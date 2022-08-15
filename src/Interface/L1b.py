@@ -29,7 +29,6 @@ class L1b:
         self.KiOrb_A = None
         self.KiOrb_B = None
 
-
         pass
 
     def configure(self, **kwargs):

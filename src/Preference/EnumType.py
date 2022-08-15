@@ -43,9 +43,14 @@ class Payload(Enum):
     LRI = 6
 
 
-class RKOrder(Enum):
+class SingleStepOde(Enum):
     rk4 = 1
     rk8 = 2
     rkn = 3
+
+
+class MultiStepOde(Enum):
+    GaussJackson = 1
+    ABM8 = 2
 
 

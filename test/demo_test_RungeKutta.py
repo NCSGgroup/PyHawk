@@ -1,5 +1,5 @@
-from src.ODE.RungeKutta import RungeKutta
-from src.Preference.EnumType import RKOrder
+from src.ODE.SingleStepODE import RK4
+from src.Preference.EnumType import SingleStepOde
 import numpy as np
 
 
@@ -28,9 +28,8 @@ def demo1():
     v0 = np.array([0, np.sqrt(398600.4415 / np.linalg.norm(r0)), 0])
     x0 = 0
 
-
-    rk = RungeKutta().setRecord()
-    print("Test case for %s" % RKOrder.rk4.name)
+    rk = RK4().setRecord()
+    print("Test case for %s" % SingleStepOde.rk4.name)
     rk.setInitial(r0, v0, x0).setForce(force_for_demo_use2)
     x, r, v = rk.propagate()
     # print(r / (np.linalg.norm(r)))

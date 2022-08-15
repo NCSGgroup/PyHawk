@@ -16,15 +16,15 @@ class AccCaliPar:
         if sat is SatID.B and acc_strategy == Pre_Accelerometer.cali_A:
             self.acc_strategy = Pre_Accelerometer.cali_B
         if kwargs:
-            self.par = 0
+            self.__parFlag = 0
             self.AccCaliValue = kwargs.get('AccCaliPar')
         else:
-            self.par = 1
+            self.__parFlag = 1
         self.__par = self.__configure()
 
     def __configure(self):
         cali_value = None
-        if self.par == 0:
+        if self.__parFlag == 0:
             cali_value = self.AccCaliValue
         else:
             if self.sat == SatID.A:

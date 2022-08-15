@@ -1,7 +1,7 @@
-from src.ODE.GaussJackson import GaussJackson
-from src.ODE.RungeKutta import RungeKutta
+from src.ODE.MultiStepODE import GaussJackson
+from src.ODE.SingleStepODE import RKN
 from src.ODE.KeplerOrbit import KeplerOrbit
-from src.Preference.EnumType import RKOrder
+from src.Preference.EnumType import SingleStepOde
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
@@ -58,7 +58,7 @@ def demo_test_GJ():
         V_dop.append(dop.y[4:])
 
     # ------------------Runge-Kutta-------------------
-    rk = RungeKutta().setInitial(r0, v0, x0).setForce(force_for_demo_use)
+    rk = RKN().setInitial(r0, v0, x0).setForce(force_for_demo_use).setRecord()
     X_RK, R_RK, V_RK = rk.propagate(Nstep + int(order / 2), h)
 
     # -----------------Gauss-Jackson----------------

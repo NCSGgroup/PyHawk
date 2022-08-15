@@ -1,8 +1,11 @@
-from src.Preference.EnumType import RKOrder
+from src.Preference.EnumType import SingleStepOde, MultiStepOde
+
+
+SingleStepOde = SingleStepOde.rkn
+MultiStepOde = MultiStepOde.GaussJackson
 
 
 class RK:
-    RKOrder = RKOrder.rkn
     isRecord = True
     stepsize = 0.01
     Npoints = int(3600 / stepsize)
