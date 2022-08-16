@@ -1,3 +1,4 @@
+# 儒略日
 J2000_MJD = 51544.5
 Diff_Tai_GPS = 19
 Diff_Tai_TT = 32.184
