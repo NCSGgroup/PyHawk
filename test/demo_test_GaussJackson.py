@@ -1,7 +1,7 @@
 from src.ODE.MultiStepODE import GaussJackson
 from src.ODE.SingleStepODE import RKN
 from src.ODE.KeplerOrbit import KeplerOrbit
-from src.Preference.EnumType import SingleStepOde
+from src.Preference.EnumType import SingleStepType
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
@@ -48,18 +48,18 @@ def demo_test_GJ():
     h = 30
     Nstep = 720 * 2
     # --------------------- DOP853---------------------
-    dop = ode(force_for_demo_use3).set_integrator("dop853")
-    dop.set_initial_value(np.append(r0, v0), x0)
-    X_dop, R_dop, V_dop = [], [], []
-    for i in range(Nstep + int(order / 2)):
-        dop.integrate(dop.t + h)
-        X_dop.append(dop.t)
-        R_dop.append(dop.y[0:3])
-        V_dop.append(dop.y[4:])
+    # dop = ode(force_for_demo_use3).set_integrator("dop853")
+    # dop.set_initial_value(np.append(r0, v0), x0)
+    # X_dop, R_dop, V_dop = [], [], []
+    # for i in range(Nstep + int(order / 2)):
+    #     dop.integrate(dop.t + h)
+    #     X_dop.append(dop.t)
+    #     R_dop.append(dop.y[0:3])
+    #     V_dop.append(dop.y[4:])
 
     # ------------------Runge-Kutta-------------------
     rk = RKN().setInitial(r0, v0, x0).setForce(force_for_demo_use).setRecord()
-    X_RK, R_RK, V_RK = rk.propagate(Nstep + int(order / 2), h)
+    # X_RK, R_RK, V_RK = rk.propagate(Nstep + int(order / 2), h)
 
     # -----------------Gauss-Jackson----------------
     # get initial points using Runge-Kutta
@@ -74,7 +74,6 @@ def demo_test_GJ():
     iniX = x1 + x2
     iniR = r1 + r2
     iniV = v1 + v2
-
     # get initial points using dopri5
     # dop.set_initial_value(np.append(r0, v0), x0)
     # x1, r1, v1 = [], [], []
@@ -109,38 +108,40 @@ def demo_test_GJ():
     # X_GJ, R_GJ, V_GJ = GJ.propagate(h, Nstep)
     GJ = GaussJackson().setInitial(iniX, iniR, iniV).setForce(force_for_demo_use)
     X_GJ, R_GJ, V_GJ = GJ.propagate(Nstep, h)
-
+    print(len(X_GJ))
+    print(len(R_GJ))
+    print(len(V_GJ))
     # compute the TRUE using kepler orbiting
-    kepler = KeplerOrbit().setInitial(x0, r0, v0).setArg(GM=mu)
-    X_ke, R_ke, V_ke = kepler.propagate(Nstep + int(order / 2), h)
-
-    matplotlib.rcParams.update({'font.size': 24})
-    fig = plt.figure()
-
-    # print()
-    plt.plot(np.array(X_GJ) / 60,
-             np.sqrt(np.sum((np.array(R_RK[(int(order / 2) + 1):])
-             - R_ke[(int(order / 2) + 1):]) ** 2, 1)) * 1e6,
-             label='RKN', linewidth=3)
-    # plt.plot(np.array(X_GJ)/60, np.max(np.abs(np.array(R_GJ) - R_ke[5:]), 1)*1e6,  label='Gauss-Jackson 8th', linewidth=3)
-
-    plt.plot(np.array(X_GJ) / 60,
-             np.sqrt(np.sum((np.array(R_GJ)
-            - R_ke[(int(order / 2) + 1):]) ** 2, 1)) * 1e6,
-             label='Gauss-Jackson 8th', linewidth=3)
-    plt.plot(np.array(X_GJ) / 60,
-             np.sqrt(np.sum((np.array(R_dop[int(order / 2):])
-             -R_ke[(int(order / 2) + 1):]) ** 2, 1)) * 1e6,
-             label='dopri5',linewidth=3)
-    plt.xlim(0, X_GJ[-1] / 60)
-    plt.ylim(0, )
-    plt.legend(loc='upper left', fontsize=28)
-    plt.title('Two-body problem: GJ8 VS Ode-dopri5')
-    plt.xlabel('Time (min)')
-    plt.ylabel('error relative to the kepler orbit [mm]')
-    plt.grid()
-    plt.gca().yaxis.get_major_formatter().set_powerlimits((0, 2))
-    plt.show()
+    # kepler = KeplerOrbit().setInitial(x0, r0, v0).setArg(GM=mu)
+    # X_ke, R_ke, V_ke = kepler.propagate(Nstep + int(order / 2), h)
+    #
+    # matplotlib.rcParams.update({'font.size': 24})
+    # fig = plt.figure()
+    #
+    # # print()
+    # plt.plot(np.array(X_GJ) / 60,
+    #          np.sqrt(np.sum((np.array(R_RK[(int(order / 2) + 1):])
+    #          - R_ke[(int(order / 2) + 1):]) ** 2, 1)) * 1e6,
+    #          label='RKN', linewidth=3)
+    # # plt.plot(np.array(X_GJ)/60, np.max(np.abs(np.array(R_GJ) - R_ke[5:]), 1)*1e6,  label='Gauss-Jackson 8th', linewidth=3)
+    #
+    # plt.plot(np.array(X_GJ) / 60,
+    #          np.sqrt(np.sum((np.array(R_GJ)
+    #         - R_ke[(int(order / 2) + 1):]) ** 2, 1)) * 1e6,
+    #          label='Gauss-Jackson 8th', linewidth=3)
+    # plt.plot(np.array(X_GJ) / 60,
+    #          np.sqrt(np.sum((np.array(R_dop[int(order / 2):])
+    #          -R_ke[(int(order / 2) + 1):]) ** 2, 1)) * 1e6,
+    #          label='dopri5',linewidth=3)
+    # plt.xlim(0, X_GJ[-1] / 60)
+    # plt.ylim(0, )
+    # plt.legend(loc='upper left', fontsize=28)
+    # plt.title('Two-body problem: GJ8 VS Ode-dopri5')
+    # plt.xlabel('Time (min)')
+    # plt.ylabel('error relative to the kepler orbit [mm]')
+    # plt.grid()
+    # plt.gca().yaxis.get_major_formatter().set_powerlimits((0, 2))
+    # plt.show()
 
     return True
 

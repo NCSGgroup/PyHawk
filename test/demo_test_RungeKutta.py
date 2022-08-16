@@ -1,5 +1,5 @@
 from src.ODE.SingleStepODE import RK4
-from src.Preference.EnumType import SingleStepOde
+from src.Preference.EnumType import SingleStepType
 import numpy as np
 
 
@@ -29,7 +29,7 @@ def demo1():
     x0 = 0
 
     rk = RK4().setRecord()
-    print("Test case for %s" % SingleStepOde.rk4.name)
+    print("Test case for %s" % SingleStepType.RK4.name)
     rk.setInitial(r0, v0, x0).setForce(force_for_demo_use2)
     x, r, v = rk.propagate()
     # print(r / (np.linalg.norm(r)))

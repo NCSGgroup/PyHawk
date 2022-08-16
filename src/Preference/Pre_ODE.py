@@ -1,31 +1,29 @@
-from src.Preference.EnumType import SingleStepOde, MultiStepOde
+from src.Preference.EnumType import SingleStepType, MultiStepType
 
 
-SingleStepOde = SingleStepOde.rkn
-MultiStepOde = MultiStepOde.GaussJackson
+SingleStepOde = SingleStepType.RKN
+MultiStepOde = MultiStepType.GaussJackson
 
 
-class RK:
+stepsize = 30
+Npoints = 720 * 2
+
+
+class SingleStepConfig:
     isRecord = True
-    stepsize = 0.01
-    Npoints = int(3600 / stepsize)
 
 
-class GJ:
+class MultiStepConfig:
     order = 8
     isRecord = True
     iterNum = 10
     rltot = 1e-13
-    stepsize = 0.01
-    Npoints = int(3600 / stepsize)
 
 
 class KO:
     isRecord = True
     GM = 398600.4415
     rltot = 1e-9
-    stepsize = 0.01
-    Npoints = int(3600 / stepsize)
 
 
 

@@ -1,9 +1,13 @@
 import numpy as np
-from src.Preference.Pre_ODE import RK
+import src.Preference.Pre_ODE as Pre_ODE
 
 
 class SingleStepOde:
+
     def __init__(self):
+        self.stepSize = Pre_ODE.stepsize
+        self.Npoints = Pre_ODE.Npoints
+        self._isRecord = Pre_ODE.SingleStepConfig.isRecord
         self._loadCoeff()
 
     def _loadCoeff(self):
@@ -64,7 +68,7 @@ class SingleStepOde:
         self._x_0 = x_0
         return self
 
-    def setRecord(self, isRecord=RK.isRecord):
+    def setRecord(self, isRecord=Pre_ODE.SingleStepConfig.isRecord):
         """
         If isRecord=True, the orbit track (a list of vectors at every epoch) rather than
         the final epoch will be output.
@@ -86,7 +90,7 @@ class SingleStepOde:
 
         return self
 
-    def propagate(self, Npoints: int = RK.Npoints, stepsize=RK.stepsize):
+    def propagate(self, Npoints: int = Pre_ODE.Npoints, stepsize=Pre_ODE.stepsize):
         """
 
         :param Npoints:

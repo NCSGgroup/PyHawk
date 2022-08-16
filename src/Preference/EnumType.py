@@ -43,13 +43,13 @@ class Payload(Enum):
     LRI = 6
 
 
-class SingleStepOde(Enum):
-    rk4 = 1
-    rk8 = 2
-    rkn = 3
+class SingleStepType(Enum):
+    RK4 = 1
+    RK8 = 2
+    RKN = 3
 
 
-class MultiStepOde(Enum):
+class MultiStepType(Enum):
     GaussJackson = 1
     ABM8 = 2
 

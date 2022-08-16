@@ -1,11 +1,11 @@
 import numpy as np
 from src.ODE.ODEcoeffGenerator import ODEcoeffGenerator
-from src.Preference.Pre_ODE import GJ
+import src.Preference.Pre_ODE as Pre_ODE
 
 
 class MultiStepOde:
     def __init__(self):
-        self._order = GJ.order
+        self.order = Pre_ODE.MultiStepConfig.order
         self.setRecord()
         self._loadCoeff()
 
@@ -18,14 +18,14 @@ class MultiStepOde:
         self._func = func
         return self
 
-    def setRecord(self, isRecord=GJ.isRecord):
+    def setRecord(self):
         """
         If isRecord=True, the orbit track (a list of vectors at every epoch) rather than
         the final epoch will be output.
         :param isRecord: Boolean
         :return:
         """
-        self._isRecord = isRecord
+        self._isRecord = Pre_ODE.MultiStepConfig.isRecord
         return self
 
     def setInitial(self, iniX: list, iniR: list, iniV: list):
@@ -40,7 +40,7 @@ class MultiStepOde:
     def _loadCoeff(self):
         pass
 
-    def propagate(self, N: int=GJ.Npoints, hs=GJ.stepsize):
+    def propagate(self, N: int= Pre_ODE.Npoints, hs=Pre_ODE.stepsize):
         """
         The propagator starts to work for N steps from the given initial epoch
         :param N: Steps the propagator will extend
@@ -50,6 +50,15 @@ class MultiStepOde:
         assert N > 0
         OrbitX, OrbitR, OrbitV = [], [], []
         return OrbitX, OrbitR, OrbitV
+
+    def propagate_one_step(self, hs, isFirstStep: True, dataIn):
+        """
+        One step forward once the function is called
+        :param hs:
+        :param isFirstStep: Mid-correction would be done if this is the first step of the whole integration
+        :return:
+        """
+        pass
 
 
 class ABM8(MultiStepOde):
@@ -85,7 +94,7 @@ class ABM8(MultiStepOde):
         self.__iniV = iniV
         return self
 
-    def propagate(self, N: int=GJ.Npoints, hs=GJ.stepsize):
+    def propagate(self, N: int=Pre_ODE.Npoints, hs=Pre_ODE.stepsize):
         """
         The propagator starts to work for N steps from the given initial epoch
         :param N: Steps the propagator will extend
@@ -187,7 +196,7 @@ class ABM8(MultiStepOde):
 class GaussJackson(MultiStepOde):
     def __init__(self):
         super(GaussJackson, self).__init__()
-        assert np.mod(self._order, 2) == 0 and 4 <= self._order <= 18
+        assert np.mod(self.order, 2) == 0 and 4 <= self.order <= 18
         self.setIterArgs()
 
     def _loadCoeff(self):
@@ -196,15 +205,15 @@ class GaussJackson(MultiStepOde):
         :param order:
         :return: Adams coefficients and GJ coefficients
         '''
-        dim = (self._order + 2, self._order + 1)
-        ODE = ODEcoeffGenerator(self._order)
+        dim = (self.order + 2, self.order + 1)
+        ODE = ODEcoeffGenerator(self.order)
         Adam_Coef = np.array(ODE.SummedAdam_ordinate).astype(np.float)
         GJ_Coeff = np.array(ODE.GaussJackson_ordinate).astype(np.float)
 
         assert Adam_Coef.shape == dim and GJ_Coeff.shape == dim
         self.__Adam_Coef, self.__GJ_Coeff = Adam_Coef, GJ_Coeff
 
-    def setIterArgs(self, iterNum: int = GJ.iterNum, rltot=GJ.rltot):
+    def setIterArgs(self, iterNum: int = Pre_ODE.MultiStepConfig.iterNum, rltot=Pre_ODE.MultiStepConfig.rltot):
         """
         :param rltot: tolerance of stopping an iteration.
         :param iterNum: define a maximal number of iteration to lower computation burden.
@@ -229,11 +238,11 @@ class GaussJackson(MultiStepOde):
         self.__iniV = iniV
 
         # make sure the initial points have a number of "order+1"
-        assert len(iniX) == len(iniR) == len(iniV) == (self._order + 1)
+        assert len(iniX) == len(iniR) == len(iniV) == (self.order + 1)
 
         return self
 
-    def propagate(self, N: int=GJ.Npoints, hs=GJ.stepsize):
+    def propagate(self, N: int=Pre_ODE.Npoints, hs=Pre_ODE.stepsize):
         """
         The propagator starts to work for N steps from the given initial epoch
         :param N: Steps the propagator will extend
@@ -250,6 +259,9 @@ class GaussJackson(MultiStepOde):
         iter = 0
         sn = 0
         Sn = 0
+
+        # if len(np.shape(R)) == 3:
+        #     self.__mm= self.__startup1
 
         '''start-up: mid-correction'''
         while (not isConverge) and iter < 10:
@@ -320,7 +332,7 @@ class GaussJackson(MultiStepOde):
 
     @property
     def getOrder(self):
-        return self._order
+        return self.order
 
     def __startup(self, X: np.ndarray, R: np.ndarray, V: np.ndarray
                   , acc: np.ndarray, hs, RelTol):
@@ -336,7 +348,7 @@ class GaussJackson(MultiStepOde):
         """
 
         index = self.__get_index
-        order = self._order
+        order = self.order
         b = self.__Adam_Coef
         a = self.__GJ_Coeff
 
@@ -473,7 +485,7 @@ class GaussJackson(MultiStepOde):
          original index of list or array of PYTHON, we provide this function to bridge these two indexing.
         :return: index_of_python (0, 1, 2, 3, 4, 5, 6, 7, 8)
         """
-        return int(self._order / 2 + index_of_GJ)
+        return int(self.order / 2 + index_of_GJ)
 
     def __converge_test1(self, r0, r1, RelTol):
         """
@@ -533,4 +545,5 @@ class GaussJackson(MultiStepOde):
         narray2 = array * array
         sum2 = narray2.sum()
         return np.sqrt(sum2 / N)
+
 
