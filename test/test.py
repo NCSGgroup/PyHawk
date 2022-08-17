@@ -1,7 +1,10 @@
 import numpy as np
 
-R = np.array([[123,123],[123,123]])
+R = np.array([[123,123],
+              ['123','123'],
+              [123.32,123.23],
+              [True,False]])
 
 print(np.shape(R))
-print(np.shape(R)[0])
+print(R[0][1])
 print(len(np.shape(R)))

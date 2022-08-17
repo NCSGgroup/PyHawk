@@ -25,5 +25,3 @@ class KO:
     GM = 398600.4415
     rltot = 1e-9
 
-
-

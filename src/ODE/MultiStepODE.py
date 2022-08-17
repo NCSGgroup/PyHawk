@@ -545,4 +545,3 @@ class GaussJackson(MultiStepOde):
         sum2 = narray2.sum()
         return np.sqrt(sum2 / N)
 
-

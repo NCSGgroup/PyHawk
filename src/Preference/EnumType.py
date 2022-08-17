@@ -54,3 +54,23 @@ class MultiStepType(Enum):
     ABM8 = 2
 
 
+class OdeVariable(Enum):
+    r = 1
+    drdp = 2
+    drdx = 3
+
+
+class ForceType(Enum):
+    PlanetaryPerturbation = 0
+    Relativity = 1
+    OceanTide = 2
+    ReferenceModel = 3
+    AtmosphereTide = 4
+    SolidEarthTide = 5
+    PoleTide = 6
+    NonTide = 7
+    NonConserveForce = 8
+
+
+
+
