@@ -7,17 +7,16 @@ import src.Preference.Pre_ODE as Pre_ODE
 from src.Preference.EnumType import SingleStepType, MultiStepType
 
 
-class PropagatorConfig:
-    def __init__(self):
-        self.stepSize = Pre_ODE.stepsize
-        self.Npoints = Pre_ODE.Npoints
-        self.order = Pre_ODE.MultiStepConfig.order
+class ConfigComplexODE:
+
+    def __init__(self, single: SingleStepType, multi: MultiStepType):
+        self.stepSize = None
+        self.multiStepSize = None
+        self.Npoints = None
+        self.order = None
         self.SingleStepOde = None
         self.MultiStepOde = None
-        self.desc = None
-
-    def setODE(self, single: SingleStepType, multi: MultiStepType, desc: str = 'Orbit integration'):
-        self.desc = desc
+        self.desc = 'Orbit integration'
 
         if single is SingleStepType.RK4:
             self.SingleStepOde = RK4()
@@ -31,17 +30,24 @@ class PropagatorConfig:
         elif multi is MultiStepType.ABM8:
             self.MultiStepOde = ABM8()
 
+    def setOdePar(self, singleStepSize=Pre_ODE.SingleStepConfig.stepsize,
+                  multiStepSize=Pre_ODE.MultiStepConfig.stepsize,
+                  Npoints=Pre_ODE.MultiStepConfig.Npoints,
+                  order=Pre_ODE.MultiStepConfig.order):
+        assert singleStepSize == multiStepSize
+        self.stepSize = singleStepSize
+        self.Npoints = Npoints
+        self.order = order
+        if isinstance(self.MultiStepOde, GaussJackson):
+            self.MultiStepOde.setOrder().setIterArgs()
         return self
 
-    def setForce(self):
-        return self
 
+class ComplexODE:
 
-class Propagator:
-
-    def __init__(self, config: PropagatorConfig):
+    def __init__(self, config: ConfigComplexODE):
         self.__desc = config.desc
-        self.__SingleStepOde = config.SingleStepOde
+        self.__SingleStepOde = config.SingleStepOde.setRecord()
         self.__MultiStepOde = config.MultiStepOde
         self.__stepSize = config.stepSize
         self.__Npoints = config.Npoints
@@ -49,7 +55,7 @@ class Propagator:
 
         pass
 
-    def setForceModel(self, force):
+    def setSecondDerivative(self, force):
         """
         set the force function for orbit integration.
         This function is exposed to the user, while it should be consistent with the config.

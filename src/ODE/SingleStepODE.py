@@ -5,9 +5,7 @@ import src.Preference.Pre_ODE as Pre_ODE
 class SingleStepOde:
 
     def __init__(self):
-        self.stepSize = Pre_ODE.stepsize
-        self.Npoints = Pre_ODE.Npoints
-        self._isRecord = Pre_ODE.SingleStepConfig.isRecord
+        self._isRecord = None
         self._loadCoeff()
 
     def _loadCoeff(self):
@@ -90,7 +88,7 @@ class SingleStepOde:
 
         return self
 
-    def propagate(self, Npoints: int = Pre_ODE.Npoints, stepsize=Pre_ODE.stepsize):
+    def propagate(self, Npoints: int = Pre_ODE.SingleStepConfig.Npoints, stepsize=Pre_ODE.SingleStepConfig.stepsize):
         """
 
         :param Npoints:
