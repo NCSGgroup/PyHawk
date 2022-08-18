@@ -9,6 +9,7 @@
 import pathlib as pathlib
 from src.Preference.EnumType import CoordinateTransform
 
+
 class PathOfFiles:
     root_dir = pathlib.Path(__file__).parent.parent.parent
 
