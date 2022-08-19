@@ -1,5 +1,7 @@
+import numpy as np
 from src.Frame.Frame import Frame
 import src.Preference.Pre_ForceModel as Pre_ForceModel
+from src.Auxilary.GeoMathKit import GeoMathKit
 
 
 class BaseForceCS:
@@ -10,6 +12,7 @@ class BaseForceCS:
         self._fr = None
         self._sTotal = None
         self._cTotal = None
+        self._isFirst = True
 
     def getCS(self):
         return self._s, self._c
@@ -18,10 +21,13 @@ class BaseForceCS:
         return self._cTotal, self._sTotal
 
     def accumulate(self):
-        # self._cTotal += self._c
-        # self._sTotal += self._s
-        print(self._cTotal)
-        print(self._c)
+        if self._isFirst:
+            self._cTotal = self._c
+            self._sTotal = self._s
+            self._isFirst = False
+        else:
+            self._cTotal = GeoMathKit.arrayAdd(self._c, self._cTotal)
+            self._sTotal = GeoMathKit.arrayAdd(self._s, self._sTotal)
         return self
 
     def setState(self, r, v):

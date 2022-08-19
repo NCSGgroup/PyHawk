@@ -10,11 +10,12 @@ def demo1():
     fr.setTime(252417548.816000, TimeFormat.GPS_second)
 
     eot = EOT11a()
-    eot.setTime(fr).load(90).getCS()
-    eot.accumulate()
+    eot.setTime(fr).load(120).getCS()
+    print(eot.accumulate().getTotalCS())
 
     fes = FES2014()
-    fes.setTime(fr).load(90).getCS()
+    fes.setTime(fr).load(120).getCS()
+    print(fes.accumulate().getTotalCS())
 
 
 if __name__ == '__main__':
