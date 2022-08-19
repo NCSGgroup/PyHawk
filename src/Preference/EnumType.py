@@ -62,14 +62,18 @@ class OdeVariable(Enum):
 
 class ForceType(Enum):
     PlanetaryPerturbation = 0
-    Relativity = 1
-    OceanTide = 2
-    ReferenceModel = 3
-    AtmosphereTide = 4
-    SolidEarthTide = 5
-    PoleTide = 6
-    NonTide = 7
-    NonConserveForce = 8
+    GravHar = 1
+    NonConserveForce = 2
+    Relativity = 3
+
+
+class GravHarType(Enum):
+    OceanTide = 0
+    ReferenceModel = 1
+    AtmosphereTide = 2
+    SolidEarthTide = 3
+    PoleTide = 4
+    NonTide = 5
 
 
 

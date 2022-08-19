@@ -16,25 +16,25 @@ class BaseSecondDerivative:
         self._time = time
         pass
 
-    def getSecondDerivative(self):
+    # def getSecondDerivative(self):
+    #
+    #     pass
 
-        pass
+    # def setArguments(self, zeroOrder, firstOrder, odeVariableType):
+    #     self._zeroOrder = zeroOrder
+    #     self._firstOrder = firstOrder
+    #     self._odeVariableType = odeVariableType
+    #     pass
 
-    def setArguments(self, zeroOrder, firstOrder, odeVariableType):
-        self._zeroOrder = zeroOrder
-        self._firstOrder = firstOrder
-        self._odeVariableType = odeVariableType
-        pass
-
-    def getAcceleration(self, r, v):
+    def getAcceleration(self, **kwargs):
         acc = None
         return acc
 
-    def getDaDxyz(self, drdx, dvdx):
+    def getDaDxyz(self, **kwargs):
         dadx = None
         return dadx
 
-    def getDaDp(self, drdp, dvdp):
+    def getDaDp(self, **kwargs):
         """
         dax/dp1  dax/dp2  ...
         day/dp1  day/dp2  ...
