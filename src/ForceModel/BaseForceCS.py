@@ -9,7 +9,7 @@ class BaseForceCS:
     def __init__(self):
         self._s = None
         self._c = None
-        self._fr = None
+        self._time = None
         self._sTotal = None
         self._cTotal = None
         self._isFirst = True
@@ -34,6 +34,6 @@ class BaseForceCS:
         pass
 
     def setTime(self, time: Frame):
-        self._fr = time
+        self._time = time
         return self
 

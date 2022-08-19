@@ -40,6 +40,7 @@ gapfix_cubic_int = 150
 arc_length = 6
 min_arcLen = 3
 
+
 class PathOfFiles:
     root_dir = pathlib.Path(__file__).parent.parent.parent
 

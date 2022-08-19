@@ -553,3 +553,4 @@ class ClibGravHar(AbsGravHar):
         self.__gravlib.getDu2xyz(self._Nmax, self._Cpot, self._Spot, du2xyz)
 
         return du2xyz.copy().reshape(3, 3)
+

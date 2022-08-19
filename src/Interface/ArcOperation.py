@@ -259,6 +259,7 @@ class ArcData:
 
     def __init__(self, date_span=Pre_Interface.date_span,
                  raw_data_path=Pre_Interface.PathOfFiles.temp_raw_data):
+        self.date_span = date_span
         filename = raw_data_path.joinpath(date_span[0] + '_' + date_span[1] + ".hdf5")
         self.__h5data = h5py.File(filename, "r")
         pass

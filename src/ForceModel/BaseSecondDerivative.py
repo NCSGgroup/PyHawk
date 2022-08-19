@@ -1,15 +1,14 @@
 import numpy as np
-
 from src.Frame.Frame import Frame
 
 
 class BaseSecondDerivative:
 
     def __init__(self):
-        self._time = None
         self._zeroOrder = None
         self._firstOrder = None
         self._odeVariableType = None
+        self._time = None
         pass
 
     def setTime(self, time: Frame):

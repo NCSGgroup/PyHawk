@@ -135,8 +135,8 @@ class EOT11a(OceanTide):
         :param theta: CORRESPONDING MEAN SID.TIME GREENWICH. = GMST
         :return: one-dimensional SH coefficients up to max degree defined by user
         """
-        tdb_mjd = self._fr.getTDB_mjd
-        theta = self._fr.getTheta
+        tdb_mjd = self._time.getTDB_mjd
+        theta = self._time.getTheta
         if np.fabs(tdb_mjd - self._time) < (self._SR / 86400.0):
             '''To avoid too dense output and enhance computation efficiency'''
             return self._c.copy(), self._s.copy()
@@ -249,8 +249,8 @@ class FES2014(OceanTide):
         :param theta: CORRESPONDING MEAN SID.TIME GREENWICH. = GMST
         :return: one-dimensional SH coefficients up to max degree defined by user
         """
-        tdb_mjd = self._fr.getTDB_mjd
-        theta = self._fr.getTheta
+        tdb_mjd = self._time.getTDB_mjd
+        theta = self._time.getTheta
         if np.fabs(tdb_mjd - self._time) < (self._SR / 86400.0):
             '''To avoid too dense output and enhance computation efficiency'''
             return self._c.copy(), self._s.copy()

@@ -65,7 +65,7 @@ class Accelerometer:
     TODO: And smaller arc (like bias @0.5 hour) should be introduced to make solution more flexible.
     """
 
-    def __init__(self, rd: ArcData, ap: AccCaliPar):
+    def __init__(self, rd: ArcData, ap: AccCaliPar, **kwargs):
         """
         acc and sca are the array with their first column recording the same timestamp [gps second]
         :param sat: define the sat ID for the accelerometer to be dealt with.
@@ -83,7 +83,7 @@ class Accelerometer:
         self.__acc = self.__rd.getData(arc=self.__arcNo, kind=Payload.ACC, sat=self.__sat)
         self.__sca = self.__rd.getData(arc=self.__arcNo, kind=Payload.SCA, sat=self.__sat)
         assert np.max(np.abs(self.__acc[:, 0] - self.__sca[:, 0])) < Pre_Constants.num_tolerance
-        self.__dataTemp = Pre_Accelerometer.temp_non_conservative_data
+        self.__dataTemp = kwargs.get('dataTemp', Pre_Accelerometer.temp_non_conservative_data)
         '''Above defines a fully populated scale matrix (span to 1-d)'''
         '''
         for example
@@ -159,7 +159,7 @@ class Accelerometer:
         :return: result for all the time list
         """
         acc_old = self.__acc[:, 1:]
-        time = self.get_timestamp()
+        time = self.__acc[:, 0]
         dt = time - time[0]
         '''x-axi'''
         bias_x = self.__bias[0][0] + self.__bias[1][0] * dt + self.__bias[2][0] * dt ** 2
@@ -179,7 +179,7 @@ class Accelerometer:
         Derivative of acc with respect to the parameters such as bias & scale.
         :return: result for all the time list
         """
-        time = self.get_timestamp()
+        time = self.__acc[:, 0]
         dt = time - time[0]
         q = self.__sca
 
@@ -226,18 +226,20 @@ class Accelerometer:
 
         return dadp
 
-    def get_timestamp(self):
-        """
-
-        :return: gps [second] time stamp for the time list
-        """
-        return self.__acc[:, 0]
+    # def get_timestamp(self):
+    #     """
+    #
+    #     :return: gps [second] time stamp for the time list
+    #     """
+    #     return self.__acc[:, 0]
 
     def get_and_save(self):
         sat = self.__sat
-        time = self.get_timestamp()
+        time = self.__acc[:, 0]
+        date_span = self.__rd.date_span
+
         filename = pathlib.Path(self.__dataTemp).joinpath(
-            sat.name + '_' + str(int(time[0])) + '_' + str(int(time[-1])) + '.hdf5')
+            date_span[0] + '_' + date_span[1] + '_' + sat.name + '_' + str(self.__arcNo) + '.hdf5')
         wr = h5py.File(filename, "w")
 
         acc = self.get_acceleration()
