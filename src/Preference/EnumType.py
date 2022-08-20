@@ -76,5 +76,8 @@ class GravHarType(Enum):
     NonTide = 5
 
 
-
+class RelativityType(Enum):
+    SchwarzChild = 0
+    LenseThirring = 1
+    Desitter = 2
 

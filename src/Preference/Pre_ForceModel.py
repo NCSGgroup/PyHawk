@@ -1,4 +1,4 @@
-from src.Preference.EnumType import ForceType, GravHarType, SatID
+from src.Preference.EnumType import ForceType, GravHarType, SatID, RelativityType
 import pathlib as pathlib
 
 SamplePeriod = 1e-3
