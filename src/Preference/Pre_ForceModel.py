@@ -1,5 +1,6 @@
 from src.Preference.EnumType import ForceType, GravHarType, SatID, RelativityType
 import pathlib as pathlib
+import numpy as np
 
 SamplePeriod = 1e-3
 maxDegree = 120
@@ -34,6 +35,20 @@ ThreeBody_GM = {'Earth': 398600.44150e9,
              'Neptune': 6836527.100580024e9,
              'Pluto': 975.5011758767654e9}
 ThreeBody_J2 = False
+
+
+class RelativityConfig:
+    GM_Sun = 1.32712442076e20
+    GM_Earth = 3.986004418000000e+14
+    C_Light = 299792458
+    J = np.array([0, 0, 9.8e8])
+    Gamma = 1
+    Beta = 1
+    kind = {
+        RelativityType.SchwarzChild: True,
+        RelativityType.LenseThirring: False,
+        RelativityType.Desitter: False
+    }
 
 
 class PathOfFiles:

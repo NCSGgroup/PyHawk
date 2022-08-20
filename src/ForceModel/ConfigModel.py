@@ -4,7 +4,7 @@ from src.ForceModel.NonTide import NonTide
 from src.ForceModel.OceanTide import OceanTide
 from src.ForceModel.PoleTide import PoleTide
 from src.ForceModel.SolidTide import SolidTide
-from src.Preference.EnumType import ForceType
+from src.Preference.EnumType import ForceType, GravHarType
 
 
 class ConfigModel:
@@ -13,12 +13,12 @@ class ConfigModel:
         pass
 
     def configure(self, **kwargs):
-        include_ForceType = kwargs.get('include_ForceType', Pre_ForceModel.include_ForceType)
-        self.include_ForceType = [key for key, value in include_ForceType.items() if value]
+        include_include_GravHarType = kwargs.get('include_ForceType', Pre_ForceModel.include_GravHarType)
+        self.include_ForceType = [key for key, value in include_include_GravHarType.items() if value]
 
-        if ForceType.PoleTide in self.include_ForceType:
+        if GravHarType.PoleTide in self.include_ForceType:
             PoleTide().accumulate()
-        if ForceType.OceanTide in self.include_ForceType:
+        if GravHarType.OceanTide in self.include_ForceType:
             PoleTide().accumulate()
 
 
