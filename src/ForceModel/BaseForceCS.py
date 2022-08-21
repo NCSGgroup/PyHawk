@@ -14,7 +14,7 @@ class BaseForceCS:
         self._cTotal = None
         self._isFirst = True
 
-    def getCS(self):
+    def getCS(self, **kwargs):
         return self._s, self._c
 
     def getTotalCS(self):

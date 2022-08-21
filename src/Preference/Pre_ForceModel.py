@@ -1,4 +1,4 @@
-from src.Preference.EnumType import ForceType, GravHarType, SatID, RelativityType
+from src.Preference.EnumType import ForceType, GravHarType, SatID, RelativityType, LoveNumberType
 import pathlib as pathlib
 import numpy as np
 
@@ -57,6 +57,27 @@ class EphemeridesConfig:
     planets = ['Moon', 'Sun']
 
 
+class SolidTideConfig:
+    GM_Earth = 0.3986004415E+15
+    GM_Sun = 1.32712442076e20
+    GM_Moon = 0.49028010560e13
+    Radius_Earth = 0.6378136460E+07
+    isZeroTide = True
+
+
+class PoleTideConfig:
+    Kind = ['Solid Earth', 'Ocean']
+    SimpleOcean = False
+    Version = 2
+    MaxDegreeOfOcean = 30
+    method = LoveNumberType.Wang
+
+
+class LoveNumberConfig:
+    Nmax = 30
+    method = LoveNumberType.Wang
+
+
 class PathOfFiles:
     root_dir = pathlib.Path(__file__).parent.parent.parent
 
@@ -65,3 +86,6 @@ class PathOfFiles:
     FES2014 = root_dir.joinpath('data', 'FES2014')
     temp_non_conservative_data = root_dir.joinpath('temp', 'NonConservativeForce')
     Ephemerides = root_dir.joinpath('data', 'ephemerides')
+    PoleTide = root_dir.joinpath('data', 'poletide')
+    LoverNumber = root_dir.joinpath('data', 'poletide')
+    poleTideModel = 'desaiscopolecoef.txt'
