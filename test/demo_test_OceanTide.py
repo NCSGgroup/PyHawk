@@ -11,11 +11,11 @@ def demo1():
 
     eot = EOT11a()
     c, s = eot.setTime(fr).load(120).getCS()
-    print(eot.accumulate())
+    print(c, s)
 
     fes = FES2014()
     fes.setTime(fr).load(120).getCS()
-    print(fes.accumulate())
+    print(c, s)
 
 
 if __name__ == '__main__':

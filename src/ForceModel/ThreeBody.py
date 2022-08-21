@@ -1,5 +1,5 @@
 from src.ForceModel.BaseSecondDerivative import BaseSecondDerivative
-import src.Preference.Pre_ForceModel as Pre_ForceModel
+from src.Preference.Pre_ForceModel import ThreeBodyConfig
 import numpy as np
 from src.Frame.Frame import Frame
 from src.Auxilary.GeoMathKit import GeoMathKit
@@ -12,9 +12,10 @@ class AbsThreeBody(BaseSecondDerivative):
         self._planet = None
         self._sat = None
         self._GM = None
+        self.configure()
 
     def configure(self, **kwargs):
-        self._GM = kwargs.get('GM', Pre_ForceModel.ThreeBody_GM)
+        self._GM = kwargs.get('GM', ThreeBodyConfig.ThreeBody_GM)
         pass
 
     def setPlanetPos(self, planet: dict):
@@ -36,7 +37,7 @@ class AbsThreeBody(BaseSecondDerivative):
         :param pos: the position of satellite to be compute the force, unit [m], GCRS frame
         :return:
         """
-        self.__sat = pos
+        self._sat = pos
         return self
 
     def getAcceleration(self):
@@ -65,7 +66,7 @@ class AbsThreeBody(BaseSecondDerivative):
         du2xyz_final = np.zeros((3, 3))
 
         planets = self._planet
-        sat = self.__sat
+        sat = self._sat
 
         assert planets is not None and sat is not None
 
@@ -97,7 +98,7 @@ class ThreeBody(AbsThreeBody):
         :return: acceleration in GCRS frame
         """
         planets = self._planet
-        sat = self.__sat
+        sat = self._sat
 
         assert planets is not None and sat is not None
 
@@ -174,7 +175,7 @@ class ThreeBodyPulsJ2(AbsThreeBody):
         :return: acceleration in GCRS frame
         """
         planets = self._planet
-        sat = self.__sat
+        sat = self._sat
 
         assert planets is not None and sat is not None
 

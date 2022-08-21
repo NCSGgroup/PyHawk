@@ -62,7 +62,7 @@ class Frame:
 
         pass
 
-    def setTime(self, time, format = TimeFormat.GPS_second):
+    def setTime(self, time, format=TimeFormat.GPS_second):
         """
         A smarter way to set time.
         :param format: ['second']['MJD']['JD']

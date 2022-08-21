@@ -81,3 +81,9 @@ class RelativityType(Enum):
     LenseThirring = 1
     Desitter = 2
 
+
+class JPLempheric(Enum):
+    DE405 = 1
+    DE421 = 2
+
+
