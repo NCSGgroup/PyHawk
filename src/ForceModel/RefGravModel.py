@@ -1,6 +1,7 @@
 from src.ForceModel.BaseForceCS import BaseForceCS
 
 
-class RefGravModel(BaseForceCS):
+class AbsRefGravModel(BaseForceCS):
     def __init__(self):
-        super(RefGravModel, self).__init__()
+        super(AbsRefGravModel, self).__init__()
+

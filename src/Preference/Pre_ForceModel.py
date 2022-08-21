@@ -1,4 +1,4 @@
-from src.Preference.EnumType import ForceType, GravHarType, SatID, RelativityType
+from src.Preference.EnumType import ForceType, GravHarType, SatID, RelativityType, LoveNumberType
 import pathlib as pathlib
 import numpy as np
 
@@ -16,25 +16,26 @@ include_ForceType = {ForceType.GravHar: True,
                      ForceType.PlanetaryPerturbation: False}
 
 include_GravHarType = {GravHarType.NonTide: True,
-                     GravHarType.PoleTide: True,
-                     GravHarType.OceanTide: True,
-                     GravHarType.AtmosphereTide: True,
-                     GravHarType.SolidEarthTide: True,
-                     GravHarType.ReferenceModel: True,}
+                       GravHarType.PoleTide: True,
+                       GravHarType.OceanTide: True,
+                       GravHarType.AtmosphereTide: True,
+                       GravHarType.SolidEarthTide: True,
+                       GravHarType.ReferenceModel: True}
 
-ThreeBody_GM_Sun = 1.32712442076e20
-ThreeBody_GM = {'Earth': 398600.44150e9,
-             'Sun': 1.32712442076e20,
-             'Moon': 0.49028010560e13,
-             'Mercury': ThreeBody_GM_Sun / 6023600.0,
-             'Venus': ThreeBody_GM_Sun / 408523.71,
-             'Mars': ThreeBody_GM_Sun / 3098708.0,
-             'Jupiter': ThreeBody_GM_Sun / 1047.3486,
-             'Saturn': ThreeBody_GM_Sun / 3497.898,
-             'Uranus': 5794556.465751793e9,
-             'Neptune': 6836527.100580024e9,
-             'Pluto': 975.5011758767654e9}
-ThreeBody_J2 = False
+
+class ThreeBodyConfig:
+    ThreeBody_GM_Sun = 1.32712442076e20
+    ThreeBody_GM = {'Earth': 398600.44150e9,
+                    'Sun': 1.32712442076e20,
+                    'Moon': 0.49028010560e13,
+                    'Mercury': ThreeBody_GM_Sun / 6023600.0,
+                    'Venus': ThreeBody_GM_Sun / 408523.71,
+                    'Mars': ThreeBody_GM_Sun / 3098708.0,
+                    'Jupiter': ThreeBody_GM_Sun / 1047.3486,
+                    'Saturn': ThreeBody_GM_Sun / 3497.898,
+                    'Uranus': 5794556.465751793e9,
+                    'Neptune': 6836527.100580024e9,
+                    'Pluto': 975.5011758767654e9}
 
 
 class RelativityConfig:
@@ -51,6 +52,32 @@ class RelativityConfig:
     }
 
 
+class EphemeridesConfig:
+    isMeter = True
+    planets = ['Moon', 'Sun']
+
+
+class SolidTideConfig:
+    GM_Earth = 0.3986004415E+15
+    GM_Sun = 1.32712442076e20
+    GM_Moon = 0.49028010560e13
+    Radius_Earth = 0.6378136460E+07
+    isZeroTide = True
+
+
+class PoleTideConfig:
+    Kind = ['Solid Earth', 'Ocean']
+    SimpleOcean = False
+    Version = 2
+    MaxDegreeOfOcean = 30
+    method = LoveNumberType.Wang
+
+
+class LoveNumberConfig:
+    Nmax = 30
+    method = LoveNumberType.Wang
+
+
 class PathOfFiles:
     root_dir = pathlib.Path(__file__).parent.parent.parent
 
@@ -58,4 +85,7 @@ class PathOfFiles:
     EOT11a = root_dir.joinpath('data', 'eot11a')
     FES2014 = root_dir.joinpath('data', 'FES2014')
     temp_non_conservative_data = root_dir.joinpath('temp', 'NonConservativeForce')
-
+    Ephemerides = root_dir.joinpath('data', 'ephemerides')
+    PoleTide = root_dir.joinpath('data', 'poletide')
+    LoverNumber = root_dir.joinpath('data', 'poletide')
+    poleTideModel = 'desaiscopolecoef.txt'

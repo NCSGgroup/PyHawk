@@ -81,3 +81,16 @@ class RelativityType(Enum):
     LenseThirring = 1
     Desitter = 2
 
+
+class JPLempheric(Enum):
+    DE405 = 1
+    DE421 = 2
+
+
+class LoveNumberType(Enum):
+    PREM = 1
+    AOD04 = 2
+    Wang = 3
+    IERS = 4
+    Gegout97 = 5
+

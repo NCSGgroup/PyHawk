@@ -9,7 +9,7 @@ class OceanTide(BaseForceCS):
     def __init__(self):
         super(OceanTide, self).__init__()
         self._SR = None
-        self._time = -1000000
+        self._tdb_mjd = -1000000
         self._ng = FunNutArg()
         self.setSampleRate()
 
@@ -137,11 +137,11 @@ class EOT11a(OceanTide):
         """
         tdb_mjd = self._time.getTDB_mjd
         theta = self._time.getTheta
-        if np.fabs(tdb_mjd - self._time) < (self._SR / 86400.0):
+        if np.fabs(tdb_mjd - self._tdb_mjd) < (self._SR / 86400.0):
             '''To avoid too dense output and enhance computation efficiency'''
             return self._c.copy(), self._s.copy()
 
-        self._time = tdb_mjd
+        self._tdb_mjd = tdb_mjd
 
         ds = self._ng.getNutArg(tdb_mjd, theta)
 
@@ -251,11 +251,11 @@ class FES2014(OceanTide):
         """
         tdb_mjd = self._time.getTDB_mjd
         theta = self._time.getTheta
-        if np.fabs(tdb_mjd - self._time) < (self._SR / 86400.0):
+        if np.fabs(tdb_mjd - self._tdb_mjd) < (self._SR / 86400.0):
             '''To avoid too dense output and enhance computation efficiency'''
             return self._c.copy(), self._s.copy()
 
-        self._time = tdb_mjd
+        self._tdb_mjd = tdb_mjd
 
         ds = self._ng.getNutArg(tdb_mjd, theta)
         thetaf = np.matmul(self.__doodsonMatrix, ds)

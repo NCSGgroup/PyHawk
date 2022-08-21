@@ -13,7 +13,7 @@ class BaseSecondDerivative:
 
     def setTime(self, time: Frame):
         self._time = time
-        pass
+        return self
 
     # def getSecondDerivative(self):
     #
