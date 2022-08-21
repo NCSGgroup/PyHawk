@@ -12,6 +12,7 @@ class AbsThreeBody(BaseSecondDerivative):
         self._planet = None
         self._sat = None
         self._GM = None
+        self.configure()
 
     def configure(self, **kwargs):
         self._GM = kwargs.get('GM', Pre_ForceModel.ThreeBody_GM)
