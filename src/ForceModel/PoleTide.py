@@ -2,6 +2,7 @@ from src.ForceModel.BaseGravCS import BaseGravCS
 from src.Preference.Pre_ForceModel import PoleTideConfig, PathOfFiles
 from src.ForceModel.LoveNumber import LoveNumber
 from src.Auxilary.GeoMathKit import GeoMathKit
+
 from src.Frame.Frame import Frame
 import numpy as np
 
@@ -14,7 +15,8 @@ class AbsPoleTide(BaseGravCS):
 
 class PoleTideIERS2010(AbsPoleTide):
 
-    def __init__(self, simpleOcean=PoleTideConfig.SimpleOcean, Version=PoleTideConfig.Version, kind=PoleTideConfig.Kind):
+    def __init__(self, simpleOcean=PoleTideConfig.SimpleOcean,
+                 Version=PoleTideConfig.Version, kind=PoleTideConfig.Kind):
         super(PoleTideIERS2010, self).__init__()
         self.__m1 = None
         self.__m2 = None
@@ -24,12 +26,10 @@ class PoleTideIERS2010(AbsPoleTide):
         self.__RGAMA, self.__IGAMA = None, None
         self.__simpleOcean = simpleOcean
         self.__version = Version
-        if kind is None:
-            kind = ['Solid Earth', 'Ocean']
-        assert set(kind) <= {'Solid Earth', 'Ocean'}
-        self.__kind = kind
+        self.__kind = [key for key, value in kind.items() if value]
 
-    def load(self, maxDegreeOfOcean=30, loveNum=PoleTideConfig.method, **kwargs):
+    def load(self, maxDegreeOfOcean=PoleTideConfig.MaxDegreeOfOcean,
+             loveNum=PoleTideConfig.LoveNumberType, **kwargs):
         """
         Load all necessary files and preprocess coefficients that will be used later on
         :param fileLove: directory of the love number file.

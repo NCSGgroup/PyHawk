@@ -2,6 +2,7 @@ from src.ForceModel.BaseGravCS import BaseGravCS
 from src.Auxilary.FunNutArg import FunNutArg
 from src.Auxilary.GeoMathKit import GeoMathKit
 from src.Preference.Pre_ForceModel import SolidTideConfig
+from src.ForceModel.PlanetEphemerides import PlanetEphemerides
 import numpy as np
 
 
@@ -23,13 +24,13 @@ class AbsSolidTide(BaseGravCS):
         self._GM_Moon = GM_Moon
         self._Radius_Earth = Radius_Earth
 
-    def getCS(self, pos_sun: np.ndarray, pos_moon: np.ndarray):
+    def getCS(self):
         pass
 
 
 class SolidTideIERS2010(AbsSolidTide):
 
-    def __init__(self, isZeroTide = SolidTideConfig.isZeroTide):
+    def __init__(self, pos: PlanetEphemerides, isZeroTide = SolidTideConfig.isZeroTide):
         super(SolidTideIERS2010, self).__init__()
         self.__doodA = None
         self.__doodB = None
@@ -37,8 +38,9 @@ class SolidTideIERS2010(AbsSolidTide):
         self.__love = None
         self.__isZeroTide = isZeroTide
         self.__prepare()
+        self.__pos = pos
 
-    def getCS(self, pos_sun: np.ndarray, pos_moon: np.ndarray):
+    def getCS(self):
         """
         Note!! The position vector has to be given in ITRS frame
         :param pos_sun:POSITION VECTOR OF SUN [meters], ITRS
@@ -48,6 +50,8 @@ class SolidTideIERS2010(AbsSolidTide):
         :param isZeroTide: False: TIDE FREE, True: ZERO TIDE
         :return: C, S coefficients in one dimension format up to degree/order 5
         """
+        pos_sun = self.__pos.getPosByFrame(self._time)['Sun']
+        pos_moon = self.__pos.getPosByFrame(self._time)['Moon']
         tdb_mjd = self._time.getTDB_mjd
         theta = self._time.getTheta
         index = self.__getIndex

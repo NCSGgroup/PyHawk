@@ -80,11 +80,12 @@ class SolidTideConfig:
 
 
 class PoleTideConfig:
-    Kind = ['Solid Earth', 'Ocean']
+    Kind = {'Solid Earth': True,
+            'Ocean': True}
     SimpleOcean = False
     Version = 2
     MaxDegreeOfOcean = 30
-    method = LoveNumberType.Wang
+    LoveNumberType = LoveNumberType.Wang
 
 
 class LoveNumberConfig:
