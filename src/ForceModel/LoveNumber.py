@@ -8,7 +8,7 @@ from src.Preference.EnumType import LoveNumberType
 
 class LoveNumber:
 
-    def __init__(self, fileDir: str=PathOfFiles.LoverNumber):
+    def __init__(self, fileDir=PathOfFiles.LoverNumber):
         self.__path = fileDir
         self.__Nmax = None
 
@@ -101,7 +101,7 @@ class LoveNumber:
 
         assert self.__Nmax <= 360
 
-        path = self.__path + 'LoveNumber'
+        path = self.__path.joinpath('LoveNumber.mat')
 
         love = scio.loadmat(path)
 

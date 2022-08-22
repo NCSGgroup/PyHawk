@@ -37,10 +37,10 @@ class AbsRelativity(BaseSecondDerivative):
         pass
 
 
-class Relativity(AbsRelativity):
+class RelativityIERS2010(AbsRelativity):
 
     def __init__(self):
-        super(Relativity, self).__init__()
+        super(RelativityIERS2010, self).__init__()
         self.__GM_Sun = None
         self.__GM_Earth = None
         self.__C_Light = None

@@ -48,12 +48,12 @@ class AbsThreeBody(BaseSecondDerivative):
         Acc caused by the Earth for test use
         :return:
         """
-        sat = self.__sat
+        sat = self._sat
         norm = np.linalg.norm(np.array(sat))
         acc = -self._GM['Earth'] * np.array(sat) / norm ** 3
         return acc
 
-    def getDaDxyz(self):
+    def getDaDx(self):
         """
         A SYMMETRIC matrix is returned as below
                 ax/dx ay/dx az/dx         ax/dx ax/dy ax/dz
@@ -97,6 +97,7 @@ class ThreeBody(AbsThreeBody):
 
         :return: acceleration in GCRS frame
         """
+
         planets = self._planet
         sat = self._sat
 
@@ -121,10 +122,10 @@ class ThreeBody(AbsThreeBody):
         return acc
 
 
-class ThreeBodyPulsJ2(AbsThreeBody):
+class ThreeBodyPlusJ2(AbsThreeBody):
 
     def __init__(self):
-        super(ThreeBodyPulsJ2, self).__init__()
+        super(ThreeBodyPlusJ2, self).__init__()
 
     def get_indirectJ2(self):
         """
@@ -141,6 +142,8 @@ class ThreeBodyPulsJ2(AbsThreeBody):
         RE = 6378136.6
         J2 = -4.84166854896119e-04 * (-np.sqrt(5))  # 1.0826359e-3
 
+        # assert 'Sun' in self._planet.keys()
+        # assert 'Moon' in self._planet.keys()
         '''intersection'''
         target = {'Sun', 'Moon'} & set(self._planet.keys())
 

@@ -94,3 +94,11 @@ class LoveNumberType(Enum):
     IERS = 4
     Gegout97 = 5
 
+
+class AODtype(Enum):
+    ATM = 0
+    OCN = 1
+    GLO = 2
+    OBA = 3
+
+

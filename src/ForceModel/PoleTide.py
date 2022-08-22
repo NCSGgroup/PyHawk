@@ -76,7 +76,7 @@ class PoleTide(AbsPoleTide):
         '''
         Load Desais coefficients
         '''
-        with open(fileDir + self.__poleTideModel) as f:
+        with open(fileDir.joinpath(self.__poleTideModel)) as f:
             content = f.readlines()
             pass
 

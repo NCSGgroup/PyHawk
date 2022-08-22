@@ -29,7 +29,7 @@ class BaseSecondDerivative:
         acc = None
         return acc
 
-    def getDaDxyz(self, **kwargs):
+    def getDaDx(self, **kwargs):
         dadx = None
         return dadx
 

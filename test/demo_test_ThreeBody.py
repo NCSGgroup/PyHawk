@@ -1,4 +1,4 @@
-from src.ForceModel.ThreeBody import ThreeBody, ThreeBodyPulsJ2
+from src.ForceModel.ThreeBody import ThreeBody, ThreeBodyPlusJ2
 from src.ForceModel.PlanetEphemerides import PlanetEphemerides
 from src.Frame.Frame import Frame
 from src.Frame.EOP import EOP
@@ -9,9 +9,9 @@ def demo1():
     fr = Frame(EOP(True).load())
     fr.setTime(55682.000000000000, TimeFormat.UTC_MJD)
 
-    ap = ThreeBodyPulsJ2().setTime(fr)
-    ep = PlanetEphemerides().configure().setPlanets().switchMeter()
-    planets = ep.getPos(2400000.5000000000 + 55682.000000000000)
+    ap = ThreeBodyPlusJ2().setTime(fr)
+    ep = PlanetEphemerides().configure().setPlanets()
+    planets = ep.getPosByFrame(fr)
     # print(planets)
 
     ap.setPlanetPos(planets)

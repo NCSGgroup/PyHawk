@@ -9,6 +9,7 @@ from numpy import ndarray, array, zeros, asarray, asfarray, asmatrix
 import pathlib as _pathlib
 import glob as _glob
 import src.Preference.Pre_ForceModel as Pre_ForceModel
+from src.Preference.Pre_ForceModel import GravHarConfig
 
 
 class AbsGravHar(BaseSecondDerivative):
@@ -290,7 +291,7 @@ class PyGravHar(AbsGravHar):
 
         return acc
 
-    def getDaDxyz(self):
+    def getDaDx(self):
         """
         in [ITRS] frame
         A SYMMETRIC matrix is returned as below
@@ -369,7 +370,7 @@ class PyGravHar(AbsGravHar):
 
         return DU2XYZ
 
-    def getDaDp(self, degree_max: int, degree_min=1):
+    def getDaDp(self, degree_max: int = GravHarConfig.degree_max, degree_min=GravHarConfig.degree_min):
         """
         in [ITRS] frame
         Compute the partial derivative of acceleration with respect to harmonic coefficients
@@ -527,7 +528,7 @@ class ClibGravHar(AbsGravHar):
 
         return acc.copy()
 
-    def getDaDp(self, degree_max: int, degree_min=1):
+    def getDaDp(self, degree_max: int = GravHarConfig.degree_max, degree_min=GravHarConfig.degree_min):
 
         assert 1 <= degree_min <= degree_max <= self._Nmax
 
@@ -547,7 +548,7 @@ class ClibGravHar(AbsGravHar):
 
         return du2c, du2s
 
-    def getDaDxyz(self):
+    def getDaDx(self):
 
         du2xyz = np.zeros(9)
         self.__gravlib.getDu2xyz(self._Nmax, self._Cpot, self._Spot, du2xyz)

@@ -47,14 +47,24 @@ class RelativityConfig:
     Beta = 1
     kind = {
         RelativityType.SchwarzChild: True,
-        RelativityType.LenseThirring: False,
-        RelativityType.Desitter: False
+        RelativityType.LenseThirring: True,
+        RelativityType.Desitter: True
     }
 
 
 class EphemeridesConfig:
     isMeter = True
-    planets = ['Moon', 'Sun']
+    include_planets = {'Sun': True,
+                       'Moon': True,
+                       'Mercury': True,
+                       'Venus': True,
+                       'Earth': False,
+                       'Mars': True,
+                       'Jupiter': True,
+                       'Saturn': True,
+                       'Uranus': True,
+                       'Neptune': True,
+                       'Pluto': True}
 
 
 class SolidTideConfig:
@@ -76,6 +86,11 @@ class PoleTideConfig:
 class LoveNumberConfig:
     Nmax = 30
     method = LoveNumberType.Wang
+
+
+class GravHarConfig:
+    degree_max = 90
+    degree_min = 1
 
 
 class PathOfFiles:
