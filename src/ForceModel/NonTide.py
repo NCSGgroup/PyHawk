@@ -1,4 +1,4 @@
-from src.ForceModel.BaseForceCS import BaseForceCS
+from src.ForceModel.BaseGravCS import BaseGravCS
 from src.ForceModel.LoadSH import LoadSH
 from src.Preference.EnumType import AODtype
 from src.Preference.Pre_ForceModel import PathOfFiles, NonTideConfig
@@ -9,30 +9,30 @@ import datetime
 import numpy as np
 
 
-class AbsNonTide(BaseForceCS):
+class AbsNonTide(BaseGravCS):
 
     def __init__(self):
         super(AbsNonTide, self).__init__()
 
-    def setPar(self, MaxDeg: int, TS: int, FileDir: str, AOD_type: AODtype):
+    def configure(self, MaxDeg: int, TS: int, FileDir: str, AOD_type: AODtype):
         pass
 
     def getCS(self):
         pass
 
 
-class NonTide(AbsNonTide):
+class AODRL06(AbsNonTide):
 
     def __init__(self):
-        super(NonTide, self).__init__()
+        super(AODRL06, self).__init__()
         self.__gpstime = -1000
         self.__ld = None
         self.__TS = 3
         self.__MaxDeg = 100
         self.__previousAOD, self.__nextAOD = None, None
 
-    def setPar(self, MaxDeg: int = NonTideConfig.MaxDeg, TS: int = NonTideConfig.TS,
-               FileDir = PathOfFiles.AOD, AOD_type: AODtype = NonTideConfig.kind):
+    def configure(self, MaxDeg: int = NonTideConfig.MaxDeg, TS: int = NonTideConfig.TS,
+                  FileDir = PathOfFiles.AOD, AOD_type: AODtype = NonTideConfig.kind):
         """
         basic configuration
         :param AOD_type: A or O or A+O
@@ -105,7 +105,7 @@ class LoadAOD(LoadSH):
         self.__AODdir = fileIn
         return self
 
-    def setTime(self, date: str = NonTideConfig.date, epoch: str = NonTideConfig.epoch):
+    def setTime(self, date: str, epoch: str):
         """
         specify the epoch of AOD file to be read
         :param date: eg., '2009-01-01'

@@ -1,24 +1,24 @@
-from src.ForceModel.BaseForceCS import BaseForceCS
-import src.Preference.Pre_ForceModel as Pre_ForceModel
+from src.ForceModel.BaseGravCS import BaseGravCS
+from src.Preference.Pre_ForceModel import OceanTideConfig, PathOfFiles
 from src.Auxilary.GeoMathKit import GeoMathKit
 from src.Auxilary.FunNutArg import FunNutArg
 import numpy as np
 
 
-class OceanTide(BaseForceCS):
+class AbsOceanTide(BaseGravCS):
     def __init__(self):
-        super(OceanTide, self).__init__()
+        super(AbsOceanTide, self).__init__()
         self._SR = None
         self._tdb_mjd = -1000000
         self._ng = FunNutArg()
-        self.setSampleRate()
+        self.speedUp()
 
-    def setSampleRate(self, sr=Pre_ForceModel.SamplePeriod):
+    def speedUp(self, sr=OceanTideConfig.gainFactor):
         self._SR = sr
         return self
 
 
-class EOT11a(OceanTide):
+class EOT11a(AbsOceanTide):
     """
     Notice: the input should be TDB time in MJD format.
     This is an EOT11a version modified from Matlab codes of Mayer Gurr
@@ -31,7 +31,7 @@ class EOT11a(OceanTide):
                          'M2', 'S2', 'K2', 'M4')
         self.__doodsonMatrix = np.zeros((256, 6), int)
 
-    def load(self, maxDegree=Pre_ForceModel.maxDegree, **kwargs):
+    def load(self, maxDegree=OceanTideConfig.maxDegree, **kwargs):
         """
         load the relevant files
         EXAMPLE: load("eot11a/")
@@ -40,7 +40,7 @@ class EOT11a(OceanTide):
         :return:
         """
         assert maxDegree <= 120
-        fileDir = kwargs.get('EOT11a', Pre_ForceModel.PathOfFiles.EOT11a)
+        fileDir = kwargs.get('EOT11a', PathOfFiles.EOT11a)
 
         # read Stokes Coefficients from 18 major tide constitution
         self.__CnmCos, self.__SnmCos, self.__CnmSin, self.__SnmSin = [], [], [], []
@@ -162,7 +162,7 @@ class EOT11a(OceanTide):
         return self._c.copy(), self._s.copy()
 
 
-class FES2014(OceanTide):
+class FES2014(AbsOceanTide):
 
     def __init__(self):
         super(FES2014, self).__init__()
@@ -172,7 +172,7 @@ class FES2014(OceanTide):
         # 361 doodsons
         self.__doodsonMatrix = np.zeros((361, 6), int)
 
-    def load(self, maxDegree=Pre_ForceModel.maxDegree, **kwargs):
+    def load(self, maxDegree=OceanTideConfig.maxDegree, **kwargs):
         """
         load the relevant files
         EXAMPLE: load("eot11a/")
@@ -181,7 +181,7 @@ class FES2014(OceanTide):
         :return:
         """
         assert maxDegree <= 180
-        fileDir = kwargs.get('FES2014', Pre_ForceModel.PathOfFiles.FES2014)
+        fileDir = kwargs.get('FES2014', PathOfFiles.FES2014)
 
         # read Stokes Coefficients from 18 major tide constitution
         self.__CnmCos, self.__SnmCos, self.__CnmSin, self.__SnmSin = [], [], [], []

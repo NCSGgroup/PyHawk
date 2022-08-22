@@ -1,11 +1,11 @@
-from src.ForceModel.BaseForceCS import BaseForceCS
+from src.ForceModel.BaseGravCS import BaseGravCS
 from src.Auxilary.FunNutArg import FunNutArg
 from src.Auxilary.GeoMathKit import GeoMathKit
 from src.Preference.Pre_ForceModel import SolidTideConfig
 import numpy as np
 
 
-class AbsSolidTide(BaseForceCS):
+class AbsSolidTide(BaseGravCS):
 
     def __init__(self):
         super(AbsSolidTide, self).__init__()
@@ -27,10 +27,10 @@ class AbsSolidTide(BaseForceCS):
         pass
 
 
-class SolidTide(AbsSolidTide):
+class SolidTideIERS2010(AbsSolidTide):
 
     def __init__(self, isZeroTide = SolidTideConfig.isZeroTide):
-        super(SolidTide, self).__init__()
+        super(SolidTideIERS2010, self).__init__()
         self.__doodA = None
         self.__doodB = None
         self.__doodC = None

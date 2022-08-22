@@ -1,9 +1,9 @@
-from src.ForceModel.BaseForceCS import BaseForceCS
+from src.ForceModel.BaseGravCS import BaseGravCS
 from src.ForceModel.LoadSH import LoadSH
 from src.Preference.Pre_ForceModel import RefGravModelConfig
 
 
-class AbsRefGravModel(BaseForceCS):
+class AbsRefGravModel(BaseGravCS):
 
     def __init__(self):
         super(AbsRefGravModel, self).__init__()

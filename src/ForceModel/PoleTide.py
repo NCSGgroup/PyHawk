@@ -1,4 +1,4 @@
-from src.ForceModel.BaseForceCS import BaseForceCS
+from src.ForceModel.BaseGravCS import BaseGravCS
 from src.Preference.Pre_ForceModel import PoleTideConfig, PathOfFiles
 from src.ForceModel.LoveNumber import LoveNumber
 from src.Auxilary.GeoMathKit import GeoMathKit
@@ -6,19 +6,16 @@ from src.Frame.Frame import Frame
 import numpy as np
 
 
-class AbsPoleTide(BaseForceCS):
+class AbsPoleTide(BaseGravCS):
 
     def __init__(self):
         super(AbsPoleTide, self).__init__()
 
-    def load(self, maxDegreeOfOcean=30, loveNum=PoleTideConfig.method, **kwargs):
-        pass
 
-
-class PoleTide(AbsPoleTide):
+class PoleTideIERS2010(AbsPoleTide):
 
     def __init__(self, simpleOcean=PoleTideConfig.SimpleOcean, Version=PoleTideConfig.Version, kind=PoleTideConfig.Kind):
-        super(PoleTide, self).__init__()
+        super(PoleTideIERS2010, self).__init__()
         self.__m1 = None
         self.__m2 = None
         self.__Rn = None
@@ -150,7 +147,7 @@ class PoleTide(AbsPoleTide):
 
         return self
 
-    def getCS_solid(self):
+    def __getCS_solid(self):
         """
         It only works on C21 and S21, see Eq. 6.22
         :return:
@@ -167,7 +164,7 @@ class PoleTide(AbsPoleTide):
 
         return Cpot, Spot
 
-    def getCS_ocean(self):
+    def __getCS_ocean(self):
         """
         Desai (2002) presents a self-consistent equilibrium model of the ocean pole tide. This model accounts for
         continental boundaries, mass conservation over the oceans, self-gravitation, and loading of the ocean floor.
@@ -213,12 +210,12 @@ class PoleTide(AbsPoleTide):
         :return:
         """
         if self.__kind == ['Solid Earth']:
-            return self.getCS_solid()
+            return self.__getCS_solid()
         elif self.__kind == ['Ocean']:
-            return self.getCS_ocean()
+            return self.__getCS_ocean()
         elif set(self.__kind) == {'Solid Earth', 'Ocean'}:
-            C1, S1 = self.getCS_solid()
-            C2, S2 = self.getCS_ocean()
+            C1, S1 = self.__getCS_solid()
+            C2, S2 = self.__getCS_ocean()
             return GeoMathKit.arrayAdd(C1, C2), GeoMathKit.arrayAdd(S1, S2)
 
     def __polar2wobble_v1(self, tt_mjd, xp, yp):

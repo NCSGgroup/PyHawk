@@ -1,4 +1,4 @@
-from src.ForceModel.BaseForceCS import BaseForceCS
+from src.ForceModel.BaseGravCS import BaseGravCS
 from src.Auxilary.GeoMathKit import GeoMathKit
 from src.Auxilary.FunNutArg import FunNutArg
 from src.ForceModel.LoadSH import LoadSH
@@ -8,7 +8,7 @@ import numpy as np
 import os
 
 
-class AbsAtmosTide(BaseForceCS):
+class AbsAtmosTide(BaseGravCS):
 
     def __init__(self):
         super(AbsAtmosTide, self).__init__()
@@ -38,13 +38,12 @@ class AbsAtmosTide(BaseForceCS):
         return self._C.copy(), self._S.copy()
 
 
-class BB2003(AbsAtmosTide):
+class AtmosBB2003(AbsAtmosTide):
 
     def __init__(self, kind=AtmosTideConfig.BB2003Kind):
-        super(BB2003, self).__init__()
+        super(AtmosBB2003, self).__init__()
         self.__load_BB2003()
         self.__kind = [key for key, value in kind.items() if value]
-        assert set(self.__kind) <= {'S1', 'S2'}
         self.__nutarg = None
 
     def getCS(self):
@@ -236,7 +235,8 @@ class AtmosAOD(AbsAtmosTide):
 
     def __init__(self, kind=AtmosTideConfig.tide):
         super(AtmosAOD, self).__init__()
-        self.__kind = [key for key, value in kind.items() if value]
+        self.__kind = [key.name for key, value in kind.items() if value]
+
         doodson = {
             'S1': '164.555',
             'S2': '273.555',
@@ -254,7 +254,7 @@ class AtmosAOD(AbsAtmosTide):
 
         '''construct the doodson matrix for the given tide'''
         doodsonMatrix = {}
-        for tide in kind:
+        for tide in self.__kind:
             doodsonMatrix[tide] = np.array([int(doodson[tide][0]) - 0,
                                             int(doodson[tide][1]) - 5,
                                             int(doodson[tide][2]) - 5,

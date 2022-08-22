@@ -2,8 +2,7 @@ from src.Preference.EnumType import ForceType, GravHarType, SatID, RelativityTyp
 import pathlib as pathlib
 import numpy as np
 
-SamplePeriod = 1e-3
-maxDegree = 120
+
 GravHar_GM = 398600.44150e9
 GravHar_Radius = 6378136.3e0
 NonConserveForce_date_span = ['2008-01-01', '2008-01-31']
@@ -15,12 +14,17 @@ include_ForceType = {ForceType.GravHar: True,
                      ForceType.NonConserveForce: False,
                      ForceType.PlanetaryPerturbation: False}
 
-include_GravHarType = {GravHarType.NonTide: True,
-                       GravHarType.PoleTide: True,
+include_GravHarType = {GravHarType.NonTide: False,
+                       GravHarType.PoleTide: False,
                        GravHarType.OceanTide: True,
-                       GravHarType.AtmosphereTide: True,
-                       GravHarType.SolidEarthTide: True,
-                       GravHarType.ReferenceModel: True}
+                       GravHarType.AtmosphereTide: False,
+                       GravHarType.SolidEarthTide: False,
+                       GravHarType.ReferenceModel: False}
+
+
+class OceanTideConfig:
+    gainFactor = 1e-3
+    maxDegree = 120
 
 
 class ThreeBodyConfig:
@@ -99,11 +103,8 @@ class RefGravModelConfig:
 
 
 class NonTideConfig:
-    date = '2016-01-03'
-    epoch = ['00:00:00', '03:00:00', '06:00:00', '09:00:00',
-             '12:00:00', '15:00:00', '18:00:00', '21:00:00', ]
-    kind = AODtype.ATM
-    MaxDeg = 180
+    kind = AODtype.GLO
+    MaxDeg = 100
     TS = 3
 
 
@@ -123,8 +124,8 @@ class AtmosTideConfig:
             TidesType.R3: True}
     kind = AODtype.ATM
     Nmax = 120
-    BB2003Kind = {TidesType.S1: True,
-                  TidesType.S2: True}
+    BB2003Kind = {'S1': True,
+                  'S2': True}
 
 
 class PathOfFiles:
@@ -140,4 +141,4 @@ class PathOfFiles:
     poleTideModel = 'desaiscopolecoef.txt'
     Gif48 = root_dir.joinpath('data', 'StaticGravityField', 'gif48.gfc')
     AOD = root_dir.joinpath('data', 'AOD', 'RL06')
-    Atmos = root_dir.joinpath('data', 'atmos')
+    Atmos = root_dir.joinpath('data', 'AtmosphereTide', 'AODRL06')
