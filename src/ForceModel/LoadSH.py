@@ -1,5 +1,6 @@
 import numpy as np
 import warnings
+from src.Preference.Pre_ForceModel import PathOfFiles
 
 
 class LoadSH:
@@ -21,7 +22,7 @@ class LoadSH:
         self._C, self._S = None, None
         pass
 
-    def load(self, fileIn: str):
+    def load(self, fileIn):
         return self
 
     def getCS(self, Nmax):
@@ -59,7 +60,7 @@ class Gif48(LoadSH):
         # self.__sigmaC, self.__sigmaS = None, None
         # self.__C, self.__S = None, None
 
-    def load(self, fileIn: str):
+    def load(self, fileIn = PathOfFiles.Gif48):
         """
         load gif48 fields
         :param fileIn: gif48 file and its path

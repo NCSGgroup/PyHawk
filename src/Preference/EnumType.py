@@ -102,3 +102,17 @@ class AODtype(Enum):
     OBA = 3
 
 
+class TidesType(Enum):
+    S1 = 0
+    S2 = 1
+    S3 = 2
+    M2 = 3
+    P1 = 4
+    K1 = 5
+    N2 = 6
+    L2 = 7
+    T2 = 8
+    R2 = 9
+    T3 = 10
+    R3 = 11
+

@@ -1,5 +1,5 @@
 import src.Preference.Pre_ForceModel as Pre_ForceModel
-from src.ForceModel.AtmosTide import AtmosTide
+from src.ForceModel.AtmosTide import AbsAtmosTide
 from src.ForceModel.NonTide import NonTide
 from src.ForceModel.OceanTide import OceanTide
 from src.ForceModel.PoleTide import AbsPoleTide

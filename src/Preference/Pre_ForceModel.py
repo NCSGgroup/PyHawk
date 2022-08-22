@@ -1,4 +1,4 @@
-from src.Preference.EnumType import ForceType, GravHarType, SatID, RelativityType, LoveNumberType
+from src.Preference.EnumType import ForceType, GravHarType, SatID, RelativityType, LoveNumberType, AODtype, TidesType
 import pathlib as pathlib
 import numpy as np
 
@@ -93,6 +93,40 @@ class GravHarConfig:
     degree_min = 1
 
 
+class RefGravModelConfig:
+    type = 0
+    Nmax = 90
+
+
+class NonTideConfig:
+    date = '2016-01-03'
+    epoch = ['00:00:00', '03:00:00', '06:00:00', '09:00:00',
+             '12:00:00', '15:00:00', '18:00:00', '21:00:00', ]
+    kind = AODtype.ATM
+    MaxDeg = 180
+    TS = 3
+
+
+class AtmosTideConfig:
+    SR = 1e-3
+    tide = {TidesType.S1: True,
+            TidesType.S2: True,
+            TidesType.M2: True,
+            TidesType.S3: True,
+            TidesType.P1: True,
+            TidesType.K1: True,
+            TidesType.N2: True,
+            TidesType.L2: True,
+            TidesType.T2: True,
+            TidesType.R2: True,
+            TidesType.T3: True,
+            TidesType.R3: True}
+    kind = AODtype.ATM
+    Nmax = 120
+    BB2003Kind = {TidesType.S1: True,
+                  TidesType.S2: True}
+
+
 class PathOfFiles:
     root_dir = pathlib.Path(__file__).parent.parent.parent
 
@@ -104,3 +138,6 @@ class PathOfFiles:
     PoleTide = root_dir.joinpath('data', 'poletide')
     LoverNumber = root_dir.joinpath('data', 'poletide')
     poleTideModel = 'desaiscopolecoef.txt'
+    Gif48 = root_dir.joinpath('data', 'StaticGravityField', 'gif48.gfc')
+    AOD = root_dir.joinpath('data', 'AOD', 'RL06')
+    Atmos = root_dir.joinpath('data', 'atmos')
