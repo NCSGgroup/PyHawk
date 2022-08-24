@@ -1,5 +1,5 @@
 from src.ForceModel.BaseGravCS import BaseGravCS
-from src.ForceModel.LoadSH import LoadSH
+from src.Interface.LoadSH import LoadSH
 from src.Preference.Pre_ForceModel import RefGravModelConfig
 
 

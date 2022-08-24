@@ -1,4 +1,4 @@
-from src.ForceModel.LoadSH import Gif48
+from src.Interface.LoadSH import Gif48
 
 def demo1():
     a = Gif48().load()

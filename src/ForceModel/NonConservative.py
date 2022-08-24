@@ -76,9 +76,3 @@ class NonConByAcc(AbsNonConservative):
         """
         return self.__dadp[self.__idx, :, :]
 
-
-
-
-
-
-
