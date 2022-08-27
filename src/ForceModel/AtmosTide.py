@@ -3,7 +3,7 @@ from src.Auxilary.GeoMathKit import GeoMathKit
 from src.Auxilary.FunNutArg import FunNutArg
 from src.Preference.Pre_ForceModel import AtmosTideConfig, PathOfFiles
 from src.Preference.EnumType import TidesType, AODtype
-from src.Interface.LoadSH import AtmosTide
+from src.Interface.LoadSH import LoadAtmosTide
 import numpy as np
 
 
@@ -39,10 +39,10 @@ class AbsAtmosTide(BaseGravCS):
 
 class AtmosBB2003(AbsAtmosTide):
 
-    def __init__(self, kind=AtmosTideConfig.BB2003Kind):
+    def __init__(self, kind=AtmosTideConfig.BB2003tide):
         super(AtmosBB2003, self).__init__()
         self.__load_BB2003()
-        self.__kind = [key for key, value in kind.items() if value]
+        self.__kind = [key.name for key, value in kind.items() if value]
         self.__nutarg = None
 
     def getCS(self):
@@ -195,7 +195,7 @@ class AtmosBB2003(AbsAtmosTide):
 
         pass
 
-    def __getTide(self, tide='S1'):
+    def __getTide(self, tide):
 
         (Cplus, Splus, Cminus, Sminus, lm, doodsonMatrix, factor) = self.__ATM[tide]
 
@@ -212,7 +212,7 @@ class AtmosBB2003(AbsAtmosTide):
         S = GeoMathKit.Sx0(S)
         return C, S
 
-    def __doodsonMatrix(self, tide='S1'):
+    def __doodsonMatrix(self, tide):
 
         DoodsonNumber = {'S1': '164.556', 'S2': '273.555', 'Sa': '056.554', 'Ssa': '057.555'}
 
@@ -232,7 +232,7 @@ class AtmosBB2003(AbsAtmosTide):
 
 class AtmosAOD(AbsAtmosTide):
 
-    def __init__(self, kind=AtmosTideConfig.tide):
+    def __init__(self, kind=AtmosTideConfig.AODtide):
         super(AtmosAOD, self).__init__()
         self.__kind = [key.name for key, value in kind.items() if value]
 
@@ -293,7 +293,7 @@ class AtmosAOD(AbsAtmosTide):
         :return:
         """
 
-        adt = AtmosTide().load(fileIn=fileDir)
+        adt = LoadAtmosTide().load(fileIn=fileDir)
         spec = AODtype.ATM
 
         tideCS = {}

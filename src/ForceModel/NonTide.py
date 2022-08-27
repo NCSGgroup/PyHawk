@@ -3,7 +3,7 @@ from src.Interface.LoadSH import LoadSH
 from src.Preference.EnumType import AODtype
 from src.Preference.Pre_ForceModel import PathOfFiles, NonTideConfig
 import src.Preference.Pre_Constants as Pre_Constants
-from src.Interface.LoadSH import NonTide
+from src.Interface.LoadSH import LoadNonTide
 from src.Frame.Frame import Frame
 import os
 import datetime
@@ -44,7 +44,7 @@ class AODRL06(AbsNonTide):
         """
         self.__MaxDeg = MaxDeg
         self.__TS = TS
-        self.__ld = NonTide().load(FileDir).setType(kind=AOD_type)
+        self.__ld = LoadNonTide().load(FileDir).setType(kind=AOD_type)
 
         return self
 

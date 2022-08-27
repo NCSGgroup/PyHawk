@@ -13,33 +13,44 @@ from src.Auxilary.GeoMathKit import GeoMathKit
 class ConfigGravHar:
 
     def __init__(self):
-        self.include_ForceType = None
-        self._isFirst = True
-        self._sTotal = None
-        self._cTotal = None
+        self.__include_GravHarType = None
+        self.__isFirst = True
+        self.__sTotal = None
+        self.__cTotal = None
+        self.__time = None
+        self.GravHarForce = {}
+
+        include_GravHarType = Pre_ForceModel.include_GravHarType
+        instance_GravHar = Pre_ForceModel.instance_GravHar
+        self.__include_GravHarType = [key for key, value in include_GravHarType.items() if value]
+        self.__instance_GravHar = instance_GravHar
         pass
 
-    def configure(self, **kwargs):
-        include_include_GravHarType = kwargs.get('include_ForceType', Pre_ForceModel.include_GravHarType)
-        self.include_ForceType = [key for key, value in include_include_GravHarType.items() if value]
-        return self
+    def setTime(self, time: Frame):
+        self.__time = time
+        self.__instanceForce()
 
     def accumulate(self, baseCS: BaseGravCS):
-        C,S = None, None
-        if baseCS.getType() in self.include_ForceType:
-            C, S = baseCS.getCS()
+        C, S = baseCS.getCS()
 
-        if self._isFirst:
-            self._cTotal = C
-            self._sTotal = S
-            self._isFirst = False
+        if self.__isFirst:
+            self.__cTotal = C
+            self.__sTotal = S
+            self.__isFirst = False
         else:
-            self._cTotal = GeoMathKit.arrayAdd(C, self._cTotal)
-            self._sTotal = GeoMathKit.arrayAdd(S, self._sTotal)
+            self.__cTotal = GeoMathKit.arrayAdd(C, self.__cTotal)
+            self.__sTotal = GeoMathKit.arrayAdd(S, self.__sTotal)
 
         return self
 
     def getSumCS(self):
-        return self._cTotal, self._sTotal
+        return self.__cTotal, self.__sTotal
+
+    def __instanceForce(self):
+        for tide in self.__include_GravHarType:
+            self.GravHarForce[tide] = BaseGravCS.new_instance(tide, self.__instance_GravHar[tide]).setTime(self.__time)
+
+
+
 
 

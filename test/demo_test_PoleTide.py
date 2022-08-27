@@ -10,7 +10,7 @@ def demo1():
 
     po = PoleTideIERS2010().load().setTime(fr)
     c,s = po.getCS()
-    print(c,s)
+    print(len(c))
 
 
 if __name__ == '__main__':

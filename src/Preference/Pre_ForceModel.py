@@ -1,7 +1,8 @@
 from src.Preference.EnumType import ForceType, GravHarType, SatID, RelativityType, LoveNumberType, AODtype, TidesType
+from src.Preference.EnumType import InstanceAtmosTide, InstancePoleTide, InstanceSolidTide, InstanceOceanTide, \
+    InstanceNonTide, InstanceReferenceModel
 import pathlib as pathlib
 import numpy as np
-
 
 GravHar_GM = 398600.44150e9
 GravHar_Radius = 6378136.3e0
@@ -20,6 +21,13 @@ include_GravHarType = {GravHarType.NonTide: False,
                        GravHarType.AtmosphereTide: False,
                        GravHarType.SolidEarthTide: False,
                        GravHarType.ReferenceModel: False}
+
+instance_GravHar = {GravHarType.NonTide: InstanceNonTide.AODRL06,
+                    GravHarType.PoleTide: InstancePoleTide.PoleTideIERS2010,
+                    GravHarType.OceanTide: InstanceOceanTide.EOT11a,
+                    GravHarType.AtmosphereTide: InstanceAtmosTide.AtmosAOD,
+                    GravHarType.SolidEarthTide: InstanceSolidTide.SolidTideIERS2010,
+                    GravHarType.ReferenceModel: InstanceReferenceModel.RefGravModel}
 
 
 class OceanTideConfig:
@@ -83,7 +91,7 @@ class PoleTideConfig:
     Kind = {'Solid Earth': True,
             'Ocean': True}
     SimpleOcean = False
-    Version = 2
+    Polar2wobble = 2
     MaxDegreeOfOcean = 30
     LoveNumberType = LoveNumberType.Wang
 
@@ -111,22 +119,22 @@ class NonTideConfig:
 
 class AtmosTideConfig:
     SR = 1e-3
-    tide = {TidesType.S1: True,
-            TidesType.S2: True,
-            TidesType.M2: True,
-            TidesType.S3: True,
-            TidesType.P1: True,
-            TidesType.K1: True,
-            TidesType.N2: True,
-            TidesType.L2: True,
-            TidesType.T2: True,
-            TidesType.R2: True,
-            TidesType.T3: True,
-            TidesType.R3: True}
+    AODtide = {TidesType.S1: True,
+               TidesType.S2: True,
+               TidesType.M2: True,
+               TidesType.S3: True,
+               TidesType.P1: True,
+               TidesType.K1: True,
+               TidesType.N2: True,
+               TidesType.L2: True,
+               TidesType.T2: True,
+               TidesType.R2: True,
+               TidesType.T3: True,
+               TidesType.R3: True}
     kind = AODtype.ATM
     Nmax = 120
-    BB2003Kind = {'S1': True,
-                  'S2': True}
+    BB2003tide = {TidesType.S1: True,
+                  TidesType.S2: True}
 
 
 class PathOfFiles:

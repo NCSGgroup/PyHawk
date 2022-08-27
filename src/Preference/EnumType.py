@@ -76,6 +76,32 @@ class GravHarType(Enum):
     NonTide = 5
 
 
+class InstanceOceanTide(Enum):
+    EOT11a = 0
+    FES2014 = 1
+
+
+class InstancePoleTide(Enum):
+    PoleTideIERS2010 = 0
+
+
+class InstanceAtmosTide(Enum):
+    AtmosBB2003 = 0
+    AtmosAOD = 1
+
+
+class InstanceSolidTide(Enum):
+    SolidTideIERS2010 = 0
+
+
+class InstanceNonTide(Enum):
+    AODRL06 = 0
+
+
+class InstanceReferenceModel(Enum):
+    RefGravModel = 0
+
+
 class RelativityType(Enum):
     SchwarzChild = 0
     LenseThirring = 1

@@ -10,8 +10,8 @@ def demo1():
     fr.setTime(55682.000000000000, TimeFormat.UTC_MJD)
 
     ap = ThreeBodyPlusJ2().setTime(fr)
-    ep = PlanetEphemerides().configure().setPlanets()
-    planets = ep.getPosByFrame(fr)
+    ep = PlanetEphemerides().configure().setPlanets().setTime(fr)
+    planets = ep.getPosByFrame()
     # print(planets)
 
     ap.setPlanetPos(planets)
