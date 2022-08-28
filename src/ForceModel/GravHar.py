@@ -22,7 +22,7 @@ class AbsGravHar(BaseSecondDerivative):
         self._Cpot = None
         self._Spot = None
 
-    def setConstant(self, GM=398600.44150e9, Radius=6378136.3e0):
+    def setConstant(self, GM=Pre_ForceModel.GravHar_GM, Radius=Pre_ForceModel.GravHar_Radius):
         return self
 
     def setPar(self, Cpot: np.ndarray, Spot: np.ndarray, Pos: np.ndarray):

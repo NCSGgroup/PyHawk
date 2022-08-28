@@ -93,12 +93,12 @@ class PoleTideConfig:
     SimpleOcean = False
     Polar2wobble = 2
     MaxDegreeOfOcean = 30
-    LoveNumberType = LoveNumberType.Wang
+    LoveNumberType = LoveNumberType.Gegout97
 
 
 class LoveNumberConfig:
     Nmax = 30
-    method = LoveNumberType.Wang
+    method = LoveNumberType.Gegout97
 
 
 class GravHarConfig:
@@ -151,4 +151,4 @@ class PathOfFiles:
 
     Gif48 = root_dir.joinpath('data', 'StaticGravityField', 'gif48.gfc')
     AOD = root_dir.joinpath('data', 'AOD', 'RL06')
-    Atmos = root_dir.joinpath('data', 'AtmosphereTide', 'AODRL06')
+    Atmos = root_dir.joinpath('data', 'atmos')

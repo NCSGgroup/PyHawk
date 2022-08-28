@@ -23,6 +23,6 @@ def demo2():
     print(at.getCS())
 
 
+
 if __name__ == '__main__':
-    print(BaseGravCS.__subclasses__())
-    # demo2()
+    demo2()

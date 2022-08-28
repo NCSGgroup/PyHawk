@@ -6,7 +6,7 @@ from src.Preference.EnumType import TimeFormat
 
 def demo1():
     fr = Frame(EOP(True).load())
-    fr.setTime(32529600, TimeFormat.GPS_second)
+    fr.setTime(505051205, TimeFormat.GPS_second)
 
     aod = AODRL06().configure().setTime(fr)
     print(aod.getCS())

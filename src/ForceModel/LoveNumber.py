@@ -147,7 +147,7 @@ class LoveNumber:
 
         assert Nmax <= 1024
 
-        with open(self.__path+'Load_Love2_CM.txt') as load_f:
+        with open(self.__path.joinpath('Load_Love2_CM.txt')) as load_f:
             contents = load_f.readlines()
 
         Kn = np.zeros(Nmax+1)

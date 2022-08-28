@@ -13,12 +13,7 @@ def demo1():
     eot = EOT11a()
     c, s = eot.setTime(fr).load(100).getCS()
 
-    eot2 = EOT11a()
-    c2, s2 = eot2.setTime(fr).load(120).getCS()
-
-    baseCS = BaseGravCS()
-    baseCS.accumulate(c, s).accumulate(c2, s2)
-    print(c2[0:51*101]-c)
+    print(c, s)
 
 
 def demo2():
@@ -38,6 +33,19 @@ def demo2():
     cgh = ClibGravHar().setConstant().configure(c, s, 555220)
 
 
+def createInstance(module_name, class_name, *args, **kwargs):
+    module_meta = __import__(module_name, globals(), locals(), [class_name])
+    class_meta = getattr(module_meta, class_name)
+    obj = class_meta(*args, **kwargs)
+    return obj
+
+
 if __name__ == '__main__':
+    # obj = createInstance("src.ForceModel.OceanTide", "EOT11a")
+    # fr = Frame(EOP(True).load())
+    # fr.setTime(252417548.816000, TimeFormat.GPS_second)
+    #
+    # at = obj.setTime(fr).load(100)
+    # print(at.getCS())
     demo1()
 

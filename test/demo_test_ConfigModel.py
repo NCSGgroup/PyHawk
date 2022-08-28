@@ -5,23 +5,19 @@ from src.Frame.EOP import EOP
 from src.Preference.EnumType import TimeFormat,GravHarType
 from src.ForceModel.BaseGravCS import BaseGravCS
 from src.ForceModel.GravHar import ClibGravHar
+import numpy as np
 
 
 def demo1():
-    config_model = ConfigGravHar().configure()
+    config_model = ConfigGravHar()
     fr = Frame(EOP(True).load())
-    fr.setTime(252417548.816000, TimeFormat.GPS_second)
+    fr.setTime(505051205, TimeFormat.GPS_second)
+    pos = np.array([-4.151812213728250004e+06, 5.276550892813707702e+06, -1.296691103991644224e+06])
 
-    eot = EOT11a().setType(GravHarType.OceanTide).setTime(fr).load(100)
-    eot2 = EOT11a().setType(GravHarType.OceanTide).setTime(fr).load(120)
-
-    config_model.accumulate(eot).accumulate(eot2)
-    c, s = config_model.getSumCS()
-    # config_model.accumulate(eot2)
-
-    pass
-    # eot2 = EOT11a()
-    # c2, s2 = eot2.setTime(fr).load(120).getCS()
+    cm = config_model.setTime(fr)
+    c,s = cm.getSumCS()
+    gh = ClibGravHar().setConstant().setPar(c, s, pos)
+    print(gh.getAcceleration())
 
 
 if __name__ == '__main__':
