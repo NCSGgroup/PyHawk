@@ -21,7 +21,7 @@ include_payloads = {Payload.ACC: True,
                     Payload.LRI: False}
 
 is_orbit_GCRS = {Payload.GNV: False,
-               Payload.KinematicOrbit: False}
+                 Payload.KinematicOrbit: False}
 
 sr_payload = {Payload.ACC: 1,
               Payload.SCA: 5,

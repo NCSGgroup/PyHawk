@@ -1,10 +1,4 @@
 import src.Preference.Pre_ForceModel as Pre_ForceModel
-from src.ForceModel.AtmosTide import AbsAtmosTide
-from src.ForceModel.NonTide import AODRL06
-from src.ForceModel.OceanTide import AbsOceanTide
-from src.ForceModel.PoleTide import AbsPoleTide
-from src.ForceModel.SolidTide import SolidTideIERS2010
-from src.Preference.EnumType import ForceType, GravHarType
 from src.ForceModel.BaseGravCS import BaseGravCS
 from src.Frame.Frame import Frame
 from src.Auxilary.GeoMathKit import GeoMathKit
@@ -20,8 +14,8 @@ class ConfigGravHar:
         pass
 
     def configure(self, **kwargs):
-        include_include_GravHarType = kwargs.get('include_ForceType', Pre_ForceModel.include_GravHarType)
-        self.include_ForceType = [key for key, value in include_include_GravHarType.items() if value]
+        include_GravHarType = kwargs.get('include_ForceType', Pre_ForceModel.include_GravHarType)
+        self.include_ForceType = [key for key, value in include_GravHarType.items() if value]
         return self
 
     def accumulate(self, baseCS: BaseGravCS):

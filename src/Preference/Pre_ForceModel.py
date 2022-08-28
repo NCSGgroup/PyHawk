@@ -14,12 +14,12 @@ include_ForceType = {ForceType.GravHar: True,
                      ForceType.NonConserveForce: False,
                      ForceType.PlanetaryPerturbation: False}
 
-include_GravHarType = {GravHarType.NonTide: False,
-                       GravHarType.PoleTide: False,
+include_GravHarType = {GravHarType.NonTide: True,
+                       GravHarType.PoleTide: True,
                        GravHarType.OceanTide: True,
-                       GravHarType.AtmosphereTide: False,
-                       GravHarType.SolidEarthTide: False,
-                       GravHarType.ReferenceModel: False}
+                       GravHarType.AtmosphereTide: True,
+                       GravHarType.SolidEarthTide: True,
+                       GravHarType.ReferenceModel: True}
 
 
 class OceanTideConfig:
