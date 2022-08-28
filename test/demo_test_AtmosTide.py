@@ -2,6 +2,7 @@ from src.ForceModel.AtmosTide import AtmosBB2003, AtmosAOD
 from src.Frame.Frame import Frame
 from src.Frame.EOP import EOP
 from src.Preference.EnumType import TimeFormat
+from src.ForceModel.BaseGravCS import BaseGravCS
 
 
 def demo1():
@@ -23,4 +24,5 @@ def demo2():
 
 
 if __name__ == '__main__':
-    demo1()
+    print(BaseGravCS.__subclasses__())
+    # demo2()

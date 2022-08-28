@@ -24,13 +24,10 @@ class AbsSolidTide(BaseGravCS):
         self._GM_Moon = GM_Moon
         self._Radius_Earth = Radius_Earth
 
-    def getCS(self):
-        pass
-
 
 class SolidTideIERS2010(AbsSolidTide):
 
-    def __init__(self, pos: PlanetEphemerides, isZeroTide = SolidTideConfig.isZeroTide):
+    def __init__(self, pe: PlanetEphemerides, isZeroTide = SolidTideConfig.isZeroTide):
         super(SolidTideIERS2010, self).__init__()
         self.__doodA = None
         self.__doodB = None
@@ -38,7 +35,7 @@ class SolidTideIERS2010(AbsSolidTide):
         self.__love = None
         self.__isZeroTide = isZeroTide
         self.__prepare()
-        self.__pos = pos
+        self.__pe = pe
 
     def getCS(self):
         """
@@ -50,8 +47,8 @@ class SolidTideIERS2010(AbsSolidTide):
         :param isZeroTide: False: TIDE FREE, True: ZERO TIDE
         :return: C, S coefficients in one dimension format up to degree/order 5
         """
-        pos_sun = self.__pos.getPosByFrame(self._time)['Sun']
-        pos_moon = self.__pos.getPosByFrame(self._time)['Moon']
+        pos_sun = self.__pe.getPosByFrame()['Sun']
+        pos_moon = self.__pe.getPosByFrame()['Moon']
         tdb_mjd = self._time.getTDB_mjd
         theta = self._time.getTheta
         index = self.__getIndex

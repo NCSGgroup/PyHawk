@@ -10,8 +10,8 @@ def demo1():
     fr = Frame(EOP(True).load())
     fr.setTime(51544.5, TimeFormat.GPS_second)
 
-    ep = PlanetEphemerides().configure().setPlanets()
-    ep.getPosByFrame(fr)
+    ep = PlanetEphemerides().configure().setPlanets().setTime(fr)
+
     c, s = SolidTideIERS2010(ep).setTime(fr).getCS()
     print(c)
     print(s)

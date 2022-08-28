@@ -16,7 +16,7 @@ class AbsPoleTide(BaseGravCS):
 class PoleTideIERS2010(AbsPoleTide):
 
     def __init__(self, simpleOcean=PoleTideConfig.SimpleOcean,
-                 Version=PoleTideConfig.Version, kind=PoleTideConfig.Kind):
+                 Version=PoleTideConfig.Polar2wobble, kind=PoleTideConfig.Kind):
         super(PoleTideIERS2010, self).__init__()
         self.__m1 = None
         self.__m2 = None

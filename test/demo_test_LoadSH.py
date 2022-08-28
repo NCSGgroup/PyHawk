@@ -1,7 +1,7 @@
-from src.Interface.LoadSH import Gif48
+from src.Interface.LoadSH import LoadGif48
 
 def demo1():
-    a = Gif48().load()
+    a = LoadGif48().load()
     C0, S0 = a.getCS(100)
     C1, S1 = a.getSigmaCS(100)
     print(a.getCS(100))

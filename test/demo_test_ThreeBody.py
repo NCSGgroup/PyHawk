@@ -9,11 +9,11 @@ def demo1():
     fr = Frame(EOP(True).load())
     fr.setTime(55682.000000000000, TimeFormat.UTC_MJD)
 
-    ep = PlanetEphemerides().configure().setPlanets()
-    planets = ep.getPosByFrame(fr)
+    ap = ThreeBodyPlusJ2().setTime(fr)
+    ep = PlanetEphemerides().configure().setPlanets().setTime(fr)
+    planets = ep.getPosByFrame()
     # print(planets)
 
-    ap = ThreeBodyPlusJ2().setTime(fr)
     ap.setPlanetPos(planets)
     ap.setSatPos([6378136 + 1000000., 6378136 + 2000000., 6378136 + 3000000.])
 

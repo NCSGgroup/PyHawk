@@ -2,6 +2,7 @@ from src.ForceModel.BaseGravCS import BaseGravCS
 from src.Preference.Pre_ForceModel import OceanTideConfig, PathOfFiles
 from src.Auxilary.GeoMathKit import GeoMathKit
 from src.Auxilary.FunNutArg import FunNutArg
+from src.Preference.EnumType import InstanceOceanTide
 import numpy as np
 
 
@@ -16,6 +17,16 @@ class AbsOceanTide(BaseGravCS):
     def speedUp(self, sr=OceanTideConfig.gainFactor):
         self._SR = sr
         return self
+
+    @staticmethod
+    def new_OceanTide(kind:InstanceOceanTide):
+        cls = None
+        if kind is InstanceOceanTide.EOT11a:
+            cls = EOT11a
+        elif kind is InstanceOceanTide.FES2014:
+            cls = FES2014
+        inst = cls()
+        return inst
 
 
 class EOT11a(AbsOceanTide):

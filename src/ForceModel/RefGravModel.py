@@ -27,12 +27,13 @@ class RefGravModel(AbsRefGravModel):
         self.__Nmax = Nmax
         return self
 
-    def getCS(self, t):
+    def getCS(self):
         """
         :param t: time of reference model to be returned (Considering that the reference model might be
         changing with time), [GPS time in format of MJD]
         :return:
         """
+        epoch = self._time.getGPS_from_epoch2000
         if self.__type == 0:
             '''constant type， a constant reference model without changing with time.'''
             return self.getModelPar().getCS(self.__Nmax)

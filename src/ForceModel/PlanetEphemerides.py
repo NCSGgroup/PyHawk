@@ -22,6 +22,7 @@ class PlanetEphemerides:
         self.__reset()
         self.__emphericPath = None
         self.__kernel = None
+        self.__time =  None
 
     def configure(self, emphericType: JPLempheric=JPLempheric.DE421, isMeter: bool = EphemeridesConfig.isMeter, **kwargs):
         if emphericType == JPLempheric.DE405:
@@ -36,6 +37,10 @@ class PlanetEphemerides:
 
         self.__emphericPath = kwargs.get('path', PathOfFiles.Ephemerides).joinpath(filename)
         self.__kernel = SPK.open(self.__emphericPath)
+        return self
+
+    def setTime(self, time:Frame):
+        self.__time = time
         return self
 
     def __reset(self):
@@ -79,7 +84,7 @@ class PlanetEphemerides:
     def getPlanets(self):
         return self.__planets.copy()
 
-    def getPosByTdb(self, tdb_jd):
+    def __getPosByTdb(self, tdb_jd):
         """
         1. This function supports vectorized input like: time=[ 2457061.5 , 2457062.5 ]
         2. Unit: kilometers
@@ -106,14 +111,14 @@ class PlanetEphemerides:
 
         return pos_planets
 
-    def getPosByFrame(self, time: Frame):
+    def getPosByFrame(self):
         """
                1. This function supports vectorized input like: time=[ 2457061.5 , 2457062.5 ]
                2. Unit: kilometers
                :param tdb_jd: TDB time in terms of JD convention
                :return: a three-dimension position vector
                """
-        tdb_jd = time.getTDB_jd
+        tdb_jd = self.__time.getTDB_jd
         pos_planets = {}
 
         # 地球重心相对于太阳系质心的坐标
@@ -139,7 +144,7 @@ class PlanetEphemerides:
         :return: an array of "positions"
         """
 
-        self.__posVec = self.getPosByTdb(timeseries)
+        self.__posVec = self.__getPosByTdb(timeseries)
 
         return self
 

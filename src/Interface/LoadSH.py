@@ -52,7 +52,7 @@ class LoadSH:
         return self._sigmaC[0:end], self._sigmaS[0:end]
 
 
-class Gif48(LoadSH):
+class LoadGif48(LoadSH):
     """
     specified to read gif48 gravity fields. Plus, the file that formats the same as GIF48 can be read as well.
     """
@@ -160,7 +160,7 @@ class Gif48(LoadSH):
         self._sigmaS[(l * (l + 1) / 2 + m).astype(np.int)] = sigmaS
 
 
-class AtmosTide(LoadSH):
+class LoadAtmosTide(LoadSH):
     """
     This class is used to read stokes coefficients at given epoch from AOD product.
     """
@@ -293,7 +293,7 @@ class AtmosTide(LoadSH):
         self._S[(l * (l + 1) / 2 + m).astype(np.int)] = S
 
 
-class NonTide(LoadSH):
+class LoadNonTide(LoadSH):
     """
     This class is used to read stokes coefficients at given epoch from AOD product.
     """
