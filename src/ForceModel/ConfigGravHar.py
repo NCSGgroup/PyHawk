@@ -34,16 +34,17 @@ class ConfigGravHar:
         self.__instance_GravHar = instance_GravHar
         pass
 
-    def setTime(self, time: Frame):
+    def setTime(self, time: Frame, ep: PlanetEphemerides):
         self.__time = time
-        self.__ep = PlanetEphemerides().configure().setPlanets().setTime(self.__time)
+        self.__ep = ep
         self.__refmodel = LoadGif48().load()
         self.__instanceForce()
+        for obj in self.GravHarForce.values():
+            self.accumulate(obj)
         return self
 
     def accumulate(self, baseCS: BaseGravCS):
         C, S = baseCS.getCS()
-
         if self.__isFirst:
             self.__cTotal = C
             self.__sTotal = S
@@ -51,12 +52,9 @@ class ConfigGravHar:
         else:
             self.__cTotal = GeoMathKit.arrayAdd(C, self.__cTotal)
             self.__sTotal = GeoMathKit.arrayAdd(S, self.__sTotal)
-
         return self
 
     def getSumCS(self):
-        for obj in self.GravHarForce.values():
-            self.accumulate(obj)
         return self.__cTotal, self.__sTotal
 
     def __instanceForce(self):
@@ -95,6 +93,4 @@ class ConfigGravHar:
                 if self.__instance_GravHar[tide] is InstanceReferenceModel.RefGravModel:
                     obj = RefGravModel().setTime(self.__time).setModel(self.__refmodel)
                 self.GravHarForce[tide] = obj
-
-
 

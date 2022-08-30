@@ -22,7 +22,7 @@ class AbsGravHar(BaseSecondDerivative):
         self._Cpot = None
         self._Spot = None
 
-    def setConstant(self, GM=Pre_ForceModel.GravHar_GM, Radius=Pre_ForceModel.GravHar_Radius):
+    def setConstant(self, GM=GravHarConfig.GravHar_GM, Radius=GravHarConfig.GravHar_Radius):
         return self
 
     def setPar(self, Cpot: np.ndarray, Spot: np.ndarray, Pos: np.ndarray):
@@ -44,7 +44,7 @@ class PyGravHar(AbsGravHar):
         # self.setConstant()
         pass
 
-    def setConstant(self, GM=Pre_ForceModel.GravHar_GM, Radius=Pre_ForceModel.GravHar_Radius):
+    def setConstant(self, GM=GravHarConfig.GravHar_GM, Radius=GravHarConfig.GravHar_Radius):
         """
         A more precise definition of Earth constant or with user own definition
         :param GM: from JGM3
@@ -474,7 +474,7 @@ class ClibGravHar(AbsGravHar):
 
         pass
 
-    def setConstant(self, GM=Pre_ForceModel.GravHar_GM, Radius=Pre_ForceModel.GravHar_Radius):
+    def setConstant(self, GM=GravHarConfig.GravHar_GM, Radius=GravHarConfig.GravHar_Radius):
         self.__gravlib.setPar(GM, Radius)
         return self
 

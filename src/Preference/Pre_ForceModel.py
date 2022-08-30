@@ -4,12 +4,6 @@ from src.Preference.EnumType import InstanceAtmosTide, InstancePoleTide, Instanc
 import pathlib as pathlib
 import numpy as np
 
-GravHar_GM = 398600.44150e9
-GravHar_Radius = 6378136.3e0
-NonConserveForce_date_span = ['2008-01-01', '2008-01-31']
-arcNo = 0
-sat = SatID.A
-
 include_ForceType = {ForceType.GravHar: True,
                      ForceType.Relativity: True,
                      ForceType.NonConserveForce: False,
@@ -30,6 +24,12 @@ instance_GravHar = {GravHarType.NonTide: InstanceNonTide.AODRL06,
                     GravHarType.ReferenceModel: InstanceReferenceModel.RefGravModel}
 
 
+class NonConservative:
+    date_span = ['2008-01-01', '2008-01-31']
+    arcNo = 0
+    sat = SatID.A
+
+
 class OceanTideConfig:
     gainFactor = 1e-3
     maxDegree = 120
@@ -48,6 +48,7 @@ class ThreeBodyConfig:
                     'Uranus': 5794556.465751793e9,
                     'Neptune': 6836527.100580024e9,
                     'Pluto': 975.5011758767654e9}
+    isJ2 = False
 
 
 class RelativityConfig:
@@ -104,6 +105,8 @@ class LoveNumberConfig:
 class GravHarConfig:
     degree_max = 90
     degree_min = 1
+    GravHar_GM = 398600.44150e9
+    GravHar_Radius = 6378136.3e0
 
 
 class RefGravModelConfig:

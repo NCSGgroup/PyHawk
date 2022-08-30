@@ -1,5 +1,5 @@
 from src.ForceModel.BaseSecondDerivative import BaseSecondDerivative
-import src.Preference.Pre_ForceModel as Pre_ForceModel
+from src.Preference.Pre_ForceModel import NonConservative, PathOfFiles
 from src.Auxilary.GeoMathKit import GeoMathKit
 from src.Frame.Frame import Frame
 import h5py
@@ -9,9 +9,9 @@ import numpy as np
 
 class AbsNonConservative(BaseSecondDerivative):
 
-    def __init__(self, range=Pre_ForceModel.NonConserveForce_date_span,
-                 sat=Pre_ForceModel.sat,
-                 arcNo=Pre_ForceModel.arcNo):
+    def __init__(self, range=NonConservative.date_span,
+                 sat=NonConservative.sat,
+                 arcNo=NonConservative.arcNo):
         super(AbsNonConservative, self).__init__()
         self._GPStime = None
         self.sat = sat
@@ -21,9 +21,9 @@ class AbsNonConservative(BaseSecondDerivative):
 
 class NonConByAcc(AbsNonConservative):
 
-    def __init__(self, range=Pre_ForceModel.NonConserveForce_date_span,
-                 sat=Pre_ForceModel.sat,
-                 arcNo=Pre_ForceModel.arcNo):
+    def __init__(self, range=NonConservative.date_span,
+                 sat=NonConservative.sat,
+                 arcNo=NonConservative.arcNo):
         """
         Load the saved-already acc and dadp, and output the acc/dadp for the given time epoch.
         :param fileDir: acc and dadp have been computed beforehand and saved in given directory.
@@ -35,7 +35,7 @@ class NonConByAcc(AbsNonConservative):
         self.__GPStime = None
 
     def configure(self, **kwargs):
-        self.__dataTemp = kwargs.get('dataTemp', Pre_ForceModel.PathOfFiles.temp_non_conservative_data)
+        self.__dataTemp = kwargs.get('dataTemp', PathOfFiles.temp_non_conservative_data)
         self.__loadAccelerometer()
         return self
 
