@@ -4,7 +4,7 @@ from src.ForceModel.NonTide import AODRL06
 from src.ForceModel.OceanTide import AbsOceanTide, EOT11a, FES2014
 from src.ForceModel.PoleTide import AbsPoleTide, PoleTideIERS2010
 from src.ForceModel.SolidTide import SolidTideIERS2010
-from src.ForceModel.RefGravModel import RefGravModel
+from src.ForceModel.RefGravModel import RefGravModel, ConfigStaticGravModel
 from src.Preference.EnumType import ForceType, GravHarType
 from src.ForceModel.BaseGravCS import BaseGravCS
 from src.Frame.Frame import Frame
@@ -25,7 +25,6 @@ class ConfigGravHar:
         self.__cTotal = None
         self.__time = None
         self.__ep = None
-        self.__refmodel = None
         self.GravHarForce = {}
 
         include_GravHarType = Pre_ForceModel.include_GravHarType
@@ -37,7 +36,6 @@ class ConfigGravHar:
     def setTime(self, time: Frame, ep: PlanetEphemerides):
         self.__time = time
         self.__ep = ep
-        self.__refmodel = LoadGif48().load()
         self.__instanceForce()
         for obj in self.GravHarForce.values():
             self.accumulate(obj)
@@ -90,7 +88,8 @@ class ConfigGravHar:
                 self.GravHarForce[tide] = obj
             if tide is GravHarType.ReferenceModel:
                 obj = None
+                staticModel = ConfigStaticGravModel().getStaticModel()
                 if self.__instance_GravHar[tide] is InstanceReferenceModel.RefGravModel:
-                    obj = RefGravModel().setTime(self.__time).setModel(self.__refmodel)
+                    obj = RefGravModel().setTime(self.__time).setModel(staticModel)
                 self.GravHarForce[tide] = obj
 

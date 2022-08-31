@@ -1,4 +1,5 @@
-from src.Preference.EnumType import ForceType, GravHarType, SatID, RelativityType, LoveNumberType, AODtype, TidesType
+from src.Preference.EnumType import ForceType, GravHarType, SatID, \
+    RelativityType, LoveNumberType, AODtype, TidesType, StaticGravModel
 from src.Preference.EnumType import InstanceAtmosTide, InstancePoleTide, InstanceSolidTide, InstanceOceanTide, \
     InstanceNonTide, InstanceReferenceModel
 import pathlib as pathlib
@@ -88,18 +89,18 @@ class SolidTideConfig:
     isZeroTide = True
 
 
+class LoveNumberConfig:
+    Nmax = 30
+    method = LoveNumberType.Wang
+
+
 class PoleTideConfig:
     Kind = {'Solid Earth': True,
             'Ocean': True}
     SimpleOcean = False
     Polar2wobble = 2
-    MaxDegreeOfOcean = 30
-    LoveNumberType = LoveNumberType.Gegout97
-
-
-class LoveNumberConfig:
-    Nmax = 30
-    method = LoveNumberType.Gegout97
+    MaxDegreeOfOcean = LoveNumberConfig.Nmax
+    LoveNumberType = LoveNumberConfig.method
 
 
 class GravHarConfig:
@@ -110,8 +111,9 @@ class GravHarConfig:
 
 
 class RefGravModelConfig:
-    type = 0
+    kind = 0
     Nmax = 90
+    StaticModel = StaticGravModel.Gif48
 
 
 class NonTideConfig:
@@ -153,5 +155,7 @@ class PathOfFiles:
     poleTideModel = 'desaiscopolecoef.txt'
 
     Gif48 = root_dir.joinpath('data', 'StaticGravityField', 'gif48.gfc')
+    EIGEN6_C4 = root_dir.joinpath('data', 'StaticGravityField', 'EIGEN6-C4.gfc')
+    GOCO02s = root_dir.joinpath('data', 'StaticGravityField', 'GOCO02s.gfc')
     AOD = root_dir.joinpath('data', 'AOD', 'RL06')
     Atmos = root_dir.joinpath('data', 'atmos')

@@ -1,6 +1,7 @@
 from src.ForceModel.BaseGravCS import BaseGravCS
-from src.Interface.LoadSH import LoadSH
-from src.Preference.Pre_ForceModel import RefGravModelConfig
+from src.Interface.LoadSH import LoadSH, LoadGif48
+from src.Preference.Pre_ForceModel import RefGravModelConfig, PathOfFiles
+from src.Preference.EnumType import StaticGravModel
 
 
 class AbsRefGravModel(BaseGravCS):
@@ -9,13 +10,28 @@ class AbsRefGravModel(BaseGravCS):
         super(AbsRefGravModel, self).__init__()
 
 
+class ConfigStaticGravModel:
+    def __init__(self):
+        self.__staticModel = None
+        staticModel = RefGravModelConfig.StaticModel
+        if staticModel is StaticGravModel.Gif48:
+            self.__staticModel = LoadGif48().load(PathOfFiles.Gif48)
+        elif staticModel is StaticGravModel.EIGEN6_C4:
+            self.__staticModel = LoadGif48().load(PathOfFiles.EIGEN6_C4)
+        elif staticModel is StaticGravModel.GOCO02s:
+            self.__staticModel = LoadGif48().load(PathOfFiles.GOCO02s)
+
+    def getStaticModel(self):
+        return self.__staticModel
+
+
 class RefGravModel(AbsRefGravModel):
 
-    def __init__(self, type=RefGravModelConfig.type):
+    def __init__(self, kind=RefGravModelConfig.kind):
         super(RefGravModel, self).__init__()
         self.__model = None
         self.__Nmax = None
-        self.__type = type
+        self.__kind = kind
 
     def setModel(self, model: LoadSH, Nmax=RefGravModelConfig.Nmax):
         """
@@ -34,7 +50,7 @@ class RefGravModel(AbsRefGravModel):
         :return:
         """
         epoch = self._time.getGPS_from_epoch2000
-        if self.__type == 0:
+        if self.__kind == 0:
             '''constant type， a constant reference model without changing with time.'''
             return self.getModelPar().getCS(self.__Nmax)
 

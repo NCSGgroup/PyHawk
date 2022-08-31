@@ -142,3 +142,9 @@ class TidesType(Enum):
     T3 = 10
     R3 = 11
 
+
+class StaticGravModel(Enum):
+    Gif48 = 0
+    EIGEN6_C4 = 1
+    GOCO02s = 2
+
