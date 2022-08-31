@@ -10,6 +10,7 @@ import pathlib as _pathlib
 import glob as _glob
 import src.Preference.Pre_ForceModel as Pre_ForceModel
 from src.Preference.Pre_ForceModel import GravHarConfig
+import os
 
 
 class AbsGravHar(BaseSecondDerivative):
@@ -431,13 +432,12 @@ class ClibGravHar(AbsGravHar):
         super(ClibGravHar, self).__init__()
         '''# Attempt to find grav library to load'''
         if platform.system() == 'Windows':
-            gravlib_filename = _glob.glob(str(_pathlib.Path(__file__).parent.parent.parent.joinpath('lib','GravHar_release.dll')))
+            gravlib_filename = _glob.glob(str(_pathlib.Path(__file__).parent.parent.parent.joinpath('lib', 'GravHar.dll')))
         elif platform.system() == 'Linux':
-            gravlib_filename = _glob.glob(str(_pathlib.Path(__file__).parent.parent.parent.joinpath('lib','GravHar.so')))
+            gravlib_filename = _glob.glob(str(_pathlib.Path(__file__).parent.parent.parent.joinpath('lib', 'GravHar.so')))
 
         if len(gravlib_filename) == 0:
             raise ImportError('Unable to find the shared C library "GravHar".')
-
         self.__gravlib = cdll.LoadLibrary(gravlib_filename[0])
 
         '''
