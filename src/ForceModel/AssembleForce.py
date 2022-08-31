@@ -7,6 +7,8 @@ from src.Preference.Pre_ForceModel import ThreeBodyConfig
 from src.ForceModel.ConfigGravHar import ConfigGravHar
 from src.ForceModel.PlanetEphemerides import PlanetEphemerides
 from src.ForceModel.NonConservative import NonConByAcc
+from src.ForceModel.GravHar import ClibGravHar
+import numpy as np
 
 
 class AssembleForce:
@@ -16,8 +18,13 @@ class AssembleForce:
         self.__pos = None
         self.__vel = None
         self.__ep = None
+        self.__acc = np.zeros(3, dtype=float)
+        self.__dadp = np.array([[], [], []])
+        self.__dadx = np.zeros((3, 3), dtype=float)
+        self.__cgh = None
         self.ForceType = {}
 
+        self.__cgh = ClibGravHar().setConstant()
         include_ForceType = Pre_ForceModel.include_ForceType
         self.__include_ForceType = [key for key, value in include_ForceType.items() if value]
 
@@ -25,12 +32,25 @@ class AssembleForce:
         self.__time = time
         self.__ep = PlanetEphemerides().configure().setPlanets().setTime(self.__time)
         self.__instanceForce()
+        self.__calculation()
         return self
 
     def setPosAndVel(self, pos, vel):
         self.__pos = pos
         self.__vel = vel
         return self
+
+    def __calculation(self):
+        for obj in self.ForceType.values():
+            if isinstance(obj, ConfigGravHar):
+                c, s = obj.getSumCS()
+                self.__acc += self.__cgh.setPar(c, s, self.__pos).getAcceleration()
+                self.__dadx += self.__cgh.setPar(c, s, self.__pos).getDaDx()
+                self.__dadp = np.hstack((self.__dadp, self.__cgh.setPar(c, s, self.__pos).getDaDp()))
+            else:
+                self.__acc += obj.getAcceleration()
+                self.__dadx += obj.getDaDx()
+                # self.__dadp += obj.getDaDp()
 
     def __instanceForce(self):
         for force in self.__include_ForceType:
@@ -55,11 +75,11 @@ class AssembleForce:
                 self.ForceType[force] = obj
 
     def getAcceleration(self):
-        pass
+        return self.__acc
 
     def getDaDx(self):
-        pass
+        return self.__dadx
 
     def getDaDp(self):
-        pass
+        return self.__dadp
 

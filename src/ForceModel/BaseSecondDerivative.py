@@ -26,11 +26,11 @@ class BaseSecondDerivative:
     #     pass
 
     def getAcceleration(self, **kwargs):
-        acc = None
+        acc = np.zeros(3, dtype=float)
         return acc
 
     def getDaDx(self, **kwargs):
-        dadx = None
+        dadx = np.zeros(3, dtype=float)
         return dadx
 
     def getDaDp(self, **kwargs):
@@ -40,6 +40,6 @@ class BaseSecondDerivative:
         daz/dp1  daz/dp2  ...
         :return:  da/dp in GCRS frame [3*np]
         """
-        dadp = None
+        dadp = np.zeros(3, dtype=float)
         return dadp
 

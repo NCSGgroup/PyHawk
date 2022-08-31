@@ -19,7 +19,9 @@ def demo1():
 
     assem_model = assem_model.setPosAndVel(pos, vel).setTime(fr)
 
-    print(assem_model.ForceType)
+    print(assem_model.getAcceleration())
+    print(assem_model.getDaDx())
+    print(assem_model.getDaDp())
 
 
 if __name__ == '__main__':
