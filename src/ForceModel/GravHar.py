@@ -432,7 +432,7 @@ class ClibGravHar(AbsGravHar):
         super(ClibGravHar, self).__init__()
         '''# Attempt to find grav library to load'''
         if platform.system() == 'Windows':
-            gravlib_filename = _glob.glob(str(_pathlib.Path(__file__).parent.parent.parent.joinpath('lib', 'GravHar.dll')))
+            gravlib_filename = _glob.glob(str(_pathlib.Path(__file__).parent.parent.parent.joinpath('lib', 'Project1.dll')))
         elif platform.system() == 'Linux':
             gravlib_filename = _glob.glob(str(_pathlib.Path(__file__).parent.parent.parent.joinpath('lib', 'GravHar.so')))
 
