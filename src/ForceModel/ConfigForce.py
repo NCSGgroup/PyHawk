@@ -62,3 +62,4 @@ class ConfigForce:
                 self.ForceType[force] = obj
 
 
+

@@ -5,7 +5,7 @@ from src.Frame.EOP import EOP
 from src.Preference.EnumType import TimeFormat,GravHarType
 from src.ForceModel.BaseGravCS import BaseGravCS
 from src.ForceModel.GravHar import ClibGravHar
-from src.ForceModel.AssembleForce import AssembleForce
+from src.ForceModel.Assemble2ndDerivative import AssembleForce
 import numpy as np
 
 # fr = Frame(EOP(True).load())
