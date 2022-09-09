@@ -46,6 +46,8 @@ class AssembleForce:
                 c, s = obj.getSumCS()
                 self.__acc += self.__cgh.setPar(c, s, self.__pos).getAcceleration()
                 self.__dadx += self.__cgh.setPar(c, s, self.__pos).getDaDx()
+                print(np.shape(self.__dadp))
+                print(np.shape(self.__cgh.setPar(c, s, self.__pos).getDaDp()))
                 self.__dadp = np.hstack((self.__dadp, self.__cgh.setPar(c, s, self.__pos).getDaDp()))
             else:
                 self.__acc += obj.getAcceleration()

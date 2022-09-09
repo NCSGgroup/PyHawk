@@ -22,7 +22,7 @@ class PlanetEphemerides:
         self.__reset()
         self.__emphericPath = None
         self.__kernel = None
-        self.__time =  None
+        self.__time = None
 
     def configure(self, emphericType: JPLempheric=JPLempheric.DE421, isMeter: bool = EphemeridesConfig.isMeter, **kwargs):
         if emphericType == JPLempheric.DE405:
