@@ -16,7 +16,7 @@ class AbsThreeBody(BaseSecondDerivative):
 
     def configure(self, **kwargs):
         self._GM = kwargs.get('GM', ThreeBodyConfig.ThreeBody_GM)
-        pass
+        return self
 
     def setPlanetPos(self, planet: dict):
         """

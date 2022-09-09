@@ -10,7 +10,11 @@ import numpy as np
 
 def demo1():
     config_model = ConfigGravHar()
-    print(config_model.GravHarForce)
+    fr = Frame(EOP(True).load())
+
+    time = fr.setTime(505051205, TimeFormat.GPS_second)
+    config_model = config_model.setTime(time)
+    print(config_model.getSumCS())
 
 
 if __name__ == '__main__':

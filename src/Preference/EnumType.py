@@ -148,3 +148,10 @@ class StaticGravModel(Enum):
     EIGEN6_C4 = 1
     GOCO02s = 2
 
+
+class CSseq(Enum):
+    Normal = 1
+    SortByOrder = 2
+    SortByDegree = 3
+    kind4 = 4
+

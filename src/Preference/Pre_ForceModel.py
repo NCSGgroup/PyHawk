@@ -7,10 +7,10 @@ import numpy as np
 
 include_ForceType = {ForceType.GravHar: True,
                      ForceType.Relativity: True,
-                     ForceType.NonConserveForce: False,
-                     ForceType.PlanetaryPerturbation: False}
+                     ForceType.NonConserveForce: True,
+                     ForceType.PlanetaryPerturbation: True}
 
-include_GravHarType = {GravHarType.NonTide: True,
+include_GravHarType = {GravHarType.NonTide: False,
                        GravHarType.PoleTide: True,
                        GravHarType.OceanTide: True,
                        GravHarType.AtmosphereTide: True,

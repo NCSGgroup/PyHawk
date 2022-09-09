@@ -31,16 +31,20 @@ class ConfigGravHar:
         self.__include_GravHarType = [key for key, value in include_GravHarType.items() if value]
         self.__instance_GravHar = instance_GravHar
 
-        self.__instanceForce()
+        self.__instance_force()
         pass
 
     def setTime(self, time: Frame):
         self.__time = time
         for obj in self.GravHarForce.values():
-            self.accumulate(obj)
+            obj = obj.setTime(time)
+            self.__accumulate(obj)
         return self
 
-    def accumulate(self, baseCS: BaseGravCS):
+    def getSumCS(self):
+        return self.__cTotal, self.__sTotal
+
+    def __accumulate(self, baseCS: BaseGravCS):
         C, S = baseCS.getCS()
         if self.__isFirst:
             self.__cTotal = C
@@ -51,10 +55,7 @@ class ConfigGravHar:
             self.__sTotal = GeoMathKit.arrayAdd(S, self.__sTotal)
         return self
 
-    def getSumCS(self):
-        return self.__cTotal, self.__sTotal
-
-    def __instanceForce(self):
+    def __instance_force(self):
         for tide in self.__include_GravHarType:
             if tide is GravHarType.OceanTide:
                 obj = None
@@ -90,43 +91,5 @@ class ConfigGravHar:
                 staticModel = ConfigStaticGravModel().getStaticModel()
                 if self.__instance_GravHar[tide] is EnumType.InstanceReferenceModel.RefGravModel:
                     obj = RefGravModel().setModel(staticModel)
-                self.GravHarForce[tide] = obj
-
-    def test(self):
-        for tide in self.__include_GravHarType:
-            if tide is GravHarType.OceanTide:
-                obj = None
-                if self.__instance_GravHar[tide] is EnumType.InstanceOceanTide.EOT11a:
-                    obj = EOT11a().setTime(self.__time).load()
-                elif self.__instance_GravHar[tide] is EnumType.InstanceOceanTide.FES2014:
-                    obj = FES2014().setTime(self.__time).load()
-                self.GravHarForce[tide] = obj
-            if tide is GravHarType.AtmosphereTide:
-                obj = None
-                if self.__instance_GravHar[tide] is EnumType.InstanceAtmosTide.AtmosBB2003:
-                    obj = AtmosBB2003().setTime(self.__time)
-                elif self.__instance_GravHar[tide] is EnumType.InstanceAtmosTide.AtmosAOD:
-                    obj = AtmosAOD().setTime(self.__time).loadfile()
-                self.GravHarForce[tide] = obj
-            if tide is GravHarType.PoleTide:
-                obj = None
-                if self.__instance_GravHar[tide] is EnumType.InstancePoleTide.PoleTideIERS2010:
-                    obj = PoleTideIERS2010().load().setTime(self.__time)
-                self.GravHarForce[tide] = obj
-            if tide is GravHarType.SolidEarthTide:
-                obj = None
-                if self.__instance_GravHar[tide] is EnumType.InstanceSolidTide.SolidTideIERS2010:
-                    obj = SolidTideIERS2010(self.__ep).setTime(self.__time)
-                self.GravHarForce[tide] = obj
-            if tide is GravHarType.NonTide:
-                obj = None
-                if self.__instance_GravHar[tide] is EnumType.InstanceNonTide.AODRL06:
-                    obj = AODRL06().setTime(self.__time).configure()
-                self.GravHarForce[tide] = obj
-            if tide is GravHarType.ReferenceModel:
-                obj = None
-                staticModel = ConfigStaticGravModel().getStaticModel()
-                if self.__instance_GravHar[tide] is EnumType.InstanceReferenceModel.RefGravModel:
-                    obj = RefGravModel().setTime(self.__time).setModel(staticModel)
                 self.GravHarForce[tide] = obj
 

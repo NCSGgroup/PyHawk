@@ -27,8 +27,6 @@ def demo2():
     c2, s2 = eot2.setTime(fr).load(120).getCS()
 
     baseCS = BaseGravCS()
-    baseCS.accumulate(c, s).accumulate(c2, s2)
-    print(baseCS.getTotalCS())
 
     cgh = ClibGravHar().setConstant().configure(c, s, 555220)
 
