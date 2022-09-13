@@ -43,20 +43,20 @@ class AssembleForce:
                 c, s = obj.setTime(self.__time).getSumCS()
                 self.__acc += self.__cgh.setPar(c, s, self.__pos).getAcceleration()
                 self.__dadx += self.__cgh.setPar(c, s, self.__pos).getDaDx()
+
                 du2c, du2s = self.__cgh.setPar(c, s, self.__pos).getDaDp()
                 res = np.array([self.__sort.sort(du2c[0], du2s[0]),
                                 self.__sort.sort(du2c[1], du2s[1]),
                                 self.__sort.sort(du2c[2], du2s[2]),])
                 res = self.__time.AccITRS2GCRS(res, self.__time.getRotationMatrix)
-
-                # self.__dadp = np.hstack((self.__dadp, self.__cgh.setPar(c, s, self.__pos).getDaDp()))
+                self.__dadp = np.hstack((self.__dadp, res))
             elif isinstance(obj, RelativityIERS2010):
                 obj = obj.setSunState(*(self.__ep.getSunPosAndVel(self.__time))).setSatState(self.__pos, self.__vel)
                 self.__acc += obj.getAcceleration()
             elif isinstance(obj, NonConByAcc):
                 obj = obj.setTime(self.__time)
                 self.__acc += obj.getAcceleration()
-                # self.__dadp += obj.getDaDp()
+                self.__dadp = np.hstack((self.__dadp,  obj.getDaDp()))
             elif isinstance(obj, ThreeBodyPlusJ2) or isinstance(obj, ThreeBody):
                 obj = obj.setTime(self.__time).setPlanetPos(self.__ep.getPosByFrame()).setSatPos(self.__pos)
                 self.__acc += obj.getAcceleration()

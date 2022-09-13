@@ -23,10 +23,11 @@ def demo1():
     arc.unpackArcs().makeReport()
     pass
 
+
 def demo2():
     rd = ArcData()
     res = rd.getData(arc=0, kind=Payload.SCA, sat=SatID.B)
     print(res)
 
 if __name__ == '__main__':
-    demo2()
+    demo1()
