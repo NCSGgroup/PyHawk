@@ -42,7 +42,8 @@ class KinematicOrbit:
         date_range = (round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 0, 0, 0))),
                       round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 23, 59, 60 - self.__L1b.sr_payload[Payload.GNV]))))
 
-        path = self.__path_kinematic.joinpath(str(IY), 'grace' + sat.name + '-kinOrb-' + date + '.txt')
+        path = self.__path_kinematic.joinpath(*[str(IY), date.split('-')[0] + '-' + date.split('-')[1], 'grace' +
+                                                str(sat.value) + '-kinematicOrbit-' + date + '.txt'])
 
         res = None
 
@@ -51,7 +52,7 @@ class KinematicOrbit:
             res[:, 0] = np.round(Frame.mjd2sec(res[:, 0]))
         except FileNotFoundError as e:
             # lg.error(e)
-            print(path)
+            # print(path)
             return None
 
         return res

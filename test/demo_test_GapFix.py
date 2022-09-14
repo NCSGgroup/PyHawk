@@ -1,5 +1,5 @@
 from src.Frame.Frame import Frame, EOP
-from src.Interface.L1b import GRACE_RL02, GRACE_FO_RL04
+from src.Interface.L1b import GRACE_RL02, GRACE_FO_RL04, GRACE_JPL_RL02
 from src.Interface.GapFix import GapFix
 
 def demo1():
