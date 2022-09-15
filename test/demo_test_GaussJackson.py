@@ -131,10 +131,10 @@ def demo_test_GJ():
              -R_ke[(int(order / 2) + 1):]) ** 2, 1)) * 1e6,
              label='dopri5',linewidth=3)
 
-    a = np.load('data.npy')
-
-    plt.plot(np.linspace(2.5,722,1439),np.load('data.npy'),
-             label='ComplexODE',linewidth=3)
+    # a = np.load('data.npy')
+    #
+    # plt.plot(np.linspace(2.5,722,1439),np.load('data.npy'),
+    #          label='ComplexODE',linewidth=3)
     plt.xlim(0, X_GJ[-1] / 60)
     plt.ylim(0, )
     plt.legend(loc='upper left', fontsize=28)

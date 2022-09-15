@@ -10,7 +10,7 @@ include_ForceType = {ForceType.GravHar: True,
                      ForceType.NonConserveForce: True,
                      ForceType.PlanetaryPerturbation: True}
 
-include_GravHarType = {GravHarType.NonTide: False,
+include_GravHarType = {GravHarType.NonTide: True,
                        GravHarType.PoleTide: True,
                        GravHarType.OceanTide: True,
                        GravHarType.AtmosphereTide: True,

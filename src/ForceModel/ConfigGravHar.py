@@ -17,17 +17,17 @@ from src.Interface.LoadSH import LoadGif48
 
 class ConfigGravHar:
 
-    def __init__(self):
+    def __init__(self, ep: PlanetEphemerides):
         self.__include_GravHarType = None
         self.__isFirst = True
         self.__sTotal = None
         self.__cTotal = None
         self.__time = None
-        self.__ep = PlanetEphemerides().configure().setPlanets()
+        self.__ep = ep
         self.GravHarForce = {}
 
-        include_GravHarType = Pre_ForceModel.include_GravHarType
-        instance_GravHar = Pre_ForceModel.instance_GravHar
+        include_GravHarType = Pre_ForceModel.include_GravHarType.copy()
+        instance_GravHar = Pre_ForceModel.instance_GravHar.copy()
         self.__include_GravHarType = [key for key, value in include_GravHarType.items() if value]
         self.__instance_GravHar = instance_GravHar
 

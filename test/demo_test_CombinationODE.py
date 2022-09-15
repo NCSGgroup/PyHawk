@@ -57,8 +57,9 @@ def demo2():
              np.sqrt(np.sum((np.array(R_GJ[4:-1])
                              - R_ke[0:-6]) ** 2, 1)) * 1e6,
              label='Gauss-Jackson 8th', linewidth=3)
-
+    plt.show()
     np.save('data.npy',np.sqrt(np.sum((np.array(R_GJ[4:-1])
                              - R_ke[0:-6]) ** 2, 1)) * 1e6)
+
 if __name__ == '__main__':
     demo2()

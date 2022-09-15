@@ -20,7 +20,7 @@ class AssembleForce:
         self.__ep = PlanetEphemerides().configure().setPlanets()
         self.__cgh = ClibGravHar().setConstant()
         self.__sort = SortCS()
-        self.ForceType = ConfigForce().ForceType
+        self.ForceType = ConfigForce(self.__ep).getForceType()
 
         self.__acc = np.zeros(3, dtype=float)
         self.__dadp = np.array([[], [], []])
