@@ -2,8 +2,6 @@ from src.Frame.Frame import Frame
 from src.Frame.EOP import EOP
 from src.Preference.EnumType import TimeFormat, GravHarType
 from src.ForceModel.Assemble2ndDerivative import AssembleForce
-from src.ODE.ComplexODE import ComplexODE, ConfigComplexODE
-from src.Preference.EnumType import SingleStepType, MultiStepType
 from src.ForceModel.MainPropagator import PropagatorConfig, Propagator
 import json
 import numpy as np
@@ -34,9 +32,9 @@ def demo1():
     # print(modelB.getAcceleration())
 
     '''ode'''
-    config = ConfigComplexODE(SingleStepType.RKN, MultiStepType.GaussJackson).setOdePar()
-    propagator = ComplexODE(config).setSecondDerivative(modelA).setInitial(x0, posA, velA)
+    propagator = Propagator().setInitial(x0, posA, velA).setForceModel(modelA)
     X_GJ, R_GJ, v = propagator.propagate()
+    print(propagator.propagate())
 
 
 if __name__ == '__main__':
