@@ -1,18 +1,16 @@
 import src.Preference.Pre_ForceModel as Pre_ForceModel
-from src.ForceModel.AtmosTide import AbsAtmosTide, AtmosBB2003, AtmosAOD
+from src.ForceModel.AtmosTide import AtmosBB2003, AtmosAOD
 from src.ForceModel.NonTide import AODRL06
-from src.ForceModel.OceanTide import AbsOceanTide, EOT11a, FES2014
-from src.ForceModel.PoleTide import AbsPoleTide, PoleTideIERS2010
+from src.ForceModel.OceanTide import EOT11a, FES2014
+from src.ForceModel.PoleTide import PoleTideIERS2010
 from src.ForceModel.SolidTide import SolidTideIERS2010
 from src.ForceModel.RefGravModel import RefGravModel, ConfigStaticGravModel
-from src.Preference.EnumType import ForceType, GravHarType
+from src.Preference.EnumType import GravHarType
 from src.ForceModel.BaseGravCS import BaseGravCS
 from src.Frame.Frame import Frame
 from src.Auxilary.GeoMathKit import GeoMathKit
-from src.ForceModel.PlanetEphemerides import PlanetEphemerides
-from src.ForceModel.GravHar import ClibGravHar
+from src.Auxilary.PlanetEphemerides import PlanetEphemerides
 import src.Preference.EnumType as EnumType
-from src.Interface.LoadSH import LoadGif48
 
 
 class ConfigGravHar:

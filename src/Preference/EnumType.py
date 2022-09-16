@@ -155,3 +155,17 @@ class CSseq(Enum):
     SortByDegree = 3
     kind4 = 4
 
+
+class ParaType(Enum):
+    """
+    ALL the parameters are sorted with this order
+    """
+    TransitionMatrix = 1
+    Accelerometer = 2
+    StokesCoeff = 3
+
+
+class ParaField(Enum):
+    Global = 1
+    Local = 2
+

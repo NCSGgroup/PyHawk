@@ -19,7 +19,7 @@ class ConfigFMbyJson:
         for term in self.__config.keys():
             content = self.__config[term]
             if term == 'include_ForceType':
-                Pre_ForceModel.include_ForceType[EnumType.ForceType.GravHar] = content['GravHar']
+                Pre_ForceModel.include_ForceType[EnumType.ForceType.GravHar] = content[EnumType.ForceType.GravHar.name]
                 Pre_ForceModel.include_ForceType[EnumType.ForceType.NonConserveForce] = content['NonConserveForce']
                 Pre_ForceModel.include_ForceType[EnumType.ForceType.Relativity] = content['Relativity']
                 Pre_ForceModel.include_ForceType[EnumType.ForceType.PlanetaryPerturbation] = content['PlanetaryPerturbation']

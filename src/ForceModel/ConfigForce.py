@@ -1,14 +1,11 @@
-from src.Frame.Frame import Frame
 from src.ForceModel.ThreeBody import ThreeBody, ThreeBodyPlusJ2
 from src.ForceModel.Relativity import RelativityIERS2010
-from src.Preference.EnumType import ForceType, GravHarType
+from src.Preference.EnumType import ForceType
 import src.Preference.Pre_ForceModel as Pre_ForceModel
 from src.Preference.Pre_ForceModel import ThreeBodyConfig
 from src.ForceModel.ConfigGravHar import ConfigGravHar
-from src.ForceModel.PlanetEphemerides import PlanetEphemerides
+from src.Auxilary.PlanetEphemerides import PlanetEphemerides
 from src.ForceModel.NonConservative import NonConByAcc
-from src.ForceModel.GravHar import ClibGravHar
-import numpy as np
 
 
 class ConfigForce:

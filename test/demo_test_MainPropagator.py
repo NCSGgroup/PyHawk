@@ -2,7 +2,7 @@ from src.Frame.Frame import Frame
 from src.Frame.EOP import EOP
 from src.Preference.EnumType import TimeFormat, GravHarType
 from src.ForceModel.Assemble2ndDerivative import Assemble2ndDerivative
-from src.ForceModel.MainPropagator import ConfigFMbyJson, Propagator
+from src.ForceModel.ConfigByJson import ConfigFMbyJson, Propagator
 import json
 import numpy as np
 
@@ -31,11 +31,11 @@ def demo1():
     # print(modelB.getAcceleration())
 
     '''ode'''
-    propagator = Propagator(fr).setInitial(x0, posA, velA).setForceModel(modelA)
-    X_GJ, R_GJ, v = propagator.propagate()
-    print(X_GJ)
-    print(R_GJ)
-    print(v)
+    # propagator = Propagator(fr).setInitial(x0, posA, velA).setForceModel(modelA)
+    # X_GJ, R_GJ, v = propagator.propagate()
+    # print(X_GJ)
+    # print(R_GJ)
+    # print(v)
 
 
 if __name__ == '__main__':

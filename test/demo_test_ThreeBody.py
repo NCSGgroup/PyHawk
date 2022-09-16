@@ -1,5 +1,5 @@
-from src.ForceModel.ThreeBody import ThreeBody, ThreeBodyPlusJ2
-from src.ForceModel.PlanetEphemerides import PlanetEphemerides
+from src.ForceModel.ThreeBody import ThreeBodyPlusJ2
+from src.Auxilary.PlanetEphemerides import PlanetEphemerides
 from src.Frame.Frame import Frame
 from src.Frame.EOP import EOP
 from src.Preference.EnumType import TimeFormat

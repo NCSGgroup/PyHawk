@@ -2,8 +2,7 @@ from src.ForceModel.SolidTide import SolidTideIERS2010
 from src.Frame.Frame import Frame
 from src.Frame.EOP import EOP
 from src.Preference.EnumType import TimeFormat
-from src.ForceModel.PlanetEphemerides import PlanetEphemerides
-import numpy as np
+from src.Auxilary.PlanetEphemerides import PlanetEphemerides
 
 
 def demo1():
