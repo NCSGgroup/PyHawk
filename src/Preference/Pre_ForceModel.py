@@ -27,7 +27,7 @@ instance_GravHar = {GravHarType.NonTide: InstanceNonTide.AODRL06,
 
 class NonConservative:
     date_span = ['2016-01-01', '2016-01-31']
-    arcNo = 0
+    arcNo = 4
     sat = SatID.A
 
 

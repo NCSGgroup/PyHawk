@@ -35,8 +35,8 @@ class PropagatorConfig:
 
 class Propagator:
 
-    def __init__(self):
-        self.__fr = Frame(EOP(True).load())
+    def __init__(self, fr: Frame):
+        self.__fr = fr
         self.__t0 = None
         self.__r0 = None
         self.__v0 = None
@@ -59,6 +59,7 @@ class Propagator:
 
     def propagate(self):
         config = ConfigComplexODE(SingleStepType.RKN, MultiStepType.GaussJackson).setOdePar()
+
         propagator = ComplexODE(config).setSecondDerivative(self.forceModel).setInitial(self.__t0, self.__r0, self.__v0)
         return propagator.propagate()
 

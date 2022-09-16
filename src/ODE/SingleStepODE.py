@@ -104,6 +104,7 @@ class SingleStepOde:
         X = [x_0]
         R = [r_0]
         V = [v_0]
+
         for i in range(Npoints):
             x_0, r_0, v_0 = callfunc(self._func, x_0, r_0, v_0, stepsize)
             X.append(x_0)

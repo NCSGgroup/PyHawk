@@ -17,12 +17,10 @@ def demo1():
     velA = np.array([3000, 5000, 6000])
     posB = np.array([-4.151812213728250004e+06, 5.276550892813707702e+06, -1.296691103991644224e+06])
     velB = np.array([3000, 5000, 6000])
-    x0 = 504878405
-    h = 30
-    Nstep = 720 * 2
+    x0 = 504964860
 
     '''sat force'''
-    fr.setTime(504878405, TimeFormat.GPS_second)
+    fr.setTime(504964830, TimeFormat.GPS_second)
     modelA = AssembleForce()
     # modelA = modelA.setPosAndVel(posA, velA).setTime(fr)
     pc = PropagatorConfig().configure(configA)
@@ -32,9 +30,11 @@ def demo1():
     # print(modelB.getAcceleration())
 
     '''ode'''
-    propagator = Propagator().setInitial(x0, posA, velA).setForceModel(modelA)
+    propagator = Propagator(fr).setInitial(x0, posA, velA).setForceModel(modelA)
     X_GJ, R_GJ, v = propagator.propagate()
-    print(propagator.propagate())
+    print(X_GJ)
+    print(R_GJ)
+    print(v)
 
 
 if __name__ == '__main__':

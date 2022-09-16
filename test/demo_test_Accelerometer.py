@@ -7,7 +7,7 @@ import numpy as np
 def demo1():
     sat = SatID.A
     rd = ArcData()
-    ap = AccCaliPar(sat=sat, arcNo=1)
+    ap = AccCaliPar(sat=sat, arcNo=6)
 
     ac = Accelerometer(rd=rd, ap=ap)
     ac.get_and_save()
