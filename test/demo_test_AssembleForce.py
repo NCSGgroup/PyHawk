@@ -1,12 +1,12 @@
 from src.Frame.Frame import Frame
 from src.Frame.EOP import EOP
 from src.Preference.EnumType import TimeFormat, GravHarType
-from src.ForceModel.Assemble2ndDerivative import AssembleForce
+from src.ForceModel.Assemble2ndDerivative import Assemble2ndDerivative
 import numpy as np
 
 
 def demo1():
-    assem_model = AssembleForce()
+    assem_model = Assemble2ndDerivative()
     fr = Frame(EOP(True).load())
     fr.setTime(504878405, TimeFormat.GPS_second)
 

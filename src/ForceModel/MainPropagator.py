@@ -1,6 +1,6 @@
 import src.Preference.EnumType as EnumType
 import src.Preference.Pre_ForceModel as Pre_ForceModel
-from src.ForceModel.Assemble2ndDerivative import AssembleForce
+from src.ForceModel.Assemble2ndDerivative import Assemble2ndDerivative
 from src.ODE.ComplexODE import ComplexODE, ConfigComplexODE
 from src.Preference.EnumType import SingleStepType, MultiStepType
 import src.Preference.Pre_ODE as Pre_ODE
@@ -9,7 +9,7 @@ from src.Frame.Frame import Frame
 from src.Frame.EOP import EOP
 
 
-class PropagatorConfig:
+class ConfigFMbyJson:
 
     def __init__(self):
         self.__config = None
@@ -49,7 +49,7 @@ class Propagator:
         self.__v0 = v0
         return self
 
-    def setForceModel(self, force: AssembleForce):
+    def setForceModel(self, force: Assemble2ndDerivative):
         self.__force = force
         return self
 
@@ -59,7 +59,6 @@ class Propagator:
 
     def propagate(self):
         config = ConfigComplexODE(SingleStepType.RKN, MultiStepType.GaussJackson).setOdePar()
-
         propagator = ComplexODE(config).setSecondDerivative(self.forceModel).setInitial(self.__t0, self.__r0, self.__v0)
         return propagator.propagate()
 

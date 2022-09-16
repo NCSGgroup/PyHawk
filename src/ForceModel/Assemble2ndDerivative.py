@@ -10,7 +10,7 @@ from src.Auxilary.SortCS import SortCS
 import numpy as np
 
 
-class AssembleForce:
+class Assemble2ndDerivative:
 
     def __init__(self):
         self.__time = None

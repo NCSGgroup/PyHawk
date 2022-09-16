@@ -1,8 +1,8 @@
 from src.Frame.Frame import Frame
 from src.Frame.EOP import EOP
 from src.Preference.EnumType import TimeFormat, GravHarType
-from src.ForceModel.Assemble2ndDerivative import AssembleForce
-from src.ForceModel.MainPropagator import PropagatorConfig, Propagator
+from src.ForceModel.Assemble2ndDerivative import Assemble2ndDerivative
+from src.ForceModel.MainPropagator import ConfigFMbyJson, Propagator
 import json
 import numpy as np
 
@@ -21,10 +21,11 @@ def demo1():
 
     '''sat force'''
     fr.setTime(504964830, TimeFormat.GPS_second)
-    modelA = AssembleForce()
+    pc = ConfigFMbyJson().configure(configA)
+    modelA = Assemble2ndDerivative()
     # modelA = modelA.setPosAndVel(posA, velA).setTime(fr)
-    pc = PropagatorConfig().configure(configA)
-    modelB = AssembleForce()
+    pc = ConfigFMbyJson().configure(configA)
+    modelB = Assemble2ndDerivative()
     # modelB = modelB.setPosAndVel(posA, velA).setTime(fr)
     # print(modelA.getAcceleration())
     # print(modelB.getAcceleration())
