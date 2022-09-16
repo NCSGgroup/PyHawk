@@ -32,7 +32,13 @@ class ConfigGravHar:
         self.__instance_force()
         pass
 
+    def __reset(self):
+        self.__isFirst = True
+        self.__sTotal = None
+        self.__cTotal = None
+
     def setTime(self, time: Frame):
+        self.__reset()
         self.__time = time
         for obj in self.GravHarForce.values():
             obj = obj.setTime(time)

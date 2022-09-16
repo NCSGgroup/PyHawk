@@ -28,7 +28,14 @@ class Assemble2ndDerivative:
         self.__dadp = np.array([[], [], []])
         self.__dadx = np.zeros((3, 3), dtype=float)
 
+    def __reset(self):
+        self.__acc = np.zeros(3, dtype=float)
+        self.__dadp = np.array([[], [], []])
+        self.__dadx = np.zeros((3, 3), dtype=float)
+        pass
+
     def setTime(self, time: Frame):
+        self.__reset()
         self.__time = time
         self.__ep = self.__ep.setTime(self.__time)
         self.__calculation()
@@ -65,7 +72,6 @@ class Assemble2ndDerivative:
                 obj = obj.setTime(self.__time)
                 self.__acc += obj.getAcceleration()
 
-                '''How to consider both A and B stars'''
                 if Pre_Parameterization.Accelerometer.isRequired:
                     self.__dadp = np.hstack((self.__dadp,  obj.getDaDp()))
             elif isinstance(obj, ThreeBodyPlusJ2) or isinstance(obj, ThreeBody):

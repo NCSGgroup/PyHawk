@@ -164,9 +164,9 @@ class L1b:
                 return self.KiOrb_B
 
 
-class GRACE_RL02(L1b):
+class GRACE_OLD_RL02(L1b):
     def __init__(self):
-        super(GRACE_RL02, self).__init__()
+        super(GRACE_OLD_RL02, self).__init__()
         assert Pre_Interface.mission is Mission.GRACE_RL02
         pass
 
@@ -364,9 +364,9 @@ class GRACE_RL02(L1b):
         return np.array(GNV)
 
 
-class GRACE_JPL_RL02(L1b):
+class GRACE_NEW_RL02(L1b):
     def __init__(self):
-        super(GRACE_JPL_RL02, self).__init__()
+        super(GRACE_NEW_RL02, self).__init__()
         assert Pre_Interface.mission is Mission.GRACE_RL02
         pass
 
