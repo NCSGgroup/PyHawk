@@ -11,6 +11,7 @@ from src.Frame.Frame import Frame
 from src.Auxilary.GeoMathKit import GeoMathKit
 from src.Auxilary.PlanetEphemerides import PlanetEphemerides
 import src.Preference.EnumType as EnumType
+from src.ForceModel.GravHar import ClibGravHar
 
 
 class ConfigGravHar:
@@ -23,6 +24,7 @@ class ConfigGravHar:
         self.__time = None
         self.__ep = ep
         self.GravHarForce = {}
+        self.ClibGravHar = ClibGravHar().setConstant()
 
         include_GravHarType = Pre_ForceModel.include_GravHarType.copy()
         instance_GravHar = Pre_ForceModel.instance_GravHar.copy()
