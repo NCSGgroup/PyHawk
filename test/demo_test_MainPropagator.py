@@ -21,12 +21,14 @@ def demo1():
 
     '''sat force'''
     fr.setTime(504964830, TimeFormat.GPS_second)
-    pc = ConfigFMbyJson().configure(configA)
+    # pc = ConfigFMbyJson().configure(configA)
     modelA = Assemble2ndDerivative()
+    print(modelA.ForceType)
     # modelA = modelA.setPosAndVel(posA, velA).setTime(fr)
     pc = ConfigFMbyJson().configure(configA)
     modelB = Assemble2ndDerivative()
     # modelB = modelB.setPosAndVel(posA, velA).setTime(fr)
+    print(modelB.ForceType)
     # print(modelA.getAcceleration())
     # print(modelB.getAcceleration())
 

@@ -19,17 +19,11 @@ class ConfigFMbyJson:
         for term in self.__config.keys():
             content = self.__config[term]
             if term == 'include_ForceType':
-                Pre_ForceModel.include_ForceType[EnumType.ForceType.GravHar] = content[EnumType.ForceType.GravHar.name]
-                Pre_ForceModel.include_ForceType[EnumType.ForceType.NonConserveForce] = content['NonConserveForce']
-                Pre_ForceModel.include_ForceType[EnumType.ForceType.Relativity] = content['Relativity']
-                Pre_ForceModel.include_ForceType[EnumType.ForceType.PlanetaryPerturbation] = content['PlanetaryPerturbation']
+                for force in EnumType.ForceType:
+                    Pre_ForceModel.include_ForceType[force] = content[force.name]
             elif term == 'include_GravHarType':
-                Pre_ForceModel.include_GravHarType[EnumType.GravHarType.NonTide] = content['NonTide']
-                Pre_ForceModel.include_GravHarType[EnumType.GravHarType.PoleTide] = content['PoleTide']
-                Pre_ForceModel.include_GravHarType[EnumType.GravHarType.OceanTide] = content['OceanTide']
-                Pre_ForceModel.include_GravHarType[EnumType.GravHarType.AtmosphereTide] = content['AtmosphereTide']
-                Pre_ForceModel.include_GravHarType[EnumType.GravHarType.SolidEarthTide] = content['SolidEarthTide']
-                Pre_ForceModel.include_GravHarType[EnumType.GravHarType.ReferenceModel] = content['ReferenceModel']
+                for GravHar in EnumType.GravHarType:
+                    Pre_ForceModel.include_GravHarType[GravHar] = content[GravHar.name]
         return self
 
 

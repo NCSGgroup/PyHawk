@@ -9,34 +9,30 @@ from src.Interface.ArcOperation import ArcData
 
 
 class AccCaliPar:
-    def __init__(self, sat, arcNo, acc_strategy=Pre_Accelerometer.cali_A, **kwargs):
+    def __init__(self, sat, arcNo, acc_strategy=Pre_Accelerometer.cali, **kwargs):
         self.sat = sat
         self.arcNo = arcNo
         self.acc_strategy = acc_strategy
-        if sat is SatID.B and acc_strategy == Pre_Accelerometer.cali_A:
-            self.acc_strategy = Pre_Accelerometer.cali_B
-        if kwargs:
-            self.__parFlag = 0
-            self.AccCaliValue = kwargs.get('AccCaliPar')
-        else:
-            self.__parFlag = 1
+        # if kwargs:
+        #     self.__parFlag = 0
+        #     self.AccCaliValue = kwargs.get('AccCaliPar')
+        # else:
+        #     self.__parFlag = 1
         self.__par = self.__configure()
 
     def __configure(self):
         cali_value = None
-        if self.__parFlag == 0:
-            cali_value = self.AccCaliValue
-        else:
-            if self.sat == SatID.A:
-                cali_value = Pre_Accelerometer.cali_value_A
-            else:
-                cali_value = Pre_Accelerometer.cali_value_B
+        # if self.__parFlag == 0:
+        #     cali_value = self.AccCaliValue
+        cali_value = Pre_Accelerometer.cali_value
+
         #======= strategy ======
         isScale = self.acc_strategy['Scale']
         isBias_constant = self.acc_strategy['Bias_constant']
         isBias_trend = self.acc_strategy['Bias_trend']
         isBias_quadratic = self.acc_strategy['Bias_quadratic']
         self.isCali = [isScale, isBias_constant, isBias_trend, isBias_quadratic]
+
         #======= value ======
         scale = cali_value['Scale']
         bias_constant = cali_value['Bias_constant']
@@ -106,11 +102,11 @@ class Accelerometer:
         :param kwargs: define the value of the parameters. [3-axis]
         :return:
         """
-        scale = kwargs.get('Scale', Pre_Accelerometer.cali_value_A['Scale'])
+        scale = kwargs.get('Scale', Pre_Accelerometer.cali_value['Scale'])
         # scale = kwargs.get('Scale', [0.9465, 0.9842, 0.9303])  # for sat B
-        bias_constant = kwargs.get('Bias_constant', Pre_Accelerometer.cali_value_A['Bias_constant'])
-        bias_trend = kwargs.get('Bias_trend', Pre_Accelerometer.cali_value_A['Bias_trend'])
-        bias_quadratic = kwargs.get('Bias_quadratic', Pre_Accelerometer.cali_value_A['Bias_quadratic'])
+        bias_constant = kwargs.get('Bias_constant', Pre_Accelerometer.cali_value['Bias_constant'])
+        bias_trend = kwargs.get('Bias_trend', Pre_Accelerometer.cali_value['Bias_trend'])
+        bias_quadratic = kwargs.get('Bias_quadratic', Pre_Accelerometer.cali_value['Bias_quadratic'])
 
         self.__scale = np.array(scale, dtype=np.float).reshape((3, 3))
         self.__bias = np.array([bias_constant, bias_trend, bias_quadratic], dtype=np.float)
