@@ -2,7 +2,7 @@ from src.ForceModel.BaseGravCS import BaseGravCS
 from src.Auxilary.FunNutArg import FunNutArg
 from src.Auxilary.GeoMathKit import GeoMathKit
 from src.Preference.Pre_ForceModel import SolidTideConfig
-from src.Auxilary.PlanetEphemerides import PlanetEphemerides
+from src.Frame.PlanetEphemerides import PlanetEphemerides
 import numpy as np
 
 

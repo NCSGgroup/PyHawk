@@ -78,13 +78,6 @@ class RelativityConfig:
     }
 
 
-class EphemeridesConfig:
-    isMeter = True
-    SunAndMoon = {'Sun': True,
-                  'Moon': True}
-    include_planets = dict(ThreeBodyConfig.include_planets.items() | SunAndMoon.items())
-
-
 class SolidTideConfig:
     GM_Earth = 0.3986004415E+15
     GM_Sun = 1.32712442076e20
@@ -108,7 +101,8 @@ class PoleTideConfig:
 
 
 class GravHarConfig:
-    isIncludeEarth = ThreeBodyConfig.include_planets['Earth']
+    isIncludeZeroOrder = True
+    isIncludeFirstOrder = True
     isIncludeSecOrder = True
     isIncludeThirdOrder = True
     degree_max = 90

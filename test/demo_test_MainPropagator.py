@@ -1,8 +1,8 @@
 from src.Frame.Frame import Frame
 from src.Frame.EOP import EOP
-from src.Preference.EnumType import TimeFormat, GravHarType
+from src.Preference.EnumType import TimeFormat
 from src.ForceModel.Assemble2ndDerivative import Assemble2ndDerivative
-from src.ForceModel.ConfigByJson import ConfigFMbyJson, Propagator
+from src.ConfigJson.ConfigByJson import ConfigFMbyJson
 import json
 import numpy as np
 

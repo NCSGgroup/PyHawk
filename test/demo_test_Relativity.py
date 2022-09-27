@@ -1,5 +1,5 @@
 from src.ForceModel.Relativity import RelativityIERS2010
-from src.Auxilary.PlanetEphemerides import PlanetEphemerides
+from src.Frame.PlanetEphemerides import PlanetEphemerides
 from src.Frame.Frame import Frame
 from src.Frame.EOP import EOP
 from src.Preference.EnumType import TimeFormat

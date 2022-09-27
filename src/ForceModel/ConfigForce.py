@@ -4,7 +4,7 @@ from src.Preference.EnumType import ForceType
 import src.Preference.Pre_ForceModel as Pre_ForceModel
 from src.Preference.Pre_ForceModel import ThreeBodyConfig
 from src.ForceModel.ConfigGravHar import ConfigGravHar
-from src.Auxilary.PlanetEphemerides import PlanetEphemerides
+from src.Frame.PlanetEphemerides import PlanetEphemerides
 from src.ForceModel.NonConservative import NonConByAcc
 
 

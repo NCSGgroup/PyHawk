@@ -68,14 +68,14 @@ class AbsThreeBody(BaseSecondDerivative):
 
         du2xyz_final = np.zeros((3, 3))
 
-        planets = self._PlanetPos
+        PlanetPos = self._PlanetPos
         sat = self._sat
 
-        assert planets is not None and sat is not None
+        assert PlanetPos is not None and sat is not None
 
         for planet in self._Planets:
             '''Relative position vector of satellite w.r.t. point mass '''
-            s = np.array(planets[planet])
+            s = np.array(PlanetPos[planet])
             d = np.array(sat) - s
             if planet == 'Earth':
                 d = np.array(sat)

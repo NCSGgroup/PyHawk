@@ -1,9 +1,11 @@
 import numpy as np
-from src.Preference.EnumType import JPLempheric
-from src.Preference.Pre_ForceModel import PathOfFiles, EphemeridesConfig
+from src.Preference.EnumType import JPLempheric, ForceType
+from src.Preference.Pre_ForceModel import PathOfFiles
+import src.Preference.Pre_ForceModel as Pre_ForceModel
 from jplephem import Ephemeris
 from jplephem.spk import SPK
 from src.Frame.Frame import Frame
+import src.Preference.Pre_Frame as Pre_Frame
 import pathlib
 
 
@@ -23,8 +25,15 @@ class PlanetEphemerides:
         self.__emphericPath = None
         self.__kernel = None
         self.__time = None
+        if Pre_ForceModel.include_ForceType[ForceType.PlanetaryPerturbation]:
+            self.__include_plantes = Pre_ForceModel.ThreeBodyConfig.include_planets.copy()
+        else:
+            self.__include_plantes = Pre_Frame.EphemeridesConfig.include_planets.copy()
+        self.__include_plantes['Sun'] = True
+        self.__include_plantes['Moon'] = True
 
-    def configure(self, emphericType: JPLempheric=JPLempheric.DE421, isMeter: bool = EphemeridesConfig.isMeter, **kwargs):
+    def configure(self, emphericType: JPLempheric = JPLempheric.DE421,
+                  isMeter: bool = Pre_Frame.EphemeridesConfig.isMeter, **kwargs):
         if emphericType == JPLempheric.DE405:
             filename = 'de405.bsp'
         elif emphericType == JPLempheric.DE421:
@@ -39,7 +48,7 @@ class PlanetEphemerides:
         self.__kernel = SPK.open(self.__emphericPath)
         return self
 
-    def setTime(self, time:Frame):
+    def setTime(self, time: Frame):
         self.__time = time
         return self
 
@@ -57,13 +66,14 @@ class PlanetEphemerides:
                           'Pluto': 9, }
         pass
 
-    def setPlanets(self, planets: dict = EphemeridesConfig.include_planets):
+    def setPlanets(self, include_plantes: dict):
         """
         Only compute the planets asked by the user
         :param planets: see the __init__
         :return:
         """
-        planets = [key for key, value in planets.items() if value]
+        include_plantes = self.__include_plantes
+        include_plantes = [key for key, value in include_plantes.items() if value]
         self.__reset()
 
         '''Assure the 'Sun' and 'Moon' are included because they will be used again in other force models '''
@@ -71,7 +81,7 @@ class PlanetEphemerides:
         # assert 'Moon' in planets
 
         keys = self.__planets.keys()
-        user_def = list(set(keys).difference(set(planets)))
+        user_def = list(set(keys).difference(set(include_plantes)))
 
         if not len(user_def):
             return self
@@ -173,7 +183,7 @@ class PlanetEphemerides:
         pos2, vel2 = self.__kernel[3, 399].compute_and_differentiate(tdb_jd)
         pos3, vel3 = self.__kernel[0, 10].compute_and_differentiate(tdb_jd)
 
-        return (pos3-pos1-pos2)*1000, (vel3-vel1-vel2)/86400*1000
+        return (pos3 - pos1 - pos2) * 1000, (vel3 - vel1 - vel2) / 86400 * 1000
 
     @property
     def printHelp(self):

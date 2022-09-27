@@ -27,3 +27,18 @@ OmegaOption = 1
 tdbOption = 1
 
 
+class EphemeridesConfig:
+    isMeter = True
+    include_planets = {
+        'Sun': True,
+        'Moon': True,
+        'Mercury': True,
+        'Venus': True,
+        'Earth': False,
+        'Mars': True,
+        'Jupiter': True,
+        'Saturn': True,
+        'Uranus': True,
+        'Neptune': True,
+        'Pluto': True}
+

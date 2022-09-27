@@ -9,7 +9,7 @@ from src.Preference.EnumType import GravHarType
 from src.ForceModel.BaseGravCS import BaseGravCS
 from src.Frame.Frame import Frame
 from src.Auxilary.GeoMathKit import GeoMathKit
-from src.Auxilary.PlanetEphemerides import PlanetEphemerides
+from src.Frame.PlanetEphemerides import PlanetEphemerides
 import src.Preference.EnumType as EnumType
 from src.ForceModel.GravHar import ClibGravHar
 
@@ -23,7 +23,8 @@ class ConfigGravHar:
         self.__cTotal = None
         self.__time = None
         self.__ep = ep
-        self.isIncludeEarth = Pre_ForceModel.GravHarConfig.isIncludeEarth
+        self.isIncludeZeroOrder = Pre_ForceModel.GravHarConfig.isIncludeZeroOrder
+        self.isIncludeFirstOrder = Pre_ForceModel.GravHarConfig.isIncludeFirstOrder
         self.isIncludeSecOrder = Pre_ForceModel.GravHarConfig.isIncludeSecOrder
         self.isIncludeThirdOrder = Pre_ForceModel.GravHarConfig.isIncludeThirdOrder
         self.GravHarForce = {}

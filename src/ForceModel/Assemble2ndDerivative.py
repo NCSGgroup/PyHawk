@@ -3,7 +3,7 @@ from src.ForceModel.ThreeBody import AbsThreeBody
 from src.ForceModel.Relativity import AbsRelativity
 from src.ForceModel.ConfigForce import ConfigForce
 from src.ForceModel.ConfigGravHar import ConfigGravHar
-from src.Auxilary.PlanetEphemerides import PlanetEphemerides
+from src.Frame.PlanetEphemerides import PlanetEphemerides
 from src.ForceModel.NonConservative import AbsNonConservative
 from src.Auxilary.SortCS import SortCS
 import src.Preference.Pre_Parameterization as Pre_Parameterization
@@ -52,12 +52,14 @@ class Assemble2ndDerivative:
         for obj in self.ForceType.values():
             if isinstance(obj, ConfigGravHar):
                 c, s = obj.setTime(self.__time).getTotalCS()
-                if obj.isIncludeEarth:
-                    c[0:3], s[0:3] = 0, 0
+                if not obj.isIncludeZeroOrder:
+                    c[0:0], s[0:0] = 0., 0.
+                if not obj.isIncludeFirstOrder:
+                    c[1:3], s[1:3] = 0., 0.
                 if not obj.isIncludeSecOrder:
-                    c[3:6], s[3:6] = 0, 0
+                    c[3:6], s[3:6] = 0., 0.
                 if not obj.isIncludeThirdOrder:
-                    c[6:10], s[6:10] = 0, 0
+                    c[6:10], s[6:10] = 0., 0.
                 cgh = obj.ClibGravHar.setPar(c, s, self.__pos)
                 self.__acc += cgh.getAcceleration()
 
