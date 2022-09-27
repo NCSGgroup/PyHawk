@@ -4,6 +4,8 @@ from src.Preference.EnumType import InstanceAtmosTide, InstancePoleTide, Instanc
     InstanceNonTide, InstanceReferenceModel
 import pathlib as pathlib
 import numpy as np
+import src.Preference.EnumType as EnumType
+
 
 include_ForceType = {ForceType.GravHar: True,
                      ForceType.Relativity: True,
@@ -50,17 +52,17 @@ class ThreeBodyConfig:
                     'Neptune': 6836527.100580024e9,
                     'Pluto': 975.5011758767654e9}
     include_planets = {
-        'Sun': True,
-        'Moon': True,
-        'Mercury': True,
-        'Venus': True,
-        'Earth': False,
-        'Mars': True,
-        'Jupiter': True,
-        'Saturn': True,
-        'Uranus': True,
-        'Neptune': True,
-        'Pluto': True}
+        EnumType.Planets.Sun.name: True,
+        EnumType.Planets.Moon.name: True,
+        EnumType.Planets.Mercury.name: True,
+        EnumType.Planets.Venus.name: True,
+        EnumType.Planets.Earth.name: False,
+        EnumType.Planets.Mars.name: True,
+        EnumType.Planets.Jupiter.name: True,
+        EnumType.Planets.Saturn.name: True,
+        EnumType.Planets.Uranus.name: True,
+        EnumType.Planets.Neptune.name: True,
+        EnumType.Planets.Pluto.name: True}
     isJ2 = False
 
 
@@ -101,10 +103,7 @@ class PoleTideConfig:
 
 
 class GravHarConfig:
-    isIncludeZeroOrder = True
-    isIncludeFirstOrder = True
-    isIncludeSecOrder = True
-    isIncludeThirdOrder = True
+    setZero = [0, 1]
     degree_max = 90
     degree_min = 1
     GravHar_GM = 398600.44150e9

@@ -26,9 +26,9 @@ def demo1():
 
 def demo2():
     rd = ArcData()
-    res = rd.getData(arc=0, kind=Payload.SCA, sat=SatID.B)
+    res = rd.getData(arc=0, kind=Payload.SCA, sat=SatID.A)
     print(res)
 
 
 if __name__ == '__main__':
-    demo1()
+    demo2()

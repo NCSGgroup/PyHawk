@@ -23,10 +23,7 @@ class ConfigGravHar:
         self.__cTotal = None
         self.__time = None
         self.__ep = ep
-        self.isIncludeZeroOrder = Pre_ForceModel.GravHarConfig.isIncludeZeroOrder
-        self.isIncludeFirstOrder = Pre_ForceModel.GravHarConfig.isIncludeFirstOrder
-        self.isIncludeSecOrder = Pre_ForceModel.GravHarConfig.isIncludeSecOrder
-        self.isIncludeThirdOrder = Pre_ForceModel.GravHarConfig.isIncludeThirdOrder
+        self.setZero = Pre_ForceModel.GravHarConfig.setZero.copy()
         self.GravHarForce = {}
         self.ClibGravHar = ClibGravHar().setConstant()
 

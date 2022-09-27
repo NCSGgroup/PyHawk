@@ -52,14 +52,12 @@ class Assemble2ndDerivative:
         for obj in self.ForceType.values():
             if isinstance(obj, ConfigGravHar):
                 c, s = obj.setTime(self.__time).getTotalCS()
-                if not obj.isIncludeZeroOrder:
-                    c[0:0], s[0:0] = 0., 0.
-                if not obj.isIncludeFirstOrder:
-                    c[1:3], s[1:3] = 0., 0.
-                if not obj.isIncludeSecOrder:
-                    c[3:6], s[3:6] = 0., 0.
-                if not obj.isIncludeThirdOrder:
-                    c[6:10], s[6:10] = 0., 0.
+                if len(obj.setZero) != 0:
+                    for index in obj.setZero:
+                        start = int(index * (index + 1) / 2)
+                        end = int((index + 1) * (index + 2) / 2)
+                        c[start: end] = 0.
+                        s[start: end] = 0.
                 cgh = obj.ClibGravHar.setPar(c, s, self.__pos)
                 self.__acc += cgh.getAcceleration()
 
@@ -86,7 +84,7 @@ class Assemble2ndDerivative:
 
                 if Pre_Parameterization.Accelerometer.isRequired:
                     self.__isExistDaDp = True
-                    self.__dadp = np.hstack((self.__dadp,  obj.getDaDp()))
+                    self.__dadp = np.hstack((self.__dadp, obj.getDaDp()))
             elif isinstance(obj, AbsThreeBody):
                 obj = obj.setTime(self.__time).setPlanetPos(self.__ep.getPosByFrame()).setSatPos(self.__pos)
                 self.__acc += obj.getAcceleration()
@@ -108,4 +106,3 @@ class Assemble2ndDerivative:
         if not self.__isExistDaDp:
             return None
         return self.__dadp
-

@@ -1,5 +1,5 @@
 import numpy as np
-from src.Preference.EnumType import JPLempheric, ForceType
+import src.Preference.EnumType as EnumType
 from src.Preference.Pre_ForceModel import PathOfFiles
 import src.Preference.Pre_ForceModel as Pre_ForceModel
 from jplephem import Ephemeris
@@ -25,18 +25,18 @@ class PlanetEphemerides:
         self.__emphericPath = None
         self.__kernel = None
         self.__time = None
-        if Pre_ForceModel.include_ForceType[ForceType.PlanetaryPerturbation]:
+        if Pre_ForceModel.include_ForceType[EnumType.ForceType.PlanetaryPerturbation]:
             self.__include_plantes = Pre_ForceModel.ThreeBodyConfig.include_planets.copy()
         else:
             self.__include_plantes = Pre_Frame.EphemeridesConfig.include_planets.copy()
         self.__include_plantes['Sun'] = True
         self.__include_plantes['Moon'] = True
 
-    def configure(self, emphericType: JPLempheric = JPLempheric.DE421,
-                  isMeter: bool = Pre_Frame.EphemeridesConfig.isMeter, **kwargs):
-        if emphericType == JPLempheric.DE405:
+    def configure(self, emphericType = EnumType.JPLempheric.DE421,
+                  isMeter = Pre_Frame.EphemeridesConfig.isMeter, **kwargs):
+        if emphericType == EnumType.JPLempheric.DE405:
             filename = 'de405.bsp'
-        elif emphericType == JPLempheric.DE421:
+        elif emphericType == EnumType.JPLempheric.DE421:
             filename = 'de421.bsp'
         else:
             raise Exception
@@ -66,7 +66,7 @@ class PlanetEphemerides:
                           'Pluto': 9, }
         pass
 
-    def setPlanets(self, include_plantes: dict):
+    def setPlanets(self, include_plantes: dict = {}):
         """
         Only compute the planets asked by the user
         :param planets: see the __init__
@@ -112,7 +112,7 @@ class PlanetEphemerides:
         for planet in self.__planets.keys():
             index = self.__planets[planet]
 
-            if planet != 'Moon':
+            if planet != EnumType.Planets.Moon.name:
                 pos_planets[planet] = (-pos1 + self.__kernel[0, index].compute(tdb_jd) - pos2) * self.__meter
             else:
                 pos_planets[planet] = (self.__kernel[3, 301].compute(tdb_jd) - pos2) * self.__meter

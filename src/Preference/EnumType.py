@@ -169,3 +169,17 @@ class ParaField(Enum):
     Global = 1
     Local = 2
 
+
+class Planets(Enum):
+    Sun = 10
+    Moon = 11
+    Mercury = 1
+    Venus = 2
+    Earth = 3
+    Mars = 4
+    Jupiter = 5
+    Saturn = 6
+    Uranus = 7
+    Neptune = 8
+    Pluto = 9
+
