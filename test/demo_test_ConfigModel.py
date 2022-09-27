@@ -14,7 +14,7 @@ def demo1():
 
     time = fr.setTime(505051205, TimeFormat.GPS_second)
     config_model = config_model.setTime(time)
-    print(config_model.getSumCS())
+    print(config_model.getTotalCS())
 
 
 if __name__ == '__main__':

@@ -9,25 +9,28 @@ class AbsThreeBody(BaseSecondDerivative):
 
     def __init__(self):
         super(AbsThreeBody, self).__init__()
-        self._planet = None
+        self._Planets = None
+        self._PlanetPos = None
         self._sat = None
         self._GM = None
         self.configure()
 
     def configure(self, **kwargs):
         self._GM = kwargs.get('GM', ThreeBodyConfig.ThreeBody_GM)
+        planets = kwargs.get('Planets', ThreeBodyConfig.include_planets.copy())
+        self._Planets = [key for key, value in planets.items() if value]
         return self
 
-    def setPlanetPos(self, planet: dict):
+    def setPlanetPos(self, planetPos: dict):
         """
 
-        :param planet: a dictionary data set that contains key (name of the planet) and value (position of the planet),
+        :param planetPos: a dictionary data set that contains key (name of the planet) and value (position of the planet),
                         unit should be given in [m], GCRS frame
         :return:
         """
-        self._planet = planet
+        self._PlanetPos = planetPos
 
-        assert set(planet.keys()) <= set(self._GM.keys())
+        assert set(planetPos.keys()) <= set(self._GM.keys())
 
         return self
 
@@ -65,12 +68,12 @@ class AbsThreeBody(BaseSecondDerivative):
 
         du2xyz_final = np.zeros((3, 3))
 
-        planets = self._planet
+        planets = self._PlanetPos
         sat = self._sat
 
         assert planets is not None and sat is not None
 
-        for planet in planets.keys():
+        for planet in self._Planets:
             '''Relative position vector of satellite w.r.t. point mass '''
             s = np.array(planets[planet])
             d = np.array(sat) - s
@@ -98,14 +101,14 @@ class ThreeBody(AbsThreeBody):
         :return: acceleration in GCRS frame
         """
 
-        planets = self._planet
+        planets = self._PlanetPos
         sat = self._sat
 
         assert planets is not None and sat is not None
 
         acc = np.zeros(3)
 
-        for planet in planets.keys():
+        for planet in self._Planets:
             '''Relative position vector of satellite w.r.t. point mass '''
             if planet == 'Earth':
                 norm = np.linalg.norm(np.array(sat))
@@ -145,11 +148,11 @@ class ThreeBodyPlusJ2(AbsThreeBody):
         # assert 'Sun' in self._planet.keys()
         # assert 'Moon' in self._planet.keys()
         '''intersection'''
-        target = {'Sun', 'Moon'} & set(self._planet.keys())
+        target = {'Sun', 'Moon'} & set(self._Planets)
 
         for planet in target:
             '''get pos in GCRS frame'''
-            pos = np.array(self._planet[planet])
+            pos = np.array(self._PlanetPos[planet])
 
             '''get pos in ITRS frame'''
             pos = Frame.PosGCRS2ITRS(pos, rm)
@@ -177,14 +180,14 @@ class ThreeBodyPlusJ2(AbsThreeBody):
 
         :return: acceleration in GCRS frame
         """
-        planets = self._planet
+        planets = self._PlanetPos
         sat = self._sat
 
         assert planets is not None and sat is not None
 
         acc = np.zeros(3)
 
-        for planet in planets.keys():
+        for planet in self._Planets:
             '''Relative position vector of satellite w.r.t. point mass '''
             if planet == 'Earth':
                 norm = np.linalg.norm(np.array(sat))

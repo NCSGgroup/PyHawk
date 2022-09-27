@@ -23,6 +23,9 @@ class ConfigGravHar:
         self.__cTotal = None
         self.__time = None
         self.__ep = ep
+        self.isIncludeEarth = Pre_ForceModel.GravHarConfig.isIncludeEarth
+        self.isIncludeSecOrder = Pre_ForceModel.GravHarConfig.isIncludeSecOrder
+        self.isIncludeThirdOrder = Pre_ForceModel.GravHarConfig.isIncludeThirdOrder
         self.GravHarForce = {}
         self.ClibGravHar = ClibGravHar().setConstant()
 
@@ -47,7 +50,7 @@ class ConfigGravHar:
             self.__accumulate(obj)
         return self
 
-    def getSumCS(self):
+    def getTotalCS(self):
         return self.__cTotal, self.__sTotal
 
     def __accumulate(self, baseCS: BaseGravCS):

@@ -51,7 +51,13 @@ class Assemble2ndDerivative:
     def __calculation(self):
         for obj in self.ForceType.values():
             if isinstance(obj, ConfigGravHar):
-                c, s = obj.setTime(self.__time).getSumCS()
+                c, s = obj.setTime(self.__time).getTotalCS()
+                if obj.isIncludeEarth:
+                    c[0:3], s[0:3] = 0, 0
+                if not obj.isIncludeSecOrder:
+                    c[3:6], s[3:6] = 0, 0
+                if not obj.isIncludeThirdOrder:
+                    c[6:10], s[6:10] = 0, 0
                 cgh = obj.ClibGravHar.setPar(c, s, self.__pos)
                 self.__acc += cgh.getAcceleration()
 

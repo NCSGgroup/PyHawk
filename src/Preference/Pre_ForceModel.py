@@ -8,7 +8,7 @@ import numpy as np
 include_ForceType = {ForceType.GravHar: True,
                      ForceType.Relativity: True,
                      ForceType.NonConserveForce: False,
-                     ForceType.PlanetaryPerturbation: False}
+                     ForceType.PlanetaryPerturbation: True}
 
 include_GravHarType = {GravHarType.NonTide: True,
                        GravHarType.PoleTide: True,
@@ -49,6 +49,18 @@ class ThreeBodyConfig:
                     'Uranus': 5794556.465751793e9,
                     'Neptune': 6836527.100580024e9,
                     'Pluto': 975.5011758767654e9}
+    include_planets = {
+        'Sun': True,
+        'Moon': True,
+        'Mercury': True,
+        'Venus': True,
+        'Earth': False,
+        'Mars': True,
+        'Jupiter': True,
+        'Saturn': True,
+        'Uranus': True,
+        'Neptune': True,
+        'Pluto': True}
     isJ2 = False
 
 
@@ -68,17 +80,9 @@ class RelativityConfig:
 
 class EphemeridesConfig:
     isMeter = True
-    include_planets = {'Sun': True,
-                       'Moon': True,
-                       'Mercury': True,
-                       'Venus': True,
-                       'Earth': False,
-                       'Mars': True,
-                       'Jupiter': True,
-                       'Saturn': True,
-                       'Uranus': True,
-                       'Neptune': True,
-                       'Pluto': True}
+    SunAndMoon = {'Sun': True,
+                  'Moon': True}
+    include_planets = dict(ThreeBodyConfig.include_planets.items() | SunAndMoon.items())
 
 
 class SolidTideConfig:
@@ -104,6 +108,9 @@ class PoleTideConfig:
 
 
 class GravHarConfig:
+    isIncludeEarth = ThreeBodyConfig.include_planets['Earth']
+    isIncludeSecOrder = True
+    isIncludeThirdOrder = True
     degree_max = 90
     degree_min = 1
     GravHar_GM = 398600.44150e9

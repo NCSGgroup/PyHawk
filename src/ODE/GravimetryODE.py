@@ -35,3 +35,4 @@ class GravimetryODE:
         config = ConfigComplexODE(SingleStepType.RKN, MultiStepType.GaussJackson).setOdePar()
         propagator = ComplexODE(config).setSecondDerivative(self.forceModel).setInitial(self.__t0, self.__r0, self.__v0)
         return propagator.propagate()
+
