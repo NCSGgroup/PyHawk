@@ -9,23 +9,22 @@ class BaseSecondDerivative:
         self._firstOrder = None
         self._odeVariableType = None
         self._time = None
+        self._rm = None
         pass
 
     def setTime(self, time: Frame):
         self._time = time
         return self
 
-    # def getSecondDerivative(self):
-    #
-    #     pass
-
-    # def setArguments(self, zeroOrder, firstOrder, odeVariableType):
-    #     self._zeroOrder = zeroOrder
-    #     self._firstOrder = firstOrder
-    #     self._odeVariableType = odeVariableType
-    #     pass
+    def setRotationMatrix(self, rm):
+        self._rm = rm
+        return self
 
     def getAcceleration(self, **kwargs):
+        acc = np.zeros(3, dtype=float)
+        return acc
+
+    def getAccelerationITRS(self, **kwargs):
         acc = np.zeros(3, dtype=float)
         return acc
 
