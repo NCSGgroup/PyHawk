@@ -1,6 +1,10 @@
 from src.Preference.EnumType import SingleStepType, MultiStepType
 
 
+class ComplexConfig:
+    pass
+
+
 class SingleStepConfig:
     stepsize = 5
     Npoints = 4316

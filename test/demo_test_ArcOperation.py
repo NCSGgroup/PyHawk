@@ -20,6 +20,7 @@ def demo1():
     gf = GapFix(s).configure()
     gf.fix_all().makeReport()
 
+
     #
     arc = ArcSelect(gf).configure()
     arc.unpackArcs().makeReport()

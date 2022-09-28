@@ -90,7 +90,7 @@ class EOP:
 
         pass
 
-    def load(self, EOP_path=Pre_Frame.PathOfFiles.EOP_14_IAU2000, **kwargs):
+    def load(self, EOP_path=Pre_Frame.PathOfFiles.EOP, **kwargs):
         """
         load relevant files for the EOP computation
         :param EOP_path:
