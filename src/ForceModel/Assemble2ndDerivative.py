@@ -51,6 +51,7 @@ class Assemble2ndDerivative:
     def __calculation(self):
         for obj in self.ForceType.values():
             if isinstance(obj, ConfigGravHar):
+                pos = self.__time.PosGCRS2ITRS(np.array(self.__pos).astype(float), self.__time.getRotationMatrix)
                 c, s = obj.setTime(self.__time).getTotalCS()
                 if len(obj.setZero) != 0:
                     for index in obj.setZero:
@@ -58,8 +59,11 @@ class Assemble2ndDerivative:
                         end = int((index + 1) * (index + 2) / 2)
                         c[start: end] = 0.
                         s[start: end] = 0.
-                cgh = obj.ClibGravHar.setPar(c, s, self.__pos)
-                self.__acc += cgh.getAcceleration()
+                cgh = obj.ClibGravHar.setPar(c, s, pos)
+                acc = cgh.getAcceleration()
+                acc = self.__time.AccITRS2GCRS(acc, self.__time.getRotationMatrix)
+                acc = np.array(acc)
+                self.__acc += acc[:, 0]
 
                 if Pre_Parameterization.TransitionMatrix.isRequired:
                     res = cgh.getDaDx()

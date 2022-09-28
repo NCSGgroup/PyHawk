@@ -3,27 +3,31 @@ from src.Frame.EOP import EOP
 import src.Preference.EnumType as EnumType
 from src.ForceModel.Assemble2ndDerivative import Assemble2ndDerivative
 from src.Interface.ArcOperation import ArcData
+from src.ODE.GravimetryODE import GravimetryODE
 import numpy as np
 
 
 def demo1():
 
     fr = Frame(EOP().load())
+
     # read Arc GRACE Data
     rd = ArcData()
     res = rd.getData(arc=0, kind=EnumType.Payload.GNV, sat=EnumType.SatID.A)
+    GPS_Time = res[4, 0]
+    print(res[:, 1:4])
+    startPos = res[4, 1:4]
+    startVel = res[4, 4:7]
 
     # instance assemble model
     assem_model = Assemble2ndDerivative()
-    pos = np.array([-4.151812213728250004e+06, 5.276550892813707702e+06, -1.296691103991644224e+06])
-    vel = np.array([3000, 5000, 6000])
-    fr.setTime(504964860, EnumType.TimeFormat.GPS_second)
-    #
-    assem_model = assem_model.setPosAndVel(pos, vel).setTime(fr)
-    #
-    # print(assem_model.getAcceleration())
-    # print(assem_model.getDaDx())
-    # print(assem_model.getDaDp())
+
+    # ODE
+    # propagator = GravimetryODE(fr).setInitial(GPS_Time, startPos, startVel).setForceModel(assem_model)
+    # X_GJ, R_GJ, v = propagator.propagate()
+    # print(X_GJ)
+    # print(R_GJ)
+    # print(v)
 
 
 if __name__ == '__main__':

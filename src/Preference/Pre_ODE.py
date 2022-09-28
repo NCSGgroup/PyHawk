@@ -3,14 +3,14 @@ from src.Preference.EnumType import SingleStepType, MultiStepType
 
 class SingleStepConfig:
     stepsize = 5
-    Npoints = 10
+    Npoints = 4316
     isRecord = True
     SingleStepOde = SingleStepType.RKN
 
 
 class MultiStepConfig:
     stepsize = 5
-    Npoints = 10
+    Npoints = 4316
     order = 8
     isRecord = True
     iterNum = 10

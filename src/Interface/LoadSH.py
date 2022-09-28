@@ -125,16 +125,37 @@ class LoadGif48(LoadSH):
         """
         l, m, C, S, sigmaC, sigmaS = [], [], [], [], [], []
 
+        stempC = np.zeros((int(self.maxDegree + 1), int(self.maxDegree + 1)))
+        stempS = np.zeros((int(self.maxDegree + 1), int(self.maxDegree + 1)))
+        stempsigmaC = np.zeros((int(self.maxDegree + 1), int(self.maxDegree + 1)))
+        stempsigmaS = np.zeros((int(self.maxDegree + 1), int(self.maxDegree + 1)))
         for item in content:
             value = item.split()
             if len(value) == 0: continue
+            stempC[int(value[1]), int(value[2])] = float(value[3])
+            stempS[int(value[1]), int(value[2])] = float(value[4])
+            stempsigmaC[int(value[1]), int(value[2])] = float(value[5])
+            stempsigmaS[int(value[1]), int(value[2])] = float(value[6])
 
-            l.append(value[1])
-            m.append(value[2])
-            C.append(value[3])
-            S.append(value[4])
-            sigmaC.append(value[5])
-            sigmaS.append(value[6])
+        for i in range(int(self.maxDegree + 1)):
+            for j in range(i + 1):
+                l.append(i)
+                m.append(j)
+                C.append(stempC[i, j])
+                S.append(stempS[i, j])
+                sigmaC.append(stempsigmaC[i, j])
+                sigmaS.append(stempsigmaS[i, j])
+
+        # for item in content:
+        #     value = item.split()
+        #     if len(value) == 0: continue
+        #
+        #     l.append(value[1])
+        #     m.append(value[2])
+        #     C.append(value[3])
+        #     S.append(value[4])
+        #     sigmaC.append(value[5])
+        #     sigmaS.append(value[6])
 
         l = np.array(l).astype(np.int)
         m = np.array(m).astype(np.int)

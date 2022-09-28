@@ -4,6 +4,7 @@ from src.Interface.ArcOperation import ArcSelect, ArcData
 from src.Frame.Frame import Frame, EOP
 from src.Interface.GapFix import GapFix
 from src.Preference.EnumType import Payload, SatID
+import src.Preference.EnumType as EnumType
 
 
 def demo1():
@@ -19,8 +20,10 @@ def demo1():
     gf = GapFix(s).configure()
     gf.fix_all().makeReport()
 
+    #
     arc = ArcSelect(gf).configure()
     arc.unpackArcs().makeReport()
+
     pass
 
 
@@ -31,4 +34,4 @@ def demo2():
 
 
 if __name__ == '__main__':
-    demo2()
+    demo1()

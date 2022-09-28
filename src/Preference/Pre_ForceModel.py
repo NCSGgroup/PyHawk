@@ -9,7 +9,7 @@ import src.Preference.EnumType as EnumType
 
 include_ForceType = {ForceType.GravHar: True,
                      ForceType.Relativity: True,
-                     ForceType.NonConserveForce: False,
+                     ForceType.NonConserveForce: True,
                      ForceType.PlanetaryPerturbation: True}
 
 include_GravHarType = {GravHarType.NonTide: True,
@@ -29,7 +29,7 @@ instance_GravHar = {GravHarType.NonTide: InstanceNonTide.AODRL06,
 
 class NonConservative:
     date_span = ['2016-01-01', '2016-01-31']
-    arcNo = 4
+    arcNo = 0
     sat = SatID.A
 
 
@@ -56,7 +56,7 @@ class ThreeBodyConfig:
         EnumType.Planets.Moon.name: True,
         EnumType.Planets.Mercury.name: True,
         EnumType.Planets.Venus.name: True,
-        EnumType.Planets.Earth.name: False,
+        EnumType.Planets.Earth.name: True,
         EnumType.Planets.Mars.name: True,
         EnumType.Planets.Jupiter.name: True,
         EnumType.Planets.Saturn.name: True,
@@ -68,7 +68,7 @@ class ThreeBodyConfig:
 
 class RelativityConfig:
     GM_Sun = 1.32712442076e20
-    GM_Earth = 3.986004418000000e+14
+    GM_Earth = 0.3986004415E+15
     C_Light = 299792458
     J = np.array([0, 0, 9.8e8])
     Gamma = 1
@@ -85,11 +85,11 @@ class SolidTideConfig:
     GM_Sun = 1.32712442076e20
     GM_Moon = 0.49028010560e13
     Radius_Earth = 0.6378136460E+07
-    isZeroTide = True
+    isZeroTide = False
 
 
 class LoveNumberConfig:
-    Nmax = 30
+    Nmax = 180
     method = LoveNumberType.Gegout97
 
 
@@ -106,19 +106,19 @@ class GravHarConfig:
     setZero = [0, 1]
     degree_max = 90
     degree_min = 1
-    GravHar_GM = 398600.44150e9
-    GravHar_Radius = 6378136.3e0
+    GravHar_GM = 0.3986004415E+15
+    GravHar_Radius = 0.6378136460E+07
 
 
 class RefGravModelConfig:
     kind = 0
     Nmax = 90
-    StaticModel = StaticGravModel.Gif48
+    StaticModel = StaticGravModel.EIGEN6_C4
 
 
 class NonTideConfig:
     kind = AODtype.GLO
-    MaxDeg = 100
+    MaxDeg = 180
     TS = 3
 
 
@@ -137,7 +137,7 @@ class AtmosTideConfig:
                TidesType.T3: True,
                TidesType.R3: True}
     kind = AODtype.ATM
-    Nmax = 120
+    Nmax = 180
     BB2003tide = {TidesType.S1: True,
                   TidesType.S2: True}
 
@@ -151,7 +151,7 @@ class PathOfFiles:
     temp_non_conservative_data = root_dir.joinpath('temp', 'NonConservativeForce')
     Ephemerides = root_dir.joinpath('data', 'ephemerides')
     PoleTide = root_dir.joinpath('data', 'poletide')
-    LoverNumber = root_dir.joinpath('data', 'poletide')
+    LoverNumber = root_dir.joinpath('data', 'LoveNumber')
     poleTideModel = 'desaiscopolecoef.txt'
 
     Gif48 = root_dir.joinpath('data', 'StaticGravityField', 'gif48.gfc')

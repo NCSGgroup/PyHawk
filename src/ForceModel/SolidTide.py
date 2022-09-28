@@ -50,6 +50,10 @@ class SolidTideIERS2010(AbsSolidTide):
         self.__pe = self.__pe.setTime(self._time)
         pos_sun = self.__pe.getPosByFrame()['Sun']
         pos_moon = self.__pe.getPosByFrame()['Moon']
+        rm = self._time.getRotationMatrix
+        pos_sun = self._time.PosGCRS2ITRS(pos_sun, rm)
+        pos_moon = self._time.PosGCRS2ITRS(pos_moon, rm)
+
         tdb_mjd = self._time.getTDB_mjd
         theta = self._time.getTheta
         index = self.__getIndex

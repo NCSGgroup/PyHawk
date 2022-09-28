@@ -4,6 +4,7 @@ from src.Preference.EnumType import SingleStepType, MultiStepType
 import src.Preference.Pre_ODE as Pre_ODE
 from src.Preference.EnumType import TimeFormat, GravHarType
 from src.Frame.Frame import Frame
+import numpy as np
 from src.Frame.EOP import EOP
 
 
@@ -28,7 +29,8 @@ class GravimetryODE:
         return self
 
     def forceModel(self, t, r, v):
-        self.__force = self.__force.setPosAndVel(r, v).setTime(self.__fr.setTime(t, TimeFormat.GPS_second))
+        self.__fr = self.__fr.setTime(t, TimeFormat.GPS_second)
+        self.__force = self.__force.setPosAndVel(r, v).setTime(self.__fr)
         return self.__force.getAcceleration()
 
     def propagate(self):

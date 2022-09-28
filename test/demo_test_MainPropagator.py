@@ -1,43 +1,33 @@
 from src.Frame.Frame import Frame
 from src.Frame.EOP import EOP
-from src.Preference.EnumType import TimeFormat
+import src.Preference.EnumType as EnumType
 from src.ForceModel.Assemble2ndDerivative import Assemble2ndDerivative
 from src.ConfigJson.ConfigByJson import ConfigFMbyJson
+from src.ODE.GravimetryODE import GravimetryODE
+from src.Interface.ArcOperation import ArcData
 import json
 import numpy as np
 
 
 def demo1():
-    with open('../setting/GraceTestForceModel_A.json') as load_f:
-        configA = json.load(load_f)
-    fr = Frame(EOP(True).load())
+    fr = Frame(EOP().load())
 
-    '''sat state'''
-    posA = np.array([-4.151812213728250004e+06, 5.276550892813707702e+06, -1.296691103991644224e+06])
-    velA = np.array([3000, 5000, 6000])
-    posB = np.array([-4.151812213728250004e+06, 5.276550892813707702e+06, -1.296691103991644224e+06])
-    velB = np.array([3000, 5000, 6000])
-    x0 = 504964860
+    # read Arc GRACE Data
+    rd = ArcData()
+    res = rd.getData(arc=0, kind=EnumType.Payload.GNV, sat=EnumType.SatID.A)
+    GPS_Time = res[4, 0]
+    startPos = res[4, 1:4]
+    startVel = res[4, 4:7]
 
-    '''sat force'''
-    fr.setTime(504964830, TimeFormat.GPS_second)
-    # pc = ConfigFMbyJson().configure(configA)
-    modelA = Assemble2ndDerivative()
-    print(modelA.ForceType)
-    # modelA = modelA.setPosAndVel(posA, velA).setTime(fr)
-    pc = ConfigFMbyJson().configure(configA)
-    modelB = Assemble2ndDerivative()
-    # modelB = modelB.setPosAndVel(posA, velA).setTime(fr)
-    print(modelB.ForceType)
-    # print(modelA.getAcceleration())
-    # print(modelB.getAcceleration())
+    # instance assemble model
+    assem_model = Assemble2ndDerivative()
 
-    '''ode'''
-    # propagator = Propagator(fr).setInitial(x0, posA, velA).setForceModel(modelA)
-    # X_GJ, R_GJ, v = propagator.propagate()
-    # print(X_GJ)
-    # print(R_GJ)
-    # print(v)
+    # ODE
+    propagator = GravimetryODE(fr).setInitial(GPS_Time, startPos, startVel).setForceModel(assem_model)
+    X_GJ, R_GJ, v = propagator.propagate()
+    print(X_GJ)
+    print(R_GJ)
+    print(v)
 
 
 if __name__ == '__main__':
