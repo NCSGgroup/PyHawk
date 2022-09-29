@@ -34,5 +34,6 @@ def demo2():
     print(res)
     pass
 
+
 if __name__ == '__main__':
-    demo2()
+    demo1()

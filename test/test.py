@@ -1,27 +1,39 @@
+import h5py
 import numpy as np
-import os
-import src.Preference.EnumType as EnumType
-import src.Preference.Pre_ForceModel as Pre_ForceModel
+import time
+import multiprocessing
 
-test1 = {'Sun': True,
-         'Moon': True}
+test1 = np.ones(1000000)
 
-test2 = {
-    'Mercury': True,
-    'Venus': True,
-    'Earth': False,
-    'Mars': True,
-    'Jupiter': True,
-    'Saturn': True,
-    'Uranus': True,
-    'Neptune': True,
-    'Pluto': True
-}
+test2 = [2,2,2,2,2,2,2]
+filename = 'test.hdf5'
 
-lisdt = []
-# test3 = [key for key, value in test2.items() if value]
-print(len(lisdt))
-# print(Pre_ForceModel.ThreeBodyConfig.include_planets)
-# print(test2)
-# print(test1)
-# print(dict(test1.items() | test2.items()))
+
+def fun1(index):
+    print("This is {}".format(index))
+    r = h5py.File(filename, "r")
+    data = r['data'][:]
+    time.sleep(1)
+    print(data)
+
+
+def demo1():
+    time1 = time.time()
+    _processes = []
+    for index in range(0, 10):
+        _process = multiprocessing.Process(target=fun1, args=(index,))
+        _process.start()
+        _processes.append(_process)
+    for _process in _processes:
+        _process.join()
+    time2 = time.time()
+    print("time consume {} s".format(time2 - time1))
+
+
+if __name__ == '__main__':
+    time1 = time.time()
+    for i in range(0, 10):
+        fun1(i)
+    time2 = time.time()
+    print(time2 - time1)
+    # demo1()
