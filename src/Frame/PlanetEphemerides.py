@@ -25,6 +25,7 @@ class PlanetEphemerides:
         self.__emphericPath = None
         self.__kernel = None
         self.__time = None
+        self.__pos_planets = {}
         if Pre_ForceModel.include_ForceType[EnumType.ForceType.PlanetaryPerturbation]:
             self.__include_plantes = Pre_ForceModel.ThreeBodyConfig.include_planets.copy()
         else:
@@ -32,8 +33,8 @@ class PlanetEphemerides:
         self.__include_plantes['Sun'] = True
         self.__include_plantes['Moon'] = True
 
-    def configure(self, emphericType = EnumType.JPLempheric.DE421,
-                  isMeter = Pre_Frame.EphemeridesConfig.isMeter, **kwargs):
+    def configure(self, emphericType=EnumType.JPLempheric.DE421,
+                  isMeter=Pre_Frame.EphemeridesConfig.isMeter, **kwargs):
         if emphericType == EnumType.JPLempheric.DE405:
             filename = 'de405.bsp'
         elif emphericType == EnumType.JPLempheric.DE421:
@@ -123,13 +124,13 @@ class PlanetEphemerides:
 
     def getPosByFrame(self):
         """
-               1. This function supports vectorized input like: time=[ 2457061.5 , 2457062.5 ]
-               2. Unit: kilometers
-               :param tdb_jd: TDB time in terms of JD convention
-               :return: a three-dimension position vector
-               """
+        1. This function supports vectorized input like: time=[ 2457061.5 , 2457062.5 ]
+        2. Unit: kilometers
+        :param tdb_jd: TDB time in terms of JD convention
+        :return: a three-dimension position vector
+        """
         tdb_jd = self.__time.getTDB_jd
-        pos_planets = {}
+        self.__pos_planets = {}
 
         # 地球重心相对于太阳系质心的坐标
         pos1 = self.__kernel[0, 3].compute(tdb_jd)
@@ -140,13 +141,16 @@ class PlanetEphemerides:
             index = self.__planets[planet]
 
             if planet != 'Moon':
-                pos_planets[planet] = (-pos1 + self.__kernel[0, index].compute(tdb_jd) - pos2) * self.__meter
+                self.__pos_planets[planet] = (-pos1 + self.__kernel[0, index].compute(tdb_jd) - pos2) * self.__meter
             else:
-                pos_planets[planet] = (self.__kernel[3, 301].compute(tdb_jd) - pos2) * self.__meter
+                self.__pos_planets[planet] = (self.__kernel[3, 301].compute(tdb_jd) - pos2) * self.__meter
 
             # print(planet, len(pos_planets[planet][0]))
 
-        return pos_planets
+        return self
+
+    def getPosPlanets(self):
+        return self.__pos_planets
 
     def setPosVec(self, timeseries: np.array):
         """

@@ -47,9 +47,8 @@ class SolidTideIERS2010(AbsSolidTide):
         :param isZeroTide: False: TIDE FREE, True: ZERO TIDE
         :return: C, S coefficients in one dimension format up to degree/order 5
         """
-        self.__pe = self.__pe.setTime(self._time)
-        pos_sun = self.__pe.getPosByFrame()['Sun']
-        pos_moon = self.__pe.getPosByFrame()['Moon']
+        pos_sun = self.__pe.getPosPlanets()['Sun']
+        pos_moon = self.__pe.getPosPlanets()['Moon']
         rm = self._time.getRotationMatrix
         pos_sun = self._time.PosGCRS2ITRS(pos_sun, rm)
         pos_moon = self._time.PosGCRS2ITRS(pos_moon, rm)

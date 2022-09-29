@@ -112,7 +112,7 @@ class GravHarConfig:
 
 class RefGravModelConfig:
     kind = 0
-    Nmax = 90
+    Nmax = 180
     StaticModel = StaticGravModel.EIGEN6_C4
 
 

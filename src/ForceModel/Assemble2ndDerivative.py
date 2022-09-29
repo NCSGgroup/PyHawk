@@ -39,7 +39,7 @@ class Assemble2ndDerivative:
     def setTime(self, time: Frame):
         self.__reset()
         self.__time = time
-        self.__ep = self.__ep.setTime(self.__time)
+        self.__ep = self.__ep.setTime(self.__time).getPosByFrame()
         self.__calculation()
         return self
 
@@ -69,7 +69,6 @@ class Assemble2ndDerivative:
                     res = cgh.getDaDx()
                     self.__isExistDaDx = True
                     self.__dadx += self.__time.dadrITRS2GCRS(res, self.__time.getRotationMatrix)
-
                 if Pre_Parameterization.StokesCoefficients.isRequired:
                     du2c, du2s = cgh.getDaDp(degree_max=Pre_Parameterization.StokesCoefficients.MaxDegree,
                                              degree_min=Pre_Parameterization.StokesCoefficients.MinDegree)
@@ -90,7 +89,7 @@ class Assemble2ndDerivative:
                     self.__isExistDaDp = True
                     self.__dadp = np.hstack((self.__dadp, obj.getDaDp()))
             elif isinstance(obj, AbsThreeBody):
-                obj = obj.setTime(self.__time).setPlanetPos(self.__ep.getPosByFrame()).setSatPos(self.__pos)
+                obj = obj.setTime(self.__time).setPlanetPos(self.__ep.getPosPlanets()).setSatPos(self.__pos)
                 self.__acc += obj.getAcceleration()
                 if Pre_Parameterization.TransitionMatrix.isRequired:
                     self.__isExistDaDx = True

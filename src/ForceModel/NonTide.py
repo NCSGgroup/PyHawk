@@ -54,21 +54,21 @@ class AODRL06(AbsNonTide):
         :param gpsTime: gps time in terms of sec since J2000
         :return:
         """
-        gpsTime = self._time.getGPS_from_epoch2000
+        gpsTime = float(self._time.getGPS_from_epoch2000)
         mjd = gpsTime / 86400 + Pre_Constants.J2000_MJD
         # mjd = gpsTime
         cal = Frame.mjd2cal(mjd)
 
         day = datetime.datetime(year=cal[0], month=cal[1], day=cal[2], hour=int(cal[3]))
 
-        if gpsTime<self.__gpstime or gpsTime>self.__gpstime+self.__TS*3600:
+        if gpsTime < self.__gpstime or gpsTime > self.__gpstime + self.__TS * 3600:
             hr_previous = int(cal[3]) % self.__TS
             hr_next = self.__TS - hr_previous
             previous_date = day + datetime.timedelta(hours=-hr_previous)
             next_date = day + datetime.timedelta(hours=hr_next)
 
             self.__gpstime = (Frame.cal2mjd(IY=previous_date.year, IM=previous_date.month, ID=previous_date.day,
-                                           IH=previous_date.hour, MIN=0, SEC=0) - Pre_Constants.J2000_MJD)*86400
+                                            IH=previous_date.hour, MIN=0, SEC=0) - Pre_Constants.J2000_MJD) * 86400
 
             rd = self.__ld.setTime(date=previous_date.date().__str__(), epoch=previous_date.time().__str__())
             self.__previousAOD = np.array(rd.getCS(self.__MaxDeg))
@@ -77,7 +77,8 @@ class AODRL06(AbsNonTide):
             self.__nextAOD = np.array(rd.getCS(self.__MaxDeg))
 
         '''linear interpolation'''
-        res = (gpsTime - self.__gpstime)/(self.__TS*3600)*(self.__nextAOD - self.__previousAOD) + self.__previousAOD
+        res = (gpsTime - self.__gpstime) / (self.__TS * 3600) * \
+              (self.__nextAOD - self.__previousAOD) + self.__previousAOD
 
         return res[0], res[1]
 

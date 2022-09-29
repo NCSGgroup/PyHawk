@@ -42,6 +42,7 @@ class NonConByAcc(AbsNonConservative):
     def __loadAccelerometer(self):
         filename = pathlib.Path(self.__dataTemp).joinpath(
             self._range[0] + '_' + self._range[1] + '_' + self.sat.name + '_' + str(self._arcNo) + '.hdf5')
+        print(filename)
         h5data = h5py.File(filename, "r")
 
         self.__time = h5data['time'][()]
