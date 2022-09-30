@@ -108,8 +108,8 @@ class GravHarConfig:
     degree_min = 1
     GravHar_GM = 3.9860044150e+14
     GravHar_Radius = 6.3781363000e+06
-    Coordinate = EnumType.Coordinate.ITRS
-    ACCCoordinate = EnumType.Coordinate.GCRS
+    InputPosCoordinate = EnumType.Coordinate.ITRS
+    OutputCoordinate = EnumType.Coordinate.GCRS
 
 
 class SortCSConfig:
