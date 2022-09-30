@@ -8,16 +8,16 @@ import src.Preference.EnumType as EnumType
 
 
 include_ForceType = {ForceType.GravHar: True,
-                     ForceType.Relativity: True,
-                     ForceType.NonConserveForce: True,
-                     ForceType.PlanetaryPerturbation: True}
+                     ForceType.Relativity: False,
+                     ForceType.NonConserveForce: False,
+                     ForceType.PlanetaryPerturbation: False}
 
-include_GravHarType = {GravHarType.NonTide: True,
-                       GravHarType.PoleTide: True,
+include_GravHarType = {GravHarType.NonTide: False,
+                       GravHarType.PoleTide: False,
                        GravHarType.OceanTide: True,
-                       GravHarType.AtmosphereTide: True,
-                       GravHarType.SolidEarthTide: True,
-                       GravHarType.ReferenceModel: True}
+                       GravHarType.AtmosphereTide: False,
+                       GravHarType.SolidEarthTide: False,
+                       GravHarType.ReferenceModel: False}
 
 instance_GravHar = {GravHarType.NonTide: InstanceNonTide.AODRL06,
                     GravHarType.PoleTide: InstancePoleTide.PoleTideIERS2010,
@@ -106,8 +106,15 @@ class GravHarConfig:
     setZero = [0, 1]
     degree_max = 90
     degree_min = 1
-    GravHar_GM = 0.3986004415E+15
-    GravHar_Radius = 0.6378136460E+07
+    GravHar_GM = 3.9860044150e+14
+    GravHar_Radius = 6.3781363000e+06
+    Coordinate = EnumType.Coordinate.ITRS
+    ACCCoordinate = EnumType.Coordinate.GCRS
+
+
+class SortCSConfig:
+    degree_max = 90
+    degree_min = 1
 
 
 class RefGravModelConfig:

@@ -32,7 +32,7 @@ def demo1():
     time2 = time.time()
 
     print(time2 - time1)
-    np.savez('data2.npz', time=X_GJ, R_GJ=R_GJ, V_GJ=V_GJ)
+    # np.savez('data2.npz', time=X_GJ, R_GJ=R_GJ, V_GJ=V_GJ)
     print(X_GJ)
     print(R_GJ)
     print(V_GJ)

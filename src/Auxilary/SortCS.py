@@ -21,8 +21,8 @@ class SortCS:
     Notice, all is given in one-dimension
     """
 
-    def __init__(self, method=CSseq.SortByOrder, degree_max=Pre_ForceModel.GravHarConfig.degree_max,
-                 degree_min=Pre_ForceModel.GravHarConfig.degree_min):
+    def __init__(self, method=CSseq.SortByOrder, degree_max=Pre_ForceModel.SortCSConfig.degree_max,
+                 degree_min=Pre_ForceModel.SortCSConfig.degree_min):
 
         if method == CSseq.Normal:
             self.__sort = self.__method1(degree_max, degree_min)

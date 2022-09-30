@@ -24,10 +24,6 @@ class BaseSecondDerivative:
         acc = np.zeros(3, dtype=float)
         return acc
 
-    def getAccelerationITRS(self, **kwargs):
-        acc = np.zeros(3, dtype=float)
-        return acc
-
     def getDaDx(self, **kwargs):
         dadx = np.zeros(3, dtype=float)
         return dadx

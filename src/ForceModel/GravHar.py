@@ -292,6 +292,49 @@ class PyGravHar(AbsGravHar):
 
         return acc
 
+    def getAccelerationGCRS(self):
+        """
+        [m/s^2] in ITRS frame
+        Notice, this is only the acc due to geopential rather than the true gravity acceleration
+        :return: three-dimensional accelerations a_x, a_y, a_z
+        """
+
+        acc = np.zeros(3, dtype=np.float)
+
+        V, W = self.__V, self.__W
+        (f1meq0, f2meq0, f1meq1, f2meq1, f3meq1, grdtcn1, grdtcn2, grdtcn3, grdtcn4,
+         grdtcn5, grdtcn6, grdtcn7, grdtcn8, grdtcn9, grdtcn10, grdtcn11, grdtcn12, vwmeq1, vwn1, vwn2,
+         f1mgt1, f2mgt1, f3mgt1, grdtcnm1, grdtcnm2, grdtcnm3, grdtcnm4, grdtcnm5, grdtcnm6, vwnm1,
+         vwnm2) = self.__coeff
+
+        Nmax = self._Nmax
+        for m in range(Nmax + 1):
+            for n in range(m, Nmax + 1):
+                index = int(n * (n + 1) / 2 + m)
+                C = self._Cpot[index]
+                S = self._Spot[index]
+
+                if m == 0:
+                    acc[0] += - C * V[n + 1, 1] * f1meq0[n]
+                    acc[1] += - C * W[n + 1, 1] * f1meq0[n]
+                    acc[2] += - C * V[n + 1, 0] * f2meq0[n]
+                elif m == 1:
+                    acc[0] += 0.5 * (f1meq1[n] * (- C * V[n + 1, 2] - S * W[n + 1, 2]) + f2meq1[n] * C * V[n + 1, 0])
+                    acc[1] += 0.5 * (f1meq1[n] * (- C * W[n + 1, 2] + S * V[n + 1, 2]) + f2meq1[n] * S * V[n + 1, 0])
+                    acc[2] += f3meq1[n] * (- C * V[n + 1, 1] - S * W[n + 1, 1])
+                else:
+                    acc[0] += 0.5 * (f1mgt1[index] * (- C * V[n + 1, m + 1] - S * W[n + 1, m + 1]) +
+                                     f2mgt1[index] * (+ C * V[n + 1, m - 1] + S * W[n + 1, m - 1]))
+                    acc[1] += 0.5 * (f1mgt1[index] * (- C * W[n + 1, m + 1] + S * V[n + 1, m + 1]) +
+                                     f2mgt1[index] * (- C * W[n + 1, m - 1] + S * V[n + 1, m - 1]))
+                    acc[2] += f3mgt1[index] * (- C * V[n + 1, m] - S * W[n + 1, m])
+
+        GM = self._GM
+        R_ref = self._Radius
+        acc = (GM / (R_ref * R_ref)) * acc
+
+        return acc
+
     def getDaDx(self):
         """
         in [ITRS] frame
@@ -527,6 +570,16 @@ class ClibGravHar(AbsGravHar):
         self.__gravlib.getAcc(self._Nmax, self._Cpot, self._Spot, acc)
 
         return acc.copy()
+
+    # def getAccelerationGCRS(self, rm):
+    #
+    #
+    #     acc = np.zeros(3)
+    #     self.__gravlib.getAcc(self._Nmax, self._Cpot, self._Spot, acc)
+    #
+    #     acc = self.__time.AccITRS2GCRS(acc, self.__time.getRotationMatrix)
+    #     acc = np.array(acc)
+    #     return acc.copy()
 
     def getDaDp(self, degree_max: int = GravHarConfig.degree_max, degree_min=GravHarConfig.degree_min):
 

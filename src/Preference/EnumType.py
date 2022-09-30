@@ -15,6 +15,11 @@ class TimeFormat(Enum):
     TAI_MJD = 3
 
 
+class Coordinate(Enum):
+    GCRS = 0
+    ITRS = 1
+
+
 class CoordinateTransform(Enum):
     CIOxy = 1
     CIOangle = 2

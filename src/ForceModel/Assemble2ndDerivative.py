@@ -5,6 +5,7 @@ from src.ForceModel.ConfigForce import ConfigForce
 from src.ForceModel.ConfigGravHar import ConfigGravHar
 from src.Frame.PlanetEphemerides import PlanetEphemerides
 from src.ForceModel.NonConservative import AbsNonConservative
+import src.Preference.EnumType as EnumType
 from src.Auxilary.SortCS import SortCS
 import src.Preference.Pre_Parameterization as Pre_Parameterization
 import numpy as np
@@ -51,7 +52,9 @@ class Assemble2ndDerivative:
     def __calculation(self):
         for obj in self.ForceType.values():
             if isinstance(obj, ConfigGravHar):
-                pos = self.__time.PosGCRS2ITRS(np.array(self.__pos).astype(float), self.__time.getRotationMatrix)
+                rm = self.__time.getRotationMatrix
+                if obj.Coordinate is EnumType.Coordinate.GCRS:
+                    self.__pos = self.__time.PosGCRS2ITRS(np.array(self.__pos).astype(float), rm)
                 c, s = obj.setTime(self.__time).getTotalCS()
                 if len(obj.setZero) != 0:
                     for index in obj.setZero:
@@ -59,11 +62,12 @@ class Assemble2ndDerivative:
                         end = int((index + 1) * (index + 2) / 2)
                         c[start: end] = 0.
                         s[start: end] = 0.
-                cgh = obj.ClibGravHar.setPar(c, s, pos)
+                cgh = obj.ClibGravHar.setPar(c, s, self.__pos)
+
                 acc = cgh.getAcceleration()
-                acc = self.__time.AccITRS2GCRS(acc, self.__time.getRotationMatrix)
-                acc = np.array(acc)
-                self.__acc += acc[:, 0]
+                if obj.ACCCoordinate is EnumType.Coordinate.GCRS:
+                    acc = self.__time.AccITRS2GCRS(acc, rm).flatten()
+                self.__acc += acc
 
                 if Pre_Parameterization.TransitionMatrix.isRequired:
                     res = cgh.getDaDx()

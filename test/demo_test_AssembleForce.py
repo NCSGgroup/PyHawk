@@ -21,13 +21,10 @@ def demo1():
 
     # instance assemble model
     assem_model = Assemble2ndDerivative()
+    assem_model = assem_model.setPosAndVel(startPos, startVel).setTime(fr.setTime(GPS_Time))
+    assem_model.getDaDx()
+    assem_model.getDaDp()
 
-    # ODE
-    # propagator = GravimetryODE(fr).setInitial(GPS_Time, startPos, startVel).setForceModel(assem_model)
-    # X_GJ, R_GJ, v = propagator.propagate()
-    # print(X_GJ)
-    # print(R_GJ)
-    # print(v)
 
 
 if __name__ == '__main__':
