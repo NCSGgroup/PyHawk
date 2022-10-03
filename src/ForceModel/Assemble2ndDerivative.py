@@ -53,7 +53,7 @@ class Assemble2ndDerivative:
         for obj in self.ForceType.values():
             if isinstance(obj, ConfigGravHar):
                 rm = self.__time.getRotationMatrix
-                if obj.Coordinate is EnumType.Coordinate.GCRS:
+                if obj.PosCoordinate is EnumType.Coordinate.GCRS:
                     self.__pos = self.__time.PosGCRS2ITRS(np.array(self.__pos).astype(float), rm)
                 c, s = obj.setTime(self.__time).getTotalCS()
                 if len(obj.setZero) != 0:
@@ -62,11 +62,12 @@ class Assemble2ndDerivative:
                         end = int((index + 1) * (index + 2) / 2)
                         c[start: end] = 0.
                         s[start: end] = 0.
-                cgh = obj.ClibGravHar.setPar(c, s, self.__pos)
+                cgh = obj.ClibGravHar.setPar(c, s, self.__pos.copy())
 
                 acc = cgh.getAcceleration()
                 if obj.ACCCoordinate is EnumType.Coordinate.GCRS:
                     acc = self.__time.AccITRS2GCRS(acc, rm).flatten()
+
                 self.__acc += acc
 
                 if Pre_Parameterization.TransitionMatrix.isRequired:

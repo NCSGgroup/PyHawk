@@ -14,8 +14,8 @@ include_ForceType = {ForceType.GravHar: True,
 
 include_GravHarType = {GravHarType.NonTide: False,
                        GravHarType.PoleTide: False,
-                       GravHarType.OceanTide: True,
-                       GravHarType.AtmosphereTide: False,
+                       GravHarType.OceanTide: False,
+                       GravHarType.AtmosphereTide: True,
                        GravHarType.SolidEarthTide: False,
                        GravHarType.ReferenceModel: False}
 
@@ -52,17 +52,17 @@ class ThreeBodyConfig:
                     'Neptune': 6836527.100580024e9,
                     'Pluto': 975.5011758767654e9}
     include_planets = {
-        EnumType.Planets.Sun.name: True,
-        EnumType.Planets.Moon.name: True,
+        EnumType.Planets.Sun.name: False,
+        EnumType.Planets.Moon.name: False,
         EnumType.Planets.Mercury.name: True,
         EnumType.Planets.Venus.name: True,
-        EnumType.Planets.Earth.name: True,
+        EnumType.Planets.Earth.name: False,
         EnumType.Planets.Mars.name: True,
         EnumType.Planets.Jupiter.name: True,
         EnumType.Planets.Saturn.name: True,
-        EnumType.Planets.Uranus.name: True,
-        EnumType.Planets.Neptune.name: True,
-        EnumType.Planets.Pluto.name: True}
+        EnumType.Planets.Uranus.name: False,
+        EnumType.Planets.Neptune.name: False,
+        EnumType.Planets.Pluto.name: False}
     isJ2 = False
 
 
@@ -95,7 +95,7 @@ class LoveNumberConfig:
 
 class PoleTideConfig:
     Kind = {'Solid Earth': True,
-            'Ocean': True}
+            'Ocean': False}
     SimpleOcean = False
     Polar2wobble = 2
     MaxDegreeOfOcean = LoveNumberConfig.Nmax
@@ -103,12 +103,12 @@ class PoleTideConfig:
 
 
 class GravHarConfig:
-    setZero = [0, 1]
+    setZero = [0,1]
     degree_max = 90
     degree_min = 1
-    GravHar_GM = 3.9860044150e+14
-    GravHar_Radius = 6.3781363000e+06
-    Coordinate = EnumType.Coordinate.ITRS
+    GravHar_GM = 0.3986004415E+15
+    GravHar_Radius = 0.6378136460E+07
+    PosCoordinate = EnumType.Coordinate.ITRS
     ACCCoordinate = EnumType.Coordinate.GCRS
 
 
