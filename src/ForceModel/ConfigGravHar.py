@@ -24,8 +24,8 @@ class ConfigGravHar:
         self.__time = None
         self.__ep = ep
         self.setZero = Pre_ForceModel.GravHarConfig.setZero.copy()
-        self.PosCoordinate = Pre_ForceModel.GravHarConfig.PosCoordinate
-        self.ACCCoordinate = Pre_ForceModel.GravHarConfig.ACCCoordinate
+        self.InputPosCoordinate = Pre_ForceModel.GravHarConfig.InputPosCoordinate
+        self.OutputCoordinate = Pre_ForceModel.GravHarConfig.OutputCoordinate
         self.GravHarForce = {}
         self.ClibGravHar = ClibGravHar().setConstant()
 
