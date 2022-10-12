@@ -26,7 +26,6 @@ def demo1():
     assem_model.getDaDp()
 
 
-
 if __name__ == '__main__':
     demo1()
 

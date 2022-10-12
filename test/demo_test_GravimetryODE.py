@@ -54,10 +54,10 @@ def demo2():
     matplotlib.rcParams.update({'font.size': 24})
     fig = plt.figure()
 
-    plt.plot(oldTime, diff_V[:, 0] * 1e6, label='diff_V_X', linewidth=3)
-    plt.plot(oldTime, diff_V[:, 1] * 1e6, label='diff_V_Y', linewidth=3)
-    plt.plot(oldTime, diff_V[:, 2] * 1e6, label='diff_V_Z', linewidth=3)
-    plt.plot(oldTime, np.sqrt(np.sum(diff_V ** 2, 1)) * 1e6, label='diff_V', linewidth=3)
+    plt.plot(oldTime, diff_R[:, 0] * 1e6, label='diff_R_X', linewidth=3)
+    plt.plot(oldTime, diff_R[:, 1] * 1e6, label='diff_R_Y', linewidth=3)
+    plt.plot(oldTime, diff_R[:, 2] * 1e6, label='diff_R_Z', linewidth=3)
+    plt.plot(oldTime, np.sqrt(np.sum(diff_R ** 2, 1)) * 1e6, label='diff_R', linewidth=3)
 
     plt.xlim(oldTime[0], oldTime[-1])
     # plt.ylim(0, )
@@ -73,5 +73,6 @@ def demo2():
 
 
 if __name__ == '__main__':
-    demo1()
-    # demo2()
+    # demo1()
+    demo2()
+

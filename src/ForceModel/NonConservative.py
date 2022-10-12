@@ -42,7 +42,6 @@ class NonConByAcc(AbsNonConservative):
     def __loadAccelerometer(self):
         filename = pathlib.Path(self.__dataTemp).joinpath(
             self._range[0] + '_' + self._range[1] + '_' + self.sat.name + '_' + str(self._arcNo) + '.hdf5')
-        print(filename)
         h5data = h5py.File(filename, "r")
 
         self.__time = h5data['time'][()]
@@ -55,17 +54,15 @@ class NonConByAcc(AbsNonConservative):
         :param time: GPS seconds since J2000
         :return:
         """
-        self.__GPStime = time.getGPS_from_epoch2000
         '''assuring the time is located within the range'''
         err = 1e-3 # GPS time is not that accurate because of the increment of the time
-        assert self.__time[0] - err <= self.__GPStime <= self.__time[-1] + err, 'ACC instrument does not cover the given time '
+        assert self.__time[0] - err <= time.getGPS_from_epoch2000 <= self.__time[-1] + err, 'ACC instrument does not cover the given time '
         # TODO: efficiency
-        self.__idx = np.abs(self.__GPStime - self.__time).argmin()
+        self.__idx = np.abs(time.getGPS_from_epoch2000 - self.__time).argmin()
         return self
 
     def getAcceleration(self):
         """
-
         :return: acc [m/s][GCRS]
         """
         return self.__acc[self.__idx, :]

@@ -2,6 +2,7 @@ from src.Frame.Frame import Frame, EOP
 from src.Interface.L1b import GRACE_OLD_RL02, GRACE_FO_RL04, GRACE_NEW_RL02
 from src.Interface.GapFix import GapFix
 
+
 def demo1():
     # fr = Frame(EOP().load())
     s = GRACE_OLD_RL02().configure().setDate()
@@ -12,6 +13,7 @@ def demo1():
     # s.getData()
     # s.clear()
     pass
+
 
 if __name__ == '__main__':
     demo1()
