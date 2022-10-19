@@ -21,6 +21,8 @@ def demo1():
     GPS_Time = res[4, 0]
     startPos = res[4, 1:4]
     startVel = res[4, 4:7]
+    # startPos = np.vstack((res[4, 1:4], res[4, 1:4]))
+    # startVel = np.vstack((res[4, 4:7], res[4, 4:7]))
 
     # instance assemble model
     assem_model = Assemble2ndDerivative()
@@ -29,6 +31,7 @@ def demo1():
     time1 = time.time()
     propagator = GravimetryODE(fr).setInitial(GPS_Time, startPos, startVel).setForceModel(assem_model)
     X_GJ, R_GJ, V_GJ = propagator.propagate()
+    pass
     time2 = time.time()
 
     print(time2 - time1)
@@ -54,17 +57,17 @@ def demo2():
     matplotlib.rcParams.update({'font.size': 24})
     fig = plt.figure()
 
-    plt.plot(oldTime, diff_R[:, 0] * 1e6, label='diff_R_X', linewidth=3)
-    plt.plot(oldTime, diff_R[:, 1] * 1e6, label='diff_R_Y', linewidth=3)
-    plt.plot(oldTime, diff_R[:, 2] * 1e6, label='diff_R_Z', linewidth=3)
-    plt.plot(oldTime, np.sqrt(np.sum(diff_R ** 2, 1)) * 1e6, label='diff_R', linewidth=3)
+    plt.plot(oldTime, diff_R[:, 0], label='diff_R_X', linewidth=3)
+    plt.plot(oldTime, diff_R[:, 1], label='diff_R_Y', linewidth=3)
+    plt.plot(oldTime, diff_R[:, 2], label='diff_R_Z', linewidth=3)
+    plt.plot(oldTime, np.sqrt(np.sum(diff_R ** 2, 1)), label='diff_R', linewidth=3)
 
     plt.xlim(oldTime[0], oldTime[-1])
     # plt.ylim(0, )
     plt.legend(loc='upper left', fontsize=28)
     plt.title('NewGravimetryODE VS OldGravimetryODE')
     plt.xlabel('Time (min)')
-    plt.ylabel('between error relative R[mm]')
+    plt.ylabel('between error relative R[m]')
     plt.grid()
     plt.gca().yaxis.get_major_formatter().set_powerlimits((0, 2))
     plt.show()

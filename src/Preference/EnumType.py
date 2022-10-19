@@ -56,7 +56,8 @@ class SingleStepType(Enum):
 
 class MultiStepType(Enum):
     GaussJackson = 1
-    ABM8 = 2
+    MatrixGaussJackson = 2
+    ABM8 = 3
 
 
 class OdeVariable(Enum):

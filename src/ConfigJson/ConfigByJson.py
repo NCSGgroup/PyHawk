@@ -7,6 +7,8 @@ class ConfigFMbyJson:
     def __init__(self):
         self.__config = None
 
+    # print(EnumType.InstanceOceanTide.EOT11a)
+
     def configure(self, config: dict):
         self.__config = config
         for term in self.__config.keys():
@@ -15,8 +17,11 @@ class ConfigFMbyJson:
                 for force in EnumType.ForceType:
                     Pre_ForceModel.include_ForceType[force] = content[force.name]
             elif term == 'include_GravHarType':
+                for GravHarType in EnumType.GravHarType:
+                    Pre_ForceModel.include_GravHarType[GravHarType] = content[GravHarType.name]
+            elif term == 'instance_GravHar':
                 for GravHar in EnumType.GravHarType:
-                    Pre_ForceModel.include_GravHarType[GravHar] = content[GravHar.name]
+                    Pre_ForceModel.instance_GravHar[GravHar] = content[GravHar.name]
         return self
 
 

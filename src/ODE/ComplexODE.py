@@ -2,7 +2,7 @@ import numpy as np
 import json
 from tqdm import tqdm
 from src.ODE.SingleStepODE import SingleStepOde, RK4, RK8, RKN
-from src.ODE.MultiStepODE import MultiStepOde, GaussJackson, ABM8
+from src.ODE.MultiStepODE import MultiStepOde, GaussJackson, ABM8, MatrixGaussJackson
 import src.Preference.Pre_ODE as Pre_ODE
 from src.Preference.EnumType import SingleStepType, MultiStepType
 
@@ -27,6 +27,8 @@ class ConfigComplexODE:
 
         if multi is MultiStepType.GaussJackson:
             self.MultiStepOde = GaussJackson()
+        elif multi is MultiStepType.MatrixGaussJackson:
+            self.MultiStepOde = MatrixGaussJackson()
         elif multi is MultiStepType.ABM8:
             self.MultiStepOde = ABM8()
 

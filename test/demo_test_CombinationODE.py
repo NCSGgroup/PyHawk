@@ -42,8 +42,8 @@ def demo2():
     v0 = np.array([0, np.sqrt(mu / np.linalg.norm(r0)), 0])
     # the unit is km
     x0 = 0
-    h = 30
-    Nstep = 720 * 2
+    h = 5
+    Nstep = 4316
     config = ConfigComplexODE(SingleStepType.RKN, MultiStepType.GaussJackson).setOdePar()
     propagator = ComplexODE(config).setSecondDerivative(force_for_demo_use).setInitial(x0, r0, v0)
     X_GJ, R_GJ, v = propagator.propagate()
@@ -51,15 +51,16 @@ def demo2():
     kepler = KeplerOrbit().setInitial(x0, r0, v0).setArg(GM=mu)
     X_ke, R_ke, V_ke = kepler.propagate(Nstep + int(order / 2), h)
 
-    print(len(X_GJ))
-    print(len(X_ke))
-    plt.plot(np.array(X_GJ[4:-1]) / 60,
-             np.sqrt(np.sum((np.array(R_GJ[4:-1])
-                             - R_ke[0:-6]) ** 2, 1)) * 1e6,
+    print(X_GJ[4:])
+    print(X_ke[0:-5])
+    plt.plot(np.array(X_GJ[4:]) / 60,
+             np.sqrt(np.sum((np.array(R_GJ[4:])
+                             - R_ke[0:-5]) ** 2, 1)) * 1e6,
              label='Gauss-Jackson 8th', linewidth=3)
     plt.show()
     np.save('data.npy',np.sqrt(np.sum((np.array(R_GJ[4:-1])
                              - R_ke[0:-6]) ** 2, 1)) * 1e6)
+
 
 if __name__ == '__main__':
     demo2()

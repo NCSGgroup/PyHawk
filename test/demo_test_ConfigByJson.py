@@ -6,11 +6,15 @@ from src.ConfigJson.ConfigByJson import ConfigFMbyJson
 from src.ODE.GravimetryODE import GravimetryODE
 import json
 import numpy as np
+import src.Preference.EnumType as EnumType
+import src.Preference.Pre_ForceModel as Pre_ForceModel
 
 
 def demo1():
-    with open('../setting/GraceTestForceModel_A.json') as load_f:
+    with open('../setting/BenchMarkTest_ForceModel.setting.json') as load_f:
         configA = json.load(load_f)
+    with open('../setting/GraceTestForceModel_B.json') as load_f:
+        configB = json.load(load_f)
     fr = Frame(EOP(True).load())
 
     '''sat state'''
@@ -22,12 +26,19 @@ def demo1():
 
     '''sat force'''
     fr.setTime(504964830, TimeFormat.GPS_second)
-    # pc = ConfigFMbyJson().configure(configA)
-    modelA = Assemble2ndDerivative()
-    print(modelA.ForceType)
+    for force in EnumType.GravHarType:
+        print(1, force, Pre_ForceModel.instance_GravHar[force])
+    pc = ConfigFMbyJson().configure(configA)
+    for force in EnumType.GravHarType:
+        print(2, force, Pre_ForceModel.instance_GravHar[force])
+    # pc = ConfigFMbyJson().configure(configB)
+    # for force in EnumType.ForceType:
+    #     print(3, force, Pre_ForceModel.instance_GravHar[force])
+    # modelA = Assemble2ndDerivative()
+    # print(modelA.ForceType)
     # modelA = modelA.setPosAndVel(posA, velA).setTime(fr)
     # pc = ConfigFMbyJson().configure(configA)
-    modelB = Assemble2ndDerivative()
+    # modelB = Assemble2ndDerivative()
     # modelB = modelB.setPosAndVel(posA, velA).setTime(fr)
     # print(modelB.ForceType)
     # print(modelA.getAcceleration())

@@ -7,17 +7,17 @@ import numpy as np
 import src.Preference.EnumType as EnumType
 
 
-include_ForceType = {ForceType.GravHar: False,
-                     ForceType.Relativity: True,
-                     ForceType.NonConserveForce: True,
-                     ForceType.PlanetaryPerturbation: True}
+include_ForceType = {ForceType.GravHar: True,
+                     ForceType.Relativity: False,
+                     ForceType.NonConserveForce: False,
+                     ForceType.PlanetaryPerturbation: False}
 
-include_GravHarType = {GravHarType.NonTide: True,
-                       GravHarType.PoleTide: True,
-                       GravHarType.OceanTide: True,
-                       GravHarType.AtmosphereTide: True,
+include_GravHarType = {GravHarType.NonTide: False,
+                       GravHarType.PoleTide: False,
+                       GravHarType.OceanTide: False,
+                       GravHarType.AtmosphereTide: False,
                        GravHarType.SolidEarthTide: True,
-                       GravHarType.ReferenceModel: True}
+                       GravHarType.ReferenceModel: False}
 
 instance_GravHar = {GravHarType.NonTide: InstanceNonTide.AODRL06,
                     GravHarType.PoleTide: InstancePoleTide.PoleTideIERS2010,
@@ -40,29 +40,29 @@ class OceanTideConfig:
 
 class ThreeBodyConfig:
     ThreeBody_GM_Sun = 1.32712442076e20
-    ThreeBody_GM = {'Earth': 398600.44150e9,
-                    'Sun': 1.32712442076e20,
-                    'Moon': 0.49028010560e13,
-                    'Mercury': ThreeBody_GM_Sun / 6023600.0,
-                    'Venus': ThreeBody_GM_Sun / 408523.71,
-                    'Mars': ThreeBody_GM_Sun / 3098708.0,
-                    'Jupiter': ThreeBody_GM_Sun / 1047.3486,
-                    'Saturn': ThreeBody_GM_Sun / 3497.898,
-                    'Uranus': 5794556.465751793e9,
-                    'Neptune': 6836527.100580024e9,
-                    'Pluto': 975.5011758767654e9}
+    ThreeBody_GM = {EnumType.Planets.Earth.name: 398600.44150e9,
+                    EnumType.Planets.Sun.name: 1.32712442076e20,
+                    EnumType.Planets.Moon.name: 0.49028010560e13,
+                    EnumType.Planets.Mercury.name: ThreeBody_GM_Sun / 6023600.0,
+                    EnumType.Planets.Venus.name: ThreeBody_GM_Sun / 408523.71,
+                    EnumType.Planets.Mars.name: ThreeBody_GM_Sun / 3098708.0,
+                    EnumType.Planets.Jupiter.name: ThreeBody_GM_Sun / 1047.3486,
+                    EnumType.Planets.Saturn.name: ThreeBody_GM_Sun / 3497.898,
+                    EnumType.Planets.Uranus.name: 5794556.465751793e9,
+                    EnumType.Planets.Neptune.name: 6836527.100580024e9,
+                    EnumType.Planets.Pluto.name: 975.5011758767654e9}
     include_planets = {
-        EnumType.Planets.Sun.name: True,
+        EnumType.Planets.Sun.name: False,
         EnumType.Planets.Moon.name: True,
-        EnumType.Planets.Mercury.name: True,
-        EnumType.Planets.Venus.name: True,
-        EnumType.Planets.Earth.name: True,
-        EnumType.Planets.Mars.name: True,
-        EnumType.Planets.Jupiter.name: True,
-        EnumType.Planets.Saturn.name: True,
-        EnumType.Planets.Uranus.name: True,
-        EnumType.Planets.Neptune.name: True,
-        EnumType.Planets.Pluto.name: True}
+        EnumType.Planets.Mercury.name: False,
+        EnumType.Planets.Venus.name: False,
+        EnumType.Planets.Earth.name: False,
+        EnumType.Planets.Mars.name: False,
+        EnumType.Planets.Jupiter.name: False,
+        EnumType.Planets.Saturn.name: False,
+        EnumType.Planets.Uranus.name: False,
+        EnumType.Planets.Neptune.name: False,
+        EnumType.Planets.Pluto.name: False}
     isJ2 = False
 
 
@@ -108,7 +108,7 @@ class GravHarConfig:
     degree_min = 2
     GravHar_GM = 0.3986004415E+15
     GravHar_Radius = 0.6378136460E+07
-    PosCoordinate = EnumType.Coordinate.GCRS
+    PosCoordinate = EnumType.Coordinate.ITRS
     ACCCoordinate = EnumType.Coordinate.GCRS
 
 
@@ -131,18 +131,20 @@ class NonTideConfig:
 
 class AtmosTideConfig:
     SR = 1e-3
-    AODtide = {TidesType.S1: True,
-               TidesType.S2: True,
-               TidesType.M2: True,
-               TidesType.S3: True,
-               TidesType.P1: True,
-               TidesType.K1: True,
-               TidesType.N2: True,
-               TidesType.L2: True,
-               TidesType.T2: True,
-               TidesType.R2: True,
-               TidesType.T3: True,
-               TidesType.R3: True}
+    AODtide = {
+        TidesType.P1: True,
+        TidesType.S1: True,
+        TidesType.K1: True,
+        TidesType.N2: True,
+        TidesType.M2: True,
+        TidesType.L2: True,
+        TidesType.T2: True,
+        TidesType.S2: True,
+        TidesType.R2: True,
+        TidesType.T3: True,
+        TidesType.S3: True,
+        TidesType.R3: True,
+    }
     kind = AODtype.ATM
     Nmax = 180
     BB2003tide = {TidesType.S1: True,

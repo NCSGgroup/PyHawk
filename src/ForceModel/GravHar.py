@@ -475,7 +475,7 @@ class ClibGravHar(AbsGravHar):
         super(ClibGravHar, self).__init__()
         '''# Attempt to find grav library to load'''
         if platform.system() == 'Windows':
-            gravlib_filename = _glob.glob(str(_pathlib.Path(__file__).parent.parent.parent.joinpath('lib', 'Project1.dll')))
+            gravlib_filename = _glob.glob(str(_pathlib.Path(__file__).parent.parent.parent.joinpath('lib', 'GravHar.dll')))
         elif platform.system() == 'Linux':
             gravlib_filename = _glob.glob(str(_pathlib.Path(__file__).parent.parent.parent.joinpath('lib', 'GravHar.so')))
 
@@ -529,7 +529,7 @@ class ClibGravHar(AbsGravHar):
                 :param Pos: position in ITRS frame, a three dimension array
                 :return:
                 """
-        assert len(Pos) == 3
+        # assert len(Pos) == 3
         assert len(Cpot) == len(Spot)
         L = len(Cpot)
         N = int(np.round(np.sqrt(2 * L))) - 1

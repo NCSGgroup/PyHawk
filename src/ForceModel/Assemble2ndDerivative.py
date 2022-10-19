@@ -56,7 +56,7 @@ class Assemble2ndDerivative:
 
                 pos = self.__pos
                 if obj.InputPosCoordinate is EnumType.Coordinate.GCRS:
-                    pos = self.__time.PosGCRS2ITRS(np.array(self.__pos).astype(float), rm)
+                    pos = self.__time.PosGCRS2ITRS(np.array(self.__pos.copy()).astype(float), rm)
                 c, s = obj.setTime(self.__time).getTotalCS()
                 if len(obj.setZero) != 0:
                     for index in obj.setZero:

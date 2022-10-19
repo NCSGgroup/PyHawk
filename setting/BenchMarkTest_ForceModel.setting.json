@@ -1,0 +1,77 @@
+{
+    "include_ForceType": {
+        "GravHar": false,
+        "Relativity": true,
+        "NonConserveForce": false,
+        "PlanetaryPerturbation": false
+    },
+    "include_GravHarType": {
+        "NonTide": true,
+        "PoleTide": true,
+        "OceanTide": true,
+        "AtmosphereTide": true,
+        "SolidEarthTide": true,
+        "ReferenceModel": true
+    },
+    "instance_GravHar": {
+        "NonTide": "InstanceNonTide.AODRL06",
+        "PoleTide": "InstancePoleTide.PoleTideIERS2010",
+        "OceanTide": "InstanceOceanTide.EOT11a",
+        "AtmosphereTide": "InstanceAtmosTide.AtmosAOD",
+        "SolidEarthTide": "InstanceSolidTide.SolidTideIERS2010",
+        "ReferenceModel": "InstanceReferenceModel.RefGravModel"
+    },
+    "NonConservative": {
+        "date_span": "['2016-01-01', '2016-01-31']",
+        "arcNo": 0,
+        "sat": "SatID.A"
+    },
+    "OceanTideConfig": {
+        "gainFactor": 1e-3,
+        "maxDegree": 120
+    },
+    "ThreeBodyConfig": {
+        "ThreeBody_GM_Sun": 1.32712442076e20,
+        "ThreeBody_GM": {
+
+        },
+        "include_planets": 1,
+        "isJ2": false
+    },
+    "Relativity": {
+        "isRequired": true,
+        "Constants": {
+            "GM_Earth": 398600441800000.0,
+            "GM_Sun": 1.32712442076e+20,
+            "c_light": 299792458
+        },
+        "Kind": [
+            "SchwarzChild"
+        ]
+    },
+    "Non-tidal AOD": {
+        "isRequired": true,
+        "Path": "../data/AOD/RL06",
+        "Max degree": 100,
+        "Type": 2,
+        "Time resolution": 3
+    },
+    "NonConservative for Sat I": {
+        "isRequired": true,
+        "kind": 0,
+        "sat": "A",
+        "range": [
+            505051200,
+            505072795
+        ]
+    },
+    "NonConservative for Sat II": {
+        "isRequired": false,
+        "kind": 0,
+        "sat": "B",
+        "range": [
+            505051200,
+            505072795
+        ]
+    }
+}
