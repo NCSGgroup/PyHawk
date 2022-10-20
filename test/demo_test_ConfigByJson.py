@@ -26,11 +26,9 @@ def demo1():
 
     '''sat force'''
     fr.setTime(504964830, TimeFormat.GPS_second)
-    for force in EnumType.GravHarType:
-        print(1, force, Pre_ForceModel.instance_GravHar[force])
+    print(Pre_ForceModel.LoveNumberConfig.method)
     pc = ConfigFMbyJson().configure(configA)
-    for force in EnumType.GravHarType:
-        print(2, force, Pre_ForceModel.instance_GravHar[force])
+    print(Pre_ForceModel.LoveNumberConfig.method)
     # pc = ConfigFMbyJson().configure(configB)
     # for force in EnumType.ForceType:
     #     print(3, force, Pre_ForceModel.instance_GravHar[force])

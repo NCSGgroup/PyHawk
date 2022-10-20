@@ -33,45 +33,110 @@
     "ThreeBodyConfig": {
         "ThreeBody_GM_Sun": 1.32712442076e20,
         "ThreeBody_GM": {
-
+            "Earth" : 398600.44150e9,
+            "Sun" : 1.32712442076e20,
+            "Moon" : 0.49028010560e13,
+            "Mercury" : "ThreeBody_GM_Sun / 6023600.0",
+            "Venus" : "ThreeBody_GM_Sun / 408523.71",
+            "Mars" : "ThreeBody_GM_Sun / 3098708.0",
+            "Jupiter" : "ThreeBody_GM_Sun / 1047.3486",
+            "Saturn" : "ThreeBody_GM_Sun / 3497.898",
+            "Uranus" : 5794556.465751793e9,
+            "Neptune" : 6836527.100580024e9,
+            "Pluto" : 975.5011758767654e9
         },
-        "include_planets": 1,
-        "isJ2": false
+        "include_planets": {
+            "Earth" : true,
+            "Sun" : true,
+            "Moon" : true,
+            "Mercury" : true,
+            "Venus" : true,
+            "Mars" : true,
+            "Jupiter" : true,
+            "Saturn" : true,
+            "Uranus" : true,
+            "Neptune" : true,
+            "Pluto" : true
+        },
+        "isJ2" : false
     },
     "Relativity": {
-        "isRequired": true,
-        "Constants": {
-            "GM_Earth": 398600441800000.0,
-            "GM_Sun": 1.32712442076e+20,
-            "c_light": 299792458
+        "GM_Sun": 1.32712442076e20,
+        "GM_Earth": 0.3986004415E+15,
+        "C_Light": 299792458,
+        "J": [0, 0, 9.8e8],
+        "Gamma": 1,
+        "Beta": 1,
+        "Kind": {
+            "SchwarzChild" : true,
+            "LenseThirring" : true,
+            "Desitter" : true
+        }
+    },
+    "SolidTideConfig": {
+        "GM_Earth": 0.3986004415E+15,
+        "GM_Sun": 1.32712442076e20,
+        "GM_Moon": 0.49028010560e13,
+        "Radius_Earth": 0.6378136460E+07,
+        "isZeroTide": false
+    },
+    "LoveNumberConfig": {
+        "Nmax": 180,
+        "method": "Gegout97"
+    },
+    "PoleTideConfig": {
+        "Kind": {"Solid Earth": true,
+                "Ocean": true},
+        "SimpleOcean": false,
+        "Polar2wobble": 2
+    },
+    "GravHarConfig": {
+        "setZero": [0, 1],
+        "degree_max": 90,
+        "degree_min": 2,
+        "GravHar_GM": 0.3986004415E+15,
+        "GravHar_Radius": 0.6378136460E+07,
+        "PosCoordinate": "ITRS",
+        "ACCCoordinate": "GCRS"
+    },
+    "SortCSConfig": {
+        "degree_max": 90,
+        "degree_min": 1
+    },
+    "RefGravModelConfig": {
+        "kind": 90,
+        "Nmax": 180,
+        "StaticModel": "EIGEN6_C4"
+    },
+    "NonTideConfig": {
+        "kind": "GLO",
+        "MaxDeg": 180,
+        "TS": 3
+    },
+    "AtmosTideConfig": {
+        "SR": 1e-3,
+        "AODtide": {
+            "P1": true,
+            "S1": true,
+            "K1": true,
+            "N2": true,
+            "M2": true,
+            "L2": true,
+            "T2": true,
+            "S2": true,
+            "R2": true,
+            "T3": true,
+            "S3": true,
+            "R3": true
         },
-        "Kind": [
-            "SchwarzChild"
-        ]
+        "kind": "ATM",
+        "Nmax": 180,
+        "BB2003tide": {
+            "S1": true,
+            "S2": true
+        }
     },
-    "Non-tidal AOD": {
-        "isRequired": true,
-        "Path": "../data/AOD/RL06",
-        "Max degree": 100,
-        "Type": 2,
-        "Time resolution": 3
-    },
-    "NonConservative for Sat I": {
-        "isRequired": true,
-        "kind": 0,
-        "sat": "A",
-        "range": [
-            505051200,
-            505072795
-        ]
-    },
-    "NonConservative for Sat II": {
-        "isRequired": false,
-        "kind": 0,
-        "sat": "B",
-        "range": [
-            505051200,
-            505072795
-        ]
+    "PathOfFiles": {
+
     }
 }
