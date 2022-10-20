@@ -35,13 +35,45 @@ def demo1():
     time2 = time.time()
 
     print(time2 - time1)
-    np.savez('data2.npz', time=X_GJ, R_GJ=R_GJ, V_GJ=V_GJ)
+    # np.savez('data2.npz', time=X_GJ, R_GJ=R_GJ, V_GJ=V_GJ)
     print(X_GJ)
     print(R_GJ)
     print(V_GJ)
 
 
 def demo2():
+    fr = Frame(EOP().load())
+
+    # read Arc GRACE Data
+    rd = ArcData()
+    resA = rd.getData(arc=0, kind=EnumType.Payload.GNV, sat=EnumType.SatID.A)
+    resB = rd.getData(arc=0, kind=EnumType.Payload.GNV, sat=EnumType.SatID.B)
+    GPS_Time = resA[4, 0]
+    startPosA = resA[4, 1:4]
+    startVelA = resA[4, 4:7]
+    startPosB = resB[4, 1:4]
+    startVelB = resB[4, 4:7]
+    startPos = np.vstack((startPosA, startPosB))
+    startVel = np.vstack((startVelA, startVelB))
+
+    # instance assemble model
+    assem_model = Assemble2ndDerivative()
+
+    # ODE
+    time1 = time.time()
+    propagator = GravimetryODE(fr).setInitial(GPS_Time, startPos, startVel).setForceModel(assem_model)
+    X_GJ, R_GJ, V_GJ = propagator.propagate()
+    pass
+    time2 = time.time()
+
+    print(time2 - time1)
+    np.savez('MatrixGNV.npz', time=X_GJ, R_GJ=R_GJ, V_GJ=V_GJ)
+    print(X_GJ)
+    print(R_GJ)
+    print(V_GJ)
+
+
+def demo3():
     oldData = np.load('data1.npz')
     newData = np.load('data2.npz')
     oldTime = oldData['time']

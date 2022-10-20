@@ -34,7 +34,7 @@ class GravimetryODE:
         return self.__force.getAcceleration()
 
     def propagate(self):
-        config = ConfigComplexODE(SingleStepType.RKN, MultiStepType.GaussJackson).setOdePar()
+        config = ConfigComplexODE(SingleStepType.MatrixRKN, MultiStepType.MatrixGaussJackson).setOdePar()
         propagator = ComplexODE(config).setSecondDerivative(self.forceModel).setInitial(self.__t0, self.__r0, self.__v0)
         return propagator.propagate()
 

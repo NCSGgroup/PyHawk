@@ -52,6 +52,7 @@ class SingleStepType(Enum):
     RK4 = 1
     RK8 = 2
     RKN = 3
+    MatrixRKN = 4
 
 
 class MultiStepType(Enum):
