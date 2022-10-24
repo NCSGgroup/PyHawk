@@ -61,13 +61,13 @@ def demo2():
 
     # ODE
     time1 = time.time()
-    propagator = GravimetryODE(fr).setInitial(GPS_Time, startPos, startVel).setForceModel(assem_model)
+    propagator = GravimetryODE(fr).setInitial(GPS_Time, startPosB, startVelB).setForceModel(assem_model)
     X_GJ, R_GJ, V_GJ = propagator.propagate()
     pass
     time2 = time.time()
 
     print(time2 - time1)
-    np.savez('MatrixGNV.npz', time=X_GJ, R_GJ=R_GJ, V_GJ=V_GJ)
+    # np.savez('testMatrix.npz', time=X_GJ, R_GJ=R_GJ, V_GJ=V_GJ)
     print(X_GJ)
     print(R_GJ)
     print(V_GJ)
@@ -107,7 +107,43 @@ def demo3():
     pass
 
 
+def demo4():
+    VectorGNV = np.load('VectorGNV.npz')
+    MatrixGNV = np.load('testMatrix.npz')
+    VectorTime = VectorGNV['time']
+    MatrixTime = MatrixGNV['time']
+    VectorR = VectorGNV['R_GJ']
+    MatrixR = MatrixGNV['R_GJ'][:, 0, :]
+    VectorV = VectorGNV['V_GJ']
+    MatrixV = MatrixGNV['V_GJ'][:, 0, :]
+
+    diff_R = VectorR - MatrixR
+    diff_V = VectorV - MatrixV
+
+    matplotlib.rcParams.update({'font.size': 24})
+    fig = plt.figure()
+
+    plt.plot(VectorTime, diff_V[:, 0], label='X', linewidth=3)
+    plt.plot(VectorTime, diff_V[:, 1], label='Y', linewidth=3)
+    plt.plot(VectorTime, diff_V[:, 2], label='Z', linewidth=3)
+    # plt.plot(VectorTime, np.sqrt(np.sum(diff_V ** 2, 1)), label='rms', linewidth=3)
+
+
+    plt.xlim(VectorTime[0], VectorTime[-1])
+    # plt.ylim(0, )
+    plt.legend(loc='upper left', fontsize=28)
+    plt.title('sat A vel MartixODE VS VectorODE')
+    plt.xlabel('Time (min)')
+    plt.ylabel('between error relative R[m]')
+    plt.grid()
+    plt.gca().yaxis.get_major_formatter().set_powerlimits((0, 2))
+    plt.show()
+
+    pass
+
+
 if __name__ == '__main__':
     # demo1()
-    demo2()
+    # demo2()
+    demo4()
 

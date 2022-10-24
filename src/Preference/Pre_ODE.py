@@ -2,7 +2,9 @@ from src.Preference.EnumType import SingleStepType, MultiStepType
 
 
 class ComplexConfig:
-    pass
+    SingleStepType = SingleStepType.RKN
+    MultiStepType = MultiStepType.GaussJackson
+
 
 
 class SingleStepConfig:

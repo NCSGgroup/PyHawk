@@ -33,8 +33,19 @@ class GravimetryODE:
         self.__force = self.__force.setPosAndVel(r, v).setTime(self.__fr)
         return self.__force.getAcceleration()
 
+    def MatrixforceModel(self, t, r, v):
+        self.__fr = self.__fr.setTime(t, TimeFormat.GPS_second)
+        if len(r) == 2 and len(v) == 2:
+            acc1 = self.__force.setPosAndVel(r[0], v[0]).setTime(self.__fr).getAcceleration()
+            acc2 = self.__force.setPosAndVel(r[1], v[1]).setTime(self.__fr).getAcceleration()
+            acc = np.vstack((acc1, acc2))
+            return acc
+        else:
+            acc = self.__force.setPosAndVel(r, v).setTime(self.__fr).getAcceleration()
+            return acc
+
     def propagate(self):
-        config = ConfigComplexODE(SingleStepType.MatrixRKN, MultiStepType.MatrixGaussJackson).setOdePar()
-        propagator = ComplexODE(config).setSecondDerivative(self.forceModel).setInitial(self.__t0, self.__r0, self.__v0)
+        config = ConfigComplexODE().setOdePar()
+        propagator = ComplexODE(config).setSecondDerivative(self.MatrixforceModel).setInitial(self.__t0, self.__r0, self.__v0)
         return propagator.propagate()
 

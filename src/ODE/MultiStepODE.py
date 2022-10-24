@@ -664,9 +664,10 @@ class MatrixGaussJackson(MultiStepOde):
         if isFirstStep:
 
             X, R, V = np.array(self.__iniX), np.array(self.__iniR), np.array(self.__iniV)
-            accA = self.__evaluation(X, R[:, 0, :], V[:, 0, :])
-            accB = self.__evaluation(X, R[:, 1, :], V[:, 1, :])
-            acc = np.hstack((accA[:, None, :], accB[:, None, :]))
+            # accA = self.__evaluation(X, R[:, 0, :], V[:, 0, :])
+            # accB = self.__evaluation(X, R[:, 1, :], V[:, 1, :])
+            # acc = np.hstack((accA[:, None, :], accB[:, None, :]))
+            acc = self.__evaluation(X, R, V)
             isConverge = False
             iter = 0
             sn = 0
@@ -755,9 +756,10 @@ class MatrixGaussJackson(MultiStepOde):
             R_update[index(0)] = R[index(0), :]
             V_update[index(0)] = V[index(0), :]
 
-        acc_updateA = self.__evaluation(X, R_update[:, 0, :], V_update[:, 0, :])
-        acc_updateB = self.__evaluation(X, R_update[:, 1, :], V_update[:, 1, :])
-        acc_update = np.hstack((acc_updateA[:, None, :], acc_updateB[:, None, :]))
+        # acc_updateA = self.__evaluation(X, R_update[:, 0, :], V_update[:, 0, :])
+        # acc_updateB = self.__evaluation(X, R_update[:, 1, :], V_update[:, 1, :])
+        # acc_update = np.hstack((acc_updateA[:, None, :], acc_updateB[:, None, :]))
+        acc_update = self.__evaluation(X, R_update, V_update)
         # acc_update = self.__evaluation(X, R_update, V_update)
         # print(X, R_update, V_update, acc_update, sn, Sn, self.__converge_test1(R, R_update, RelTol))
         return X, R_update, V_update, acc_update, sn, Sn, self.__converge_test1(R, R_update, RelTol)
@@ -778,9 +780,10 @@ class MatrixGaussJackson(MultiStepOde):
         X_p = X[-1] + hs
 
         # evaluation
-        acc_pA = self._func(X_p, R_p[0], V_p[0])
-        acc_pB = self._func(X_p, R_p[1], V_p[1])
-        acc_p = np.vstack((acc_pA, acc_pB))
+        # acc_pA = self._func(X_p, R_p[0], V_p[0])
+        # acc_pB = self._func(X_p, R_p[1], V_p[1])
+        # acc_p = np.vstack((acc_pA, acc_pB))
+        acc_p = self._func(X_p, R_p, V_p)
         # acc_p = self._func(X_p, R_p, V_p)
         # increment
         X = np.delete(X, 0, 0)
@@ -810,9 +813,10 @@ class MatrixGaussJackson(MultiStepOde):
         V_c = hs * (sn[-1] + np.einsum('m,mln->ln', b[-2, :], acc))
 
         # evaluation
-        acc_cA = self._func(X[-1], R_c[0], V_c[0])
-        acc_cB = self._func(X[-1], R_c[1], V_c[1])
-        acc_c = np.vstack((acc_cA, acc_cB))
+        # acc_cA = self._func(X[-1], R_c[0], V_c[0])
+        # acc_cB = self._func(X[-1], R_c[1], V_c[1])
+        # acc_c = np.vstack((acc_cA, acc_cB))
+        acc_c = self._func(X[-1], R_c, V_c)
         # update acc
         acc[-1] = acc_c
 

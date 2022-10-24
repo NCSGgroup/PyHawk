@@ -9,7 +9,8 @@ from src.Preference.EnumType import SingleStepType, MultiStepType
 
 class ConfigComplexODE:
 
-    def __init__(self, single: SingleStepType, multi: MultiStepType):
+    def __init__(self, single: SingleStepType = Pre_ODE.ComplexConfig.SingleStepType,
+                 multi: MultiStepType = Pre_ODE.ComplexConfig.MultiStepType):
         self.stepSize = None
         self.multiStepSize = None
         self.Npoints = None

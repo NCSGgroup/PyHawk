@@ -6,14 +6,14 @@ import multiprocessing
 test1 = np.ones(1000000)
 
 test2 = [2,2,2,2,2,2,2]
-filename = 'test.hdf5'
+filename = '2008-01-01_2008-01-31_A_0.hdf5'
 
 
 def fun1(index):
+    time.sleep(2)
     print("This is {}".format(index))
     r = h5py.File(filename, "r")
-    data = r['data'][:]
-    time.sleep(1)
+    data = r['acc'][:]
     print(data)
 
 
@@ -31,9 +31,10 @@ def demo1():
 
 
 if __name__ == '__main__':
-    time1 = time.time()
-    for i in range(0, 10):
-        fun1(i)
-    time2 = time.time()
-    print(time2 - time1)
+    fun1(1)
+    # time1 = time.time()
+    # for i in range(0, 10):
+    #     fun1(i)
+    # time2 = time.time()
+    # print(time2 - time1)
     # demo1()
