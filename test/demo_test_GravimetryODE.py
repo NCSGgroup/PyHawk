@@ -5,6 +5,7 @@ from src.ForceModel.Assemble2ndDerivative import Assemble2ndDerivative
 from src.ConfigJson.ConfigByJson import ConfigFMbyJson
 from src.ODE.GravimetryODE import GravimetryODE
 from src.Interface.ArcOperation import ArcData
+from src.ForceModel.InstanceForceModel import SingleSatForceModel
 import json
 import numpy as np
 import time
@@ -26,10 +27,11 @@ def demo1():
 
     # instance assemble model
     assem_model = Assemble2ndDerivative()
+    var_2nd_diff = SingleSatForceModel(fr)
 
     # ODE
     time1 = time.time()
-    propagator = GravimetryODE(fr).setInitial(GPS_Time, startPos, startVel).setForceModel(assem_model)
+    propagator = GravimetryODE().setInitial(GPS_Time, startPos, startVel).setForceModel(var_2nd_diff)
     X_GJ, R_GJ, V_GJ = propagator.propagate()
     pass
     time2 = time.time()
@@ -57,11 +59,12 @@ def demo2():
     startVel = np.vstack((startVelA, startVelB))
 
     # instance assemble model
+    var_2nd_diff = SingleSatForceModel(fr)
     assem_model = Assemble2ndDerivative()
 
     # ODE
     time1 = time.time()
-    propagator = GravimetryODE(fr).setInitial(GPS_Time, startPosB, startVelB).setForceModel(assem_model)
+    propagator = GravimetryODE().setInitial(GPS_Time, startPosB, startVelB).setForceModel(var_2nd_diff)
     X_GJ, R_GJ, V_GJ = propagator.propagate()
     pass
     time2 = time.time()
@@ -143,7 +146,7 @@ def demo4():
 
 
 if __name__ == '__main__':
-    # demo1()
+    demo1()
     # demo2()
-    demo4()
+    # demo4()
 

@@ -1,7 +1,7 @@
 import numpy as np
 import json
 from tqdm import tqdm
-from src.ODE.SingleStepODE import SingleStepOde, RK4, RK8, RKN, MatrixRKN
+from src.ODE.SingleStepODE import SingleStepOde, RK4, RK8, RKN
 from src.ODE.MultiStepODE import MultiStepOde, GaussJackson, ABM8, MatrixGaussJackson
 import src.Preference.Pre_ODE as Pre_ODE
 from src.Preference.EnumType import SingleStepType, MultiStepType
@@ -25,8 +25,6 @@ class ConfigComplexODE:
             self.SingleStepOde = RK8()
         elif single is SingleStepType.RKN:
             self.SingleStepOde = RKN()
-        elif single is SingleStepType.MatrixRKN:
-            self.SingleStepOde = MatrixRKN()
 
         if multi is MultiStepType.GaussJackson:
             self.MultiStepOde = GaussJackson()
