@@ -146,7 +146,7 @@ def demo4():
 
 
 if __name__ == '__main__':
-    demo1()
-    # demo2()
+    # demo1()
+    demo2()
     # demo4()
 

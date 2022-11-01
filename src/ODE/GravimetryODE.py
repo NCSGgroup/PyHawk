@@ -27,12 +27,13 @@ class GravimetryODE:
         pv = np.append(r0, v0)
 
         p = Pre_Parameterization.TransitionMatrix.Parameter_Number
+
+
         self.__r0, self.__v0 = VarEqn.getVarEq2ndIni(p, True, True, pv)
         return self
 
     def setForceModel(self, force: Assemble2ndDerivative):
-        assert isinstance(force, Orbit_var_2nd_diff)
-        self.__force = force.orbit_var_2nd_diff
+        self.__force = force.fun
         return self
 
     # def __forceModel(self, t, r, v):
