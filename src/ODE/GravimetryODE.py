@@ -3,10 +3,11 @@ from src.ODE.ComplexODE import ComplexODE, ConfigComplexODE
 from src.Preference.EnumType import SingleStepType, MultiStepType
 import src.Preference.Pre_ODE as Pre_ODE
 from src.Preference.EnumType import TimeFormat, GravHarType
-from src.ForceModel.InstanceForceModel import SingleSatForceModel
+from src.ForceModel.InstanceForceModel import Orbit_var_2nd_diff
 from src.ForceModel.VarEqn import VarEqn
 from src.Frame.Frame import Frame
 import numpy as np
+import src.Preference.Pre_Parameterization as Pre_Parameterization
 from src.Frame.EOP import EOP
 
 
@@ -24,11 +25,13 @@ class GravimetryODE:
         self.__r0 = r0
         self.__v0 = v0
         pv = np.append(r0, v0)
-        self.__r0, self.__v0 = VarEqn.getVarEq2ndIni(6, True, True, pv)
+
+        p = Pre_Parameterization.TransitionMatrix.Parameter_Number
+        self.__r0, self.__v0 = VarEqn.getVarEq2ndIni(p, True, True, pv)
         return self
 
     def setForceModel(self, force: Assemble2ndDerivative):
-        assert isinstance(force, SingleSatForceModel)
+        assert isinstance(force, Orbit_var_2nd_diff)
         self.__force = force.orbit_var_2nd_diff
         return self
 
