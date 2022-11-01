@@ -1,12 +1,10 @@
 from src.Frame.Frame import Frame
 from src.Frame.EOP import EOP
 import src.Preference.EnumType as EnumType
-from src.ForceModel.Assemble2ndDerivative import Assemble2ndDerivative
-from src.ConfigJson.ConfigByJson import ConfigFMbyJson
+from src.SecDerivative.Assemble2ndDerivative import Assemble2ndDerivative
 from src.ODE.GravimetryODE import GravimetryODE
 from src.Interface.ArcOperation import ArcData
-from src.ForceModel.InstanceForceModel import Orbit_var_2nd_diff
-import json
+from src.SecDerivative.InstanceForceModel import Orbit_var_2nd_diff
 import numpy as np
 import time
 import matplotlib.pyplot as plt
@@ -64,7 +62,7 @@ def demo2():
 
     # ODE
     time1 = time.time()
-    propagator = GravimetryODE().setInitial(GPS_Time, startPos, startVel).setForceModel(var_2nd_diff)
+    propagator = GravimetryODE().setInitial(GPS_Time, startPosB, startVelB).setForceModel(var_2nd_diff)
     X_GJ, R_GJ, V_GJ = propagator.propagate()
     pass
     time2 = time.time()

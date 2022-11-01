@@ -1,14 +1,9 @@
 from src.Frame.Frame import Frame
 from src.Frame.EOP import EOP
 import src.Preference.EnumType as EnumType
-from src.ForceModel.Assemble2ndDerivative import Assemble2ndDerivative
-from src.ODE.GravimetryODE import GravimetryODE
-from src.Interface.ArcOperation import ArcData
-import json
+from src.SecDerivative.Assemble2ndDerivative import Assemble2ndDerivative
 import numpy as np
-import time
 import matplotlib.pyplot as plt
-import matplotlib
 
 savedir = "../result/benchmarktest/"
 

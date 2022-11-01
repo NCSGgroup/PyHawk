@@ -1,11 +1,7 @@
-import src.Preference.EnumType as EnumType
-from src.Auxilary.SortCS import SortCS
-import src.Preference.Pre_Parameterization as Pre_Parameterization
-from src.ForceModel.Assemble2ndDerivative import Assemble2ndDerivative
+from src.SecDerivative.Assemble2ndDerivative import Assemble2ndDerivative
 from src.Frame.Frame import Frame
-from src.Preference.EnumType import TimeFormat, GravHarType
-from src.ForceModel.VarEqn import VarEqn
-import numpy as np
+from src.Preference.EnumType import TimeFormat
+from src.SecDerivative.VarEqn import VarEqn
 
 
 # class SingleSatForceModel(Assemble2ndDerivative):

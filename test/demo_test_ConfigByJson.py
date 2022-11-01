@@ -1,12 +1,9 @@
 from src.Frame.Frame import Frame
 from src.Frame.EOP import EOP
 from src.Preference.EnumType import TimeFormat
-from src.ForceModel.Assemble2ndDerivative import Assemble2ndDerivative
 from src.ConfigJson.ConfigByJson import ConfigFMbyJson
-from src.ODE.GravimetryODE import GravimetryODE
 import json
 import numpy as np
-import src.Preference.EnumType as EnumType
 import src.Preference.Pre_ForceModel as Pre_ForceModel
 
 

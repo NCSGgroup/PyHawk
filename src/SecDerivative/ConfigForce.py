@@ -3,7 +3,7 @@ from src.ForceModel.Relativity import RelativityIERS2010
 from src.Preference.EnumType import ForceType
 import src.Preference.Pre_ForceModel as Pre_ForceModel
 from src.Preference.Pre_ForceModel import ThreeBodyConfig
-from src.ForceModel.ConfigGravHar import ConfigGravHar
+from src.SecDerivative.ConfigGravHar import ConfigGravHar
 from src.Frame.PlanetEphemerides import PlanetEphemerides
 from src.ForceModel.NonConservative import NonConByAcc
 

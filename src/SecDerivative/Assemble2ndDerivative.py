@@ -1,8 +1,8 @@
 from src.Frame.Frame import Frame
 from src.ForceModel.ThreeBody import AbsThreeBody
 from src.ForceModel.Relativity import AbsRelativity
-from src.ForceModel.ConfigForce import ConfigForce
-from src.ForceModel.ConfigGravHar import ConfigGravHar
+from src.SecDerivative.ConfigForce import ConfigForce
+from src.SecDerivative.ConfigGravHar import ConfigGravHar
 from src.Frame.PlanetEphemerides import PlanetEphemerides
 from src.ForceModel.NonConservative import AbsNonConservative
 import src.Preference.EnumType as EnumType
@@ -116,4 +116,6 @@ class Assemble2ndDerivative:
             return None
         return self.__dadp
 
+    def fun1(self,t,r,v):
+        pass
 

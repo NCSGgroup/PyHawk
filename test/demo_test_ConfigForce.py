@@ -1,11 +1,7 @@
-from src.ForceModel.ConfigForce import ConfigForce
-from src.ForceModel.OceanTide import EOT11a, FES2014
+from src.SecDerivative.ConfigForce import ConfigForce
 from src.Frame.Frame import Frame
 from src.Frame.EOP import EOP
-from src.Preference.EnumType import TimeFormat,GravHarType
-from src.ForceModel.BaseGravCS import BaseGravCS
-from src.ForceModel.GravHar import ClibGravHar
-import numpy as np
+from src.Preference.EnumType import TimeFormat
 
 
 def demo1():

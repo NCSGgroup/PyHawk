@@ -1,10 +1,8 @@
 from src.Frame.Frame import Frame
 from src.Frame.EOP import EOP
 import src.Preference.EnumType as EnumType
-from src.ForceModel.Assemble2ndDerivative import Assemble2ndDerivative
+from src.SecDerivative.Assemble2ndDerivative import Assemble2ndDerivative
 from src.Interface.ArcOperation import ArcData
-from src.ODE.GravimetryODE import GravimetryODE
-import numpy as np
 
 
 def demo1():
