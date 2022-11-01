@@ -1,7 +1,6 @@
-from src.ODE.MultiStepODE import MatrixGaussJackson
-from src.ODE.SingleStepODE import RKN
-from src.ODE.KeplerOrbit import KeplerOrbit
-from src.Preference.EnumType import SingleStepType
+from src.ODE.Common.MultiStepODE import MatrixGaussJackson
+from src.ODE.Common.SingleStepODE import RKN
+from src.ODE.Common.KeplerOrbit import KeplerOrbit
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib

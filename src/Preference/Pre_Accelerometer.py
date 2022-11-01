@@ -15,7 +15,7 @@ cali = {'Scale': [False, False, False,
 #           'Bias_trend': [False, False, False],
 #           'Bias_quadratic': [False, False, False]
 #           }
-
+# 在configJson文件中，设置初值
 cali_value = {'Scale': [0.9595, 0, 0,
                         0, 0.9797, 0,
                         0, 0, 0.9485],

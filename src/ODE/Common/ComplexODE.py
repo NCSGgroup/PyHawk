@@ -1,8 +1,7 @@
 import numpy as np
-import json
 from tqdm import tqdm
-from src.ODE.SingleStepODE import SingleStepOde, RK4, RK8, RKN
-from src.ODE.MultiStepODE import MultiStepOde, GaussJackson, ABM8, MatrixGaussJackson
+from src.ODE.Common.SingleStepODE import RK4, RK8, RKN
+from src.ODE.Common.MultiStepODE import GaussJackson, ABM8, MatrixGaussJackson
 import src.Preference.Pre_ODE as Pre_ODE
 from src.Preference.EnumType import SingleStepType, MultiStepType
 
@@ -59,18 +58,18 @@ class ComplexODE:
 
         pass
 
-    def setSecondDerivative(self, force):
+    def setSecondDerivative(self, secDer):
         """
         set the force function for orbit integration.
         This function is exposed to the user, while it should be consistent with the config.
         Notice: it must be immediately used after config!
-        :param force: father class of ForceModel, e.g., ForcesDoubleSat, ForcesSingleSat
+        :param secDer: father class of ForceModel, e.g., ForcesDoubleSat, ForcesSingleSat
         :return:
         """
         '''set force model'''
-        self.__force = force
-        self.__SingleStepOde.setForce(force)
-        self.__MultiStepOde.setForce(force)
+        self.__force = secDer
+        self.__SingleStepOde.setForce(secDer)
+        self.__MultiStepOde.setForce(secDer)
         return self
 
     def setInitial(self, t0=None, r0=None, v0=None):

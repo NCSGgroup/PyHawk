@@ -1,6 +1,6 @@
 from src.ForceModel.BaseGravCS import BaseGravCS
 from src.Preference.Pre_ForceModel import PoleTideConfig, PathOfFiles
-from src.ForceModel.LoveNumber import LoveNumber
+from src.Auxilary.LoveNumber import LoveNumber
 from src.Auxilary.GeoMathKit import GeoMathKit
 
 from src.Frame.Frame import Frame

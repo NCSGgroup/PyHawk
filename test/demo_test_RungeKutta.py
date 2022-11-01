@@ -1,4 +1,4 @@
-from src.ODE.SingleStepODE import RK4
+from src.ODE.Common.SingleStepODE import RK4
 from src.Preference.EnumType import SingleStepType
 import numpy as np
 

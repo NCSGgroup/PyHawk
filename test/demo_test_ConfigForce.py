@@ -1,4 +1,4 @@
-from src.SecDerivative.ConfigForce import ConfigForce
+from src.SecDerivative.Common.ConfigForce import ConfigForce
 from src.Frame.Frame import Frame
 from src.Frame.EOP import EOP
 from src.Preference.EnumType import TimeFormat

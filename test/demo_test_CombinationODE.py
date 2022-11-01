@@ -1,8 +1,8 @@
-from src.ODE.SingleStepODE import RKN
-from src.ODE.MultiStepODE import GaussJackson
-from src.ODE.ComplexODE import ComplexODE, ConfigComplexODE
+from src.ODE.Common.SingleStepODE import RKN
+from src.ODE.Common.MultiStepODE import GaussJackson
+from src.ODE.Common.ComplexODE import ComplexODE, ConfigComplexODE
 from src.Preference.EnumType import SingleStepType, MultiStepType
-from src.ODE.KeplerOrbit import KeplerOrbit
+from src.ODE.Common.KeplerOrbit import KeplerOrbit
 import matplotlib.pyplot as plt
 import numpy as np
 

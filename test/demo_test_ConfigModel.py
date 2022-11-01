@@ -1,4 +1,4 @@
-from src.SecDerivative.ConfigGravHar import ConfigGravHar
+from src.SecDerivative.Common.ConfigForce_GravHar import ConfigGravHar
 from src.Frame.Frame import Frame
 from src.Frame.EOP import EOP
 from src.Preference.EnumType import TimeFormat

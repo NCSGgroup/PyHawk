@@ -1,5 +1,5 @@
-from src.SecDerivative.Assemble2ndDerivative import Assemble2ndDerivative
-from src.ODE.ComplexODE import ComplexODE, ConfigComplexODE
+from src.SecDerivative.Common.Assemble2ndDerivative import Assemble2ndDerivative
+from src.ODE.Common.ComplexODE import ComplexODE, ConfigComplexODE
 from src.SecDerivative.VarEqn import VarEqn
 import numpy as np
 import src.Preference.Pre_Parameterization as Pre_Parameterization
@@ -11,7 +11,7 @@ class GravimetryODE:
         self.__t0 = None
         self.__r0 = None
         self.__v0 = None
-        self.__force = None
+        self.__secDer = None
         self.__ParNum = 0
         self.getParNum()
         pass
@@ -31,11 +31,12 @@ class GravimetryODE:
         self.__v0 = v0
         # pv = np.vstack((r0, v0))
         pv = np.append(r0, v0)
+        # !
         self.__r0, self.__v0 = VarEqn.getVarEq2ndIni(self.__ParNum, Pre_Parameterization.TransitionMatrix.isRequired, True, pv)
         return self
 
-    def setForceModel(self, force: Assemble2ndDerivative):
-        self.__force = force.fun1
+    def set2ndDerivative(self, secDer: Assemble2ndDerivative):
+        self.__secDer = secDer.fun1
         return self
 
     # def __forceModel(self, t, r, v):
@@ -56,6 +57,6 @@ class GravimetryODE:
 
     def propagate(self):
         config = ConfigComplexODE().setOdePar()
-        propagator = ComplexODE(config).setSecondDerivative(self.__force).setInitial(self.__t0, self.__r0, self.__v0)
+        propagator = ComplexODE(config).setSecondDerivative(self.__secDer).setInitial(self.__t0, self.__r0, self.__v0)
         return propagator.propagate()
 

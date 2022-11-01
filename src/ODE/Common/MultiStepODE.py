@@ -1,5 +1,5 @@
 import numpy as np
-from src.ODE.ODEcoeffGenerator import ODEcoeffGenerator
+from src.ODE.Common.ODEcoeffGenerator import ODEcoeffGenerator
 import src.Preference.Pre_ODE as Pre_ODE
 
 

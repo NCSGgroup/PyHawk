@@ -1,7 +1,7 @@
 from src.Frame.Frame import Frame
 from src.Frame.EOP import EOP
 import src.Preference.EnumType as EnumType
-from src.SecDerivative.Assemble2ndDerivative import Assemble2ndDerivative
+from src.SecDerivative.Common.Assemble2ndDerivative import Assemble2ndDerivative
 import numpy as np
 import matplotlib.pyplot as plt
 
