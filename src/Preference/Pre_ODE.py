@@ -3,7 +3,7 @@ from src.Preference.EnumType import SingleStepType, MultiStepType
 
 class ComplexConfig:
     SingleStepType = SingleStepType.RKN
-    MultiStepType = MultiStepType.GaussJackson
+    MultiStepType = MultiStepType.MatrixGaussJackson
 
 
 
