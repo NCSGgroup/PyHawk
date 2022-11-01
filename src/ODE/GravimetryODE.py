@@ -18,7 +18,18 @@ class GravimetryODE:
         self.__r0 = None
         self.__v0 = None
         self.__force = None
+        self.__ParNum = 0
+        self.getParNum()
         pass
+
+    def getParNum(self):
+        if Pre_Parameterization.TransitionMatrix.isRequired:
+            self.__ParNum += Pre_Parameterization.TransitionMatrix.Parameter_Number
+        if Pre_Parameterization.Accelerometer.isRequired:
+            self.__ParNum += Pre_Parameterization.Accelerometer.Parameter_Number
+        if Pre_Parameterization.StokesCoefficients.isRequired:
+            self.__ParNum += Pre_Parameterization.StokesCoefficients.Parameter_Number
+        return self
 
     def setInitial(self, t0=None, r0=None, v0=None):
         self.__t0 = t0
@@ -26,14 +37,11 @@ class GravimetryODE:
         self.__v0 = v0
         pv = np.append(r0, v0)
 
-        p = Pre_Parameterization.TransitionMatrix.Parameter_Number
-
-
-        self.__r0, self.__v0 = VarEqn.getVarEq2ndIni(p, True, True, pv)
+        self.__r0, self.__v0 = VarEqn.getVarEq2ndIni(self.__ParNum, True, True, pv)
         return self
 
     def setForceModel(self, force: Assemble2ndDerivative):
-        self.__force = force.fun
+        self.__force = force.fun1
         return self
 
     # def __forceModel(self, t, r, v):

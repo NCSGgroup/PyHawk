@@ -6,7 +6,6 @@ class ComplexConfig:
     MultiStepType = MultiStepType.MatrixGaussJackson
 
 
-
 class SingleStepConfig:
     stepsize = 5
     Npoints = 4316

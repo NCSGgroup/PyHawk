@@ -90,7 +90,7 @@ class Orbit_2nd_diff(Assemble2ndDerivative):
         self.__fr = fr
         super(Orbit_2nd_diff, self).__init__()
 
-    def fun(self, t, r, v):
+    def fun1(self, t, r, v):
         """
         For orbit only in terms of 2nd order differential equation
         :param v: vel vector
@@ -110,7 +110,7 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
         self.__fr = fr
         super(Orbit_var_2nd_diff, self).__init__()
 
-    def fun(self, t, PhirSr, PhivSv):
+    def fun1(self, t, PhirSr, PhivSv):
         """
         For orbit and variation equations in terms of 2nd order differential equation
         :param t: time
