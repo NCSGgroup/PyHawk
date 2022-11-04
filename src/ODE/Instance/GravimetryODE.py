@@ -1,6 +1,7 @@
 from src.SecDerivative.Common.Assemble2ndDerivative import Assemble2ndDerivative
 from src.ODE.Common.ComplexODE import ComplexODE, ConfigComplexODE
 from src.SecDerivative.VarEqn import VarEqn
+from src.SecDerivative.MatrixVarEqn import MatrixVarEqn
 import numpy as np
 import src.Preference.Pre_Parameterization as Pre_Parameterization
 
@@ -30,9 +31,13 @@ class GravimetryODE:
         self.__r0 = r0
         self.__v0 = v0
         # pv = np.vstack((r0, v0))
-        pv = np.append(r0, v0)
+        pv1 = np.append(r0[0], v0[0])
+        pv2 = np.append(r0[1], v0[1])
         # !
-        self.__r0, self.__v0 = VarEqn.getVarEq2ndIni(self.__ParNum, Pre_Parameterization.TransitionMatrix.isRequired, True, pv)
+        rA, vA = MatrixVarEqn.getVarEq2ndIni(self.__ParNum, Pre_Parameterization.TransitionMatrix.isRequired, True, pv1)
+        rB, vB = MatrixVarEqn.getVarEq2ndIni(self.__ParNum, Pre_Parameterization.TransitionMatrix.isRequired, True, pv2)
+
+        self.__r0, self.__v0 = np.vstack((rA, rB)), np.vstack((vA, vB))
         return self
 
     def set2ndDerivative(self, secDer: Assemble2ndDerivative):

@@ -31,10 +31,11 @@ def demo1():
 
 
 if __name__ == '__main__':
-    fun1(1)
+    # fun1(1)
     # time1 = time.time()
     # for i in range(0, 10):
     #     fun1(i)
     # time2 = time.time()
     # print(time2 - time1)
     # demo1()
+    print(np.array([1, 1, 1]).reshape(3,1)[:,0])

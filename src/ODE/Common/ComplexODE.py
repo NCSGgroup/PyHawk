@@ -67,7 +67,7 @@ class ComplexODE:
         :return:
         """
         '''set force model'''
-        self.__force = secDer
+        self.__secDer = secDer
         self.__SingleStepOde.setForce(secDer)
         self.__MultiStepOde.setForce(secDer)
         return self
