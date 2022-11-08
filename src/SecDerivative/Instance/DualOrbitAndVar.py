@@ -13,7 +13,7 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
         self.__fr = fr
         super(Orbit_var_2nd_diff, self).__init__()
 
-    def fun1(self, t, PhirSr, PhivSv):
+    def secDerivative(self, t, PhirSr, PhivSv):
         """
         For orbit and variation equations in terms of 2nd order differential equation
         :param t: time
@@ -22,8 +22,8 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
         :param PhivSv: time derivative of the PhirSr
         :return:
         """
-        rA, vA = VarEqn.getRVfromVarEq2ndOrder(PhirSr[0], PhivSv[0])
-        rB, vB = VarEqn.getRVfromVarEq2ndOrder(PhirSr[1], PhivSv[1])
+        rA, vA = MatrixVarEqn.getRVfromVarEq2ndOrder(PhirSr[0:3], PhivSv[0:3])
+        rB, vB = MatrixVarEqn.getRVfromVarEq2ndOrder(PhirSr[3:6], PhivSv[3:6])
 
         # self.setPar(t, r, v)
         # acc = self.get_acceleration()
@@ -70,12 +70,12 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
             bool2 = False
 
         '''calculate the second order differentials'''
-        diff2ndA = VarEqn.VarEq2ndOrder(PhirSr[0], PhivSv[0], arA, apA, accA,
+        diff2ndA = MatrixVarEqn.VarEq2ndOrder(PhirSr[0:3], PhivSv[0:3], arA, apA, accA,
                                        isIncludeStateVec=True,
                                        isIncludeTransitionMatrix=bool1,
                                        isIncludeSensitivityMatrix=bool2)
 
-        diff2ndB = VarEqn.VarEq2ndOrder(PhirSr[1], PhivSv[1], arB, apB, accB,
+        diff2ndB = MatrixVarEqn.VarEq2ndOrder(PhirSr[3:6], PhivSv[3:6], arB, apB, accB,
                                        isIncludeStateVec=True,
                                        isIncludeTransitionMatrix=bool1,
                                        isIncludeSensitivityMatrix=bool2)

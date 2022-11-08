@@ -1,5 +1,6 @@
 from src.SecDerivative.Common.Assemble2ndDerivative import Assemble2ndDerivative
 from src.ODE.Common.ComplexODE import ComplexODE, ConfigComplexODE
+from src.Preference.EnumType import SingleStepType, MultiStepType
 from src.SecDerivative.VarEqn import VarEqn
 from src.SecDerivative.MatrixVarEqn import MatrixVarEqn
 import numpy as np
@@ -14,10 +15,11 @@ class GravimetryODE:
         self.__v0 = None
         self.__secDer = None
         self.__ParNum = 0
-        self.getParNum()
+        self.__isSingle = True
+        self.setParNum()
         pass
 
-    def getParNum(self):
+    def setParNum(self):
         if Pre_Parameterization.TransitionMatrix.isRequired:
             self.__ParNum += Pre_Parameterization.TransitionMatrix.Parameter_Number
         if Pre_Parameterization.Accelerometer.isRequired:
@@ -30,18 +32,26 @@ class GravimetryODE:
         self.__t0 = t0
         self.__r0 = r0
         self.__v0 = v0
-        # pv = np.vstack((r0, v0))
-        pv1 = np.append(r0[0], v0[0])
-        pv2 = np.append(r0[1], v0[1])
-        # !
-        rA, vA = MatrixVarEqn.getVarEq2ndIni(self.__ParNum, Pre_Parameterization.TransitionMatrix.isRequired, True, pv1)
-        rB, vB = MatrixVarEqn.getVarEq2ndIni(self.__ParNum, Pre_Parameterization.TransitionMatrix.isRequired, True, pv2)
 
-        self.__r0, self.__v0 = np.vstack((rA, rB)), np.vstack((vA, vB))
+        if np.shape(r0) == np.shape(v0) == (2, 3):
+            self.__isSingle = False
+            pv1 = np.append(r0[0], v0[0])
+            pv2 = np.append(r0[1], v0[1])
+            rA, vA = MatrixVarEqn.getVarEq2ndIni(self.__ParNum, Pre_Parameterization.TransitionMatrix.isRequired, True,
+                                                 pv1)
+            rB, vB = MatrixVarEqn.getVarEq2ndIni(self.__ParNum, Pre_Parameterization.TransitionMatrix.isRequired, True,
+                                                 pv2)
+            self.__r0, self.__v0 = np.vstack((rA, rB)), np.vstack((vA, vB))
+        elif len(r0) == len(v0) == 3:
+            self.__isSingle = True
+            pv = np.append(r0, v0)
+            r, v = MatrixVarEqn.getVarEq2ndIni(self.__ParNum, Pre_Parameterization.TransitionMatrix.isRequired, True, pv)
+            self.__r0, self.__v0 = r, v
+
         return self
 
     def set2ndDerivative(self, secDer: Assemble2ndDerivative):
-        self.__secDer = secDer.fun1
+        self.__secDer = secDer.secDerivative
         return self
 
     # def __forceModel(self, t, r, v):
@@ -61,7 +71,10 @@ class GravimetryODE:
     #         return acc
 
     def propagate(self):
-        config = ConfigComplexODE().setOdePar()
+        if self.__isSingle:
+            config = ConfigComplexODE(SingleStepType.RKN, MultiStepType.GaussJackson).setOdePar()
+        else:
+            config = ConfigComplexODE(SingleStepType.RKN, MultiStepType.MatrixGaussJackson).setOdePar()
         propagator = ComplexODE(config).setSecondDerivative(self.__secDer).setInitial(self.__t0, self.__r0, self.__v0)
         return propagator.propagate()
 

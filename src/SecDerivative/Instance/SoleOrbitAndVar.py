@@ -11,7 +11,7 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
         self.__fr = fr
         super(Orbit_var_2nd_diff, self).__init__()
 
-    def fun1(self, t, PhirSr, PhivSv):
+    def secDerivative(self, t, PhirSr, PhivSv):
         """
         For orbit and variation equations in terms of 2nd order differential equation
         :param t: time
@@ -74,7 +74,7 @@ class MatrixOrbit_var_2nd_diff(Assemble2ndDerivative):
         self.__fr = fr
         super(MatrixOrbit_var_2nd_diff, self).__init__()
 
-    def fun1(self, t, PhirSr, PhivSv):
+    def secDerivative(self, t, PhirSr, PhivSv):
         """
         For orbit and variation equations in terms of 2nd order differential equation
         :param t: time

@@ -30,7 +30,30 @@ def demo1():
     print("time consume {} s".format(time2 - time1))
 
 
+def readData():
+    path = "20221027-BaTmSiO.dat"
+
+    try:
+        f = open(path, 'rb')
+    except FileNotFoundError as e:
+        print(path)
+        return None
+
+    NumOfAcc = None
+    while True:
+        r = f.readline()
+        content = r.decode()
+        if content.split(',')[2].strip() == 'Temperature (K)':
+            print(content)
+            break
+        # if content.split(':')[0].strip() == 'NUMBER OF DATA RECORDS':
+        #     NumOfAcc = int(content.split(':')[1])
+        # if content.strip() == 'END OF HEADER':
+        #     break
+
+
 if __name__ == '__main__':
+    readData()
     # fun1(1)
     # time1 = time.time()
     # for i in range(0, 10):
@@ -38,4 +61,3 @@ if __name__ == '__main__':
     # time2 = time.time()
     # print(time2 - time1)
     # demo1()
-    print(np.array([1, 1, 1]).reshape(3,1)[:,0])

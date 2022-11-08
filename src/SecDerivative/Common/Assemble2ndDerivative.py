@@ -116,6 +116,6 @@ class Assemble2ndDerivative:
             return None
         return self.__dadp
 
-    def fun1(self,t,r,v):
+    def secDerivative(self, t, r, v):
         pass
 

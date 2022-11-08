@@ -85,7 +85,7 @@ class Orbit_2nd_diff(Assemble2ndDerivative):
         self.__fr = fr
         super(Orbit_2nd_diff, self).__init__()
 
-    def fun1(self, t, r, v):
+    def secDerivative(self, t, r, v):
         """
         For orbit only in terms of 2nd order differential equation
         :param v: vel vector
