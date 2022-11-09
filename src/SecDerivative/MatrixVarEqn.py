@@ -111,13 +111,13 @@ class MatrixVarEqn:
 
         if isIncludeSensitivityMatrix:
             '''Sensitivity matrix, [3*np]'''
-            Sr = PhirSr[index:].reshape((3, -1))
+            Sr = PhirSr[:, 7:]
             '''da/dp'''
             if isIncludeTransitionMatrix:
                 Srp = np.matmul(ar, Sr) + ap
             else:
                 Srp = ap
-            PhirSrp = np.append(PhirSrp, Srp.flatten())
+            PhirSrp = np.hstack((PhirSrp, Srp))
 
         return PhirSrp
 
@@ -199,16 +199,16 @@ class MatrixVarEqn:
             TransMatV[2, 5] = 1.
 
         if paraNum > 6:
-            iniR = np.append(iniR, TransMat.ravel())
-            iniV = np.append(iniV, TransMatV.ravel())
-            iniR = np.append(iniR, np.zeros(3 * (paraNum - 6)))
-            iniV = np.append(iniV, np.zeros(3 * (paraNum - 6)))
+            iniR = np.hstack((iniR, TransMat))
+            iniV = np.hstack((iniV, TransMatV))
+            iniR = np.hstack((iniR, np.zeros((3, (paraNum - 6)))))
+            iniV = np.hstack((iniV, np.zeros((3, (paraNum - 6)))))
         elif paraNum == 6:
             iniR = np.hstack((iniR, TransMat))
             iniV = np.hstack((iniV, TransMatV))
         else:
-            iniR = np.append(iniR, np.zeros(3 * paraNum))
-            iniV = np.append(iniV, np.zeros(3 * paraNum))
+            iniR = np.hstack((iniR, np.zeros((3, paraNum))))
+            iniV = np.hstack((iniV, np.zeros((3, paraNum))))
 
         return iniR, iniV
 

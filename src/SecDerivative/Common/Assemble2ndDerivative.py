@@ -70,7 +70,6 @@ class Assemble2ndDerivative:
                 if obj.OutputCoordinate is EnumType.Coordinate.GCRS:
                     acc = self.__time.AccITRS2GCRS(acc, rm).flatten()
                 self.__acc += acc
-
                 if Pre_Parameterization.TransitionMatrix.isRequired:
                     res = cgh.getDaDx()
                     self.__isExistDaDx = True

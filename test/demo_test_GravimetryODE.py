@@ -4,10 +4,10 @@ import src.Preference.EnumType as EnumType
 from src.SecDerivative.Common.Assemble2ndDerivative import Assemble2ndDerivative
 from src.ODE.Instance.GravimetryODE import GravimetryODE
 from src.Interface.ArcOperation import ArcData
-from src.SecDerivative.Instance.SoleOrbit import Orbit_2nd_diff
+# from src.SecDerivative.Instance.SoleOrbit import Orbit_2nd_diff
 # from src.SecDerivative.Instance.SoleOrbitAndVar import Orbit_var_2nd_diff, MatrixOrbit_var_2nd_diff
 # from src.SecDerivative.Instance.DualOrbit import Orbit_2nd_diff
-# from src.SecDerivative.Instance.DualOrbitAndVar import Orbit_var_2nd_diff
+from src.SecDerivative.Instance.DualOrbitAndVar import Orbit_var_2nd_diff
 import numpy as np
 import time
 import matplotlib.pyplot as plt
@@ -60,14 +60,13 @@ def demo2():
     startVel = np.vstack((startVelA, startVelB))
 
     # instance assemble model
-    var_2nd_diff = Orbit_2nd_diff(fr)
+    var_2nd_diff = Orbit_var_2nd_diff(fr)
     assem_model = Assemble2ndDerivative()
 
     # ODE
     time1 = time.time()
-    propagator = GravimetryODE().setInitial(GPS_Time, startPosB, startVelB).set2ndDerivative(var_2nd_diff)
+    propagator = GravimetryODE().setInitial(GPS_Time, startPos, startVel).set2ndDerivative(var_2nd_diff)
     X_GJ, R_GJ, V_GJ = propagator.propagate()
-    pass
     time2 = time.time()
 
     print(time2 - time1)
