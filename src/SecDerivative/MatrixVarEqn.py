@@ -75,6 +75,52 @@ class MatrixVarEqn:
 
         return PhiSp
 
+    # @staticmethod
+    # def VarEq2ndOrder(PhirSr, PhivSv, ar, ap, acc,
+    #                   isIncludeStateVec=False, isIncludeTransitionMatrix=False, isIncludeSensitivityMatrix=False):
+    #     """
+    #     Reference 1, eq.(7.48)
+    #     This is the second order differential form of the variational Equation
+    #     :param isIncludeSensitivityMatrix: The sensitivity matrix is included if true
+    #     :param isIncludeTransitionMatrix: The transition matrix is included if true
+    #     :param isIncludeStateVec: True, state vector is included. Vice the versa
+    #     :param PhirSr: StateVec [3*1] + Transition Matrix  [3*6]
+    #                    + Parameter Sensitivity matrix  [3*np] => one dimension
+    #     :param PhivSv: time derivative of the PhirSr
+    #     :param ar: da/dr
+    #     :param ap: da/dp
+    #     :param acc: acceleration
+    #     :return: right hand of the variational equation. [a, Phip, Sp]
+    #     """
+    #     PhirSrp = None
+    #     '''Unpack the PhiS'''
+    #     index = 0
+    #     if isIncludeStateVec:
+    #         '''State vector [1*6]'''
+    #         r = PhirSr[:, 0].copy()
+    #         index += 3
+    #         v = PhivSv[:, 0].copy()
+    #         PhirSrp = np.array(acc).reshape((3, 1))
+    #
+    #     if isIncludeTransitionMatrix:
+    #         '''Phi, Transition Matrix, [3*6]'''
+    #         Phir = PhirSr[:, 1:7]
+    #         index += 3 * 6
+    #         Phirp = np.matmul(ar, Phir)
+    #         PhirSrp = np.hstack((PhirSrp, Phirp))
+    #
+    #     if isIncludeSensitivityMatrix:
+    #         '''Sensitivity matrix, [3*np]'''
+    #         Sr = PhirSr[:, 7:]
+    #         '''da/dp'''
+    #         if isIncludeTransitionMatrix:
+    #             Srp = np.matmul(ar, Sr) + ap
+    #         else:
+    #             Srp = ap
+    #         PhirSrp = np.hstack((PhirSrp, Srp))
+    #
+    #     return PhirSrp
+
     @staticmethod
     def VarEq2ndOrder(PhirSr, PhivSv, ar, ap, acc,
                       isIncludeStateVec=False, isIncludeTransitionMatrix=False, isIncludeSensitivityMatrix=False):
@@ -92,32 +138,20 @@ class MatrixVarEqn:
         :param acc: acceleration
         :return: right hand of the variational equation. [a, Phip, Sp]
         """
-        PhirSrp = None
         '''Unpack the PhiS'''
-        index = 0
-        if isIncludeStateVec:
-            '''State vector [1*6]'''
-            r = PhirSr[:, 0].copy()
-            index += 3
-            v = PhivSv[:, 0].copy()
-            PhirSrp = np.array(acc).reshape((3, 1))
+
+        PhirSrp = np.array(acc).reshape((3, 1))
 
         if isIncludeTransitionMatrix:
-            '''Phi, Transition Matrix, [3*6]'''
-            Phir = PhirSr[:, 1:7]
-            index += 3 * 6
-            Phirp = np.matmul(ar, Phir)
-            PhirSrp = np.hstack((PhirSrp, Phirp))
-
-        if isIncludeSensitivityMatrix:
-            '''Sensitivity matrix, [3*np]'''
-            Sr = PhirSr[:, 7:]
-            '''da/dp'''
-            if isIncludeTransitionMatrix:
-                Srp = np.matmul(ar, Sr) + ap
+            PhirS = np.matmul(ar, PhirSr[:, 1:])
+            if isIncludeSensitivityMatrix:
+                ap = np.hstack((np.zeros((3, 6)), ap))
+                PhirSrp = np.hstack((PhirSrp, (PhirS + ap)))
             else:
-                Srp = ap
-            PhirSrp = np.hstack((PhirSrp, Srp))
+                PhirSrp = np.hstack((PhirSrp, PhirS))
+        else:
+            if isIncludeSensitivityMatrix:
+                PhirSrp = np.hstack((PhirSrp, ap))
 
         return PhirSrp
 

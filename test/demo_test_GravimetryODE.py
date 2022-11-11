@@ -34,7 +34,6 @@ def demo1():
     time1 = time.time()
     propagator = GravimetryODE().setInitial(GPS_Time, startPos, startVel).set2ndDerivative(var_2nd_diff)
     X_GJ, R_GJ, V_GJ = propagator.propagate()
-    pass
     time2 = time.time()
 
     print(time2 - time1)
