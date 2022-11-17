@@ -6,11 +6,13 @@
 @Description:
 """
 
-from src.Preference.EnumType import Mission, Payload
+from src.Preference.EnumType import Mission, Payload, SatID
 import pathlib as pathlib
 
 mission = Mission.GRACE_RL02
 date_span = ['2016-01-01', '2016-01-31']
+arcNo = 0
+sat = SatID.A
 date_delete = []
 
 include_payloads = {Payload.ACC: True,

@@ -47,11 +47,9 @@ def demo1():
     """step 7: Propagator"""
     time1 = time.time()
     propagator = GravimetryODE().setInitial(GPS_Time, startPos, startVel).set2ndDerivative(var_2nd_diff)
-
-
-
     # X_GJ, R_GJ, V_GJ = propagator.propagate()
 
 
 if __name__ == '__main__':
     demo1()
+
