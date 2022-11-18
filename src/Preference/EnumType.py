@@ -169,7 +169,7 @@ class ParaType(Enum):
     """
     TransitionMatrix = 1
     Accelerometer = 2
-    StokesCoeff = 3
+    StokesCoefficients = 3
 
 
 class ParaField(Enum):

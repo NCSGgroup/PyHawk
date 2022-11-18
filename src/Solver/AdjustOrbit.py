@@ -2,6 +2,7 @@ import h5py
 import pathlib
 import src.Preference.Pre_AdjustOrbit as Pre_AdjustOrbit
 import src.Preference.Pre_Interface as Pre_Interface
+import src.Preference.Pre_Parameterization as Pre_Parameterization
 from src.Interface.ArcOperation import ArcSelect, ArcData
 import src.Preference.EnumType as EnumType
 import numpy as np
@@ -20,6 +21,7 @@ class AdjustOrbit:
         self.__ode = None
         self.__initTime = None
         self.__initR = None
+        self.__GNV = None
         self.__date_span = date_span
         self.__arcNo = arcNo
         self.__sat = sat
@@ -50,6 +52,8 @@ class AdjustOrbit:
         """step 4: Propagator config"""
         self.__ode = GravimetryODE().setInitial(GPS_Time, startPos, startVel).set2ndDerivative(var_2nd_diff)
 
+        self.__GNV = np.vstack((GNVA, GNVB))
+
     def calibrate(self, iteration: int = 3):
         assert iteration >= 2
 
@@ -63,7 +67,7 @@ class AdjustOrbit:
         self.initR = h5['r'][:]
         h5.close()
         '''step 2: orbit adjustment'''
-        self.__adjust()
+        self.__adjust(StateVectors=ode_res[1], isGNV=True)
 
     def __adjust(self, StateVectors: np.ndarray, isGNV: bool, refOrbit: np.ndarray = None):
         """
@@ -84,38 +88,10 @@ class AdjustOrbit:
         '''least-square solver'''
         residual = obs[:, 1:4] - xyz[:, 0:3]
 
-        DesignMatrix = {}
-        par = self.__configPar
-        index1 = 3
-        for term in ParaType:
-            thisterm = par.getInfo(term)
-            if not thisterm.isRequired:
-                continue
-            index2 = index1 + 3 * thisterm.ParaNum
-            DesignMatrix[term] = xyz[:, index1:index2].reshape((len(xyz[:, 0]) * 3, -1))
-            index1 = index2
-
-        A = None
-        for term in DesignMatrix.keys():
-            if A is None:
-                A = DesignMatrix[term]
-            else:
-                A = np.hstack((A, DesignMatrix[term]))
+        DesignMatrix = xyz[:, :, 1:]
 
         b = residual.flatten()
-        x = np.linalg.lstsq(A, b, rcond=None)[0]
-
-        res = {}
-        index1 = 0
-        for term in ParaType:
-            thisterm = par.getInfo(term)
-            if not thisterm.isRequired:
-                continue
-            index2 = index1 + thisterm.ParaNum
-            res[term] = x[index1:index2]
-            index1 = index2
-
-        self.__res = res
+        x = np.linalg.lstsq(DesignMatrix, b, rcond=None)[0]
         # h5.close()
         return self
 
