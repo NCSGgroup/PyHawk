@@ -12,10 +12,10 @@ include_ForceType = {ForceType.GravHar: True,
                      ForceType.NonConserveForce: True,
                      ForceType.PlanetaryPerturbation: True}
 
-include_GravHarType = {GravHarType.NonTide: True,
+include_GravHarType = {GravHarType.NonTide: False,
                        GravHarType.PoleTide: True,
                        GravHarType.OceanTide: True,
-                       GravHarType.AtmosphereTide: True,
+                       GravHarType.AtmosphereTide: False,
                        GravHarType.SolidEarthTide: True,
                        GravHarType.ReferenceModel: True}
 
@@ -28,7 +28,7 @@ instance_GravHar = {GravHarType.NonTide: InstanceNonTide.AODRL06,
 
 
 class NonConservative:
-    date_span = ['2016-01-01', '2016-01-31']
+    date_span = ['2008-01-01', '2008-01-31']
     arcNo = 0
     sat = SatID.A
 

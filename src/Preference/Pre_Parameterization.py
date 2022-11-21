@@ -2,13 +2,13 @@ import src.Preference.EnumType as EnumType
 
 
 class TransitionMatrix:
-    isRequired = True
+    isRequired = False
     Parameter_Number = 6
     AllisGlobal = False
 
 
 class Accelerometer:
-    isRequired = False
+    isRequired = True
     Parameter_Number = 6
     AllisGlobal = False
 

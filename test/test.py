@@ -2,58 +2,52 @@ import h5py
 import numpy as np
 import time
 import multiprocessing
-
-test1 = np.ones(1000000)
-
-test2 = [2,2,2,2,2,2,2]
-filename = '2008-01-01_2008-01-31_A_0.hdf5'
+import src.Preference.EnumType as EnumType
+import src.Preference.Pre_Parameterization as Pre_Parameterization
+import matplotlib.pyplot as plt
 
 
-def fun1(index):
-    time.sleep(2)
-    print("This is {}".format(index))
-    r = h5py.File(filename, "r")
-    data = r['acc'][:]
-    print(data)
+def Sheet1():
+    Data = []
+    with open('Sheet1.txt', 'r', encoding='utf-8') as file:
+        for line in file:
+            data = line.strip("\n").split()
+            Data.append(data)
 
+    MatrixData = np.zeros((len(Data[2:]), len(Data[2:][0])))
+    for i in range(len(Data[2:])):
+        for j in range(len(Data[2:][i])):
+            MatrixData[i][j] = float(Data[2:][i][j])
 
-def demo1():
-    time1 = time.time()
-    _processes = []
-    for index in range(0, 10):
-        _process = multiprocessing.Process(target=fun1, args=(index,))
-        _process.start()
-        _processes.append(_process)
-    for _process in _processes:
-        _process.join()
-    time2 = time.time()
-    print("time consume {} s".format(time2 - time1))
+    i = 0
+    j = 0
+    X = np.zeros((6, len(Data[2:])))
+    Y1 = np.zeros((6, len(Data[2:])))
+    Y2 = np.zeros((6, len(Data[2:])))
+    while i < np.shape(MatrixData)[1]:
+        X[j] = MatrixData[:, i]
+        Y1[j] = MatrixData[:, i+3]
+        Y2[j] = MatrixData[:, i+4]
+        i+=5
+        j+=1
 
+    # X = X[X != 0]
+    # Y1= Y1[Y1 != 0]
+    # Y2= Y2[Y2 != 0]
 
-def readData():
-    path = "20221027-BaTmSiO.dat"
-
-    try:
-        f = open(path, 'rb')
-    except FileNotFoundError as e:
-        print(path)
-        return None
-
-    NumOfAcc = None
-    while True:
-        r = f.readline()
-        content = r.decode()
-        if content.split(',')[2].strip() == 'Temperature (K)':
-            print(content)
-            break
-        # if content.split(':')[0].strip() == 'NUMBER OF DATA RECORDS':
-        #     NumOfAcc = int(content.split(':')[1])
-        # if content.strip() == 'END OF HEADER':
-        #     break
+    fig,ax = plt.subplots(3, 2)
+    k = 0
+    for i in range(3):
+        for j in range(2):
+            ax[i][j].scatter(X[k], Y1[k], color='blue')
+            ax2 = ax[i][j].twinx()
+            ax2.scatter(X[k], Y2[k], color='red')
+            k+=1
+    plt.show()
 
 
 if __name__ == '__main__':
-    readData()
+    Sheet1()
     # fun1(1)
     # time1 = time.time()
     # for i in range(0, 10):

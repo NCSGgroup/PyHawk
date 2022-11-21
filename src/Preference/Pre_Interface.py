@@ -10,18 +10,18 @@ from src.Preference.EnumType import Mission, Payload
 import pathlib as pathlib
 
 mission = Mission.GRACE_RL02
-date_span = ['2016-01-01', '2016-01-31']
+date_span = ['2008-01-01', '2008-01-31']
 date_delete = []
 
 include_payloads = {Payload.ACC: True,
                     Payload.SCA: True,
                     Payload.KBR: True,
                     Payload.GNV: True,
-                    Payload.KinematicOrbit: True,
+                    Payload.KinematicOrbit: False,
                     Payload.LRI: False}
 
 is_orbit_GCRS = {Payload.GNV: False,
-                 Payload.KinematicOrbit: False}
+                 Payload.KinematicOrbit: True}
 
 sr_payload = {Payload.ACC: 1,
               Payload.SCA: 5,

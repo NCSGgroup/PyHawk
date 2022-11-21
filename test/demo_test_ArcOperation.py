@@ -10,7 +10,7 @@ import src.Preference.EnumType as EnumType
 def demo1():
 
     fr = Frame(EOP().load())
-    s = GRACE_NEW_RL02().configure().setDate()
+    s = GRACE_OLD_RL02().configure().setDate()
     s.read_double_sat()
 
     kine = KinematicOrbit(L1b=s).configure()
