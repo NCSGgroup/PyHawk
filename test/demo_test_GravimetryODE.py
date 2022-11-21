@@ -34,7 +34,6 @@ def demo1():
     time1 = time.time()
     propagator = GravimetryODE().setInitial(GPS_Time, startPos, startVel).set2ndDerivative(var_2nd_diff)
     X_GJ, R_GJ, V_GJ = propagator.propagate()
-    pass
     time2 = time.time()
 
     print(time2 - time1)
@@ -151,11 +150,13 @@ def demo5():
     VectorTime = VectorGNV['time']
     MatrixTime = MatrixGNV['time']
     VectorR = VectorGNV['R_GJ'][:, 0:3]
-    MatrixR = MatrixGNV['R_GJ'][:, 0:3, 0]
+    print(np.shape(MatrixGNV['R_GJ']))
+    MatrixR = MatrixGNV['R_GJ'][:, :, 0:2]
     VectorV = VectorGNV['V_GJ']
     MatrixV = MatrixGNV['V_GJ']
 
-    print(VectorR)
+    # print(VectorR)
+    print(np.shape(MatrixR))
     print(MatrixR)
     # diff_R = VectorR - MatrixR
     # diff_V = VectorV - MatrixV
@@ -184,7 +185,7 @@ def demo5():
 
 if __name__ == '__main__':
     # demo1()
-    demo2()
+    # demo2()
     # demo4()
-    # demo5()
+    demo5()
 
