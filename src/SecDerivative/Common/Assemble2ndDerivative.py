@@ -41,7 +41,6 @@ class Assemble2ndDerivative:
         self.__reset()
         self.__time = time
         self.__ep = self.__ep.setTime(self.__time).getPosByFrame()
-        self.__calculation()
         return self
 
     def setPosAndVel(self, pos, vel):
@@ -49,7 +48,7 @@ class Assemble2ndDerivative:
         self.__vel = vel
         return self
 
-    def __calculation(self):
+    def calculation(self):
         for obj in self.ForceType.values():
             if isinstance(obj, ConfigGravHar):
                 rm = self.__time.getRotationMatrix

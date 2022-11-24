@@ -28,7 +28,7 @@ def demo1():
 
     # instance assemble model
     assem_model = Assemble2ndDerivative()
-    var_2nd_diff = Orbit_var_2nd_diff(fr)
+    var_2nd_diff = Orbit_var_2nd_diff(fr, rd)
 
     # ODE
     time1 = time.time()
@@ -59,7 +59,7 @@ def demo2():
     startVel = np.vstack((startVelA, startVelB))
 
     # instance assemble model
-    var_2nd_diff = Orbit_var_2nd_diff(fr)
+    var_2nd_diff = Orbit_var_2nd_diff(fr, rd)
     assem_model = Assemble2ndDerivative()
 
     # ODE
