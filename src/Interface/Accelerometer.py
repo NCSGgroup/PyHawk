@@ -125,7 +125,6 @@ class Accelerometer:
         self.__bias = bias.reshape((3, 3))
         return self
 
-    @DeprecationWarning
     def updatePar(self, paralist):
         """
         set parameters from a list of calibrated parameters; update the parameters: scale & bias

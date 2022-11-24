@@ -25,7 +25,8 @@ def Sheet1():
 
 
 if __name__ == '__main__':
-    Sheet1()
+    print(Pre_Parameterization.TransitionMatrix.__name__)
+    # Sheet1()
     # fun1(1)
     # time1 = time.time()
     # for i in range(0, 10):
