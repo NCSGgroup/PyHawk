@@ -17,6 +17,9 @@ class ConfigForce:
         self.__include_ForceType = [key for key, value in include_ForceType.items() if value]
         self.__instanceForce()
 
+    def reConfigure(self):
+        self.__instanceForce()
+
     def __instanceForce(self):
         for force in self.__include_ForceType:
             obj = None

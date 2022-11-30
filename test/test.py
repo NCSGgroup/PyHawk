@@ -24,9 +24,13 @@ def Sheet1():
     print(np.shape(MatrixData))
 
 
+def fitting():
+    pass
+
 if __name__ == '__main__':
-    print(Pre_Parameterization.TransitionMatrix.__name__)
+    # print(Pre_Parameterization.TransitionMatrix.__name__)
     # Sheet1()
+    fitting()
     # fun1(1)
     # time1 = time.time()
     # for i in range(0, 10):

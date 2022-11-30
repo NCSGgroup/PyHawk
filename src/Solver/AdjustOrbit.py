@@ -25,6 +25,8 @@ class AdjustOrbit:
         self.__ode = None
         self.__initTime = None
         self.__initR = None
+        self.__endTime = None
+        self.__endR = None
         self.__startTime = None
         self.__startPos = None
         self.__startVel = None
@@ -32,6 +34,7 @@ class AdjustOrbit:
         self.__res = None
         self.__ap = None
         self.__ac = None
+        self.__secDer = None
         self.__date_span = date_span
         self.__arcNo = arcNo
         self.__sat = sat
@@ -68,13 +71,14 @@ class AdjustOrbit:
         # startVel = np.vstack((startVelA, startVelB))
         """step 3: instance second Derivative"""
         var_2nd_diff = Orbit_var_2nd_diff(self.__fr, rd).setInitData(arc=self.__arcNo, kind=self.__kind, sat=self.__sat)
+        self.__secDer = var_2nd_diff
         """step 4: Propagator config"""
         self.__startTime, self.__startPos, self.__startVel = var_2nd_diff.getInitData()
         self.__obsGNV = var_2nd_diff.getInitState()
         self.__ode = GravimetryODE().setInitial(self.__startTime, self.__startPos.copy(), self.__startVel.copy()).set2ndDerivative(var_2nd_diff)
         return self
 
-    def calibrate(self, iteration: int = 3):
+    def calibrate(self, iteration: int = 2):
         assert iteration >= 2
 
         '''step 1: orbit integration and save data'''
@@ -92,7 +96,7 @@ class AdjustOrbit:
         '''step 3: start iteration'''
         for i in range(iteration):
             '''make the adjustment'''
-            self.__adjust(StateVectors=self.__initR.copy(), isGNV=True)
+            self.__adjust(StateVectors=ode_res[1], isGNV=True)
             orbit_ini, acc_ini = self.__updateIniValue(iniOrbit=orbit_init, iniAcc=acc_init)
             r_ini, v_ini = orbit_ini[:, 0:3], orbit_ini[:, 3:]
             '''step 4: update initial state vector'''
@@ -100,16 +104,18 @@ class AdjustOrbit:
             '''step 5: update accelerometer'''
             self.__ac.updatePar(paralist=acc_ini[0]).get_and_save()
             '''step 6: update force model'''
-            ##
+            self.__secDer.configForce.reConfigure()
             '''step 7: orbit integration once again'''
             ode_res = self.__ode.propagate()
             self.__save_StateVectors(ode_res)
 
         filename = self.__state_dir.joinpath(str(self.__arcNo) + '_' + self.__sat.name + '.hdf5')
         h5 = h5py.File(filename, 'r')
-        self.endTime = h5['t'][:]
-        self.endR = h5['r'][:]
+        self.__endTime = h5['t'][:]
+        self.__endR = h5['r'][:]
         h5.close()
+
+        return self
 
     def __updateIniValue(self, iniOrbit: np.ndarray, iniAcc: np.ndarray):
         res = self.__res
@@ -125,7 +131,9 @@ class AdjustOrbit:
 
         key = Pre_Parameterization.Accelerometer
         if key.isRequired:
-            iniAcc += res[:, Pre_Parameterization.TransitionMatrix.Parameter_Number:key.Parameter_Number]
+            left = Pre_Parameterization.TransitionMatrix.Parameter_Number
+            right = Pre_Parameterization.TransitionMatrix.Parameter_Number + key.Parameter_Number
+            iniAcc += res[:, left:right]
             if key.__name__ in h5:
                 h5[key.__name__][()] = iniAcc
             else:
@@ -172,4 +180,7 @@ class AdjustOrbit:
         h5.create_dataset('v', data=state[2])
         h5.close()
         pass
+
+    def draw(self):
+        return self.__initTime, self.__initR, self.__endTime, self.__endR
 

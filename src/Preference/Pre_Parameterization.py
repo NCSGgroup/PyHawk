@@ -8,8 +8,8 @@ class TransitionMatrix:
 
 
 class Accelerometer:
-    isRequired = False
-    Parameter_Number = 9
+    isRequired = True
+    Parameter_Number = 6
     AllisGlobal = False
 
 

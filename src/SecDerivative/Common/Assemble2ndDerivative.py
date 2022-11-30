@@ -21,7 +21,8 @@ class Assemble2ndDerivative:
         self.__sort = SortCS(Pre_Parameterization.StokesCoefficients.SortMethod,
                              Pre_Parameterization.StokesCoefficients.MaxDegree,
                              Pre_Parameterization.StokesCoefficients.MinDegree)
-        self.ForceType = ConfigForce(self.__ep).getForceType()
+        self.configForce = ConfigForce(self.__ep)
+        self.ForceType = self.configForce.getForceType()
 
         self.__isExistDaDx = False
         self.__isExistDaDp = False
@@ -38,7 +39,6 @@ class Assemble2ndDerivative:
         pass
 
     def setTime(self, time: Frame):
-        self.__reset()
         self.__time = time
         self.__ep = self.__ep.setTime(self.__time).getPosByFrame()
         return self
@@ -48,7 +48,11 @@ class Assemble2ndDerivative:
         self.__vel = vel
         return self
 
+    def getCS(self):
+        pass
+
     def calculation(self):
+        self.__reset()
         for obj in self.ForceType.values():
             if isinstance(obj, ConfigGravHar):
                 rm = self.__time.getRotationMatrix
