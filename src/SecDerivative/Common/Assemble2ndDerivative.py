@@ -17,6 +17,8 @@ class Assemble2ndDerivative:
         self.__time = None
         self.__pos = None
         self.__vel = None
+        self.__C = None
+        self.__S = None
         self.__ep = PlanetEphemerides().configure().setPlanets()
         self.__sort = SortCS(Pre_Parameterization.StokesCoefficients.SortMethod,
                              Pre_Parameterization.StokesCoefficients.MaxDegree,
@@ -49,25 +51,26 @@ class Assemble2ndDerivative:
         return self
 
     def getCS(self):
-        pass
+        for obj in self.ForceType.values():
+            if isinstance(obj, ConfigGravHar):
+                self.__C, self.__S = obj.setTime(self.__time).getTotalCS()
+        return self
 
     def calculation(self):
         self.__reset()
         for obj in self.ForceType.values():
             if isinstance(obj, ConfigGravHar):
                 rm = self.__time.getRotationMatrix
-
                 pos = self.__pos
                 if obj.InputPosCoordinate is EnumType.Coordinate.GCRS:
                     pos = self.__time.PosGCRS2ITRS(np.array(self.__pos.copy()).astype(float), rm)
-                c, s = obj.setTime(self.__time).getTotalCS()
                 if len(obj.setZero) != 0:
                     for index in obj.setZero:
                         start = int(index * (index + 1) / 2)
                         end = int((index + 1) * (index + 2) / 2)
-                        c[start: end] = 0.
-                        s[start: end] = 0.
-                cgh = obj.ClibGravHar.setPar(c, s, pos)
+                        self.__C[start: end] = 0.
+                        self.__S[start: end] = 0.
+                cgh = obj.ClibGravHar.setPar(self.__C, self.__S, pos)
 
                 acc = cgh.getAcceleration()
                 if obj.OutputCoordinate is EnumType.Coordinate.GCRS:
