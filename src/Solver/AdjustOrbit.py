@@ -16,7 +16,13 @@ from src.Frame.Frame import Frame, EOP
 class AdjustOrbit:
     def __init__(self, date_span=Pre_Interface.date_span, arcNo=Pre_Interface.arcNo, sat=Pre_Interface.sat,
                  kind=EnumType.Payload.GNV):
+        # ======================= For demoTest===============================
+        self.fisrtR = None
+        self.secondR = None
+        self.thirdR = None
+        # ======================
         self.__fr = Frame(EOP().load())
+        self.__ode_res = None
         self.__state_path = None
         self.__state_dir = None
         self.__res_path = None
@@ -82,8 +88,8 @@ class AdjustOrbit:
         assert iteration >= 2
 
         '''step 1: orbit integration and save data'''
-        ode_res = self.__ode.propagate()
-        self.__save_StateVectors(ode_res)
+        self.__ode_res = self.__ode.propagate()
+        self.__save_StateVectors(self.__ode_res)
 
         filename = self.__state_dir.joinpath(str(self.__arcNo) + '_' + self.__sat.name + '.hdf5')
         h5 = h5py.File(filename, 'r')
@@ -96,7 +102,7 @@ class AdjustOrbit:
         '''step 3: start iteration'''
         for i in range(iteration):
             '''make the adjustment'''
-            self.__adjust(StateVectors=ode_res[1], isGNV=True)
+            self.__adjust(StateVectors=self.__ode_res[1], isGNV=True)
             orbit_ini, acc_ini = self.__updateIniValue(iniOrbit=orbit_init, iniAcc=acc_init)
             r_ini, v_ini = orbit_ini[:, 0:3], orbit_ini[:, 3:]
             '''step 4: update initial state vector'''
@@ -106,8 +112,15 @@ class AdjustOrbit:
             '''step 6: update force model'''
             self.__secDer.configForce.reConfigure()
             '''step 7: orbit integration once again'''
-            ode_res = self.__ode.propagate()
-            self.__save_StateVectors(ode_res)
+            self.__ode_res = self.__ode.propagate()
+            self.__save_StateVectors(self.__ode_res)
+
+            if i == 0:
+                self.fisrtR = self.__ode_res[1]
+            elif i == 1:
+                self.secondR = self.__ode_res[1]
+            elif i == 2:
+                self.thirdR = self.__ode_res[1]
 
         filename = self.__state_dir.joinpath(str(self.__arcNo) + '_' + self.__sat.name + '.hdf5')
         h5 = h5py.File(filename, 'r')
@@ -184,3 +197,5 @@ class AdjustOrbit:
     def draw(self):
         return self.__initTime, self.__initR, self.__endTime, self.__endR
 
+    def getR(self):
+        return self.fisrtR, self.secondR, self.thirdR

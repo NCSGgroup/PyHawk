@@ -31,24 +31,37 @@ def demo1():
     # arc = ArcSelect(gf).configure()
     # arc.unpackArcs().makeReport()
     """step 5: init AdjustOrbit"""
-    adjust = AdjustOrbit().configure().calibrate()
-    initTime, initR, endTime, endR = adjust.draw()
-    initR= initR[:, 0:3, 0]
-    endR= endR[:, 0:3, 0]
+    adjust = AdjustOrbit().configure().calibrate(iteration=3)
+    # initTime, initR, endTime, endR = adjust.draw()
+    firstR, secondR, thirdR = adjust.getR()
 
+    # initR= initR[:, 0:3, 0]
+    # endR= endR[:, 0:3, 0]
     rd = ArcData()
     GNV = rd.getData(arc=0, kind=EnumType.Payload.GNV, sat=EnumType.SatID.A)
     GNVTime = GNV[:, 0]
     GNVR = GNV[:, 1:4]
+
+    np.savez('adjust.npz', time=GNVTime, GNVR=GNVR, R1=firstR, R2=secondR, R3=thirdR)
+
+
+def draw():
+    R = np.load("adjust.npz")
+    Time = R['time']
+    GNVR = R['GNVR']
+    firstR = R['R1'][:, 0:3, 0]
+    secondR = R['R2'][:, 0:3, 0]
+    thirdR = R['R3'][:, 0:3, 0]
+
     fig = plt.figure()
-
-    ax = fig.add_subplot(2, 1, 1)
-
     # plt.style.use(['science', 'grid', 'no-latex'])
-    plt.title('Orbit difference with GNV1b', fontsize=24)
+    plt.title('nine par adjust', fontsize=24)
     # np.sqrt(np.sum((np.array(GNVR[:]) - endR[:, 0:3]) ** 2, 1))
-    plt.plot(np.array(GNVTime), np.sqrt(np.sum((np.array(GNVR[:]) - endR[:, 0:3]) ** 2, 1)), label="after adjust")
-    plt.plot(np.array(GNVTime), np.sqrt(np.sum((np.array(GNVR[:]) - initR[:, 0:3]) ** 2, 1)), label="before adjust")
+
+    plt.plot(np.array(Time), np.sqrt(np.sum((np.array(GNVR[:]) - firstR[:, 0:3]) ** 2, 1)), label="first adjust")
+    plt.plot(np.array(Time), np.sqrt(np.sum((np.array(GNVR[:]) - secondR[:, 0:3]) ** 2, 1)), label="second adjust")
+    plt.plot(np.array(Time), np.sqrt(np.sum((np.array(GNVR[:]) - thirdR[:, 0:3]) ** 2, 1)), label="third adjust")
+
     plt.xlabel('GPS time [sec]', fontsize=20)
     plt.ylabel(r'$m$', fontsize=20)
     plt.yticks(fontsize=18)
@@ -58,11 +71,9 @@ def demo1():
     plt.show()
 
 
-def demo2():
-    pass
-
-
 if __name__ == '__main__':
-    demo1()
-    # demo2()
+    # demo1()
+    draw()
+
+
 
