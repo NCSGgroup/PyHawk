@@ -17,7 +17,7 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
         self.__initTime = None
         self.__initPos = None
         self.__initVel = None
-        self.__initState = None
+        self.__PosAndVel = None
 
     def setInitData(self, arc: int, kind: Payload, sat=SatID.A):
         GNVA = self.__rd.getData(arc=arc, kind=kind, sat=SatID.A)
@@ -25,7 +25,7 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
         startPosA, startPosB = GNVA[4, 1:4], GNVB[4, 1:4]
         startVelA, startVelB = GNVA[4, 4:7], GNVB[4, 4:7]
         self.__initTime = GNVA[4, 0]
-        self.__initState = np.hstack((GNVA[:, 1:4], GNVB[:, 1:4]))
+        self.__PosAndVel = np.hstack((GNVA[:, 1:4], GNVB[:, 1:4]))
         self.__initPos = np.vstack((startPosA, startPosB))
         self.__initVel = np.vstack((startVelA, startVelB))
         return self
@@ -34,7 +34,7 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
         return self.__initTime, self.__initPos, self.__initVel
 
     def getInitState(self):
-        return self.__initState
+        return self.__PosAndVel
 
     def secDerivative(self, t, PhirSr, PhivSv):
         """
@@ -59,7 +59,7 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
         arA = self.getDaDx()
         apA = self.getDaDp()
 
-        self.setPosAndVel(rB, vB).calculation()
+        self.setPosAndVel(rB, vB).setChangeSat().calculation()
         accB = self.getAcceleration()
         arB = self.getDaDx()
         apB = self.getDaDp()

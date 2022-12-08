@@ -19,6 +19,7 @@ class Assemble2ndDerivative:
         self.__vel = None
         self.__C = None
         self.__S = None
+        self.__isChangeSat = False
         self.__ep = PlanetEphemerides().configure().setPlanets()
         self.__sort = SortCS(Pre_Parameterization.StokesCoefficients.SortMethod,
                              Pre_Parameterization.StokesCoefficients.MaxDegree,
@@ -56,8 +57,15 @@ class Assemble2ndDerivative:
                 self.__C, self.__S = obj.setTime(self.__time).getTotalCS()
         return self
 
+    def setChangeSat(self):
+        self.__isChangeSat = True
+        return self
+
     def calculation(self):
         self.__reset()
+        for item in self.ForceType:
+            print(self.ForceType[item])
+
         for obj in self.ForceType.values():
             if isinstance(obj, ConfigGravHar):
                 rm = self.__time.getRotationMatrix

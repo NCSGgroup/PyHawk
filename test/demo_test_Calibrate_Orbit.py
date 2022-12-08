@@ -72,8 +72,8 @@ def draw():
 
 
 if __name__ == '__main__':
-    # demo1()
-    draw()
+    demo1()
+    # draw()
 
 
 

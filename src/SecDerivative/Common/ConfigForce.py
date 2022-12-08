@@ -13,6 +13,7 @@ class ConfigForce:
     def __init__(self, ep: PlanetEphemerides):
         self.__forceType = {}
         self.__ep = ep
+        self.__sat = Pre_ForceModel.NonConservative.sat
         include_ForceType = Pre_ForceModel.include_ForceType.copy()
         self.__include_ForceType = [key for key, value in include_ForceType.items() if value]
         self.__instanceForce()
@@ -25,19 +26,20 @@ class ConfigForce:
             obj = None
             if force is ForceType.GravHar:
                 obj = ConfigGravHar(self.__ep)
-                self.__forceType[force] = obj
+                self.__forceType[force.name] = obj
             if force is ForceType.Relativity:
                 obj = RelativityIERS2010().setConstant().setKind()
-                self.__forceType[force] = obj
+                self.__forceType[force.name] = obj
             if force is ForceType.PlanetaryPerturbation:
                 if ThreeBodyConfig.isJ2:
                     obj = ThreeBodyPlusJ2().configure()
                 else:
                     obj = ThreeBody().configure()
-                self.__forceType[force] = obj
+                self.__forceType[force.name] = obj
             if force is ForceType.NonConserveForce:
-                obj = NonConByAcc().configure()
-                self.__forceType[force] = obj
+                for sat in self.__sat:
+                    obj = NonConByAcc(sat).configure()
+                    self.__forceType[force.name + sat.name] = obj
 
     def getForceType(self):
         return self.__forceType
