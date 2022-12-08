@@ -20,6 +20,9 @@ class BaseSecondDerivative:
         self._rm = rm
         return self
 
+    def changeSat(self):
+        return self
+
     def getAcceleration(self, **kwargs):
         acc = np.zeros(3, dtype=float)
         return acc

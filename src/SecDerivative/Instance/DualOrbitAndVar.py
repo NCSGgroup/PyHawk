@@ -2,16 +2,39 @@ import numpy as np
 
 from src.SecDerivative.Common.Assemble2ndDerivative import Assemble2ndDerivative
 from src.Frame.Frame import Frame
-from src.Preference.EnumType import TimeFormat
+from src.Preference.EnumType import TimeFormat, Payload, SatID
 from src.SecDerivative.VarEqn import VarEqn
 from src.SecDerivative.MatrixVarEqn import MatrixVarEqn
+from src.Interface.ArcOperation import ArcData
 
 
 class Orbit_var_2nd_diff(Assemble2ndDerivative):
 
-    def __init__(self, fr: Frame):
-        self.__fr = fr
+    def __init__(self, fr: Frame, rd: ArcData):
         super(Orbit_var_2nd_diff, self).__init__()
+        self.__fr = fr
+        self.__rd = rd
+        self.__initTime = None
+        self.__initPos = None
+        self.__initVel = None
+        self.__PosAndVel = None
+
+    def setInitData(self, arc: int, kind: Payload, sat=SatID.A):
+        GNVA = self.__rd.getData(arc=arc, kind=kind, sat=SatID.A)
+        GNVB = self.__rd.getData(arc=arc, kind=kind, sat=SatID.B)
+        startPosA, startPosB = GNVA[4, 1:4], GNVB[4, 1:4]
+        startVelA, startVelB = GNVA[4, 4:7], GNVB[4, 4:7]
+        self.__initTime = GNVA[4, 0]
+        self.__PosAndVel = np.hstack((GNVA[:, 1:4], GNVB[:, 1:4]))
+        self.__initPos = np.vstack((startPosA, startPosB))
+        self.__initVel = np.vstack((startVelA, startVelB))
+        return self
+
+    def getInitData(self):
+        return self.__initTime, self.__initPos, self.__initVel
+
+    def getInitState(self):
+        return self.__PosAndVel
 
     def secDerivative(self, t, PhirSr, PhivSv):
         """
@@ -29,16 +52,14 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
         # acc = self.get_acceleration()
         # ar = self.get_du2xyz()
         # ap = self.get_du2p()
-
         self.__fr = self.__fr.setTime(t, TimeFormat.GPS_second)
-        self.setPosAndVel(rA, vA).setTime(self.__fr)
 
+        self.setTime(self.__fr).setPosAndVel(rA, vA).getCS().calculation()
         accA = self.getAcceleration()
         arA = self.getDaDx()
         apA = self.getDaDp()
 
-        self.setPosAndVel(rB, vB).setTime(self.__fr)
-
+        self.setPosAndVel(rB, vB).setChangeSat().calculation()
         accB = self.getAcceleration()
         arB = self.getDaDx()
         apB = self.getDaDp()

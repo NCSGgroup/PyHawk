@@ -2,6 +2,7 @@ from src.ForceModel.BaseSecondDerivative import BaseSecondDerivative
 from src.Preference.Pre_ForceModel import NonConservative, PathOfFiles
 from src.Auxilary.GeoMathKit import GeoMathKit
 from src.Frame.Frame import Frame
+import src.Preference.EnumType as EnumType
 import h5py
 import pathlib
 import numpy as np
@@ -9,21 +10,14 @@ import numpy as np
 
 class AbsNonConservative(BaseSecondDerivative):
 
-    def __init__(self, range=NonConservative.date_span,
-                 sat=NonConservative.sat,
-                 arcNo=NonConservative.arcNo):
+    def __init__(self,  sat: EnumType.SatID, range=NonConservative.date_span, arcNo=NonConservative.arcNo):
         super(AbsNonConservative, self).__init__()
         self._GPStime = None
-        self.sat = sat
-        self._range = range
-        self._arcNo = arcNo
 
 
 class NonConByAcc(AbsNonConservative):
 
-    def __init__(self, range=NonConservative.date_span,
-                 sat=NonConservative.sat,
-                 arcNo=NonConservative.arcNo):
+    def __init__(self, sat: EnumType.SatID, range=NonConservative.date_span, arcNo=NonConservative.arcNo):
         """
         Load the saved-already acc and dadp, and output the acc/dadp for the given time epoch.
         :param fileDir: acc and dadp have been computed beforehand and saved in given directory.
@@ -33,6 +27,9 @@ class NonConByAcc(AbsNonConservative):
         super().__init__(range=range, sat=sat, arcNo=arcNo)
         self.__dataTemp = None
         self.__GPStime = None
+        self.sat = sat
+        self._range = range
+        self._arcNo = arcNo
 
     def configure(self, **kwargs):
         self.__dataTemp = kwargs.get('dataTemp', PathOfFiles.temp_non_conservative_data)

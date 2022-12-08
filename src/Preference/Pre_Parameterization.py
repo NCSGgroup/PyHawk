@@ -2,7 +2,7 @@ import src.Preference.EnumType as EnumType
 
 
 class TransitionMatrix:
-    isRequired = False
+    isRequired = True
     Parameter_Number = 6
     AllisGlobal = False
 
