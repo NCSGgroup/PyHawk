@@ -13,6 +13,7 @@ mission = Mission.GRACE_RL02
 date_span = ['2008-01-01', '2008-01-31']
 date_delete = []
 
+
 include_payloads = {Payload.ACC: True,
                     Payload.SCA: True,
                     Payload.KBR: True,
