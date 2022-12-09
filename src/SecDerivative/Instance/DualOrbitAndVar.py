@@ -19,7 +19,7 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
         self.__initVel = None
         self.__PosAndVel = None
 
-    def setInitData(self, arc: int, kind: Payload, sat=SatID.A):
+    def setInitData(self, arc: int, kind: Payload):
         GNVA = self.__rd.getData(arc=arc, kind=kind, sat=SatID.A)
         GNVB = self.__rd.getData(arc=arc, kind=kind, sat=SatID.B)
         startPosA, startPosB = GNVA[4, 1:4], GNVB[4, 1:4]
@@ -54,12 +54,12 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
         # ap = self.get_du2p()
         self.__fr = self.__fr.setTime(t, TimeFormat.GPS_second)
 
-        self.setTime(self.__fr).setPosAndVel(rA, vA).getCS().calculation()
+        self.setTime(self.__fr).setPosAndVel(rA, vA).getCS().ChangeSat(SatID.A).calculation()
         accA = self.getAcceleration()
         arA = self.getDaDx()
         apA = self.getDaDp()
 
-        self.setPosAndVel(rB, vB).setChangeSat().calculation()
+        self.setPosAndVel(rB, vB).ChangeSat(SatID.B).calculation()
         accB = self.getAcceleration()
         arB = self.getDaDx()
         apB = self.getDaDp()
