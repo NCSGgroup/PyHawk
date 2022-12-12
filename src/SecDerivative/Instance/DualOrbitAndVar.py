@@ -54,7 +54,9 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
         # ap = self.get_du2p()
         self.__fr = self.__fr.setTime(t, TimeFormat.GPS_second)
 
-        self.setTime(self.__fr).setPosAndVel(rA, vA).getCS().ChangeSat(SatID.A).calculation()
+        self.setTime(self.__fr).getCS()
+
+        self.setPosAndVel(rA, vA).ChangeSat(SatID.A).calculation()
         accA = self.getAcceleration()
         arA = self.getDaDx()
         apA = self.getDaDp()

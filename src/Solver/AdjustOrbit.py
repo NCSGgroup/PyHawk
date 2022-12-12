@@ -47,7 +47,7 @@ class AdjustOrbit:
         self.__sat = sat
         self.__kind = kind
 
-    def configure(self, **kwargs):
+    def configure(self, SerDer, **kwargs):
         self.__state_path = kwargs.get('state_dir', Pre_AdjustOrbit.PathOfFiles.StateVectorDataTemp)
         self.__res_path = kwargs.get('res_dir', Pre_AdjustOrbit.PathOfFiles.OrbitAdjustResTemp)
         """define satName"""
@@ -75,12 +75,11 @@ class AdjustOrbit:
             self.__ac[sat] = ac
             self.__ap[sat] = ap
         """step 3: instance second Derivative"""
-        var_2nd_diff = Orbit_var_2nd_diff(self.__fr, rd).setInitData(arc=self.__arcNo, kind=self.__kind)
-        self.__secDer = var_2nd_diff
+        self.__secDer = SerDer(self.__fr, rd).setInitData(arc=self.__arcNo, kind=self.__kind)
         """step 4: Propagator config"""
-        self.__startTime, self.__startPos, self.__startVel = var_2nd_diff.getInitData()
-        self.__obsGNV = var_2nd_diff.getInitState()
-        self.__ode = GravimetryODE().setInitial(self.__startTime, self.__startPos.copy(), self.__startVel.copy()).set2ndDerivative(var_2nd_diff)
+        self.__startTime, self.__startPos, self.__startVel = self.__secDer.getInitData()
+        self.__obsGNV = self.__secDer.getInitState()
+        self.__ode = GravimetryODE().setInitial(self.__startTime, self.__startPos.copy(), self.__startVel.copy()).set2ndDerivative(self.__secDer)
         return self
 
     def calibrate(self, iteration: int = 2):
@@ -108,8 +107,8 @@ class AdjustOrbit:
             '''step 4: update initial state vector'''
             self.__ode.setInitial(self.__startTime, r_ini, v_ini)
             '''step 5: update accelerometer'''
-            for sat in self.__sat:
-                self.__ac[sat].updatePar(paralist=acc_ini[0]).get_and_save()
+            for j in range(len(self.__sat)):
+                self.__ac[self.__sat[j]].updatePar(paralist=acc_ini[j]).get_and_save()
             '''step 6: update force model'''
             self.__secDer.configForce.reConfigure()
             '''step 7: orbit integration once again'''
