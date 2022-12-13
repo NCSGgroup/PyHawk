@@ -13,7 +13,8 @@ class ConfigForce:
     def __init__(self, ep: PlanetEphemerides):
         self.__forceType = {}
         self.__ep = ep
-        self.__sat = Pre_ForceModel.NonConservative.sat
+        sat = Pre_ForceModel.NonConservative.sat.copy()
+        self.__sat = [key for key, value in sat.items() if value]
         include_ForceType = Pre_ForceModel.include_ForceType.copy()
         self.__include_ForceType = [key for key, value in include_ForceType.items() if value]
         self.__instanceForce()

@@ -44,7 +44,7 @@ class AdjustOrbit:
         self.__satName = None
         self.__date_span = date_span
         self.__arcNo = arcNo
-        self.__sat = sat
+        self.__sat = [key for key, value in sat.items() if value]
         self.__kind = kind
 
     def configure(self, SerDer, **kwargs):

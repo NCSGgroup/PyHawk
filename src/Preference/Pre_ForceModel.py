@@ -6,7 +6,6 @@ import pathlib as pathlib
 import numpy as np
 import src.Preference.EnumType as EnumType
 
-
 include_ForceType = {ForceType.GravHar: True,
                      ForceType.Relativity: True,
                      ForceType.NonConserveForce: True,
@@ -28,9 +27,10 @@ instance_GravHar = {GravHarType.NonTide: InstanceNonTide.AODRL06,
 
 
 class NonConservative:
-    date_span = ['2016-01-01', '2016-01-31']
+    date_span = ['2008-01-01', '2008-01-31']
     arcNo = 0
-    sat = [SatID.A, SatID.B]
+    sat = {SatID.A: True,
+           SatID.B: True}
 
 
 class OceanTideConfig:
@@ -168,4 +168,3 @@ class PathOfFiles:
     GOCO02s = root_dir.joinpath('data', 'StaticGravityField', 'GOCO02s.gfc')
     AOD = root_dir.joinpath('data', 'AOD', 'RL06')
     Atmos = root_dir.joinpath('data', 'atmos')
-
