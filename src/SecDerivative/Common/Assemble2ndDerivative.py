@@ -19,7 +19,7 @@ class Assemble2ndDerivative:
         self.__vel = None
         self.__C = None
         self.__S = None
-        self.__isChangeSat = False
+        self.__Sat = EnumType.SatID.A
         self.__ep = PlanetEphemerides().configure().setPlanets()
         self.__sort = SortCS(Pre_Parameterization.StokesCoefficients.SortMethod,
                              Pre_Parameterization.StokesCoefficients.MaxDegree,
@@ -57,17 +57,15 @@ class Assemble2ndDerivative:
                 self.__C, self.__S = obj.setTime(self.__time).getTotalCS()
         return self
 
-    def setChangeSat(self):
-        self.__isChangeSat = True
+    def ChangeSat(self, sat: EnumType.SatID):
+        self.__Sat = sat
         return self
 
     def calculation(self):
         self.__reset()
         for item in self.ForceType:
-            print(self.ForceType[item])
-
-        for obj in self.ForceType.values():
-            if isinstance(obj, ConfigGravHar):
+            obj = self.ForceType[item]
+            if item == EnumType.ForceType.GravHar.name:
                 rm = self.__time.getRotationMatrix
                 pos = self.__pos
                 if obj.InputPosCoordinate is EnumType.Coordinate.GCRS:
@@ -97,22 +95,69 @@ class Assemble2ndDerivative:
                     res = self.__time.AccITRS2GCRS(res, self.__time.getRotationMatrix)
                     self.__isExistDaDp = True
                     self.__dadp = np.hstack((self.__dadp, res))
-            elif isinstance(obj, AbsRelativity):
+            elif item == EnumType.ForceType.Relativity.name:
                 obj = obj.setSunState(*(self.__ep.getSunPosAndVel(self.__time)))\
                     .setSatState(self.__pos.copy(), self.__vel.copy())
                 self.__acc += obj.getAcceleration()
-            elif isinstance(obj, AbsNonConservative):
-                obj = obj.setTime(self.__time)
-                self.__acc += obj.getAcceleration()
-                if Pre_Parameterization.Accelerometer.isRequired:
-                    self.__isExistDaDp = True
-                    self.__dadp = np.hstack((self.__dadp, obj.getDaDp()))
-            elif isinstance(obj, AbsThreeBody):
+            elif item == EnumType.ForceType.PlanetaryPerturbation.name:
                 obj = obj.setTime(self.__time).setPlanetPos(self.__ep.getPosPlanets()).setSatPos(self.__pos.copy())
                 self.__acc += obj.getAcceleration()
                 if Pre_Parameterization.TransitionMatrix.isRequired:
                     self.__isExistDaDx = True
                     self.__dadx += obj.getDaDx()
+            if item == (EnumType.ForceType.NonConserveForce.name + self.__Sat.name):
+                obj = obj.setTime(self.__time)
+                self.__acc += obj.getAcceleration()
+                if Pre_Parameterization.Accelerometer.isRequired:
+                    self.__isExistDaDp = True
+                    self.__dadp = np.hstack((self.__dadp, obj.getDaDp()))
+        # for obj in self.ForceType.values():
+        #     if isinstance(obj, ConfigGravHar):
+        #         rm = self.__time.getRotationMatrix
+        #         pos = self.__pos
+        #         if obj.InputPosCoordinate is EnumType.Coordinate.GCRS:
+        #             pos = self.__time.PosGCRS2ITRS(np.array(self.__pos.copy()).astype(float), rm)
+        #         if len(obj.setZero) != 0:
+        #             for index in obj.setZero:
+        #                 start = int(index * (index + 1) / 2)
+        #                 end = int((index + 1) * (index + 2) / 2)
+        #                 self.__C[start: end] = 0.
+        #                 self.__S[start: end] = 0.
+        #         cgh = obj.ClibGravHar.setPar(self.__C, self.__S, pos)
+        #
+        #         acc = cgh.getAcceleration()
+        #         if obj.OutputCoordinate is EnumType.Coordinate.GCRS:
+        #             acc = self.__time.AccITRS2GCRS(acc, rm).flatten()
+        #         self.__acc += acc
+        #         if Pre_Parameterization.TransitionMatrix.isRequired:
+        #             res = cgh.getDaDx()
+        #             self.__isExistDaDx = True
+        #             self.__dadx += self.__time.dadrITRS2GCRS(res, self.__time.getRotationMatrix)
+        #         if Pre_Parameterization.StokesCoefficients.isRequired:
+        #             du2c, du2s = cgh.getDaDp(degree_max=Pre_Parameterization.StokesCoefficients.MaxDegree,
+        #                                      degree_min=Pre_Parameterization.StokesCoefficients.MinDegree)
+        #             res = np.array([self.__sort.sort(du2c[0], du2s[0]),
+        #                             self.__sort.sort(du2c[1], du2s[1]),
+        #                             self.__sort.sort(du2c[2], du2s[2])])
+        #             res = self.__time.AccITRS2GCRS(res, self.__time.getRotationMatrix)
+        #             self.__isExistDaDp = True
+        #             self.__dadp = np.hstack((self.__dadp, res))
+        #     elif isinstance(obj, AbsRelativity):
+        #         obj = obj.setSunState(*(self.__ep.getSunPosAndVel(self.__time)))\
+        #             .setSatState(self.__pos.copy(), self.__vel.copy())
+        #         self.__acc += obj.getAcceleration()
+        #     elif isinstance(obj, AbsNonConservative):
+        #         obj = obj.setTime(self.__time)
+        #         self.__acc += obj.getAcceleration()
+        #         if Pre_Parameterization.Accelerometer.isRequired:
+        #             self.__isExistDaDp = True
+        #             self.__dadp = np.hstack((self.__dadp, obj.getDaDp()))
+        #     elif isinstance(obj, AbsThreeBody):
+        #         obj = obj.setTime(self.__time).setPlanetPos(self.__ep.getPosPlanets()).setSatPos(self.__pos.copy())
+        #         self.__acc += obj.getAcceleration()
+        #         if Pre_Parameterization.TransitionMatrix.isRequired:
+        #             self.__isExistDaDx = True
+        #             self.__dadx += obj.getDaDx()
 
     def getAcceleration(self):
         if not bool(self.ForceType):

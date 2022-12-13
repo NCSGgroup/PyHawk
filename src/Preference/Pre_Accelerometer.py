@@ -5,7 +5,7 @@ cali = {'Scale': [False, False, False,
                   False, False, False],
         'Bias_constant': [True, True, True],
         'Bias_trend': [True, True, True],
-        'Bias_quadratic': [True, True, True]
+        'Bias_quadratic': [False, False, False]
         }
 
 # cali_B = {'Scale': [False, False, False,

@@ -32,7 +32,6 @@ class Mission(Enum):
     GFO_RL02 = 4
     XX4_RL01 = 5
     GRACE_FO_RL04 = 6
-    GRACE_NEW_RL02 = 7
 
 
 class SatID(Enum):

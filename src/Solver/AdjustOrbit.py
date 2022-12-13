@@ -38,18 +38,24 @@ class AdjustOrbit:
         self.__startVel = None
         self.__obsGNV = None
         self.__res = None
-        self.__ap = None
-        self.__ac = None
+        self.__ap = {}
+        self.__ac = {}
         self.__secDer = None
+        self.__satName = None
         self.__date_span = date_span
         self.__arcNo = arcNo
         self.__sat = sat
         self.__kind = kind
 
-    def configure(self, **kwargs):
+    def configure(self, SerDer, **kwargs):
         self.__state_path = kwargs.get('state_dir', Pre_AdjustOrbit.PathOfFiles.StateVectorDataTemp)
         self.__res_path = kwargs.get('res_dir', Pre_AdjustOrbit.PathOfFiles.OrbitAdjustResTemp)
-
+        """define satName"""
+        for sat in self.__sat:
+            if self.__satName is None:
+                self.__satName = sat.name
+            else:
+                self.__satName = self.__satName + sat.name
         """Define the directory to deposit the state vectors"""
         self.__state_dir = self.__state_path.joinpath(self.__date_span[0] + '_' + self.__date_span[1])
         if not self.__state_dir.is_dir():
@@ -58,30 +64,22 @@ class AdjustOrbit:
         self.__res_dir = self.__res_path.joinpath(self.__date_span[0] + '_' + self.__date_span[1])
         if not self.__res_dir.is_dir():
             self.__res_dir.mkdir(exist_ok=True)
-        res_filename = self.__res_dir.joinpath(str(self.__arcNo) + '_' + self.__sat.name + '.hdf5')
+        res_filename = self.__res_dir.joinpath(str(self.__arcNo) + '_' + self.__satName + '.hdf5')
         self.__res_h5 = h5py.File(res_filename, 'w')
         """step 1: combine the SCA and ACC data to obtain the non-conservative force as well as dadp arc by arc"""
         rd = ArcData(date_span=self.__date_span)
-        ap = AccCaliPar(sat=self.__sat, arcNo=self.__arcNo)
-        ac = Accelerometer(rd=rd, ap=ap)
-        ac.get_and_save()
-        self.__ac = ac
-        self.__ap = ap
-        # """step 2: obtain the GNV orbit of GRACE to initialize the ODE"""
-        # GNVA = rd.getData(arc=self.__arcNo, kind=self.__kind, sat=self.__sat)
-        # GNVB = rd.getData(arc=self.__arcNo, kind=self.__kind, sat=self.__sat)
-        # GPS_Time = GNVA[4, 0]
-        # startPosA, startPosB = GNVA[4, 1:4], GNVB[4, 1:4]
-        # startVelA, startVelB = GNVA[4, 4:7], GNVB[4, 4:7]
-        # startPos = np.vstack((startPosA, startPosB))
-        # startVel = np.vstack((startVelA, startVelB))
+        for sat in self.__sat:
+            ap = AccCaliPar(sat=sat, arcNo=self.__arcNo)
+            ac = Accelerometer(rd=rd, ap=ap)
+            ac.get_and_save()
+            self.__ac[sat] = ac
+            self.__ap[sat] = ap
         """step 3: instance second Derivative"""
-        var_2nd_diff = Orbit_var_2nd_diff(self.__fr, rd).setInitData(arc=self.__arcNo, kind=self.__kind, sat=self.__sat)
-        self.__secDer = var_2nd_diff
+        self.__secDer = SerDer(self.__fr, rd).setInitData(arc=self.__arcNo, kind=self.__kind)
         """step 4: Propagator config"""
-        self.__startTime, self.__startPos, self.__startVel = var_2nd_diff.getInitData()
-        self.__obsGNV = var_2nd_diff.getInitState()
-        self.__ode = GravimetryODE().setInitial(self.__startTime, self.__startPos.copy(), self.__startVel.copy()).set2ndDerivative(var_2nd_diff)
+        self.__startTime, self.__startPos, self.__startVel = self.__secDer.getInitData()
+        self.__obsGNV = self.__secDer.getInitState()
+        self.__ode = GravimetryODE().setInitial(self.__startTime, self.__startPos.copy(), self.__startVel.copy()).set2ndDerivative(self.__secDer)
         return self
 
     def calibrate(self, iteration: int = 2):
@@ -91,14 +89,15 @@ class AdjustOrbit:
         self.__ode_res = self.__ode.propagate()
         self.__save_StateVectors(self.__ode_res)
 
-        filename = self.__state_dir.joinpath(str(self.__arcNo) + '_' + self.__sat.name + '.hdf5')
+        filename = self.__state_dir.joinpath(str(self.__arcNo) + '_' + self.__satName + '.hdf5')
         h5 = h5py.File(filename, 'r')
         self.__initTime = h5['t'][:]
         self.__initR = h5['r'][:]
         h5.close()
         '''step 2: orbit adjustment'''
         orbit_init = np.hstack((self.__startPos, self.__startVel))
-        acc_init = np.vstack((self.__ap.getPar(), self.__ap.getPar()))
+        """TODO"""
+        acc_init = np.vstack((self.__ap[self.__sat[0]].getPar(), self.__ap[self.__sat[1]].getPar()))
         '''step 3: start iteration'''
         for i in range(iteration):
             '''make the adjustment'''
@@ -108,7 +107,8 @@ class AdjustOrbit:
             '''step 4: update initial state vector'''
             self.__ode.setInitial(self.__startTime, r_ini, v_ini)
             '''step 5: update accelerometer'''
-            self.__ac.updatePar(paralist=acc_ini[0]).get_and_save()
+            for j in range(len(self.__sat)):
+                self.__ac[self.__sat[j]].updatePar(paralist=acc_ini[j]).get_and_save()
             '''step 6: update force model'''
             self.__secDer.configForce.reConfigure()
             '''step 7: orbit integration once again'''
@@ -122,7 +122,7 @@ class AdjustOrbit:
             elif i == 2:
                 self.thirdR = self.__ode_res[1]
 
-        filename = self.__state_dir.joinpath(str(self.__arcNo) + '_' + self.__sat.name + '.hdf5')
+        filename = self.__state_dir.joinpath(str(self.__arcNo) + '_' + self.__satName + '.hdf5')
         h5 = h5py.File(filename, 'r')
         self.__endTime = h5['t'][:]
         self.__endR = h5['r'][:]
@@ -186,7 +186,7 @@ class AdjustOrbit:
 
     def __save_StateVectors(self, state):
         res_dir = self.__state_dir
-        res_filename = res_dir.joinpath(str(self.__arcNo) + '_' + self.__sat.name + '.hdf5')
+        res_filename = res_dir.joinpath(str(self.__arcNo) + '_' + self.__satName + '.hdf5')
         h5 = h5py.File(res_filename, 'w')
         h5.create_dataset('t', data=state[0])
         h5.create_dataset('r', data=state[1])

@@ -25,7 +25,10 @@ def Sheet1():
 
 
 def fitting():
-    pass
+    str = EnumType.SatID.A.name
+    sat = EnumType.SatID.B.name
+    str = str + sat
+    print(str)
 
 if __name__ == '__main__':
     # print(Pre_Parameterization.TransitionMatrix.__name__)

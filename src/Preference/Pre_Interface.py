@@ -6,23 +6,24 @@
 @Description:
 """
 
-from src.Preference.EnumType import Mission, Payload
+from src.Preference.EnumType import Mission, Payload, SatID
 import pathlib as pathlib
 
 mission = Mission.GRACE_RL02
-date_span = ['2008-01-01', '2008-01-31']
+date_span = ['2016-01-01', '2016-01-31']
+arcNo = 0
+sat = [SatID.A, SatID.B]
 date_delete = []
-
 
 include_payloads = {Payload.ACC: True,
                     Payload.SCA: True,
                     Payload.KBR: True,
                     Payload.GNV: True,
-                    Payload.KinematicOrbit: False,
+                    Payload.KinematicOrbit: True,
                     Payload.LRI: False}
 
 is_orbit_GCRS = {Payload.GNV: False,
-                 Payload.KinematicOrbit: True}
+                 Payload.KinematicOrbit: False}
 
 sr_payload = {Payload.ACC: 1,
               Payload.SCA: 5,

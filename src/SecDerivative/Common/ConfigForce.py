@@ -38,7 +38,7 @@ class ConfigForce:
                 self.__forceType[force.name] = obj
             if force is ForceType.NonConserveForce:
                 for sat in self.__sat:
-                    obj = NonConByAcc(sat).configure()
+                    obj = NonConByAcc(sat=sat).configure()
                     self.__forceType[force.name + sat.name] = obj
 
     def getForceType(self):
