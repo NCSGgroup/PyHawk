@@ -10,9 +10,10 @@ from src.ForceModel.NonConservative import NonConByAcc
 
 class ConfigForce:
 
-    def __init__(self, ep: PlanetEphemerides):
+    def __init__(self, arc: int, ep: PlanetEphemerides):
         self.__forceType = {}
         self.__ep = ep
+        self.__arc = arc
         sat = Pre_ForceModel.NonConservative.sat.copy()
         self.__sat = [key for key, value in sat.items() if value]
         include_ForceType = Pre_ForceModel.include_ForceType.copy()
@@ -39,7 +40,7 @@ class ConfigForce:
                 self.__forceType[force.name] = obj
             if force is ForceType.NonConserveForce:
                 for sat in self.__sat:
-                    obj = NonConByAcc(sat=sat).configure()
+                    obj = NonConByAcc(sat=sat, arcNo=self.__arc).configure()
                     self.__forceType[force.name + sat.name] = obj
 
     def getForceType(self):
