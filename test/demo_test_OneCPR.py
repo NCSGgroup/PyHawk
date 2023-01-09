@@ -16,14 +16,14 @@ def oneCPR():
 
 
 
-    # plt.plot(np.array(KBR[:, 0]), KBR[:, 1] - baKBR[:, 0], label="X")
-    # plt.plot(np.array(KBR[:, 0]), KBR[:, 2] - baKBR[:, 1], label="Y")
-    # plt.plot(np.array(KBR[:, 0]), KBR[:, 3] - baKBR[:, 2], label="Z")
-    # plt.xlabel('GPS time [sec]', fontsize=20)
-    # plt.ylabel(r'$m$', fontsize=20)
-    # plt.yticks(fontsize=18)
-    # plt.legend(loc='upper left', fontsize=20)
-    # plt.show()
+    plt.plot(np.array(KBR[:, 0]), KBR[:, 1] - baKBR[:, 0], label="X")
+    plt.plot(np.array(KBR[:, 0]), KBR[:, 2] - baKBR[:, 1], label="Y")
+    plt.plot(np.array(KBR[:, 0]), KBR[:, 3] - baKBR[:, 2], label="Z")
+    plt.xlabel('GPS time [sec]', fontsize=20)
+    plt.ylabel(r'$m$', fontsize=20)
+    plt.yticks(fontsize=18)
+    plt.legend(loc='upper left', fontsize=20)
+    plt.show()
 
 
 def fun(t: np.ndarray, n: np.ndarray):

@@ -34,7 +34,7 @@ def demo1():
     rd = ArcData()
     RMSA = []
     RMSB = []
-    for i in range(120):
+    for i in range(109):
         GNVA = rd.getData(arc=i, kind=EnumType.Payload.GNV, sat=EnumType.SatID.A)
         GNVTime = GNVA[:, 0]
         GNVAR = GNVA[:, 1:4]
@@ -62,6 +62,23 @@ def rms(x: np.ndarray):
     """
     return np.linalg.norm(x) / np.sqrt(np.shape(x)[0])
 
+def draw():
+    R = np.load("2008-1RMS.npz")
+    RMSA = R['RMSA']
+    RMSB = R['RMSB']
+    plt.title('2008-1RMS', fontsize=24)
+
+    plt.plot(np.arange(len(RMSA)), RMSA, label="RMSA")
+    plt.plot(np.arange(len(RMSA)), RMSB, label="RMSB")
+    plt.xlabel('GPS time [sec]', fontsize=20)
+    plt.ylabel(r'$m$', fontsize=20)
+    plt.yticks(fontsize=18)
+    plt.legend(loc='upper left', fontsize=20)
+    # plt.savefig('../result/img/{}-{}.png'.format(length[0], length[-1]), dpi=300)
+    # plt.grid(ls='--')
+    plt.show()
+
 
 if __name__ == '__main__':
-    demo1()
+    # demo1()
+    draw()
