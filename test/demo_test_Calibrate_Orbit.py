@@ -17,19 +17,19 @@ import matplotlib.pyplot as plt
 
 def demo1():
 
-    # """step 1: Read raw data"""
-    # fr = Frame(EOP().load())
-    # s = GRACE_OLD_RL02().configure().setDate()
-    # s.read_double_sat()
-    # """step 2: Convert orbit from ITRS frame into GCRS frame"""
-    # kine = KinematicOrbit(L1b=s).configure()
-    # kine.read_double_sat()
-    # kine.GNVandKiOrbitItrs2Gcrs(fr)
-    # """step 3: Gap fix"""
-    # gf = GapFix(s).configure()
-    # gf.fix_all().makeReport()
-    # arc = ArcSelect(gf).configure()
-    # arc.unpackArcs().makeReport()
+    """step 1: Read raw data"""
+    fr = Frame(EOP().load())
+    s = GRACE_OLD_RL02().configure().setDate()
+    s.read_double_sat()
+    """step 2: Convert orbit from ITRS frame into GCRS frame"""
+    kine = KinematicOrbit(L1b=s).configure()
+    kine.read_double_sat()
+    kine.GNVandKiOrbitItrs2Gcrs(fr)
+    """step 3: Gap fix"""
+    gf = GapFix(s).configure()
+    gf.fix_all().makeReport()
+    arc = ArcSelect(gf).configure()
+    arc.unpackArcs().makeReport()
     """step 5: init AdjustOrbit"""
     adjust = AdjustOrbit().configure(Orbit_var_2nd_diff).calibrate(iteration=2)
     # initTime, initR, endTime, endR = adjust.draw()
@@ -49,25 +49,24 @@ def draw():
     R = np.load("adjust.npz")
     Time = R['time']
     GNVR = R['GNVR']
-    firstR = R['R1'][:, 0:3, 0]
-    secondR = R['R2'][:, 0:3, 0]
-    thirdR = R['R3'][:, 0:3, 0]
-
+    firstR = R['R1'][:, 3:6, 0]
+    secondR = R['R2'][:, 3:6, 0]
+    # thirdR = R['R3'][:, 0:3, 0]
     fig = plt.figure()
     # plt.style.use(['science', 'grid', 'no-latex'])
     plt.title('2008-1-1 sat-A arc-0 (constant and trend)', fontsize=24)
     #
-    print(rms(np.array(GNVR[:]) - secondR[:, 0:3]))
-    a = np.sum((np.array(GNVR[:]) - secondR[:, 0:3]))
+    # print(rms(np.array(GNVR[:]) - secondR[:, 0:3]))
+    # a = np.sum((np.array(GNVR[:]) - secondR[:, 0:3]))
     # plt.plot(np.array(Time), np.array(np.sqrt(np.sum((np.array(GNVR[:]) - secondR[:, 0:3]) ** 2, 1))), label="X")
-    # rd = ArcData()
-    # GNV = rd.getData(arc=0, kind=EnumType.Payload.GNV, sat=EnumType.SatID.B)
-    # GNVTime = GNV[:, 0]
-    # GNVR = GNV[:, 1:4]
+    rd = ArcData()
+    GNV = rd.getData(arc=0, kind=EnumType.Payload.GNV, sat=EnumType.SatID.B)
+    GNVTime = GNV[:, 0]
+    GNVR = GNV[:, 1:4]
 
-    # plt.plot(np.array(Time), np.array(GNVR[:, 0]) - secondR[:, 0], label="X")
-    # plt.plot(np.array(Time), np.array(GNVR[:, 1]) - secondR[:, 1], label="Y")
-    # plt.plot(np.array(Time), np.array(GNVR[:, 2]) - secondR[:, 2], label="Z")
+    plt.plot(np.array(Time), np.array(GNVR[:, 0]) - secondR[:, 0], label="X")
+    plt.plot(np.array(Time), np.array(GNVR[:, 1]) - secondR[:, 1], label="Y")
+    plt.plot(np.array(Time), np.array(GNVR[:, 2]) - secondR[:, 2], label="Z")
     plt.xlabel('GPS time [sec]', fontsize=20)
     plt.ylabel(r'$m$', fontsize=20)
     plt.yticks(fontsize=18)
@@ -88,8 +87,8 @@ def rms(x: np.ndarray):
 
 
 if __name__ == '__main__':
-    demo1()
-    # draw()
+    # demo1()
+    draw()
 
 
 
