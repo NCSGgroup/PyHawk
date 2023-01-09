@@ -19,19 +19,22 @@ class Assemble2ndDerivative:
         self.__vel = None
         self.__C = None
         self.__S = None
+        self._arc = None
         self.__Sat = EnumType.SatID.A
         self.__ep = PlanetEphemerides().configure().setPlanets()
         self.__sort = SortCS(Pre_Parameterization.StokesCoefficients.SortMethod,
                              Pre_Parameterization.StokesCoefficients.MaxDegree,
                              Pre_Parameterization.StokesCoefficients.MinDegree)
-        self.configForce = ConfigForce(self.__ep)
-        self.ForceType = self.configForce.getForceType()
-
         self.__isExistDaDx = False
         self.__isExistDaDp = False
         self.__acc = np.zeros(3, dtype=float)
         self.__dadp = np.array([[], [], []])
         self.__dadx = np.zeros((3, 3), dtype=float)
+
+    def configure(self):
+        self.configForce = ConfigForce(arc=self._arc, ep=self.__ep)
+        self.ForceType = self.configForce.getForceType()
+        return self
 
     def __reset(self):
         self.__isExistDaDx = False
