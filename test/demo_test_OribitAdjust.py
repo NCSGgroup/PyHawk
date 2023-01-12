@@ -1,22 +1,14 @@
-from src.Interface.KinematicOrbit import KinematicOrbit
-from src.Interface.L1b import GRACE_OLD_RL02, GRACE_FO_RL04, GRACE_NEW_RL02
 from src.Interface.ArcOperation import ArcSelect, ArcData
-from src.Frame.Frame import Frame, EOP
-from src.Interface.GapFix import GapFix
 import src.Preference.EnumType as EnumType
 import numpy as np
 import time
 from src.SecDerivative.Instance.DualOrbitAndVar import Orbit_var_2nd_diff
 from src.Solver.AdjustOrbit import AdjustOrbit
-from src.SecDerivative.Common.Assemble2ndDerivative import Assemble2ndDerivative
-from src.ODE.Instance.GravimetryODE import GravimetryODE
-from src.Interface.Accelerometer import Accelerometer, AccCaliPar
-import src.Preference.Pre_Interface as Pre_Interface
 import matplotlib.pyplot as plt
+import multiprocessing
 
 
-def demo1():
-
+def demo1(start, end):
     # """step 1: Read raw data"""
     # fr = Frame(EOP().load())
     # s = GRACE_OLD_RL02().configure().setDate()
@@ -34,7 +26,7 @@ def demo1():
     rd = ArcData()
     RMSA = []
     RMSB = []
-    for i in range(109):
+    for i in range(start, end):
         GNVA = rd.getData(arc=i, kind=EnumType.Payload.GNV, sat=EnumType.SatID.A)
         GNVTime = GNVA[:, 0]
         GNVAR = GNVA[:, 1:4]
@@ -52,7 +44,7 @@ def demo1():
         print(i)
         print(rmsA)
         print(rmsB)
-    np.savez('2008-1RMS.npz', RMSA=RMSA, RMSB=RMSB)
+    np.savez('2008-1-' + start + '-' + end + '.npz', RMSA=RMSA, RMSB=RMSB)
 
 
 def rms(x: np.ndarray):
@@ -61,6 +53,7 @@ def rms(x: np.ndarray):
     :return:
     """
     return np.linalg.norm(x) / np.sqrt(np.shape(x)[0])
+
 
 def draw():
     R = np.load("2008-1RMS.npz")
@@ -80,5 +73,18 @@ def draw():
 
 
 if __name__ == '__main__':
+    p1 = multiprocessing.Process(target=demo1, args=(0, 27))
+    p2 = multiprocessing.Process(target=demo1, args=(27, 54))
+    p3 = multiprocessing.Process(target=demo1, args=(54, 81))
+    p4 = multiprocessing.Process(target=demo1, args=(81, 108))
+    p1.start()
+    p2.start()
+    p3.start()
+    p4.start()
+    p1.join()
+    p2.join()
+    p3.join()
+    p4.join()
     # demo1()
-    draw()
+    # draw()
+
