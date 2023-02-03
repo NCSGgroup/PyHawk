@@ -52,7 +52,7 @@ def demo1():
         print(i)
         print(rmsA)
         print(rmsB)
-    np.savez('2008-1RMS.npz', RMSA=RMSA, RMSB=RMSB)
+    np.savez('2008-1RMS-Nine.npz', RMSA=RMSA, RMSB=RMSB)
 
 
 def rms(x: np.ndarray):
@@ -63,10 +63,10 @@ def rms(x: np.ndarray):
     return np.linalg.norm(x) / np.sqrt(np.shape(x)[0])
 
 def draw():
-    R = np.load("2008-1RMS.npz")
+    R = np.load("2008-1RMS-Nine.npz")
     RMSA = R['RMSA']
     RMSB = R['RMSB']
-    plt.title('2008-1RMS', fontsize=24)
+    plt.title('2008-1RMS-Nine', fontsize=24)
 
     plt.plot(np.arange(len(RMSA)), RMSA, label="RMSA")
     plt.plot(np.arange(len(RMSA)), RMSB, label="RMSB")
