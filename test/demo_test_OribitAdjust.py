@@ -1,3 +1,4 @@
+import os,sys
 from src.Interface.ArcOperation import ArcSelect, ArcData
 import src.Preference.EnumType as EnumType
 import numpy as np
@@ -6,6 +7,7 @@ from src.SecDerivative.Instance.DualOrbitAndVar import Orbit_var_2nd_diff
 from src.Solver.AdjustOrbit import AdjustOrbit
 import matplotlib.pyplot as plt
 import multiprocessing
+sys.path.append("../")
 
 
 def demo1(start, end):
