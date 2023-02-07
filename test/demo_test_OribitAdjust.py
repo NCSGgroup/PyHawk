@@ -39,14 +39,16 @@ def demo1(start, end):
         # initTime, initR, endTime, endR = adjust.draw()
         firstR, secondR, thirdR = adjust.getR()
         secondR = secondR[:, 0:6, 0]
-        rmsA = rms(np.array(GNVAR) - secondR[:, 0:3])
-        rmsB = rms(np.array(GNVBR) - secondR[:, 3:6])
+        diffA = GNVAR - secondR[:, 0:3]
+        diffB = GNVBR - secondR[:, 3:6]
+        rmsA = rms(np.sqrt(diffA[:, 0] ** 2 + diffA[:, 1] ** 2 + diffA[:, 2] ** 2))
+        rmsB = rms(np.sqrt(diffB[:, 0] ** 2 + diffB[:, 1] ** 2 + diffB[:, 2] ** 2))
         RMSA.append(rmsA)
         RMSB.append(rmsB)
         print(i)
         print(rmsA)
         print(rmsB)
-    np.savez('2008-1-' + start + '-' + end + '.npz', RMSA=RMSA, RMSB=RMSB)
+    np.savez('2008-1-' + str(start) + '-' + str(end) + '.npz', RMSA=RMSA, RMSB=RMSB)
 
 
 def rms(x: np.ndarray):
@@ -54,6 +56,7 @@ def rms(x: np.ndarray):
     :param x: 1-dim
     :return:
     """
+    # 确认公式
     return np.linalg.norm(x) / np.sqrt(np.shape(x)[0])
 
 
@@ -74,19 +77,75 @@ def draw():
     plt.show()
 
 
+def draw1():
+    R = np.load("2008-1RMS.npz")
+    RMSA_c = R['RMSA'][0:108]
+    RMSB_c = R['RMSB'][0:108]
+
+    R1 = np.load("2008-1-0-18.npz")
+    R2 = np.load("2008-1-18-36.npz")
+    R3 = np.load("2008-1-36-54.npz")
+    R4 = np.load("2008-1-54-72.npz")
+    R5 = np.load("2008-1-72-90.npz")
+    R6 = np.load("2008-1-90-108.npz")
+
+    RMSA1 = R1['RMSA']
+    RMSB1 = R1['RMSB']
+    RMSA2 = R2['RMSA']
+    RMSB2 = R2['RMSB']
+    RMSA3 = R3['RMSA']
+    RMSB3 = R3['RMSB']
+    RMSA4 = R4['RMSA']
+    RMSB4 = R4['RMSB']
+    RMSA5 = R5['RMSA']
+    RMSB5 = R5['RMSB']
+    RMSA6 = R6['RMSA']
+    RMSB6 = R6['RMSB']
+
+    RMSA = np.append(RMSA1, RMSA2)
+    RMSA = np.append(RMSA, RMSA3)
+    RMSA = np.append(RMSA, RMSA4)
+    RMSA = np.append(RMSA, RMSA5)
+    RMSA = np.append(RMSA, RMSA6)
+
+    RMSB = np.append(RMSB1, RMSB2)
+    RMSB = np.append(RMSB, RMSB3)
+    RMSB = np.append(RMSB, RMSB4)
+    RMSB = np.append(RMSB, RMSB5)
+    RMSB = np.append(RMSB, RMSB6)
+
+    plt.title('2008-1RMS-parallel', fontsize=24)
+    plt.plot(np.arange(len(RMSA)), RMSA, label="RMSA")
+    plt.plot(np.arange(len(RMSA)), RMSB, label="RMSB")
+    plt.xlabel('arcNo', fontsize=20)
+    plt.ylabel(r'$m$', fontsize=20)
+    plt.yticks(fontsize=18)
+    plt.legend(loc='upper left', fontsize=20)
+    # plt.savefig('../result/img/{}-{}.png'.format(length[0], length[-1]), dpi=300)
+    plt.grid(ls='--')
+    plt.show()
+
+
 if __name__ == '__main__':
-    p1 = multiprocessing.Process(target=demo1, args=(0, 27))
-    p2 = multiprocessing.Process(target=demo1, args=(27, 54))
-    p3 = multiprocessing.Process(target=demo1, args=(54, 81))
-    p4 = multiprocessing.Process(target=demo1, args=(81, 108))
-    p1.start()
-    p2.start()
-    p3.start()
-    p4.start()
-    p1.join()
-    p2.join()
-    p3.join()
-    p4.join()
-    # demo1()
+    # p1 = multiprocessing.Process(target=demo1, args=(0, 18))
+    # p2 = multiprocessing.Process(target=demo1, args=(18, 36))
+    # p3 = multiprocessing.Process(target=demo1, args=(36, 54))
+    # p4 = multiprocessing.Process(target=demo1, args=(54, 72))
+    # p5 = multiprocessing.Process(target=demo1, args=(72, 90))
+    # p6 = multiprocessing.Process(target=demo1, args=(90, 108))
+    # p1.start()
+    # p2.start()
+    # p3.start()
+    # p4.start()
+    # p5.start()
+    # p6.start()
+    # p1.join()
+    # p2.join()
+    # p3.join()
+    # p4.join()
+    # p5.join()
+    # p6.join()
+    # demo1(0, 27)
     # draw()
+    draw1()
 
