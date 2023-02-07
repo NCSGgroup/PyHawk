@@ -30,11 +30,23 @@ def fitting():
     str = str + sat
     print(str)
 
+
+def test2():
+    arr1 = np.array([[1,3,4],
+                    [2,3,4],
+                    [2,3,4]])
+    print(arr1[:,0])
+    print(arr1[:,1])
+    print(arr1[:,2])
+    print(np.sqrt(arr1[:,0]**2 + arr1[:,1]**2 + arr1[:,2]**2))
+
+
 if __name__ == '__main__':
     # print(Pre_Parameterization.TransitionMatrix.__name__)
     # Sheet1()
-    fitting()
+    # fitting()
     # fun1(1)
+    test2()
     # time1 = time.time()
     # for i in range(0, 10):
     #     fun1(i)

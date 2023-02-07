@@ -14,8 +14,6 @@ def oneCPR():
     BR = R['R2'][:, 3:6, 0]
     baKBR = BR - AR
 
-
-
     plt.plot(np.array(KBR[:, 0]), KBR[:, 1] - baKBR[:, 0], label="X")
     plt.plot(np.array(KBR[:, 0]), KBR[:, 2] - baKBR[:, 1], label="Y")
     plt.plot(np.array(KBR[:, 0]), KBR[:, 3] - baKBR[:, 2], label="Z")
