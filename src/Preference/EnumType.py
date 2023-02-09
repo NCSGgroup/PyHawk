@@ -190,3 +190,14 @@ class Planets(Enum):
     Neptune = 8
     Pluto = 9
 
+
+class SSTFitOption(Enum):
+    biasC0C1 = 1
+    biasC0C1C2 = 2
+    biasC0C1C2C3 = 3
+    biasC0_OneCPR = 4
+    biasC0C1_OneCPR = 5
+    biasC0C1C2_OneCPR = 6
+    twice_biasC0C1_OneCPR = 7
+    twice_biasC0C1C2_OneCPR = 8
+
