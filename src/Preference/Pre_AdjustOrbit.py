@@ -1,8 +1,9 @@
 import pathlib as pathlib
+import src.Preference.EnumType as EnumType
 
 
 class RangeRate:
-    ParameterFitting = 8
+    ParameterFitting = EnumType.SSTFitOption.biasC0C1_OneCPR
     OutlierTimes = 3
     OutlierLimit = 7e-07
     ArcLength = 1.5
