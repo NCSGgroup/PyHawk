@@ -5,7 +5,7 @@ import src.Preference.EnumType as EnumType
 import numpy as np
 import time
 from src.SecDerivative.Instance.DualOrbitAndVar import Orbit_var_2nd_diff
-from src.Solver.AdjustOrbit import AdjustOrbit
+from src.Solver.AdjustOrbit import AdjustOrbit,AdjustOrbitForDM
 import matplotlib.pyplot as plt
 import multiprocessing
 
@@ -126,38 +126,43 @@ def draw1():
     plt.show()
 
 
+def demo2():
+    AdjustOrbitForDM().configure(Orbit_var_2nd_diff).updateInit()
+    pass
+
+
 if __name__ == '__main__':
-    p1 = multiprocessing.Process(target=demo1, args=(0, 10))
-    p2 = multiprocessing.Process(target=demo1, args=(10, 20))
-    p3 = multiprocessing.Process(target=demo1, args=(20, 30))
-    p4 = multiprocessing.Process(target=demo1, args=(30, 40))
-    p5 = multiprocessing.Process(target=demo1, args=(40, 50))
-    p6 = multiprocessing.Process(target=demo1, args=(50, 60))
-    p7 = multiprocessing.Process(target=demo1, args=(60, 70))
-    p8 = multiprocessing.Process(target=demo1, args=(70, 80))
-    p9 = multiprocessing.Process(target=demo1, args=(80, 90))
-    p10 = multiprocessing.Process(target=demo1, args=(90, 108))
-    p1.start()
-    p2.start()
-    p3.start()
-    p4.start()
-    p5.start()
-    p6.start()
-    p7.start()
-    p8.start()
-    p9.start()
-    p10.start()
-    p1.join()
-    p2.join()
-    p3.join()
-    p4.join()
-    p5.join()
-    p6.join()
-    p7.join()
-    p8.join()
-    p9.join()
-    p10.join()
+    # p1 = multiprocessing.Process(target=demo1, args=(0, 10))
+    # p2 = multiprocessing.Process(target=demo1, args=(10, 20))
+    # p3 = multiprocessing.Process(target=demo1, args=(20, 30))
+    # p4 = multiprocessing.Process(target=demo1, args=(30, 40))
+    # p5 = multiprocessing.Process(target=demo1, args=(40, 50))
+    # p6 = multiprocessing.Process(target=demo1, args=(50, 60))
+    # p7 = multiprocessing.Process(target=demo1, args=(60, 70))
+    # p8 = multiprocessing.Process(target=demo1, args=(70, 80))
+    # p9 = multiprocessing.Process(target=demo1, args=(80, 90))
+    # p10 = multiprocessing.Process(target=demo1, args=(90, 108))
+    # p1.start()
+    # p2.start()
+    # p3.start()
+    # p4.start()
+    # p5.start()
+    # p6.start()
+    # p7.start()
+    # p8.start()
+    # p9.start()
+    # p10.start()
+    # p1.join()
+    # p2.join()
+    # p3.join()
+    # p4.join()
+    # p5.join()
+    # p6.join()
+    # p7.join()
+    # p8.join()
+    # p9.join()
+    # p10.join()
     # demo1(0, 27)
     # draw()
     # draw1()
-
+    demo2()

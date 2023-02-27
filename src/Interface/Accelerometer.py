@@ -112,7 +112,7 @@ class Accelerometer:
         self.__bias = np.array([bias_constant, bias_trend, bias_quadratic], dtype=np.float)
         return self
 
-    @DeprecationWarning
+    # @DeprecationWarning
     def setParFromList(self, paralist:list):
         """
         set parameters from a list; update the parameters: scale & bias

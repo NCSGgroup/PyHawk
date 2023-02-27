@@ -201,3 +201,9 @@ class SSTFitOption(Enum):
     twice_biasC0C1_OneCPR = 7
     twice_biasC0C1C2_OneCPR = 8
 
+
+class SSTObserve(Enum):
+    Range = 1
+    RangeRate = 2
+    RangeAcc = 3
+
