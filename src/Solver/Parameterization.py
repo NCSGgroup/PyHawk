@@ -1,9 +1,9 @@
 import numpy as np
 from src.Preference.EnumType import ParaType, ParaField
+import src.Preference.Pre_Parameterization as Pre_Parameterization
 
 
-
-class Parametrization:
+class Parameterization:
     """
     This class deals with the parametrization strategy of the orbit adjustment or gravity inversion process:
     To define the parameters to be estimated or solved.
@@ -20,8 +20,11 @@ class Parametrization:
     def getInfo(self):
         pass
 
-    def configure(self):
-        pass
+    def configure(self, **kwargs):
+        self.__config[ParaType.TransitionMatrix] = kwargs.get("TransitionMatrix", Pre_Parameterization.TransitionMatrix)
+        self.__config[ParaType.Accelerometer] = kwargs.get("Accelerometer", Pre_Parameterization.Accelerometer)
+        self.__config[ParaType.StokesCoefficients] = kwargs.get("StokesCoefficients", Pre_Parameterization.StokesCoefficients)
+        return self
 
     def split_global_local(self, dm: np.ndarray, isIncludeStateVec=False):
         """
@@ -37,20 +40,21 @@ class Parametrization:
         index = 0
         if isIncludeStateVec:
             '''State vector [1*3]'''
-            rv = dm[0:3]
-            index += 3
+            rv = dm[:, :, 0]
+            index += 1
 
-        local_dm = np.zeros((3, 0))
-        global_dm = np.zeros((3, 0))
+        local_dm = np.zeros((np.shape(dm)[0], np.shape(dm)[1], 0))
+        global_dm = np.zeros((np.shape(dm)[0], np.shape(dm)[1], 0))
 
         for key in [ParaType.TransitionMatrix, ParaType.Accelerometer, ParaType.StokesCoefficients]:
-            term = self.getInfo(key)
+            term = self.__config[key]
             if term.isRequired:
-                num = term.ParaNum
-                if term.field == ParaField.Local:
-                    local_dm = np.hstack((local_dm, dm[index:index + num * 3].reshape((3, -1))))
+                num = term.Parameter_Number
+                if not term.AllisGlobal:
+                    local_dm = np.dstack((local_dm, dm[:, :, index:index + num]))
                 else:
-                    global_dm = np.hstack((global_dm, dm[index:index + num * 3].reshape((3, -1))))
-                index = index + num*3
+                    global_dm = np.dstack((global_dm, dm[:, :, index:index + num]))
+                index = index + num
 
         return rv, local_dm, global_dm
+

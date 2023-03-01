@@ -14,7 +14,7 @@ class Accelerometer:
 
 
 class StokesCoefficients:
-    isRequired = False
+    isRequired = True
     Parameter_Number = 8277
     AllisGlobal = True
     SortMethod = EnumType.CSseq.SortByOrder
