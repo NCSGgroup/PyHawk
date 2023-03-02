@@ -108,7 +108,7 @@ class GravityDesignMat:
         res_dir = self._res.joinpath(self._date_span[0] + '_' + self._date_span[1])
         res_filename = res_dir.joinpath(SSTObserve.RangeRate.name + '_' + str(self._arcNo) + '.hdf5')
         h5 = h5py.File(res_filename, 'w')
-        h5.create_dataset('t', data=DM_orbit['t'][()])
+        h5.create_dataset('t', data=DM_orbit['t'][:])
         h5.create_dataset('local', data=np.concatenate((local_1[:, 0, :], local_2[:, 0, :]), axis=1))
         h5.create_dataset('global', data=Global[:, 0, :])
         h5.close()
