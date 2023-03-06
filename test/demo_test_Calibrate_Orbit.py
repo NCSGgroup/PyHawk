@@ -77,12 +77,14 @@ def draw():
     # # plt.grid(ls='--')
     # plt.show()
 
+
 def rms(x: np.ndarray):
     """
     :param x: 1-dim
     :return:
     """
     return np.linalg.norm(x) / np.sqrt(np.shape(x)[0])
+
 
 if __name__ == '__main__':
     # demo1()

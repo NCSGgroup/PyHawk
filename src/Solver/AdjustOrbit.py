@@ -276,9 +276,8 @@ class AdjustOrbitForDM(AdjustOrbit):
 
         return res
 
-    def calibrate(self, **kwargs):
+    def calibrate(self,**kwargs):
         ode = self._ode
-
         '''step 15: orbit integration'''
         if 'ChangeTempPath' in kwargs.keys():
             self._state_dir = kwargs['ChangeTempPath']

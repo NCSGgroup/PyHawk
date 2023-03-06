@@ -31,7 +31,7 @@ class GravityDesignMat:
         return self
 
     def orbit_integration(self):
-        adjustDM = AdjustOrbitForDM()
+        adjustDM = AdjustOrbitForDM(arcNo=self._arcNo)
         adjustDM.configure(Orbit_var_2nd_diff)
         '''define the directory of res output'''
         res_dir = self._res.joinpath(self._date_span[0] + '_' + self._date_span[1])
@@ -96,8 +96,8 @@ class GravityDesignMat:
         dd_r1, dd_v1, dd_r2, dd_v2 = sst.getPartial_RangeRate()
 
         local_1 = dd_r1[:, None, :] @ DM_orbit['local_r'][:, 0:3] + \
-                  dd_v1[:, None, :] @ DM_orbit['local_v'][:, 3:6]
-        local_2 = dd_r2[:, None, :] @ DM_orbit['local_r'][:, 0:3] + \
+                  dd_v1[:, None, :] @ DM_orbit['local_v'][:, 0:3]
+        local_2 = dd_r2[:, None, :] @ DM_orbit['local_r'][:, 3:6] + \
                   dd_v2[:, None, :] @ DM_orbit['local_v'][:, 3:6]
         Global = dd_r1[:, None, :] @ DM_orbit['global_r'][:, 0:3] + \
                  dd_v1[:, None, :] @ DM_orbit['global_v'][:, 0:3] + \
