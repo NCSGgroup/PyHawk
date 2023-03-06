@@ -5,7 +5,7 @@ import src.Preference.EnumType as EnumType
 import numpy as np
 import time
 from src.SecDerivative.Instance.DualOrbitAndVar import Orbit_var_2nd_diff
-from src.Solver.AdjustOrbit import AdjustOrbit
+from src.Solver.AdjustOrbit import AdjustOrbit,AdjustOrbitForDM
 import matplotlib.pyplot as plt
 import multiprocessing
 
@@ -126,6 +126,11 @@ def draw1():
     plt.show()
 
 
+def demo2():
+    AdjustOrbitForDM().configure(Orbit_var_2nd_diff).updateInit()
+    pass
+
+
 if __name__ == '__main__':
     p1 = multiprocessing.Process(target=demo1, args=(0, 10))
     p2 = multiprocessing.Process(target=demo1, args=(10, 20))
@@ -160,4 +165,4 @@ if __name__ == '__main__':
     # demo1(0, 27)
     # draw()
     # draw1()
-
+    demo2()

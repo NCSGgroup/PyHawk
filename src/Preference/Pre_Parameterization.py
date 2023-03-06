@@ -9,12 +9,12 @@ class TransitionMatrix:
 
 class Accelerometer:
     isRequired = True
-    Parameter_Number = 9
+    Parameter_Number = 6
     AllisGlobal = False
 
 
 class StokesCoefficients:
-    isRequired = False
+    isRequired = True
     Parameter_Number = 8277
     AllisGlobal = True
     SortMethod = EnumType.CSseq.SortByOrder

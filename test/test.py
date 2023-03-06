@@ -4,6 +4,7 @@ import time
 import multiprocessing
 import src.Preference.EnumType as EnumType
 import src.Preference.Pre_Parameterization as Pre_Parameterization
+import pandas as pd
 
 
 def Sheet1():
@@ -46,10 +47,13 @@ if __name__ == '__main__':
     # Sheet1()
     # fitting()
     # fun1(1)
-    test2()
+    # test2()
     # time1 = time.time()
     # for i in range(0, 10):
     #     fun1(i)
     # time2 = time.time()
     # print(time2 - time1)
     # demo1()
+    path = "Yb-60K拟合.txt"
+    data = pd.read_csv(path)
+    print(data)

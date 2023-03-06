@@ -1,3 +1,6 @@
+import os
+import sys
+sys.path.append('../')
 import src.Preference.Pre_ForceModel as Pre_ForceModel
 from src.ForceModel.AtmosTide import AtmosBB2003, AtmosAOD
 from src.ForceModel.NonTide import AODRL06
