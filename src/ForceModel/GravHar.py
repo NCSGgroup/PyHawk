@@ -480,11 +480,14 @@ class ClibGravHar(AbsGravHar):
         if platform.system() == 'Windows':
             gravlib_filename = _glob.glob(str(_pathlib.Path(__file__).parent.parent.parent.joinpath('lib', 'GravHar.dll')))
         elif platform.system() == 'Linux':
-            gravlib_filename = _glob.glob(str(_pathlib.Path(__file__).parent.parent.parent.joinpath('lib', 'GravHar.so')))
+            # gravlib_filename = _glob.glob(str(_pathlib.Path(__file__).parent.parent.parent.joinpath('lib', 'GravHar.so')))
+            gravlib_filename = str(_pathlib.Path(__file__).parent.parent.parent.joinpath('lib', 'GravHar.so'))
+            print(str(_pathlib.Path(__file__).parent.parent.parent.joinpath('lib', 'GravHar.so')))
+            print(gravlib_filename)
 
         if len(gravlib_filename) == 0:
             raise ImportError('Unable to find the shared C library "GravHar".')
-        self.__gravlib = cdll.LoadLibrary(gravlib_filename[0])
+        self.__gravlib = cdll.LoadLibrary(gravlib_filename)
 
         '''
         interface def
