@@ -16,7 +16,7 @@ class OrbitB:
 class SST:
     IsRequired = True
     measurement = 2
-    CalibrateEmpiricalParameters = True
+    CalibrateEmpiricalParameters = False
 
 
 class PathOfFiles:
