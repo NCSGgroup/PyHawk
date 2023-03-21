@@ -38,6 +38,7 @@ class Assemble2ndDerivative:
 
     def reConfigure(self):
         self.configForce.reConfigure()
+        self.ForceType = self.configForce.getForceType()
         return self
 
     def __reset(self):

@@ -8,6 +8,9 @@ from src.SecDerivative.Instance.DualOrbitAndVar import Orbit_var_2nd_diff
 from src.Solver.AdjustOrbit import AdjustOrbit,AdjustOrbitForDM
 import matplotlib.pyplot as plt
 import multiprocessing
+import src.Preference.Pre_AdjustOrbit as Pre_AdjustOrbit
+import pathlib
+import h5py
 
 
 def demo1(start, end):
@@ -30,7 +33,6 @@ def demo1(start, end):
     RMSB = []
     for i in range(start, end):
         GNVA = rd.getData(arc=i, kind=EnumType.Payload.GNV, sat=EnumType.SatID.A)
-        GNVTime = GNVA[:, 0]
         GNVAR = GNVA[:, 1:4]
         GNVB = rd.getData(arc=i, kind=EnumType.Payload.GNV, sat=EnumType.SatID.B)
         GNVBR = GNVB[:, 1:4]
@@ -127,8 +129,65 @@ def draw1():
 
 
 def demo2():
-    AdjustOrbitForDM().configure(Orbit_var_2nd_diff).updateInit()
+    AdjustOrbitForDM().configure(Orbit_var_2nd_diff).updateInit().calibrate()
     pass
+
+
+def demo(start, end):
+    # """step 1: Read raw data"""
+    # fr = Frame(EOP().load())
+    # s = GRACE_OLD_RL02().configure().setDate()
+    # s.read_double_sat()
+    # """step 2: Convert orbit from ITRS frame into GCRS frame"""
+    # kine = KinematicOrbit(L1b=s).configure()
+    # kine.read_double_sat()
+    # kine.GNVandKiOrbitItrs2Gcrs(fr)
+    # """step 3: Gap fix"""
+    # gf = GapFix(s).configure()
+    # gf.fix_all().makeReport()
+    # arc = ArcSelect(gf).configure()
+    # arc.unpackArcs().makeReport()
+    """step 5: init AdjustOrbit"""
+    for i in range(start, end):
+        adjust = AdjustOrbit(arcNo=i).configure(Orbit_var_2nd_diff).calibrate(iteration=2)
+        # initTime, initR, endTime, endR = adjust.draw()
+        firstR, secondR, thirdR = adjust.getR()
+        secondR = secondR[:, 0:6, 0]
+
+
+def drawfix():
+    dir = pathlib.Path(Pre_AdjustOrbit.PathOfFiles.StateVectorDataTemp). \
+        joinpath('2008-01-01_2008-01-31')
+
+    filename1 = dir.joinpath(str(2) + '_AB.hdf5')
+    h51 = h5py.File(filename1, 'r')
+    afterData = h51['r'][()][:, 0:3, 0]
+    h51.close()
+
+    filename2 = dir.joinpath(str(2) + '_AB-1.hdf5')
+    h52 = h5py.File(filename2, 'r')
+    beforeData = h52['r'][()][:, 0:3, 0]
+    h52.close()
+
+    rd = ArcData()
+    GNV = rd.getData(arc=2, kind=EnumType.Payload.GNV, sat=EnumType.SatID.A)
+    GNVTime = GNV[:, 0]
+    GNVR = GNV[:, 1:4]
+
+    afterDiff = afterData - GNVR
+    beforeDiff = beforeData - GNVR
+
+    plot1 = np.sqrt(afterDiff[:,0]**2 + afterDiff[:,1]**2 + afterDiff[:,2]**2)
+    plot2 = np.sqrt(beforeDiff[:,0] ** 2 + beforeDiff[:,1] ** 2 + beforeDiff[:,2] ** 2)
+
+    plt.title('2008-1-1 sat-A arc-2 (constant and trend)', fontsize=24)
+    plt.plot(np.array(GNVTime), plot1, label="after")
+    plt.plot(np.array(GNVTime), plot2, label="before")
+    plt.xlabel('GPS time [sec]', fontsize=20)
+    plt.ylabel(r'$m$', fontsize=20)
+    plt.yticks(fontsize=18)
+    plt.legend(loc='upper left', fontsize=20)
+    plt.show()
 
 
 if __name__ == '__main__':
@@ -162,7 +221,19 @@ if __name__ == '__main__':
     # p8.join()
     # p9.join()
     # p10.join()
-    # demo1(0, 27)
-    draw()
+    # demo(2, 3)
+    # draw()
     # draw1()
-    # demo2()
+    # dir = pathlib.Path(Pre_AdjustOrbit.PathOfFiles.OrbitAdjustResTemp). \
+    #     joinpath('2008-01-01_2008-01-31')
+    # filename1 = dir.joinpath(str(2) + '_AB.hdf5')
+    # h51 = h5py.File(filename1, 'r')
+    # Accelerometer = h51['Accelerometer'][()]
+    # TransitionMatrix = h51['TransitionMatrix'][()]
+    # h51.close()
+    #
+    # print(Accelerometer)
+    demo2()
+    # drawfix()
+    #
+

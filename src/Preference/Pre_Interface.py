@@ -11,7 +11,7 @@ import pathlib as pathlib
 
 mission = Mission.GRACE_RL02
 date_span = ['2008-01-01', '2008-01-31']
-arcNo = 0
+arcNo = 2
 sat = {SatID.A: True,
        SatID.B: True}
 date_delete = []
