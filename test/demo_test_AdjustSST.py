@@ -1,3 +1,5 @@
+import sys
+sys.path.append('../')
 from src.Solver.AdjustSST import RangeRate
 import h5py
 import pathlib
@@ -14,19 +16,11 @@ def demo1():
 
 
 def demo2():
-    date_begin = '2008-01-01'
-    date_end = '2008-01-31'
-    rms_list = []
+
     for i in range(0, 108):
         RR = RangeRate(i)
         RR.configure()
         RR.calibrate()
-        res_dir = pathlib.Path(Pre_AdjustOrbit.PathOfFiles.RangeRateTemp).joinpath(date_begin + '_' + date_end)
-        res_filename = res_dir.joinpath('RangeRate_' + str(i) + '.hdf5')
-        h5 = h5py.File(res_filename, 'r')
-        postfit = h5['post_residual'][:]
-        rms_list.append(rms(postfit))
-    np.savez('RangeRateRMS.npz', RMS=rms_list)
     pass
 
 
@@ -84,6 +78,5 @@ def rms(x: np.ndarray):
 
 
 if __name__ == '__main__':
-    # demo2()
-    draw1()
+    demo2()
     # drawRMS()

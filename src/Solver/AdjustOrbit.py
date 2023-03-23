@@ -66,8 +66,6 @@ class AdjustOrbit:
         self._res_dir = self.__res_path.joinpath(self._date_span[0] + '_' + self._date_span[1])
         if not self._res_dir.is_dir():
             self._res_dir.mkdir(exist_ok=True)
-        res_filename = self._res_dir.joinpath(str(self._arcNo) + '_' + self._satName + '.hdf5')
-        self.__res_h5 = h5py.File(res_filename, 'w')
 
         """step 1: combine the SCA and ACC data to obtain the non-conservative force as well as dadp arc by arc"""
         rd = ArcData(date_span=self._date_span)
@@ -89,7 +87,9 @@ class AdjustOrbit:
         return self
 
     def calibrate(self, iteration: int = 2):
-        # assert iteration >= 2
+        assert iteration >= 2
+        res_filename = self._res_dir.joinpath(str(self._arcNo) + '_' + self._satName + '.hdf5')
+        self.__res_h5 = h5py.File(res_filename, 'w')
 
         '''step 1: orbit integration and save data'''
         self.__ode_res = self._ode.propagate()
@@ -110,13 +110,13 @@ class AdjustOrbit:
             self.__adjust(StateVectors=self.__ode_res[1], isGNV=True)
             orbit_ini, acc_ini = self.__updateIniValue(iniOrbit=orbit_init, iniAcc=acc_init)
             r_ini, v_ini = orbit_ini[:, 0:3], orbit_ini[:, 3:]
-            '''step 4: update initial state vector'''
-            self._ode.setInitial(self._startTime, r_ini, v_ini)
-            '''step 5: update accelerometer'''
+            '''step 4: update accelerometer'''
             for j in range(len(self._sat)):
                 self._ac[self._sat[j]].updatePar(paralist=acc_ini[j]).get_and_save()
-            '''step 6: update force model'''
-            self._secDer.configForce.reConfigure()
+            '''step 5: update force model'''
+            self._secDer.reConfigure()
+            '''step 6: update initial state vector'''
+            self._ode.setInitial(self._startTime, r_ini, v_ini)
             '''step 7: orbit integration once again'''
             self.__ode_res = self._ode.propagate()
             self._save_StateVectors(self.__ode_res)
@@ -157,7 +157,6 @@ class AdjustOrbit:
                 h5[key.__name__][()] = iniAcc
             else:
                 h5.create_dataset(key.__name__, data=iniAcc)
-
         return iniOrbit, iniAcc
 
     def __adjust(self, StateVectors: np.ndarray, isGNV: bool, refOrbit: np.ndarray = None):
@@ -215,6 +214,7 @@ class AdjustOrbitForDM(AdjustOrbit):
     def __init__(self, date_span=Pre_Interface.date_span, arcNo=Pre_Interface.arcNo, sat=Pre_Interface.sat,
                  kind=EnumType.Payload.GNV):
         super().__init__(date_span, arcNo, sat, kind)
+        self._arcNo = arcNo
 
     def updateInit(self):
         sat = self._sat
@@ -224,13 +224,15 @@ class AdjustOrbitForDM(AdjustOrbit):
         cali_res = self.getInit()
         if EnumType.ParaType.Accelerometer.name in cali_res.keys():
             acc_par = cali_res[EnumType.ParaType.Accelerometer.name]
+            scale = acc_par[0]
+            bias = acc_par[1]
             for j in range(len(sat)):
-                ac[sat[j]].setParFromList(paralist=acc_par).get_and_save()
+                ac[sat[j]].setParFromList(paralist=[scale[j], bias[j]]).get_and_save()
             self._secDer.reConfigure()  # reload the accelerometers from files.
 
         if EnumType.ParaType.TransitionMatrix.name in cali_res.keys():
             a = cali_res[EnumType.ParaType.TransitionMatrix.name]
-            r_ini, v_ini = a[0:3], a[3:]
+            r_ini, v_ini = a[:, 0:3], a[:, 3:]
             self._ode.setInitial(time_ini, r_ini, v_ini)
 
         return self
@@ -254,6 +256,7 @@ class AdjustOrbitForDM(AdjustOrbit):
         for term in isCali:
             '''span to 1-d list'''
             cali = cali + term
+        cali = np.vstack((cali, cali))
 
         cali_value = kwargs.get("strategy", Pre_Accelerometer.cali_value)
         scale = cali_value['Scale']
@@ -263,15 +266,16 @@ class AdjustOrbitForDM(AdjustOrbit):
         scale = np.array(scale, dtype=np.float).reshape((3, 3))
         bias = np.array([bias_constant, bias_trend, bias_quadratic], dtype=np.float)
         scale, bias = scale.flatten(), bias.flatten()
+        scale, bias = np.vstack((scale, scale)), np.vstack((bias, bias))
 
         if EnumType.ParaType.Accelerometer.name in res.keys():
             accIni = res[EnumType.ParaType.Accelerometer.name]
-            valuelist = np.zeros(18, dtype=np.float)
-            valuelist[cali] = np.array(accIni)
+            valuelist = np.zeros((2, 18), dtype=np.float)
+            valuelist[cali] = np.array(accIni.flatten())
 
             '''replace'''
-            scale[cali[0:9]] = valuelist[0:9][cali[0:9]]
-            bias[cali[9:]] = valuelist[9:][cali[9:]]
+            scale[cali[:, 0:9]] = valuelist[:, 0:9][cali[:, 0:9]]
+            bias[cali[:, 9:]] = valuelist[:, 9:][cali[:, 9:]]
             res[EnumType.ParaType.Accelerometer.name] = [scale, bias]
 
         return res

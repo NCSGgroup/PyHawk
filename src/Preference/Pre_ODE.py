@@ -8,14 +8,14 @@ class ComplexConfig:
 
 class SingleStepConfig:
     stepsize = 5
-    Npoints = 4316
+    Npoints = 2156
     isRecord = True
     SingleStepOde = SingleStepType.RKN
 
 
 class MultiStepConfig:
     stepsize = 5
-    Npoints = 4316
+    Npoints = 2156
     order = 8
     isRecord = True
     iterNum = 10

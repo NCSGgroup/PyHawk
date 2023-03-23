@@ -9,16 +9,15 @@ import pathlib
 import h5py
 import numpy as np
 from tqdm import tqdm
-from src.Auxilary.GeoMathKit import GeoMathKit
 from src.Auxilary.SortCS import SortCS
+from src.Auxilary.GeoMathKit import GeoMathKit
 import src.Preference.Pre_Parameterization as Pre_Parameterization
 from src.Interface.LoadSH import LoadSH, LoadGif48
 from src.Preference.Pre_ForceModel import RefGravModelConfig, PathOfFiles
-from src.Preference.EnumType import StaticGravModel
 
 
 def demo1(start, end):
-    for i in tqdm(range(start, end), desc='arcNo.'):
+    for i in range(start, end):
         neq = GravityNEQperArc(i)
         neq.configure().get_neq()
 
@@ -29,18 +28,17 @@ def demo():
         (Pre_Interface.date_span[0] + '_' + Pre_Interface.date_span[1])
     # res_filename = res_dir.joinpath(str(0) + '.hdf5')
     # h5 = h5py.File(res_filename, 'r')
-    NMatrix = np.shape((8277, 8277))
-    LMatrix = np.shape((8277, 1))
+    NMatrix = np.zeros((3717, 3717))
+    LMatrix = np.zeros((3717, 1))
     for i in tqdm(range(0, 108), desc='Solve normal equations: '):
         res_filename = res_dir.joinpath(str(i) + '.hdf5')
         h5 = h5py.File(res_filename, 'r')
         NMatrix = NMatrix + (h5['Orbit_N_A'][:] + h5['Orbit_N_B'][:]) * 1E-12 + h5['RangeRate_N'][:]
-        LMatrix = LMatrix + (h5['Orbit_l_A'][:] + h5['Orbit_l_B'][:]) * 1E-12 + h5['RangeRate_l'][:].reshape((8277, 1))
-        h5.close()
+        LMatrix = LMatrix + (h5['Orbit_l_A'][:] + h5['Orbit_l_B'][:]) * 1E-12 + h5['RangeRate_l'][:].reshape((3717, 1))
 
     x = np.linalg.lstsq(NMatrix, LMatrix[:, 0], rcond=None)[0]
     print(x)
-    np.savez('CS.npz', cs=x)
+    np.savez('CS-3.20.npz', cs=x)
 
 
 def draw():
@@ -77,21 +75,26 @@ def draw():
     # print(np.shape(data))
 
 
+def csReshape():
+    data = np.load('CS-3.20.npz')['cs']
+    sort = SortCS(Pre_Parameterization.StokesCoefficients.SortMethod,
+                  Pre_Parameterization.StokesCoefficients.MaxDegree,
+                  Pre_Parameterization.StokesCoefficients.MinDegree)
+    c, s = sort.invert(data)
 
-def cs():
+    static_c,static_s = LoadGif48().load(PathOfFiles.EIGEN6_C4).getCS(90)
 
-    c = np.load('CS.npz')['c1d']
-    s = np.load('CS.npz')['s1d']
+    # C, S = c + static_c, s + static_s
 
-    C = GeoMathKit.CS_1dTo2d(c)
-    S = GeoMathKit.CS_1dTo2d(s)
+    C, S = GeoMathKit.CS_1dTo2d(c), GeoMathKit.CS_1dTo2d(s)
 
-    np.savez('CS2d.npz', c=C, s=S)
+    print(C)
+    np.savez('CS2d-3.20.npz', c=C, s=S)
     pass
 
 
 if __name__ == '__main__':
-    # demo1(0, 108)
+    # demo1(36,37)
     # p1 = multiprocessing.Process(target=demo1, args=(0, 18))
     # p2 = multiprocessing.Process(target=demo1, args=(18, 36))
     # p3 = multiprocessing.Process(target=demo1, args=(36, 54))
@@ -114,5 +117,4 @@ if __name__ == '__main__':
     # p6.join()
     # demo()
     # draw()
-
-    cs()
+    csReshape()

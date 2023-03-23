@@ -15,9 +15,9 @@ class Accelerometer:
 
 class StokesCoefficients:
     isRequired = False
-    Parameter_Number = 8277
+    Parameter_Number = 3717
     AllisGlobal = True
     SortMethod = EnumType.CSseq.SortByOrder
-    MaxDegree = 90
+    MaxDegree = 60
     MinDegree = 2
 

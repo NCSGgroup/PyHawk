@@ -8,7 +8,6 @@ from src.Solver.DesignMatrix import GravityDesignMat
 def demo1(start, end):
 
     for i in range(start, end):
-        print(i)
         dm = GravityDesignMat(i).configure()
         dm.orbit_integration()
         dm.get_orbit_design_matrix()
@@ -16,7 +15,7 @@ def demo1(start, end):
 
 
 if __name__ == '__main__':
-    demo1(15, 18)
+    demo1(0, 1)
     # p1 = multiprocessing.Process(target=demo1, args=(0, 18))
     # p2 = multiprocessing.Process(target=demo1, args=(18, 36))
     # p3 = multiprocessing.Process(target=demo1, args=(36, 54))
