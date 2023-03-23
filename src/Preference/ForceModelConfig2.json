@@ -1,0 +1,16 @@
+{
+    "_include_ForceType": {
+        "GravHar": "true",
+        "Relativity": "true",
+        "NonConserveForce": "true",
+        "PlanetaryPerturbation": "true"
+    },
+    "_instance_GravHar": {
+        "NonTide": 0,
+        "PoleTide": "PoleTideIERS2010",
+        "OceanTide": "EOT11a",
+        "AtmosphereTide": "AtmosAOD",
+        "SolidEarthTide": "SolidTideIERS2010",
+        "ReferenceModel": "RefGravModel"
+    }
+}
