@@ -10,36 +10,50 @@ import src.Preference.EnumType as EnumType
 
 class ForceModelConfig:
     def __init__(self):
-        self._include_ForceType = {EnumType.ForceType.GravHar: True,
-                                   EnumType.ForceType.Relativity: True,
-                                   EnumType.ForceType.NonConserveForce: True,
-                                   EnumType.ForceType.PlanetaryPerturbation: True}
+        self._include_ForceType = {EnumType.ForceType.GravHar.name: "true",
+                                   EnumType.ForceType.Relativity.name: "true",
+                                   EnumType.ForceType.NonConserveForce.name: "true",
+                                   EnumType.ForceType.PlanetaryPerturbation.name: "true"}
 
-        self._include_GravHarType = {EnumType.GravHarType.NonTide: True,
-                                     EnumType.GravHarType.PoleTide: True,
-                                     EnumType.GravHarType.OceanTide: True,
-                                     EnumType.GravHarType.AtmosphereTide: True,
-                                     EnumType.GravHarType.SolidEarthTide: True,
-                                     EnumType.GravHarType.ReferenceModel: True}
+        self._instance_GravHar = {EnumType.GravHarType.NonTide.name: EnumType.InstanceNonTide.AODRL06.value,
+                                  EnumType.GravHarType.PoleTide.name: EnumType.InstancePoleTide.PoleTideIERS2010.name,
+                                  EnumType.GravHarType.OceanTide.name: EnumType.InstanceOceanTide.EOT11a.name,
+                                  EnumType.GravHarType.AtmosphereTide.name: EnumType.InstanceAtmosTide.AtmosAOD.name,
+                                  EnumType.GravHarType.SolidEarthTide.name: EnumType.InstanceSolidTide.SolidTideIERS2010.name,
+                                  EnumType.GravHarType.ReferenceModel.name: EnumType.InstanceReferenceModel.RefGravModel.name}
 
-        self._instance_GravHar = {EnumType.GravHarType.NonTide: EnumType.InstanceNonTide.AODRL06,
-                                  EnumType.GravHarType.PoleTide: EnumType.InstancePoleTide.PoleTideIERS2010,
-                                  EnumType.GravHarType.OceanTide: EnumType.InstanceOceanTide.EOT11a,
-                                  EnumType.GravHarType.AtmosphereTide: EnumType.InstanceAtmosTide.AtmosAOD,
-                                  EnumType.GravHarType.SolidEarthTide: EnumType.InstanceSolidTide.SolidTideIERS2010,
-                                  EnumType.GravHarType.ReferenceModel: EnumType.InstanceReferenceModel.RefGravModel}
+        # self._include_GravHarType = {EnumType.GravHarType.NonTide: True,
+        #                              EnumType.GravHarType.PoleTide: True,
+        #                              EnumType.GravHarType.OceanTide: True,
+        #                              EnumType.GravHarType.AtmosphereTide: True,
+        #                              EnumType.GravHarType.SolidEarthTide: True,
+        #                              EnumType.GravHarType.ReferenceModel: True}
+        #
 
 
-def ParseObjToJson(Obj):
-    return Obj.__dict__.__str__().replace("\'", "\"")
+
+def demo1():
+    Obj1 = ForceModelConfig()
+    dict1 = json.load(open('ForceModelConfig.json', 'r'))
+    Obj1.__dict__ = dict1
+
+    Obj2 = ForceModelConfig()
+    dict2 = json.load(open('ForceModelConfig2.json', 'r'))
+    Obj2.__dict__ = dict2
+
+    print(Obj1._include_ForceType)
+    print(Obj2._include_ForceType)
+
+
+def demo2():
+    Obj1 = ForceModelConfig()
+    tc_dict = vars(Obj1)
+    with open('ForceModelConfig.json', 'w') as f:
+        json.dump(tc_dict, f, indent=4)
 
 
 if __name__ == '__main__':
     # res = ParseObjToJson(ForceModelConfig())
     # data = json.loads(res)
-    # with open('ForceModelConfig.json', 'w') as f:
-    #     json.dump(data, f)
-
-    tc_dict = vars(ForceModelConfig())
-
-    print(tc_dict)
+    demo1()
+    # demo2()
