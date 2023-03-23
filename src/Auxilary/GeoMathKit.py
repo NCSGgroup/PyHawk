@@ -335,6 +335,33 @@ class GeoMathKit:
 
         return CS[index]
 
+
+    @staticmethod
+    def CS_1dTo2d(CS: np.ndarray):
+        """
+        Transform the CS in 2-dimensional matrix to 1-dimension array
+        00
+        10 11
+        20 21 22
+        30 31 32 33          ===>         00 10 11 20 21 22 30 31 32 33 ....
+        ....
+        :return:
+        """
+        def index(N):
+            n = (np.round(np.sqrt(2 * N))).astype(np.int) - 1
+            m = N - (n * (n + 1) / 2).astype(np.int) - 1
+            return n, m
+
+        CS_index = np.arange(len(CS)) + 1
+        n,m = index(CS_index)
+
+        dim = index(len(CS))[0] + 1
+        CS2d = np.zeros((dim, dim))
+        CS2d[n, m] = CS
+
+        return CS2d
+
+
     @staticmethod
     def arrayAdd(array1: np.ndarray, array2: np.ndarray):
         """
@@ -406,10 +433,9 @@ class GeoMathKit:
         :param obs: observations
         :return: Normal equations related only to the global parameters （Nx = l）
         """
-
+        # time
         Nxx = dm_global.T @ dm_global
         Wx = dm_global.T @ obs
-
         if np.shape(dm_local)[-1] == 0:
             '''No local parameters'''
             return Nxx, Wx
@@ -419,13 +445,13 @@ class GeoMathKit:
         Nyy = dm_local.T @ dm_local
 
         Wy = dm_local.T @ obs
+
         Nyy_inv = np.linalg.inv(Nyy.copy())
 
         tm = Nxy @ Nyy_inv
 
         N = Nxx - tm @ Nyx
         l = Wx - tm @ Wy
-        print(Nyy_inv @ Wy)
         return N, l
 
     @staticmethod

@@ -9,6 +9,7 @@ import numpy as np
 import pathlib
 import h5py
 from tqdm import tqdm
+import time
 
 
 class GravityNEQperArc:
@@ -42,6 +43,10 @@ class GravityNEQperArc:
             res_dir.mkdir(exist_ok=True)
         res_filename = res_dir.joinpath(str(arcNo) + '.hdf5')
         self.__saveData = h5py.File(res_filename, 'w')
+
+        orbit_dir = pathlib.Path(Pre_AdjustOrbit.PathOfFiles.StateVectorDataTemp).joinpath(date_span[0] + '_' + date_span[1])
+        orbit_filename = orbit_dir.joinpath(str(arcNo) + '_AB.hdf5')
+        self.__orbitData = h5py.File(orbit_filename, 'r')
         pass
 
     def configure(self, **kwargs):
@@ -65,7 +70,7 @@ class GravityNEQperArc:
         self.__global_r = h5['global_r'][()]
         h5.close()
 
-        for i in tqdm(range(3), desc='Build normal equations: '):
+        for i in range(3):
             if i == 0:
                 self.get_neq_orbit(SatID.A)
             elif i == 1:
@@ -92,27 +97,32 @@ class GravityNEQperArc:
         t_nominal = self.__t_nominal
         if not config.IsRequired:
             return None
-
         rd = ArcData(date_span=self.__date_span)
 
         if config.UseKinematicOrbit:
-            orbit_obs = rd.getData(arc=self.__arcNo, kind=Payload.KinematicOrbit, sat=sat)[:, 0:4]
+            orbit_nominal = rd.getData(arc=self.__arcNo, kind=Payload.KinematicOrbit, sat=sat)[:, 0:4]
         else:
-            orbit_obs = rd.getData(arc=self.__arcNo, kind=Payload.GNV, sat=sat)[:, 0:4]
-
-        t_obs = orbit_obs[:, 0]
+            orbit_nominal = rd.getData(arc=self.__arcNo, kind=Payload.GNV, sat=sat)[:, 0:4]
+        orbit_obs = self.__orbitData['r'][:]
+        t_obs = list(self.__orbitData['t'][:])
         '''for the orbit, only position (r) is needed for the inversion'''
         '''find the common'''
-        int_t_obs = t_obs.astype(np.int)
+
+        int_t_obs = t_obs
         int_t_nominal = t_nominal.astype(np.int)
         new_index = [list(int_t_nominal).index(x) for x in int_t_obs]
+
         '''Reassignment'''
         t_nominal = t_nominal[new_index]
         orbit_nominal = orbit_nominal[new_index, :]
         local_r = local_r[new_index, :, :]
         global_r = global_r[new_index, :, :]
-        '''Expanding the observations'''
-        obs = orbit_obs[:, 1:] - orbit_nominal
+
+        if sat == SatID.A:
+            orbit_obs = orbit_obs[:, 0:3, 0]
+        else:
+            orbit_obs = orbit_obs[:, 3:6, 0]
+        obs = orbit_obs - orbit_nominal[:, 1:4]
         obs = obs.reshape((-1, 1))
         # TODO: Fix the kinematic orbit
 

@@ -9,10 +9,16 @@ import pathlib
 import h5py
 import numpy as np
 from tqdm import tqdm
+from src.Auxilary.GeoMathKit import GeoMathKit
+from src.Auxilary.SortCS import SortCS
+import src.Preference.Pre_Parameterization as Pre_Parameterization
+from src.Interface.LoadSH import LoadSH, LoadGif48
+from src.Preference.Pre_ForceModel import RefGravModelConfig, PathOfFiles
+from src.Preference.EnumType import StaticGravModel
 
 
 def demo1(start, end):
-    for i in range(start, end):
+    for i in tqdm(range(start, end), desc='arcNo.'):
         neq = GravityNEQperArc(i)
         neq.configure().get_neq()
 
@@ -28,10 +34,9 @@ def demo():
     for i in tqdm(range(0, 108), desc='Solve normal equations: '):
         res_filename = res_dir.joinpath(str(i) + '.hdf5')
         h5 = h5py.File(res_filename, 'r')
-        NMatrix = NMatrix + h5['Orbit_N_A'][:] + h5['Orbit_N_B'][:]
-        LMatrix = LMatrix + h5['Orbit_l_A'][:] + h5['Orbit_l_B'][:]
-        # NMatrix = NMatrix + (h5['Orbit_N_A'][:] + h5['Orbit_N_B'][:]) + h5['RangeRate_N'][:]
-        # LMatrix = LMatrix + (h5['Orbit_l_A'][:] + h5['Orbit_l_B'][:]) + h5['RangeRate_l'][:].reshape((8277, 1))
+        NMatrix = NMatrix + (h5['Orbit_N_A'][:] + h5['Orbit_N_B'][:]) * 1E-12 + h5['RangeRate_N'][:]
+        LMatrix = LMatrix + (h5['Orbit_l_A'][:] + h5['Orbit_l_B'][:]) * 1E-12 + h5['RangeRate_l'][:].reshape((8277, 1))
+        h5.close()
 
     x = np.linalg.lstsq(NMatrix, LMatrix[:, 0], rcond=None)[0]
     print(x)
@@ -72,8 +77,21 @@ def draw():
     # print(np.shape(data))
 
 
+
+def cs():
+
+    c = np.load('CS.npz')['c1d']
+    s = np.load('CS.npz')['s1d']
+
+    C = GeoMathKit.CS_1dTo2d(c)
+    S = GeoMathKit.CS_1dTo2d(s)
+
+    np.savez('CS2d.npz', c=C, s=S)
+    pass
+
+
 if __name__ == '__main__':
-    demo1(0,1)
+    # demo1(0, 108)
     # p1 = multiprocessing.Process(target=demo1, args=(0, 18))
     # p2 = multiprocessing.Process(target=demo1, args=(18, 36))
     # p3 = multiprocessing.Process(target=demo1, args=(36, 54))
@@ -96,3 +114,5 @@ if __name__ == '__main__':
     # p6.join()
     # demo()
     # draw()
+
+    cs()

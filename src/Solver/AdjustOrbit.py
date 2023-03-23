@@ -89,7 +89,7 @@ class AdjustOrbit:
         return self
 
     def calibrate(self, iteration: int = 2):
-        assert iteration >= 2
+        # assert iteration >= 2
 
         '''step 1: orbit integration and save data'''
         self.__ode_res = self._ode.propagate()

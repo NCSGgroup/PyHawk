@@ -84,5 +84,6 @@ def rms(x: np.ndarray):
 
 
 if __name__ == '__main__':
-    demo1()
+    # demo2()
+    draw1()
     # drawRMS()
