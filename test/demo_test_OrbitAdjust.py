@@ -221,7 +221,7 @@ if __name__ == '__main__':
     # p8.join()
     # p9.join()
     # p10.join()
-    # demo(2, 3)
+
     # draw()
     # draw1()
     # dir = pathlib.Path(Pre_AdjustOrbit.PathOfFiles.OrbitAdjustResTemp). \
@@ -233,7 +233,8 @@ if __name__ == '__main__':
     # h51.close()
     #
     # print(Accelerometer)
-    demo2()
+    # demo2()
     # drawfix()
+    demo(1, 2)
     #
 

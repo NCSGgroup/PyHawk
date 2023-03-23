@@ -47,14 +47,14 @@ def demo1(start, end):
 def draw():
     dir = pathlib.Path(Pre_AdjustOrbit.PathOfFiles.StateVectorDataTemp). \
         joinpath('2008-01-01_2008-01-31')
-    filename = dir.joinpath(str(100) + '_AB.hdf5')
+    filename = dir.joinpath(str(1) + '_AB.hdf5')
     h5 = h5py.File(filename, 'r')
     orbit_nominal = h5['r'][()][:,3:6,0]
     print(np.shape(orbit_nominal))
     h5.close()
 
     rd = ArcData()
-    GNV = rd.getData(arc=100, kind=EnumType.Payload.GNV, sat=EnumType.SatID.B)
+    GNV = rd.getData(arc=1, kind=EnumType.Payload.GNV, sat=EnumType.SatID.B)
     GNVTime = GNV[:, 0]
     GNVR = GNV[:, 1:4]
 
@@ -82,12 +82,12 @@ def rms(x: np.ndarray):
 if __name__ == '__main__':
     # demo1()
     # draw()
-    p1 = multiprocessing.Process(target=demo1, args=(0, 18))
-    p2 = multiprocessing.Process(target=demo1, args=(18, 36))
-    p3 = multiprocessing.Process(target=demo1, args=(36, 54))
-    p4 = multiprocessing.Process(target=demo1, args=(54, 72))
-    p5 = multiprocessing.Process(target=demo1, args=(72, 90))
-    p6 = multiprocessing.Process(target=demo1, args=(90, 108))
+    p1 = multiprocessing.Process(target=demo1, args=(0, 41))
+    p2 = multiprocessing.Process(target=demo1, args=(41, 82))
+    p3 = multiprocessing.Process(target=demo1, args=(82, 123))
+    p4 = multiprocessing.Process(target=demo1, args=(123, 164))
+    p5 = multiprocessing.Process(target=demo1, args=(164, 205))
+    p6 = multiprocessing.Process(target=demo1, args=(205, 243))
 
     p1.start()
     p2.start()

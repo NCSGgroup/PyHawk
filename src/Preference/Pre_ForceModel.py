@@ -89,8 +89,8 @@ class SolidTideConfig:
 
 
 class LoveNumberConfig:
-    Nmax = 180
-    method = LoveNumberType.Gegout97
+    Nmax = 30
+    method = LoveNumberType.IERS
 
 
 class PoleTideConfig:

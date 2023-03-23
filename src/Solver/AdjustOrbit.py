@@ -110,13 +110,13 @@ class AdjustOrbit:
             self.__adjust(StateVectors=self.__ode_res[1], isGNV=True)
             orbit_ini, acc_ini = self.__updateIniValue(iniOrbit=orbit_init, iniAcc=acc_init)
             r_ini, v_ini = orbit_ini[:, 0:3], orbit_ini[:, 3:]
-            '''step 4: update initial state vector'''
-            self._ode.setInitial(self._startTime, r_ini, v_ini)
-            '''step 5: update accelerometer'''
+            '''step 4: update accelerometer'''
             for j in range(len(self._sat)):
                 self._ac[self._sat[j]].updatePar(paralist=acc_ini[j]).get_and_save()
-            '''step 6: update force model'''
+            '''step 5: update force model'''
             self._secDer.reConfigure()
+            '''step 6: update initial state vector'''
+            self._ode.setInitial(self._startTime, r_ini, v_ini)
             '''step 7: orbit integration once again'''
             self.__ode_res = self._ode.propagate()
             self._save_StateVectors(self.__ode_res)

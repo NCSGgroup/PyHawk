@@ -1,3 +1,5 @@
+import sys
+sys.path.append('../')
 from src.Interface.KinematicOrbit import KinematicOrbit
 from src.Interface.L1b import GRACE_OLD_RL02, GRACE_FO_RL04, GRACE_NEW_RL02
 from src.Interface.ArcOperation import ArcSelect, ArcData
@@ -10,7 +12,7 @@ import src.Preference.EnumType as EnumType
 def demo1():
 
     fr = Frame(EOP().load())
-    s = GRACE_NEW_RL02().configure().setDate()
+    s = GRACE_OLD_RL02().configure().setDate()
     s.read_double_sat()
 
     kine = KinematicOrbit(L1b=s).configure()
@@ -36,3 +38,4 @@ def demo2():
 
 if __name__ == '__main__':
     demo1()
+    # demo2()
