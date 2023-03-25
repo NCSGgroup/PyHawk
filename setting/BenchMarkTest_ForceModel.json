@@ -1,0 +1,39 @@
+{
+    "include_ForceType": {
+        "GravHar": false,
+        "Relativity": true,
+        "NonConserveForce": true,
+        "PlanetaryPerturbation": true
+    },
+    "instance_GravHar": {
+        "NonTide": 0,
+        "PoleTide": "PoleTideIERS2010",
+        "OceanTide": "EOT11a",
+        "AtmosphereTide": "AtmosAOD",
+        "SolidEarthTide": "SolidTideIERS2010",
+        "ReferenceModel": "RefGravModel"
+    },
+    "include_GravHarType": {
+        "NonTide": true,
+        "PoleTide": true,
+        "OceanTide": true,
+        "AtmosphereTide": true,
+        "SolidEarthTide": true,
+        "ReferenceModel": true
+    },
+    "NonConservativeConfig": {
+        "date_span": [
+            "20018-01-01",
+            "2008-01-31"
+        ],
+        "arcNo": 10,
+        "sat": {
+            "A": true,
+            "B": true
+        }
+    },
+    "OceanTideConfig": {
+        "gainFactor": 0.001,
+        "maxDegree": 120
+    }
+}

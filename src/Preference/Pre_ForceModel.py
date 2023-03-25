@@ -120,7 +120,7 @@ class SortCSConfig:
 class RefGravModelConfig:
     kind = 0
     Nmax = 180
-    StaticModel = StaticGravModel.Gif48
+    StaticModel = StaticGravModel.EIGEN6_C4
 
 
 class NonTideConfig:

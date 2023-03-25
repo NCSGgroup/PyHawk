@@ -17,7 +17,8 @@ def demo1():
 
 def demo2():
 
-    for i in range(0, 108):
+    for i in range(38, 243):
+        print(i)
         RR = RangeRate(i)
         RR.configure()
         RR.calibrate()

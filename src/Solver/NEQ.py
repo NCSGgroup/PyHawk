@@ -59,18 +59,10 @@ class GravityNEQperArc:
             joinpath(self.__date_span[0] + '_' + self.__date_span[1])
         res_filename = res_dir.joinpath('Orbit_' + str(self.__arcNo) + '_' + self._satName + '.hdf5')
         h5 = h5py.File(res_filename, 'r')
-        # self.__orbit_nominal = h5['r'][()]
+        self.__orbit_nominal = h5['r'][()]
         self.__t_nominal = h5['t'][()]
         self.__local_r = h5['local_r'][()]
         self.__global_r = h5['global_r'][()]
-        h5.close()
-
-        '''after adjust'''
-        dir = pathlib.Path(Pre_AdjustOrbit.PathOfFiles.StateVectorDataTemp).\
-            joinpath(self.__date_span[0] + '_' + self.__date_span[1])
-        filename = dir.joinpath(str(self.__arcNo) + '_' + self._satName + '.hdf5')
-        h5 = h5py.File(filename, 'r')
-        self.__orbit_nominal = h5['r'][()]
         h5.close()
 
         for i in tqdm(range(3), desc='Build normal equations: '):
@@ -89,12 +81,12 @@ class GravityNEQperArc:
         """
         if sat == SatID.A:
             config = self.__config['satA']
-            orbit_nominal = self.__orbit_nominal[:, 0:3, 0]
+            orbit_nominal = self.__orbit_nominal[:, 0:3]
             local_r = self.__local_r[:, 0:3, :]
             global_r = self.__global_r[:, 0:3, :]
         else:
             config = self.__config['satB']
-            orbit_nominal = self.__orbit_nominal[:, 3:6, 0]
+            orbit_nominal = self.__orbit_nominal[:, 3:6]
             local_r = self.__local_r[:, 3:6, :]
             global_r = self.__global_r[:, 3:6, :]
         t_nominal = self.__t_nominal

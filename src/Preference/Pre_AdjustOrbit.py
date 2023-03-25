@@ -5,7 +5,7 @@ import src.Preference.EnumType as EnumType
 class RangeRate:
     ParameterFitting = EnumType.SSTFitOption.biasC0C1_OneCPR
     OutlierTimes = 3 #how
-    OutlierLimit = 7e-07
+    OutlierLimit = 7.5e-07
     ArcLength = 1.5
     Iterations = 2 #times
 
@@ -17,3 +17,4 @@ class PathOfFiles:
     StateVectorDataTemp = root_dir.joinpath('temp', 'StateVector')
     OrbitAdjustResTemp = root_dir.joinpath('temp', 'OrbitAdjustment')
     RangeRateTemp = root_dir.joinpath('temp', 'RangeRate')
+

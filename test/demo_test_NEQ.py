@@ -30,7 +30,7 @@ def demo():
     # h5 = h5py.File(res_filename, 'r')
     NMatrix = np.zeros((3717, 3717))
     LMatrix = np.zeros((3717, 1))
-    for i in tqdm(range(0, 108), desc='Solve normal equations: '):
+    for i in tqdm(range(0, 243), desc='Solve normal equations: '):
         res_filename = res_dir.joinpath(str(i) + '.hdf5')
         h5 = h5py.File(res_filename, 'r')
         NMatrix = NMatrix + (h5['Orbit_N_A'][:] + h5['Orbit_N_B'][:]) * 1E-12 + h5['RangeRate_N'][:]
@@ -38,7 +38,7 @@ def demo():
 
     x = np.linalg.lstsq(NMatrix, LMatrix[:, 0], rcond=None)[0]
     print(x)
-    np.savez('CS-3.20.npz', cs=x)
+    np.savez('CS-3.24.npz', cs=x)
 
 
 def draw():
@@ -76,7 +76,7 @@ def draw():
 
 
 def csReshape():
-    data = np.load('CS-3.20.npz')['cs']
+    data = np.load('CS-3.24.npz')['cs']
     sort = SortCS(Pre_Parameterization.StokesCoefficients.SortMethod,
                   Pre_Parameterization.StokesCoefficients.MaxDegree,
                   Pre_Parameterization.StokesCoefficients.MinDegree)
@@ -89,18 +89,18 @@ def csReshape():
     C, S = GeoMathKit.CS_1dTo2d(c), GeoMathKit.CS_1dTo2d(s)
 
     print(C)
-    np.savez('CS2d-3.20.npz', c=C, s=S)
+    np.savez('CS2d-3.24.npz', c=C, s=S)
     pass
 
 
 if __name__ == '__main__':
     # demo1(36,37)
-    # p1 = multiprocessing.Process(target=demo1, args=(0, 18))
-    # p2 = multiprocessing.Process(target=demo1, args=(18, 36))
-    # p3 = multiprocessing.Process(target=demo1, args=(36, 54))
-    # p4 = multiprocessing.Process(target=demo1, args=(54, 72))
-    # p5 = multiprocessing.Process(target=demo1, args=(72, 90))
-    # p6 = multiprocessing.Process(target=demo1, args=(90, 108))
+    # p1 = multiprocessing.Process(target=demo1, args=(0, 41))
+    # p2 = multiprocessing.Process(target=demo1, args=(41, 82))
+    # p3 = multiprocessing.Process(target=demo1, args=(82, 123))
+    # p4 = multiprocessing.Process(target=demo1, args=(123, 164))
+    # p5 = multiprocessing.Process(target=demo1, args=(164, 205))
+    # p6 = multiprocessing.Process(target=demo1, args=(205, 243))
     #
     # p1.start()
     # p2.start()
