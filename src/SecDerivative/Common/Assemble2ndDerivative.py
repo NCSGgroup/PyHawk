@@ -9,6 +9,7 @@ import src.Preference.EnumType as EnumType
 from src.Auxilary.SortCS import SortCS
 import src.Preference.Pre_Parameterization as Pre_Parameterization
 import numpy as np
+from src.Preference.ForceModelConfig import ForceModelConfig
 
 
 class Assemble2ndDerivative:
@@ -21,18 +22,24 @@ class Assemble2ndDerivative:
         self.__S = None
         self._arc = None
         self.__Sat = EnumType.SatID.A
-        self.__ep = PlanetEphemerides().configure().setPlanets()
         self.__sort = SortCS(Pre_Parameterization.StokesCoefficients.SortMethod,
                              Pre_Parameterization.StokesCoefficients.MaxDegree,
                              Pre_Parameterization.StokesCoefficients.MinDegree)
         self.__isExistDaDx = False
         self.__isExistDaDp = False
+        '''force model cofig'''
+        self.configForce = None
+        self.ForceType = None
+        '''PlanetEphemerides'''
+        self.__ep = None
+        '''init res'''
         self.__acc = np.zeros(3, dtype=float)
         self.__dadp = np.array([[], [], []])
         self.__dadx = np.zeros((3, 3), dtype=float)
 
-    def configure(self):
-        self.configForce = ConfigForce(arc=self._arc, ep=self.__ep)
+    def configure(self, FMConfig = ForceModelConfig()):
+        self.__ep = PlanetEphemerides().configure().setPlanets()
+        self.configForce = ConfigForce(arc=self._arc, ep=self.__ep).configure(FMConfig=FMConfig)
         self.ForceType = self.configForce.getForceType()
         return self
 

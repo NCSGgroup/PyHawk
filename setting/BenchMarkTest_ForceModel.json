@@ -1,8 +1,8 @@
 {
     "include_ForceType": {
         "GravHar": false,
-        "Relativity": true,
-        "NonConserveForce": true,
+        "Relativity": false,
+        "NonConserveForce": false,
         "PlanetaryPerturbation": true
     },
     "instance_GravHar": {

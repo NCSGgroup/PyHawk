@@ -13,7 +13,6 @@ class AbsThreeBody(BaseSecondDerivative):
         self._PlanetPos = None
         self._sat = None
         self._GM = None
-        self.configure()
 
     def configure(self, **kwargs):
         self._GM = kwargs.get('GM', ThreeBodyConfig.ThreeBody_GM)

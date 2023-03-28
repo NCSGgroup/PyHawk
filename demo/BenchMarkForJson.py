@@ -15,8 +15,7 @@ import matplotlib.pyplot as plt
 
 class BenchMark:
     def __init__(self, FMConfig = ForceModelConfig()):
-        self._forceModelConfig = FMConfig
         self._fr = Frame(EOP().load())
-
+        self._assembleModel = Assemble2ndDerivative().configure(FMConfig=FMConfig)
 
         pass

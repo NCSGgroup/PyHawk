@@ -7,6 +7,7 @@ from jplephem.spk import SPK
 from src.Frame.Frame import Frame
 import src.Preference.Pre_Frame as Pre_Frame
 import pathlib
+from src.Preference.ForceModelConfig import ForceModelConfig
 
 
 class PlanetEphemerides:
@@ -35,6 +36,8 @@ class PlanetEphemerides:
 
     def configure(self, emphericType=EnumType.JPLempheric.DE421,
                   isMeter=Pre_Frame.EphemeridesConfig.isMeter, **kwargs):
+
+
         if emphericType == EnumType.JPLempheric.DE405:
             filename = 'de405.bsp'
         elif emphericType == EnumType.JPLempheric.DE421:

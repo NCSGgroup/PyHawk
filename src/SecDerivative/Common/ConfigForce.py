@@ -6,6 +6,7 @@ from src.Preference.Pre_ForceModel import ThreeBodyConfig
 from src.SecDerivative.Common.ConfigForce_GravHar import ConfigGravHar
 from src.Frame.PlanetEphemerides import PlanetEphemerides
 from src.ForceModel.NonConservative import NonConByAcc
+from src.Preference.ForceModelConfig import ForceModelConfig
 
 
 class ConfigForce:
@@ -14,11 +15,19 @@ class ConfigForce:
         self.__forceType = {}
         self.__ep = ep
         self.__arc = arc
-        sat = Pre_ForceModel.NonConservative.sat.copy()
+        self.__FMConfig = None
+        self.__sat = None
+        self.__include_ForceType = None
+
+    def configure(self, FMConfig: ForceModelConfig):
+        '''force model config'''
+        self.__FMConfig = FMConfig
+        sat = self.__FMConfig.NonConservativeConfig['sat']
+        include_ForceType = self.__FMConfig.include_ForceType.copy()
         self.__sat = [key for key, value in sat.items() if value]
-        include_ForceType = Pre_ForceModel.include_ForceType.copy()
         self.__include_ForceType = [key for key, value in include_ForceType.items() if value]
         self.__instanceForce()
+        return self
 
     def reConfigure(self):
         self.__instanceForce()
@@ -26,22 +35,22 @@ class ConfigForce:
     def __instanceForce(self):
         for force in self.__include_ForceType:
             obj = None
-            if force is ForceType.GravHar:
+            if force == ForceType.GravHar.name:
                 obj = ConfigGravHar(self.__ep)
-                self.__forceType[force.name] = obj
-            if force is ForceType.Relativity:
+                self.__forceType[force] = obj
+            if force == ForceType.Relativity.name:
                 obj = RelativityIERS2010().setConstant().setKind()
-                self.__forceType[force.name] = obj
-            if force is ForceType.PlanetaryPerturbation:
+                self.__forceType[force] = obj
+            if force == ForceType.PlanetaryPerturbation.name:
                 if ThreeBodyConfig.isJ2:
                     obj = ThreeBodyPlusJ2().configure()
                 else:
                     obj = ThreeBody().configure()
-                self.__forceType[force.name] = obj
-            if force is ForceType.NonConserveForce:
+                self.__forceType[force] = obj
+            if force == ForceType.NonConserveForce.name:
                 for sat in self.__sat:
                     obj = NonConByAcc(sat=sat, arcNo=self.__arc).configure()
-                    self.__forceType[force.name + sat.name] = obj
+                    self.__forceType[force + sat.name] = obj
 
     def getForceType(self):
         return self.__forceType

@@ -4,12 +4,13 @@
 # @File    : ForceModelConfig.py
 # @Software: PyCharm
 import json
-
 import src.Preference.EnumType as EnumType
+import pathlib as pathlib
 
 
 class ForceModelConfig:
     def __init__(self):
+        root_dir = pathlib.Path(__file__).parent.parent.parent,
         self.include_ForceType = {EnumType.ForceType.GravHar.name: True,
                                   EnumType.ForceType.Relativity.name: True,
                                   EnumType.ForceType.NonConserveForce.name: True,
@@ -36,6 +37,10 @@ class ForceModelConfig:
 
         self.OceanTideConfig = {"gainFactor": 1e-3,
                                 "maxDegree": 120}
+
+        self.PathOfFilesConfig = {
+            "Ephemerides": root_dir.joinpath('data', 'ephemerides')
+        }
 
 
 def demo1():
