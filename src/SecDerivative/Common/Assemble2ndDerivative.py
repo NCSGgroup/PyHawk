@@ -38,7 +38,7 @@ class Assemble2ndDerivative:
         self.__dadx = np.zeros((3, 3), dtype=float)
 
     def configure(self, FMConfig = ForceModelConfig()):
-        self.__ep = PlanetEphemerides().configure().setPlanets()
+        self.__ep = PlanetEphemerides().configure(FMConfig=FMConfig).setPlanets()
         self.configForce = ConfigForce(arc=self._arc, ep=self.__ep).configure(FMConfig=FMConfig)
         self.ForceType = self.configForce.getForceType()
         return self
@@ -125,6 +125,8 @@ class Assemble2ndDerivative:
                 if Pre_Parameterization.Accelerometer.isRequired:
                     self.__isExistDaDp = True
                     self.__dadp = np.hstack((self.__dadp, obj.getDaDp()))
+
+        return self
         # for obj in self.ForceType.values():
         #     if isinstance(obj, ConfigGravHar):
         #         rm = self.__time.getRotationMatrix

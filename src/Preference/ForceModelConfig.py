@@ -10,7 +10,6 @@ import pathlib as pathlib
 
 class ForceModelConfig:
     def __init__(self):
-        root_dir = pathlib.Path(__file__).parent.parent.parent,
         self.include_ForceType = {EnumType.ForceType.GravHar.name: True,
                                   EnumType.ForceType.Relativity.name: True,
                                   EnumType.ForceType.NonConserveForce.name: True,
@@ -38,8 +37,36 @@ class ForceModelConfig:
         self.OceanTideConfig = {"gainFactor": 1e-3,
                                 "maxDegree": 120}
 
+        self.ThreeBodyConfig = {
+            "ThreeBody_GM_Sun": 1.32712442076e20,
+            "ThreeBody_GM": {EnumType.Planets.Earth.name: 398600.44150e9,
+                             EnumType.Planets.Sun.name: 1.32712442076e20,
+                             EnumType.Planets.Moon.name: 0.49028010560e13,
+                             EnumType.Planets.Mercury.name: 1.32712442076e20 / 6023600.0,
+                             EnumType.Planets.Venus.name: 1.32712442076e20 / 408523.71,
+                             EnumType.Planets.Mars.name: 1.32712442076e20 / 3098708.0,
+                             EnumType.Planets.Jupiter.name: 1.32712442076e20 / 1047.3486,
+                             EnumType.Planets.Saturn.name: 1.32712442076e20 / 3497.898,
+                             EnumType.Planets.Uranus.name: 5794556.465751793e9,
+                             EnumType.Planets.Neptune.name: 6836527.100580024e9,
+                             EnumType.Planets.Pluto.name: 975.5011758767654e9},
+            "include_planets": {
+                EnumType.Planets.Sun.name: True,
+                EnumType.Planets.Moon.name: True,
+                EnumType.Planets.Mercury.name: True,
+                EnumType.Planets.Venus.name: True,
+                EnumType.Planets.Earth.name: True,
+                EnumType.Planets.Mars.name: True,
+                EnumType.Planets.Jupiter.name: True,
+                EnumType.Planets.Saturn.name: True,
+                EnumType.Planets.Uranus.name: True,
+                EnumType.Planets.Neptune.name: True,
+                EnumType.Planets.Pluto.name: True},
+            "isJ2": False
+        }
+
         self.PathOfFilesConfig = {
-            "Ephemerides": root_dir.joinpath('data', 'ephemerides')
+            "Ephemerides": "../data/ephemerides",
         }
 
 

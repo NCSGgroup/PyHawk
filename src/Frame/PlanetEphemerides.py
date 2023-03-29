@@ -27,17 +27,12 @@ class PlanetEphemerides:
         self.__kernel = None
         self.__time = None
         self.__pos_planets = {}
-        if Pre_ForceModel.include_ForceType[EnumType.ForceType.PlanetaryPerturbation]:
-            self.__include_plantes = Pre_ForceModel.ThreeBodyConfig.include_planets.copy()
-        else:
-            self.__include_plantes = Pre_Frame.EphemeridesConfig.include_planets.copy()
-        self.__include_plantes['Sun'] = True
-        self.__include_plantes['Moon'] = True
+        self.__include_plantes = {}
+        self.__FMConfig = None
 
-    def configure(self, emphericType=EnumType.JPLempheric.DE421,
-                  isMeter=Pre_Frame.EphemeridesConfig.isMeter, **kwargs):
-
-
+    def configure(self, FMConfig: ForceModelConfig, emphericType=EnumType.JPLempheric.DE421,
+                  isMeter=Pre_Frame.EphemeridesConfig.isMeter):
+        self.__FMConfig = FMConfig
         if emphericType == EnumType.JPLempheric.DE405:
             filename = 'de405.bsp'
         elif emphericType == EnumType.JPLempheric.DE421:
@@ -47,8 +42,15 @@ class PlanetEphemerides:
 
         if isMeter:
             self.__meter = 1000
-
-        self.__emphericPath = kwargs.get('path', PathOfFiles.Ephemerides).joinpath(filename)
+        '''load plants ephemerides'''
+        if self.__FMConfig.include_ForceType[EnumType.ForceType.PlanetaryPerturbation.name]:
+            self.__include_plantes = self.__FMConfig.ThreeBodyConfig['include_planets'].copy()
+        else:
+            self.__include_plantes = Pre_Frame.EphemeridesConfig.include_planets.copy()
+        # self.__include_plantes['Sun'] = True
+        # self.__include_plantes['Moon'] = True
+        '''set empheric path'''
+        self.__emphericPath = self.__FMConfig.PathOfFilesConfig['Ephemerides'] + '/' + str(filename)
         self.__kernel = SPK.open(self.__emphericPath)
         return self
 

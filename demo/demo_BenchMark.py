@@ -12,7 +12,8 @@ def demo1():
     Obj2 = ForceModelConfig()
     dict2 = json.load(open('../setting/BenchMarkTest_ForceModel.json', 'r'))
     Obj2.__dict__ = dict2
-    benchMark = BenchMark(Obj2)
+    benchMark = BenchMark()
+    benchMark.three_body(Obj2)
     pass
 
 

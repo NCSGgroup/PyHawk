@@ -1,8 +1,8 @@
 from src.ForceModel.BaseSecondDerivative import BaseSecondDerivative
-from src.Preference.Pre_ForceModel import ThreeBodyConfig
 import numpy as np
 from src.Frame.Frame import Frame
 from src.Auxilary.GeoMathKit import GeoMathKit
+from src.Preference.ForceModelConfig import ForceModelConfig
 
 
 class AbsThreeBody(BaseSecondDerivative):
@@ -13,10 +13,12 @@ class AbsThreeBody(BaseSecondDerivative):
         self._PlanetPos = None
         self._sat = None
         self._GM = None
+        self._FMConfig = None
 
-    def configure(self, **kwargs):
-        self._GM = kwargs.get('GM', ThreeBodyConfig.ThreeBody_GM)
-        planets = kwargs.get('Planets', ThreeBodyConfig.include_planets.copy())
+    def configure(self, FMConfig: ForceModelConfig):
+        self._FMConfig = FMConfig
+        self._GM = self._FMConfig.ThreeBodyConfig['ThreeBody_GM']
+        planets = self._FMConfig.ThreeBodyConfig['include_planets']
         self._Planets = [key for key, value in planets.items() if value]
         return self
 

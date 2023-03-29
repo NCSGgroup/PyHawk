@@ -1,8 +1,6 @@
 from src.ForceModel.ThreeBody import ThreeBody, ThreeBodyPlusJ2
 from src.ForceModel.Relativity import RelativityIERS2010
 from src.Preference.EnumType import ForceType
-import src.Preference.Pre_ForceModel as Pre_ForceModel
-from src.Preference.Pre_ForceModel import ThreeBodyConfig
 from src.SecDerivative.Common.ConfigForce_GravHar import ConfigGravHar
 from src.Frame.PlanetEphemerides import PlanetEphemerides
 from src.ForceModel.NonConservative import NonConByAcc
@@ -42,10 +40,10 @@ class ConfigForce:
                 obj = RelativityIERS2010().setConstant().setKind()
                 self.__forceType[force] = obj
             if force == ForceType.PlanetaryPerturbation.name:
-                if ThreeBodyConfig.isJ2:
-                    obj = ThreeBodyPlusJ2().configure()
+                if self.__FMConfig.ThreeBodyConfig['isJ2']:
+                    obj = ThreeBodyPlusJ2().configure(FMConfig=self.__FMConfig)
                 else:
-                    obj = ThreeBody().configure()
+                    obj = ThreeBody().configure(FMConfig=self.__FMConfig)
                 self.__forceType[force] = obj
             if force == ForceType.NonConserveForce.name:
                 for sat in self.__sat:
