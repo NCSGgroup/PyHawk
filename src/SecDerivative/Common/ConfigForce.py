@@ -34,7 +34,7 @@ class ConfigForce:
         for force in self.__include_ForceType:
             obj = None
             if force == ForceType.GravHar.name:
-                obj = ConfigGravHar(self.__ep)
+                obj = ConfigGravHar(self.__ep).configure(self.__FMConfig)
                 self.__forceType[force] = obj
             if force == ForceType.Relativity.name:
                 obj = RelativityIERS2010().setConstant().setKind()

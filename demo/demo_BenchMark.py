@@ -9,11 +9,16 @@ import json
 
 
 def demo1():
-    Obj2 = ForceModelConfig()
-    dict2 = json.load(open('../setting/BenchMarkTest_ForceModel.json', 'r'))
-    Obj2.__dict__ = dict2
+    FMConfig = ForceModelConfig()
     benchMark = BenchMark()
-    benchMark.three_body(Obj2)
+    # '''three body'''
+    # threeBody = json.load(open('../setting/BenchMarkConfig/BenchMark_ThreeBody.json', 'r'))
+    # FMConfig.__dict__ = threeBody
+    # benchMark.three_body(FMConfig)
+    '''AOD'''
+    aod = json.load(open('../setting/BenchMarkConfig/BenchMark_AOD.json', 'r'))
+    FMConfig.__dict__ = aod
+    benchMark.aod(FMConfig)
     pass
 
 

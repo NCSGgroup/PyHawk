@@ -1,13 +1,13 @@
 from src.ForceModel.BaseGravCS import BaseGravCS
 from src.Interface.LoadSH import LoadSH
 from src.Preference.EnumType import AODtype
-from src.Preference.Pre_ForceModel import PathOfFiles, NonTideConfig
 import src.Preference.Pre_Constants as Pre_Constants
 from src.Interface.LoadSH import LoadNonTide
 from src.Frame.Frame import Frame
 import os
 import datetime
 import numpy as np
+from src.Preference.ForceModelConfig import ForceModelConfig
 
 
 class AbsNonTide(BaseGravCS):
@@ -15,7 +15,7 @@ class AbsNonTide(BaseGravCS):
     def __init__(self):
         super(AbsNonTide, self).__init__()
 
-    def configure(self, MaxDeg: int, TS: int, FileDir: str, AOD_type: AODtype):
+    def configure(self, FMConfig: ForceModelConfig):
         pass
 
     def getCS(self):
@@ -30,10 +30,10 @@ class AODRL06(AbsNonTide):
         self.__ld = None
         self.__TS = 3
         self.__MaxDeg = 100
+        self.__FMConfig = None
         self.__previousAOD, self.__nextAOD = None, None
 
-    def configure(self, MaxDeg: int = NonTideConfig.MaxDeg, TS: int = NonTideConfig.TS,
-                  FileDir = PathOfFiles.AOD, AOD_type: AODtype = NonTideConfig.kind):
+    def configure(self, FMConfig: ForceModelConfig):
         """
         basic configuration
         :param AOD_type: A or O or A+O
@@ -42,8 +42,12 @@ class AODRL06(AbsNonTide):
         :param FileDir: Directory of the AOD product.
         :return:
         """
-        self.__MaxDeg = MaxDeg
-        self.__TS = TS
+        self.__FMConfig = FMConfig
+
+        FileDir = self.__FMConfig.PathOfFilesConfig['AOD']
+        AOD_type = self.__FMConfig.NonTideConfig['kind']
+        self.__MaxDeg = self.__FMConfig.NonTideConfig['MaxDeg']
+        self.__TS = self.__FMConfig.NonTideConfig['TS']
         self.__ld = LoadNonTide().load(FileDir).setType(kind=AOD_type)
 
         return self

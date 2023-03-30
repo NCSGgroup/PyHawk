@@ -15,7 +15,7 @@ class ForceModelConfig:
                                   EnumType.ForceType.NonConserveForce.name: True,
                                   EnumType.ForceType.PlanetaryPerturbation.name: True}
 
-        self.instance_GravHar = {EnumType.GravHarType.NonTide.name: EnumType.InstanceNonTide.AODRL06.value,
+        self.instance_GravHar = {EnumType.GravHarType.NonTide.name: EnumType.InstanceNonTide.AODRL06.name,
                                  EnumType.GravHarType.PoleTide.name: EnumType.InstancePoleTide.PoleTideIERS2010.name,
                                  EnumType.GravHarType.OceanTide.name: EnumType.InstanceOceanTide.EOT11a.name,
                                  EnumType.GravHarType.AtmosphereTide.name: EnumType.InstanceAtmosTide.AtmosAOD.name,
@@ -65,22 +65,39 @@ class ForceModelConfig:
             "isJ2": False
         }
 
+        self.GravHarConfig = {
+            "setZero": [0, 1],
+            "degree_max": 90,
+            "degree_min": 2,
+            "GravHar_GM": 0.3986004415E+15,
+            "GravHar_Radius": 0.6378136460E+07,
+            "PosCoordinate": EnumType.Coordinate.GCRS.name,
+            "ACCCoordinate": EnumType.Coordinate.GCRS.name,
+        }
+
+        self.NonTideConfig = {
+            "kind": EnumType.AODtype.GLO.name,
+            "MaxDeg": 180,
+            "TS": 3,
+        }
+
         self.PathOfFilesConfig = {
             "Ephemerides": "../data/ephemerides",
+            "AOD": "../data/AOD/RL06"
         }
 
 
 def demo1():
     Obj1 = ForceModelConfig()
+
     dict1 = json.load(open('../../setting/ForceModelConfig.json', 'r'))
     Obj1.__dict__ = dict1
 
-    Obj2 = ForceModelConfig()
     dict2 = json.load(open('../../setting/ForceModelConfig2.json', 'r'))
-    Obj2.__dict__ = dict2
+    Obj1.__dict__ = dict2
 
     print(Obj1.NonConservativeConfig)
-    print(Obj2.NonConservativeConfig)
+    print(Obj1.NonConservativeConfig)
 
 
 def demo2():

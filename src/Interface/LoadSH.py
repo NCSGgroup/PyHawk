@@ -323,10 +323,10 @@ class LoadNonTide(LoadSH):
         LoadSH.__init__(self)
         self.__kind = None
         self.__AODdir = None
-        self.__box = {AODtype.ATM: 'atm',
-                      AODtype.OCN: 'ocn',
-                      AODtype.OBA: 'oba',
-                      AODtype.GLO: 'glo'}
+        self.__box = {AODtype.ATM.name: 'atm',
+                      AODtype.OCN.name: 'ocn',
+                      AODtype.OBA.name: 'oba',
+                      AODtype.GLO.name: 'glo'}
         self.__epoch = None
 
     def load(self, fileIn = PathOfFiles.AOD):
@@ -378,7 +378,7 @@ class LoadNonTide(LoadSH):
 
         return self
 
-    def setType(self, kind: AODtype = NonTideConfig.kind):
+    def setType(self, kind: str):
         """
         set the type to be read: ATM, OCN, GLO, OBA
         :return:

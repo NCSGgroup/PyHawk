@@ -8,7 +8,7 @@ import src.Preference.Pre_ForceModel as Pre_ForceModel
 
 
 def demo1():
-    with open('../setting/BenchMarkTest_ForceModel.json') as load_f:
+    with open('../setting/BenchMarkConfig/BenchMark_ThreeBody.json') as load_f:
         configA = json.load(load_f)
     with open('../setting/GraceTestForceModel_B.json') as load_f:
         configB = json.load(load_f)

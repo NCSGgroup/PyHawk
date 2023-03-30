@@ -21,21 +21,6 @@
         "SolidEarthTide": true,
         "ReferenceModel": true
     },
-    "NonConservativeConfig": {
-        "date_span": [
-            "2008-01-01",
-            "2008-01-31"
-        ],
-        "arcNo": 0,
-        "sat": {
-            "A": true,
-            "B": true
-        }
-    },
-    "OceanTideConfig": {
-        "gainFactor": 0.001,
-        "maxDegree": 120
-    },
     "ThreeBodyConfig": {
         "ThreeBody_GM_Sun": 1.32712442076e+20,
         "ThreeBody_GM": {
