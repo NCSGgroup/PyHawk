@@ -37,7 +37,7 @@ class ConfigForce:
                 obj = ConfigGravHar(self.__ep).configure(self.__FMConfig)
                 self.__forceType[force] = obj
             if force == ForceType.Relativity.name:
-                obj = RelativityIERS2010().setConstant().setKind()
+                obj = RelativityIERS2010().configure(FMConfig=self.__FMConfig)
                 self.__forceType[force] = obj
             if force == ForceType.PlanetaryPerturbation.name:
                 if self.__FMConfig.ThreeBodyConfig['isJ2']:

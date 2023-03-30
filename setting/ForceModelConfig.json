@@ -83,6 +83,23 @@
         "MaxDeg": 180,
         "TS": 3
     },
+    "RelativityConfig": {
+        "GM_Sun": 1.32712442076e+20,
+        "GM_Earth": 398600441500000.0,
+        "C_Light": 299792458,
+        "J": [
+            0,
+            0,
+            980000000.0
+        ],
+        "Gamma": 1,
+        "Beta": 1,
+        "kind": {
+            "SchwarzChild": true,
+            "LenseThirring": true,
+            "Desitter": true
+        }
+    },
     "PathOfFilesConfig": {
         "Ephemerides": "../data/ephemerides",
         "AOD": "../data/AOD/RL06"

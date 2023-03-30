@@ -4,6 +4,7 @@ from src.Preference.EnumType import RelativityType
 import numpy as np
 from src.Frame.Frame import Frame
 from src.Auxilary.GeoMathKit import GeoMathKit
+from src.Preference.ForceModelConfig import ForceModelConfig
 
 
 class AbsRelativity(BaseSecondDerivative):
@@ -47,10 +48,19 @@ class RelativityIERS2010(AbsRelativity):
         self.__satPos = None
         self.__satVel = None
         self.__sunState = None
-        self.setConstant()
+        self.__FMConfig = None
 
-    def setKind(self, **kwargs):
-        kind = kwargs.get('kind', RelativityConfig.kind)
+    def configure(self, FMConfig: ForceModelConfig):
+        self.__FMConfig = FMConfig
+
+        self.__GM_Earth = self.__FMConfig.RelativityConfig['GM_Earth']
+        self.__GM_Sun = self.__FMConfig.RelativityConfig['GM_Sun']
+        self.__C_Light = self.__FMConfig.RelativityConfig['C_Light']
+        self._gamma = self.__FMConfig.RelativityConfig['Gamma']
+        self._beta = self.__FMConfig.RelativityConfig['Beta']
+        self._J = self.__FMConfig.RelativityConfig['J']
+
+        kind = self.__FMConfig.RelativityConfig['kind']
         self.kind = [key for key, value in kind.items() if value]
         return self
 
@@ -58,17 +68,6 @@ class RelativityIERS2010(AbsRelativity):
         self.__satPos = pos
         self.__satVel = vel
 
-        return self
-
-    def setConstant(self, GM_Earth=RelativityConfig.GM_Earth,
-                    C_Light= RelativityConfig.C_Light, GM_Sun=RelativityConfig.GM_Sun,
-                    gamma=RelativityConfig.Gamma, beta=RelativityConfig.Beta, J=RelativityConfig.J):
-        self.__GM_Earth = GM_Earth
-        self.__GM_Sun = GM_Sun
-        self.__C_Light = C_Light
-        self._gamma = gamma
-        self._beta = beta
-        self._J = J
         return self
 
     def setSunState(self, pos: np.ndarray, vel: np.ndarray):
@@ -81,13 +80,13 @@ class RelativityIERS2010(AbsRelativity):
         :return:
         """
         acc = np.zeros(3)
-        if RelativityType.SchwarzChild in self.kind:
+        if RelativityType.SchwarzChild.name in self.kind:
             acc += self.getSchwarzChild()
 
-        if RelativityType.LenseThirring in self.kind:
+        if RelativityType.LenseThirring.name in self.kind:
             acc += self.getLenseThirring()
 
-        if RelativityType.Desitter in self.kind:
+        if RelativityType.Desitter.name in self.kind:
             acc += self.getDesitter()
 
         return acc

@@ -44,8 +44,8 @@
     ],
     "degree_max": 90,
     "degree_min": 2,
-    "GravHar_GM": 0.39860044180000E+15,
-    "GravHar_Radius": 0.63781366000000E+07,
+    "GravHar_GM": 398600441500000.0,
+    "GravHar_Radius": 6378136.46,
     "PosCoordinate": "ITRS",
     "ACCCoordinate": "GCRS"
   },

@@ -15,10 +15,14 @@ def demo1():
     # threeBody = json.load(open('../setting/BenchMarkConfig/BenchMark_ThreeBody.json', 'r'))
     # FMConfig.__dict__ = threeBody
     # benchMark.three_body(FMConfig)
-    '''AOD'''
-    aod = json.load(open('../setting/BenchMarkConfig/BenchMark_AOD.json', 'r'))
+    # '''AOD'''
+    # aod = json.load(open('../setting/BenchMarkConfig/BenchMark_AOD.json', 'r'))
+    # FMConfig.__dict__ = aod
+    # benchMark.aod(FMConfig)
+    '''relativistic'''
+    aod = json.load(open('../setting/BenchMarkConfig/BenchMark_Relativity.json', 'r'))
     FMConfig.__dict__ = aod
-    benchMark.aod(FMConfig)
+    benchMark.relativistic(FMConfig)
     pass
 
 

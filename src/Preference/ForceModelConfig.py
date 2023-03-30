@@ -6,6 +6,7 @@
 import json
 import src.Preference.EnumType as EnumType
 import pathlib as pathlib
+import numpy as np
 
 
 class ForceModelConfig:
@@ -79,6 +80,20 @@ class ForceModelConfig:
             "kind": EnumType.AODtype.GLO.name,
             "MaxDeg": 180,
             "TS": 3,
+        }
+
+        self.RelativityConfig = {
+            "GM_Sun": 1.32712442076e20,
+            "GM_Earth": 0.3986004415E+15,
+            "C_Light": 299792458,
+            "J": [0, 0, 9.8e8],
+            "Gamma": 1,
+            "Beta": 1,
+            "kind": {
+                EnumType.RelativityType.SchwarzChild.name: True,
+                EnumType.RelativityType.LenseThirring.name: True,
+                EnumType.RelativityType.Desitter.name: True
+            }
         }
 
         self.PathOfFilesConfig = {

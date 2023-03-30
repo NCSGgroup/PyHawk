@@ -102,3 +102,45 @@ class BenchMark:
         plt.xlabel('MJD')
         plt.ylabel('acc')
         plt.show()
+
+    def relativistic(self, FMConfig = ForceModelConfig()):
+        assembleModel = Assemble2ndDerivative().configure(FMConfig=FMConfig)
+        '''read orbit'''
+        with open('../data/Benchmark/satellite/00orbit_icrf.txt') as f:
+            contents1 = f.readlines()
+            pass
+        '''read benchmark'''
+        with open('../data/Benchmark/satellite/07relativistic_icrf.txt') as f:
+            contents2 = f.readlines()
+            pass
+
+        diff = []
+        timeList = []
+        for i in range(5, len(contents1)):
+            res1 = np.array(contents1[i].split(), dtype='float')
+            time = res1[0] + 19 / 86400
+            pos, vel = res1[1:4], res1[4:7]
+            assem_model = assembleModel.setPosAndVel(pos, vel).setTime(self._fr.setTime(time, EnumType.TimeFormat.TAI_MJD))
+            acc = assem_model.calculation().getAcceleration()
+
+            ref1 = np.array(contents2[i].split(), dtype='float')
+            acc_ref = ref1[1:4]
+
+            diff.append(acc - acc_ref)
+            timeList.append(time)
+            pass
+
+        np.save(self._savedir + 'relativistic.npy', np.array(diff))
+        diff = np.array(diff)
+        ax = diff[:, 0]
+        ay = diff[:, 1]
+        az = diff[:, 2]
+        plt.style.use('grid')
+        plt.title('Relativistic')
+        plt.plot(timeList, ax, color='#dd2c00', label='x')
+        plt.plot(timeList, ay, color='#00695c', label='y')
+        plt.plot(timeList, az, color='#1a237e', label='z')
+        plt.legend()
+        plt.xlabel('MJD')
+        plt.ylabel('acc')
+        plt.show()

@@ -1,0 +1,56 @@
+{
+    "include_ForceType": {
+        "GravHar": false,
+        "Relativity": true,
+        "NonConserveForce": false,
+        "PlanetaryPerturbation": false
+    },
+    "instance_GravHar": {
+        "NonTide": "AODRL06",
+        "PoleTide": "PoleTideIERS2010",
+        "OceanTide": "EOT11a",
+        "AtmosphereTide": "AtmosAOD",
+        "SolidEarthTide": "SolidTideIERS2010",
+        "ReferenceModel": "RefGravModel"
+    },
+    "include_GravHarType": {
+        "NonTide": true,
+        "PoleTide": true,
+        "OceanTide": true,
+        "AtmosphereTide": true,
+        "SolidEarthTide": true,
+        "ReferenceModel": true
+    },
+    "NonConservativeConfig": {
+        "date_span": [
+            "2008-01-01",
+            "2008-01-31"
+        ],
+        "arcNo": 0,
+        "sat": {
+            "A": true,
+            "B": true
+        }
+    },
+    "RelativityConfig": {
+        "GM_Sun": 1.32712442076e+20,
+        "GM_Earth": 398600441500000.0,
+        "C_Light": 299792458,
+        "J": [
+            0,
+            0,
+            980000000.0
+        ],
+        "Gamma": 1,
+        "Beta": 1,
+        "kind": {
+            "SchwarzChild": true,
+            "LenseThirring": true,
+            "Desitter": true
+        }
+    },
+    "PathOfFilesConfig": {
+        "Ephemerides": "../data/ephemerides",
+        "AOD": "../data/AOD/RL06"
+    }
+}
