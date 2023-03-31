@@ -13,6 +13,7 @@ import pathlib as _pathlib
 import glob as _glob
 import src.Preference.Pre_ForceModel as Pre_ForceModel
 from src.Preference.Pre_ForceModel import GravHarConfig
+from src.Preference.ForceModelConfig import ForceModelConfig
 import os
 
 
@@ -25,8 +26,12 @@ class AbsGravHar(BaseSecondDerivative):
         self._pos = None
         self._Cpot = None
         self._Spot = None
+        self._FMConfig = None
 
-    def setConstant(self, GM=GravHarConfig.GravHar_GM, Radius=GravHarConfig.GravHar_Radius):
+    def configure(self, FMConfig: ForceModelConfig):
+        self._FMConfig = FMConfig
+        self._GM = self._FMConfig.GravHarConfig['GravHar_GM']
+        self._Radius = self._FMConfig.GravHarConfig['GravHar_Radius']
         return self
 
     def setPar(self, Cpot: np.ndarray, Spot: np.ndarray, Pos: np.ndarray):
@@ -47,17 +52,6 @@ class PyGravHar(AbsGravHar):
         # Above value are not quite precise, suggesting 'setConstant'
         # self.setConstant()
         pass
-
-    def setConstant(self, GM=GravHarConfig.GravHar_GM, Radius=GravHarConfig.GravHar_Radius):
-        """
-        A more precise definition of Earth constant or with user own definition
-        :param GM: from JGM3
-        :param Radius: from WGS84
-        :return:
-        """
-        self._GM = GM
-        self._Radius = Radius
-        return self
 
     def setPar(self, Cpot: np.ndarray, Spot: np.ndarray, Pos: np.ndarray):
         """
@@ -523,8 +517,12 @@ class ClibGravHar(AbsGravHar):
 
         pass
 
-    def setConstant(self, GM=GravHarConfig.GravHar_GM, Radius=GravHarConfig.GravHar_Radius):
-        self.__gravlib.setPar(GM, Radius)
+    def configure(self, FMConfig: ForceModelConfig):
+        self._FMConfig = FMConfig
+        self._GM = self._FMConfig.GravHarConfig['GravHar_GM']
+        self._Radius = self._FMConfig.GravHarConfig['GravHar_Radius']
+
+        self.__gravlib.setPar(self._GM, self._Radius)
         return self
 
     def setPar(self, Cpot: np.ndarray, Spot: np.ndarray, Pos: np.ndarray):

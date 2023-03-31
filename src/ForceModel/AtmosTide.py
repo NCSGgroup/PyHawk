@@ -1,9 +1,9 @@
 from src.ForceModel.BaseGravCS import BaseGravCS
 from src.Auxilary.GeoMathKit import GeoMathKit
 from src.Auxilary.FunNutArg import FunNutArg
-from src.Preference.Pre_ForceModel import AtmosTideConfig, PathOfFiles
 from src.Preference.EnumType import TidesType, AODtype
 from src.Interface.LoadSH import LoadAtmosTide
+from src.Preference.ForceModelConfig import ForceModelConfig
 import numpy as np
 
 
@@ -15,16 +15,21 @@ class AbsAtmosTide(BaseGravCS):
         self._S = None
         self._SR = None
         self._tdb_mjd = -1000000
-        self.setSampleRate()
+        self._FMConfig = None
         self._ng = FunNutArg()
 
-    def setSampleRate(self, SR=AtmosTideConfig.SR):
+    def configure(self, FMConfig:ForceModelConfig):
+        self._FMConfig = FMConfig
+        self.setSampleRate()
+        return self
+
+    def setSampleRate(self):
         """
         To decide the output's maximal sampling rate
         :param SR: the desired sample rate [seconds]
         :return:
         """
-        self._SR = SR
+        self._SR = self._FMConfig.AtmosTideConfig['SR']
         return self
 
     def getCS(self):
@@ -39,11 +44,18 @@ class AbsAtmosTide(BaseGravCS):
 
 class AtmosBB2003(AbsAtmosTide):
 
-    def __init__(self, kind=AtmosTideConfig.BB2003tide):
+    def __init__(self):
         super(AtmosBB2003, self).__init__()
         self.__load_BB2003()
-        self.__kind = [key.name for key, value in kind.items() if value]
+        self.__kind = None
         self.__nutarg = None
+
+    def configure(self, FMConfig:ForceModelConfig):
+        self._FMConfig = FMConfig
+        BB2003tide = self._FMConfig.AtmosTideConfig['BB2003tide']
+        self.__kind = [key for key, value in BB2003tide.items() if value]
+        self.setSampleRate()
+        return self
 
     def getCS(self):
         """
@@ -232,11 +244,19 @@ class AtmosBB2003(AbsAtmosTide):
 
 class AtmosAOD(AbsAtmosTide):
 
-    def __init__(self, kind=AtmosTideConfig.AODtide):
+    def __init__(self):
         super(AtmosAOD, self).__init__()
-        self.__kind = [key.name for key, value in kind.items() if value]
+        self.__AODtide = None
+        self.__tideCS = None
+        self.__doodson = None
+        self.__warburg = None
 
-        doodson = {
+    def configure(self, FMConfig:ForceModelConfig):
+        self._FMConfig = FMConfig
+        AODtide = self._FMConfig.AtmosTideConfig['AODtide']
+        self.__AODtide = [key for key, value in AODtide.items() if value]
+
+        self.__doodson = {
             'S1': '164.555',
             'S2': '273.555',
             'M2': '255.555',
@@ -253,15 +273,15 @@ class AtmosAOD(AbsAtmosTide):
 
         '''construct the doodson matrix for the given tide'''
         doodsonMatrix = {}
-        for tide in self.__kind:
-            doodsonMatrix[tide] = np.array([int(doodson[tide][0]) - 0,
-                                            int(doodson[tide][1]) - 5,
-                                            int(doodson[tide][2]) - 5,
-                                            int(doodson[tide][4]) - 5,
-                                            int(doodson[tide][5]) - 5,
-                                            int(doodson[tide][6]) - 5])
+        for tide in self.__AODtide:
+            doodsonMatrix[tide] = np.array([int(self.__doodson[tide][0]) - 0,
+                                            int(self.__doodson[tide][1]) - 5,
+                                            int(self.__doodson[tide][2]) - 5,
+                                            int(self.__doodson[tide][4]) - 5,
+                                            int(self.__doodson[tide][5]) - 5,
+                                            int(self.__doodson[tide][6]) - 5])
 
-        self.__doodsonMatrix = np.array([doodsonMatrix[k] for k in self.__kind])
+        self.__doodsonMatrix = np.array([doodsonMatrix[k] for k in self.__AODtide])
 
         '''warburg correction: Notice, this differs from the AOD document for P1 and K1 term'''
         warburg = {
@@ -281,29 +301,31 @@ class AtmosAOD(AbsAtmosTide):
             'R3': 0
         }
 
-        self.__warburg = np.array([warburg[k] for k in self.__kind])
+        self.__warburg = np.array([warburg[k] for k in self.__AODtide])
 
-        self.__tideCS = None
+        self.setSampleRate()
+        return self
 
-    def loadfile(self, fileDir=PathOfFiles.Atmos, Nmax: int=AtmosTideConfig.Nmax):
+    def loadfile(self):
         """
 
         :param Nmax: max degree to be extracted
         :param fileDir: path of the tide files
         :return:
         """
-
+        fileDir = self._FMConfig.PathOfFilesConfig['Atmos']
+        Nmax = self._FMConfig.AtmosTideConfig['Nmax']
         adt = LoadAtmosTide().load(fileIn=fileDir)
         spec = AODtype.ATM
 
         tideCS = {}
-        for tide in self.__kind:
+        for tide in self.__AODtide:
             cnmSin, snmSin = adt.setInfo(tide=TidesType[tide], kind=spec, sincos='sin').getCS(Nmax)
             cnmCos, snmCos = adt.setInfo(tide=TidesType[tide], kind=spec, sincos='cos').getCS(Nmax)
             tideCS[tide] = np.array([cnmSin, snmSin, cnmCos, snmCos])
 
         """sort"""
-        self.__tideCS = np.array([tideCS[k] for k in self.__kind])
+        self.__tideCS = np.array([tideCS[k] for k in self.__AODtide])
 
         return self
 

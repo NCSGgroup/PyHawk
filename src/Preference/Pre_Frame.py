@@ -32,13 +32,13 @@ class EphemeridesConfig:
     include_planets = {
         'Sun': True,
         'Moon': True,
-        'Mercury': True,
-        'Venus': True,
+        'Mercury': False,
+        'Venus': False,
         'Earth': False,
-        'Mars': True,
-        'Jupiter': True,
-        'Saturn': True,
-        'Uranus': True,
-        'Neptune': True,
-        'Pluto': True}
+        'Mars': False,
+        'Jupiter': False,
+        'Saturn': False,
+        'Uranus': False,
+        'Neptune': False,
+        'Pluto': False}
 

@@ -106,8 +106,8 @@ class GravHarConfig:
     setZero = [0, 1]
     degree_max = 90
     degree_min = 2
-    GravHar_GM = 0.3986004415E+15
-    GravHar_Radius = 0.6378136460E+07
+    GravHar_GM = 3.9860044150e+14
+    GravHar_Radius = 6.3781363000e+06
     PosCoordinate = EnumType.Coordinate.GCRS
     ACCCoordinate = EnumType.Coordinate.GCRS
 

@@ -35,6 +35,50 @@ class ForceModelConfig:
                                       "sat": {EnumType.SatID.A.name: True,
                                               EnumType.SatID.B.name: True}}
 
+        self.LoveNumberConfig = {
+            "Nmax": 30,
+            "method": EnumType.LoveNumberType.IERS.name
+        }
+
+        self.PoleTideConfig = {
+            "Kind": {'Solid Earth': True,
+                     'Ocean': False},
+            "SimpleOcean": False,
+            "Polar2wobble": 2,
+            "MaxDegreeOfOcean": self.LoveNumberConfig['Nmax'],
+            "LoveNumberType": self.LoveNumberConfig['method']
+        }
+
+        self.SolidTideConfig = {
+            "GM_Earth": 0.3986004415E+15,
+            "GM_Sun": 1.32712442076e20,
+            "GM_Moon": 0.49028010560e13,
+            "Radius_Earth": 0.6378136460E+07,
+            "isZeroTide": False
+        }
+
+        self.AtmosTideConfig = {
+            "SR": 1E-3,
+            "AODtide": {
+                EnumType.TidesType.P1.name: True,
+                EnumType.TidesType.S1.name: True,
+                EnumType.TidesType.K1.name: True,
+                EnumType.TidesType.N2.name: True,
+                EnumType.TidesType.M2.name: True,
+                EnumType.TidesType.L2.name: True,
+                EnumType.TidesType.T2.name: True,
+                EnumType.TidesType.S2.name: True,
+                EnumType.TidesType.R2.name: True,
+                EnumType.TidesType.T3.name: True,
+                EnumType.TidesType.S3.name: True,
+                EnumType.TidesType.R3.name: True,
+            },
+            "kind": EnumType.AODtype.ATM.name,
+            "Nmax": 180,
+            "BB2003tide": {EnumType.TidesType.S1.name: True,
+                           EnumType.TidesType.S2.name: True}
+        }
+
         self.OceanTideConfig = {"gainFactor": 1e-3,
                                 "maxDegree": 120}
 
@@ -82,6 +126,12 @@ class ForceModelConfig:
             "TS": 3,
         }
 
+        self.RefGravModelConfig = {
+            "kind": 0,
+            "Nmax": 180,
+            "StaticModel": EnumType.StaticGravModel.EIGEN6_C4.name
+        }
+
         self.RelativityConfig = {
             "GM_Sun": 1.32712442076e20,
             "GM_Earth": 0.3986004415E+15,
@@ -98,7 +148,16 @@ class ForceModelConfig:
 
         self.PathOfFilesConfig = {
             "Ephemerides": "../data/ephemerides",
-            "AOD": "../data/AOD/RL06"
+            "AOD": "../data/AOD/RL06",
+            "EOT11a": "../data/eot11a",
+            "FES2014": "../data/FES2014",
+            "Atmos": "../data/atmos",
+            "Gif48": "../data/StaticGravityField/gif48.gfc",
+            "EIGEN6_C4": "../data/StaticGravityField/EIGEN6-C4.gfc",
+            "GOCO02s": "../data/StaticGravityField/GOCO02s.gfc",
+            "PoleTide": "../data/poletide",
+            "LoverNumber": "../data/LoveNumber",
+            "poleTideModel": "desaiscopolecoef.txt"
         }
 
 

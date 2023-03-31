@@ -3,6 +3,7 @@ from src.Auxilary.FunNutArg import FunNutArg
 from src.Auxilary.GeoMathKit import GeoMathKit
 from src.Preference.Pre_ForceModel import SolidTideConfig
 from src.Frame.PlanetEphemerides import PlanetEphemerides
+from src.Preference.ForceModelConfig import ForceModelConfig
 import numpy as np
 
 
@@ -15,27 +16,37 @@ class AbsSolidTide(BaseGravCS):
         self._GM_Sun = None
         self._GM_Moon = None
         self._Radius_Earth = None
-        self.setConstant()
+        self._FMConfig = None
 
-    def setConstant(self, GM_Earth=SolidTideConfig.GM_Earth, GM_Sun=SolidTideConfig.GM_Sun,
-                    GM_Moon=SolidTideConfig.GM_Moon, Radius_Earth=SolidTideConfig.Radius_Earth):
-        self._GM_Earth = GM_Earth
-        self._GM_Sun = GM_Sun
-        self._GM_Moon = GM_Moon
-        self._Radius_Earth = Radius_Earth
+    def configure(self, FMConfig: ForceModelConfig):
+        self._FMConfig = FMConfig
+        self._GM_Earth = self._FMConfig.SolidTideConfig['GM_Earth']
+        self._GM_Sun = self._FMConfig.SolidTideConfig['GM_Sun']
+        self._GM_Moon = self._FMConfig.SolidTideConfig['GM_Moon']
+        self._Radius_Earth = self._FMConfig.SolidTideConfig['Radius_Earth']
+        return self
 
 
 class SolidTideIERS2010(AbsSolidTide):
 
-    def __init__(self, pe: PlanetEphemerides, isZeroTide = SolidTideConfig.isZeroTide):
+    def __init__(self, pe: PlanetEphemerides):
         super(SolidTideIERS2010, self).__init__()
         self.__doodA = None
         self.__doodB = None
         self.__doodC = None
         self.__love = None
-        self.__isZeroTide = isZeroTide
+        self.__isZeroTide = None
         self.__prepare()
         self.__pe = pe
+
+    def configure(self, FMConfig: ForceModelConfig):
+        self._FMConfig = FMConfig
+        self._GM_Earth = self._FMConfig.SolidTideConfig['GM_Earth']
+        self._GM_Sun = self._FMConfig.SolidTideConfig['GM_Sun']
+        self._GM_Moon = self._FMConfig.SolidTideConfig['GM_Moon']
+        self._Radius_Earth = self._FMConfig.SolidTideConfig['Radius_Earth']
+        self.__isZeroTide = self._FMConfig.SolidTideConfig['isZeroTide']
+        return self
 
     def getCS(self):
         """

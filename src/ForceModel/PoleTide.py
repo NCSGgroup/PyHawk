@@ -2,7 +2,7 @@ from src.ForceModel.BaseGravCS import BaseGravCS
 from src.Preference.Pre_ForceModel import PoleTideConfig, PathOfFiles
 from src.Auxilary.LoveNumber import LoveNumber
 from src.Auxilary.GeoMathKit import GeoMathKit
-
+from src.Preference.ForceModelConfig import ForceModelConfig
 from src.Frame.Frame import Frame
 import numpy as np
 
@@ -11,12 +11,16 @@ class AbsPoleTide(BaseGravCS):
 
     def __init__(self):
         super(AbsPoleTide, self).__init__()
+        self._FMConfig = None
+
+    def configure(self, FMConfig: ForceModelConfig):
+        self._FMConfig = FMConfig
+        return self
 
 
 class PoleTideIERS2010(AbsPoleTide):
 
-    def __init__(self, simpleOcean=PoleTideConfig.SimpleOcean,
-                 Version=PoleTideConfig.Polar2wobble, kind=PoleTideConfig.Kind):
+    def __init__(self):
         super(PoleTideIERS2010, self).__init__()
         self.__m1 = None
         self.__m2 = None
@@ -24,12 +28,28 @@ class PoleTideIERS2010(AbsPoleTide):
         self.__maxdegree = None
         self.__poleTideModel = None
         self.__RGAMA, self.__IGAMA = None, None
-        self.__simpleOcean = simpleOcean
-        self.__version = Version
+        self.__simpleOcean = None
+        self.__version = None
+        self.__kind = None
+        self.__fileLove = None
+        self.__fileDir = None
+        self.__loveNum = None
+    
+    def configure(self, FMConfig: ForceModelConfig):
+        self._FMConfig = FMConfig
+        self.__simpleOcean = self._FMConfig.PoleTideConfig['SimpleOcean']
+        self.__version = self._FMConfig.PoleTideConfig['Polar2wobble']
+        kind = self._FMConfig.PoleTideConfig['Kind']
         self.__kind = [key for key, value in kind.items() if value]
+        self.__maxdegree = self._FMConfig.PoleTideConfig['MaxDegreeOfOcean']
+        self.__loveNum = self._FMConfig.PoleTideConfig['LoveNumberType']
 
-    def load(self, maxDegreeOfOcean=PoleTideConfig.MaxDegreeOfOcean,
-             loveNum=PoleTideConfig.LoveNumberType, **kwargs):
+        self.__fileLove = self._FMConfig.PathOfFilesConfig['LoverNumber']
+        self.__fileDir = self._FMConfig.PathOfFilesConfig['PoleTide']
+        self.__poleTideModel = self._FMConfig.PathOfFilesConfig['poleTideModel']
+        return self
+
+    def load(self, **kwargs):
         """
         Load all necessary files and preprocess coefficients that will be used later on
         :param fileLove: directory of the love number file.
@@ -38,16 +58,11 @@ class PoleTideIERS2010(AbsPoleTide):
         :param fileDir: directory of "desaiscopolecoeff.txt" provided by IERS, and the love number file.
         :return:
         """
-        fileLove = kwargs.get('fileLove', PathOfFiles.LoverNumber)
-        fileDir = kwargs.get('fileDir', PathOfFiles.PoleTide)
-        self.__poleTideModel = kwargs.get('fileDir', PathOfFiles.poleTideModel)
-        self.__maxdegree = maxDegreeOfOcean
-
         '''
         get load love number, from 1 to 30
         '''
-        LN = LoveNumber(fileLove)
-        Kn = LN.getNumber(maxDegreeOfOcean, loveNum)
+        LN = LoveNumber().configure(self._FMConfig).setPath(self.__fileLove)
+        Kn = LN.getNumber()
         '''start from degree 1'''
         Kn = Kn[1:]
 
@@ -73,7 +88,7 @@ class PoleTideIERS2010(AbsPoleTide):
         '''
         Load Desais coefficients
         '''
-        with open(fileDir.joinpath(self.__poleTideModel)) as f:
+        with open(self.__fileDir + '/' + self.__poleTideModel) as f:
             content = f.readlines()
             pass
 

@@ -2,29 +2,41 @@ from enum import Enum
 import numpy as np
 from scipy import interpolate
 import scipy.io as scio
-from src.Preference.Pre_ForceModel import PathOfFiles, LoveNumberConfig
 from src.Preference.EnumType import LoveNumberType
+from src.Preference.ForceModelConfig import ForceModelConfig
 
 
 class LoveNumber:
 
-    def __init__(self, fileDir=PathOfFiles.LoverNumber):
-        self.__path = fileDir
+    def __init__(self):
+        self.__path = None
         self.__Nmax = None
+        self.__method = None
+        self.__FMConfig = None
 
-    def getNumber(self, Nmax: int=LoveNumberConfig.Nmax, method=LoveNumberConfig.method):
-        self.__Nmax = Nmax
-        if method == LoveNumberType.Gegout97:
-            return self.__Gegout97(Nmax=Nmax)
+    def configure(self, FMConfig: ForceModelConfig):
+        self.__FMConfig = FMConfig
+        self.__Nmax = self.__FMConfig.LoveNumberConfig['Nmax']
+        self.__method = self.__FMConfig.LoveNumberConfig['method']
+        self.__path = self.__FMConfig.PathOfFilesConfig['LoverNumber']
+        return self
+
+    def setPath(self, fileDir:str):
+        self.__path = fileDir
+        return self
+
+    def getNumber(self):
+        if self.__method == LoveNumberType.Gegout97.name:
+            return self.__Gegout97(Nmax=self.__Nmax)
 
         func = None
-        if method == LoveNumberType.PREM:
+        if self.__method == LoveNumberType.PREM.name:
             func = self.__PREM
-        elif method == LoveNumberType.AOD04:
+        elif self.__method == LoveNumberType.AOD04.name:
             func = self.__AOD04
-        elif method == LoveNumberType.Wang:
+        elif self.__method == LoveNumberType.Wang.name:
             func = self.__Wang
-        elif method == LoveNumberType.IERS:
+        elif self.__method == LoveNumberType.IERS.name:
             func = self.__IERS
 
         return func()
@@ -102,7 +114,7 @@ class LoveNumber:
 
         assert self.__Nmax <= 360
 
-        path = self.__path.joinpath('LoveNumber.mat')
+        path = self.__path + '/LoveNumber.mat'
 
         love = scio.loadmat(path)
 
@@ -148,7 +160,7 @@ class LoveNumber:
 
         assert Nmax <= 1024
 
-        with open(self.__path.joinpath('Load_Love2_CM.txt')) as load_f:
+        with open(self.__path + '/Load_Love2_CM.txt') as load_f:
             contents = load_f.readlines()
 
         Kn = np.zeros(Nmax+1)

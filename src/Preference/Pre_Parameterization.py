@@ -2,19 +2,19 @@ import src.Preference.EnumType as EnumType
 
 
 class TransitionMatrix:
-    isRequired = True
+    isRequired = False
     Parameter_Number = 6
     AllisGlobal = False
 
 
 class Accelerometer:
-    isRequired = True
+    isRequired = False
     Parameter_Number = 6
     AllisGlobal = False
 
 
 class StokesCoefficients:
-    isRequired = True
+    isRequired = False
     Parameter_Number = 3717
     AllisGlobal = True
     SortMethod = EnumType.CSseq.SortByOrder

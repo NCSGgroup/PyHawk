@@ -1,8 +1,8 @@
 from src.ForceModel.BaseGravCS import BaseGravCS
-from src.Preference.Pre_ForceModel import OceanTideConfig, PathOfFiles
 from src.Auxilary.GeoMathKit import GeoMathKit
 from src.Auxilary.FunNutArg import FunNutArg
 from src.Preference.EnumType import InstanceOceanTide
+from src.Preference.ForceModelConfig import ForceModelConfig
 import numpy as np
 
 
@@ -11,11 +11,15 @@ class AbsOceanTide(BaseGravCS):
         super(AbsOceanTide, self).__init__()
         self._SR = None
         self._tdb_mjd = -1000000
+        self._FMConfig = None
         self._ng = FunNutArg()
-        self.speedUp()
 
-    def speedUp(self, sr=OceanTideConfig.gainFactor):
-        self._SR = sr
+    def configure(self, FMConfig: ForceModelConfig):
+        self._FMConfig = FMConfig
+        return self
+
+    def speedUp(self):
+        self._SR = self._FMConfig.OceanTideConfig['gainFactor']
         return self
 
     @staticmethod
@@ -42,7 +46,7 @@ class EOT11a(AbsOceanTide):
                          'M2', 'S2', 'K2', 'M4')
         self.__doodsonMatrix = np.zeros((256, 6), int)
 
-    def load(self, maxDegree=OceanTideConfig.maxDegree, **kwargs):
+    def load(self):
         """
         load the relevant files
         EXAMPLE: load("eot11a/")
@@ -50,19 +54,20 @@ class EOT11a(AbsOceanTide):
         :param fileDir: the path and dir of "eot11a"
         :return:
         """
+        maxDegree = self._FMConfig.OceanTideConfig['maxDegree']
+        fileDir = self._FMConfig.PathOfFilesConfig['EOT11a']
         assert maxDegree <= 120
-        fileDir = kwargs.get('EOT11a', PathOfFiles.EOT11a)
 
         # read Stokes Coefficients from 18 major tide constitution
         self.__CnmCos, self.__SnmCos, self.__CnmSin, self.__SnmSin = [], [], [], []
 
         for i in range(len(self.__darwin)):
-            c, s, GM, R = self.__read_gfc(fileDir.joinpath('eot11a.' + self.__darwin[i] + '.cos.gfc'))
+            c, s, GM, R = self.__read_gfc(fileDir + '/eot11a.' + self.__darwin[i] + '.cos.gfc')
             c, s = GeoMathKit.CS_2dTo1d(c[0:maxDegree + 1, 0:maxDegree + 1]), \
                    GeoMathKit.CS_2dTo1d(s[0:maxDegree + 1, 0:maxDegree + 1])
             self.__CnmCos.append(c), self.__SnmCos.append(s)
 
-            c, s, GM, R = self.__read_gfc(fileDir.joinpath('eot11a.' + self.__darwin[i] + '.sin.gfc'))
+            c, s, GM, R = self.__read_gfc(fileDir + '/eot11a.' + self.__darwin[i] + '.sin.gfc')
             c, s = GeoMathKit.CS_2dTo1d(c[0:maxDegree + 1, 0:maxDegree + 1]), \
                    GeoMathKit.CS_2dTo1d(s[0:maxDegree + 1, 0:maxDegree + 1])
             self.__CnmSin.append(c), self.__SnmSin.append(s)
@@ -71,7 +76,7 @@ class EOT11a(AbsOceanTide):
                                                                      np.array(self.__CnmSin), np.array(self.__SnmSin)
 
         # read admittance: interpolation matrix (256 tides -> 18 major tides)
-        self.__admittance = np.loadtxt(fileDir.joinpath('admittance.linear.txt'))
+        self.__admittance = np.loadtxt(fileDir + '/admittance.linear.txt')
 
         # 256x6 matrix with doodson multipliers
         # 256 tides
@@ -183,7 +188,7 @@ class FES2014(AbsOceanTide):
         # 361 doodsons
         self.__doodsonMatrix = np.zeros((361, 6), int)
 
-    def load(self, maxDegree=OceanTideConfig.maxDegree, **kwargs):
+    def load(self):
         """
         load the relevant files
         EXAMPLE: load("eot11a/")
@@ -191,21 +196,22 @@ class FES2014(AbsOceanTide):
         :param fileDir: the path and dir of "eot11a"
         :return:
         """
+        maxDegree = self._FMConfig.OceanTideConfig['maxDegree']
+        fileDir = self._FMConfig.PathOfFilesConfig['FES2014']
         assert maxDegree <= 180
-        fileDir = kwargs.get('FES2014', PathOfFiles.FES2014)
 
         # read Stokes Coefficients from 18 major tide constitution
         self.__CnmCos, self.__SnmCos, self.__CnmSin, self.__SnmSin = [], [], [], []
 
         for i in range(len(self.__darwin)):
-            c, s, GM, R = self.__read_gfc(fileDir.joinpath('fes2014b_n180_version20170520.'
-                                                           + self.__darwin[i] + '.cos.gfc'))
+            c, s, GM, R = self.__read_gfc(fileDir + '/fes2014b_n180_version20170520.'
+                                                           + self.__darwin[i] + '.cos.gfc')
             c, s = GeoMathKit.CS_2dTo1d(c[0:maxDegree + 1, 0:maxDegree + 1]), \
                    GeoMathKit.CS_2dTo1d(s[0:maxDegree + 1, 0:maxDegree + 1])
             self.__CnmCos.append(c), self.__SnmCos.append(s)
 
-            c, s, GM, R = self.__read_gfc(fileDir.joinpath('fes2014b_n180_version20170520.'
-                                                           + self.__darwin[i] + '.sin.gfc'))
+            c, s, GM, R = self.__read_gfc(fileDir + '/fes2014b_n180_version20170520.'
+                                                           + self.__darwin[i] + '.sin.gfc')
             c, s = GeoMathKit.CS_2dTo1d(c[0:maxDegree + 1, 0:maxDegree + 1]), \
                    GeoMathKit.CS_2dTo1d(s[0:maxDegree + 1, 0:maxDegree + 1])
             self.__CnmSin.append(c), self.__SnmSin.append(s)
@@ -214,11 +220,11 @@ class FES2014(AbsOceanTide):
                                                                      np.array(self.__CnmSin), np.array(self.__SnmSin)
 
         # read admittance: interpolation matrix (361 tides -> 18 major tides)
-        self.__admittance = np.loadtxt(fileDir.joinpath('fes2014b_admittance_linear_linear.txt'))
+        self.__admittance = np.loadtxt(fileDir + '/fes2014b_admittance_linear_linear.txt')
 
         # 361x6 matrix with doodson multipliers
         # 361 tides
-        doodson = np.loadtxt(fileDir.joinpath('admittanceTides.txt'), comments='#', dtype=str)
+        doodson = np.loadtxt(fileDir + '/admittanceTides.txt', comments='#', dtype=str)
 
         for i in range(len(doodson)):
             self.__doodsonMatrix[i][0] = int(doodson[i][0], base=16) - 0

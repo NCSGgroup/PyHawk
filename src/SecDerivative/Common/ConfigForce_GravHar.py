@@ -6,7 +6,7 @@ from src.ForceModel.NonTide import AODRL06
 from src.ForceModel.OceanTide import EOT11a, FES2014
 from src.ForceModel.PoleTide import PoleTideIERS2010
 from src.ForceModel.SolidTide import SolidTideIERS2010
-from src.ForceModel.RefGravModel import RefGravModel, ConfigStaticGravModel
+from src.ForceModel.RefGravModel import RefGravModel
 from src.Preference.EnumType import GravHarType
 from src.ForceModel.BaseGravCS import BaseGravCS
 from src.Frame.Frame import Frame
@@ -46,7 +46,7 @@ class ConfigGravHar:
         self.__include_GravHarType = [key for key, value in include_GravHarType.items() if value]
         self.__instance_GravHar = instance_GravHar
         '''instance clib gravhar'''
-        self.ClibGravHar = ClibGravHar().setConstant()
+        self.ClibGravHar = ClibGravHar().configure(self.__FMConfig)
         self.__instance_force()
         return self
 
@@ -81,27 +81,27 @@ class ConfigGravHar:
         for tide in self.__include_GravHarType:
             if tide == GravHarType.OceanTide.name:
                 obj = None
-                if self.__instance_GravHar[tide] is EnumType.InstanceOceanTide.EOT11a:
-                    obj = EOT11a().load()
-                elif self.__instance_GravHar[tide] is EnumType.InstanceOceanTide.FES2014:
-                    obj = FES2014().load()
+                if self.__instance_GravHar[tide] == EnumType.InstanceOceanTide.EOT11a.name:
+                    obj = EOT11a().configure(self.__FMConfig).speedUp().load()
+                elif self.__instance_GravHar[tide] == EnumType.InstanceOceanTide.FES2014.name:
+                    obj = FES2014().configure(self.__FMConfig).speedUp().load()
                 self.GravHarForce[tide] = obj
             if tide == GravHarType.AtmosphereTide.name:
                 obj = None
-                if self.__instance_GravHar[tide] is EnumType.InstanceAtmosTide.AtmosBB2003:
-                    obj = AtmosBB2003()
-                elif self.__instance_GravHar[tide] is EnumType.InstanceAtmosTide.AtmosAOD:
-                    obj = AtmosAOD().loadfile()
+                if self.__instance_GravHar[tide] == EnumType.InstanceAtmosTide.AtmosBB2003.name:
+                    obj = AtmosBB2003().configure(self.__FMConfig)
+                elif self.__instance_GravHar[tide] == EnumType.InstanceAtmosTide.AtmosAOD.name:
+                    obj = AtmosAOD().configure(self.__FMConfig).loadfile()
                 self.GravHarForce[tide] = obj
             if tide == GravHarType.PoleTide.name:
                 obj = None
-                if self.__instance_GravHar[tide] is EnumType.InstancePoleTide.PoleTideIERS2010:
-                    obj = PoleTideIERS2010().load()
+                if self.__instance_GravHar[tide] == EnumType.InstancePoleTide.PoleTideIERS2010.name:
+                    obj = PoleTideIERS2010().configure(self.__FMConfig).load()
                 self.GravHarForce[tide] = obj
             if tide == GravHarType.SolidEarthTide.name:
                 obj = None
-                if self.__instance_GravHar[tide] is EnumType.InstanceSolidTide.SolidTideIERS2010:
-                    obj = SolidTideIERS2010(self.__ep)
+                if self.__instance_GravHar[tide] == EnumType.InstanceSolidTide.SolidTideIERS2010.name:
+                    obj = SolidTideIERS2010(self.__ep).configure(self.__FMConfig)
                 self.GravHarForce[tide] = obj
             if tide == GravHarType.NonTide.name:
                 obj = None
@@ -110,8 +110,9 @@ class ConfigGravHar:
                 self.GravHarForce[tide] = obj
             if tide == GravHarType.ReferenceModel.name:
                 obj = None
-                staticModel = ConfigStaticGravModel().getStaticModel()
-                if self.__instance_GravHar[tide] is EnumType.InstanceReferenceModel.RefGravModel:
-                    obj = RefGravModel().setModel(staticModel)
+                obj = RefGravModel().configure(self.__FMConfig)
+                staticModel = obj.getStaticModel()
+                if self.__instance_GravHar[tide] == EnumType.InstanceReferenceModel.RefGravModel.name:
+                    obj = obj.setModel(staticModel)
                 self.GravHarForce[tide] = obj
 
