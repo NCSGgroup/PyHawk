@@ -27,6 +27,7 @@ class Assemble2ndDerivative:
                              Pre_Parameterization.StokesCoefficients.MinDegree)
         self.__isExistDaDx = False
         self.__isExistDaDp = False
+        self.__externalEOP = None
         '''force model cofig'''
         self.configForce = None
         self.ForceType = None
@@ -68,7 +69,7 @@ class Assemble2ndDerivative:
     def getCS(self):
         for obj in self.ForceType.values():
             if isinstance(obj, ConfigGravHar):
-                self.__C, self.__S = obj.setTime(self.__time).getTotalCS()
+                self.__C, self.__S = obj.setEOP(self.__externalEOP).setTime(self.__time).getTotalCS()
         return self
 
     def ChangeSat(self, sat: EnumType.SatID):
@@ -193,3 +194,6 @@ class Assemble2ndDerivative:
     def secDerivative(self, t, r, v):
         pass
 
+    def setEOP(self, xp, yp):
+        self.__externalEOP = [xp, yp]
+        return self

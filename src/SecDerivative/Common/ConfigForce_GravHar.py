@@ -59,6 +59,8 @@ class ConfigGravHar:
         self.__reset()
         self.__time = time
         for obj in self.GravHarForce.values():
+            if isinstance(obj, PoleTideIERS2010):
+                obj = obj.setEOP(self.__externalEOP)
             obj = obj.setTime(time)
             self.__accumulate(obj)
         return self
@@ -116,3 +118,6 @@ class ConfigGravHar:
                     obj = obj.setModel(staticModel)
                 self.GravHarForce[tide] = obj
 
+    def setEOP(self, externalEOP):
+        self.__externalEOP = externalEOP
+        return self

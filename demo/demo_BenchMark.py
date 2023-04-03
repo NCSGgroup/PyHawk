@@ -43,14 +43,14 @@ def demo1():
     # solid_earth = json.load(open('../setting/BenchMarkConfig/BenchMark_SolidEarth.json', 'r'))
     # FMConfig.__dict__ = solid_earth
     # benchMark.solid_earth(FMConfig)
-    '''solidEarth pole tide'''
-    earth_pole = json.load(open('../setting/BenchMarkConfig/BenchMark_EarthPole.json', 'r'))
-    FMConfig.__dict__ = earth_pole
-    benchMark.earth_pole(FMConfig)
-    # '''socean pole tide'''
+    # '''solidEarth pole tide'''
     # earth_pole = json.load(open('../setting/BenchMarkConfig/BenchMark_EarthPole.json', 'r'))
     # FMConfig.__dict__ = earth_pole
     # benchMark.earth_pole(FMConfig)
+    '''ocean pole tide'''
+    ocean_pole = json.load(open('../setting/BenchMarkConfig/BenchMark_OceanPole.json', 'r'))
+    FMConfig.__dict__ = ocean_pole
+    benchMark.ocean_pole(FMConfig)
     pass
 
 
