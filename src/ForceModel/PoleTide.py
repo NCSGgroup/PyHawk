@@ -154,7 +154,10 @@ class PoleTideIERS2010(AbsPoleTide):
         :return:
         """
         tt_mjd = time.getTT_mjd
-        xp, yp = time.getEOP['xp'], time.getEOP['yp']
+        if self.__externalEOP is None:
+            xp, yp = time.getEOP['xp'], time.getEOP['yp']
+        else:
+            xp, yp = self.__externalEOP
         if self.__version == 1:
             self.__m1, self.__m2 = self.__polar2wobble_v1(tt_mjd, xp, yp)
         else:
@@ -312,3 +315,6 @@ class PoleTideIERS2010(AbsPoleTide):
 
         return m1, m2
 
+    def setEOP(self, externalEOP):
+        self.__externalEOP = externalEOP
+        return self
