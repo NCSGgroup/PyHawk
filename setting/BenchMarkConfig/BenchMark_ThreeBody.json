@@ -51,6 +51,17 @@
         },
         "isJ2": false
     },
+    "NonConservativeConfig": {
+        "date_span": [
+            "2008-01-01",
+            "2008-01-31"
+        ],
+        "arcNo": 0,
+        "sat": {
+            "A": true,
+            "B": true
+        }
+    },
     "PathOfFilesConfig": {
         "Ephemerides": "../data/ephemerides"
     }
