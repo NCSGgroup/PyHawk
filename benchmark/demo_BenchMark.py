@@ -3,7 +3,7 @@
 # @Time    : 2023/3/25 21:54
 # @File    : demo_BenchMark.py
 # @Software: PyCharm
-from demo.BenchMarkForJson import BenchMark
+from benchmark.BenchMarkForJson import BenchMark
 from src.Preference.ForceModelConfig import ForceModelConfig
 import json
 
