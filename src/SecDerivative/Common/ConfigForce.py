@@ -20,7 +20,10 @@ class ConfigForce:
     def configure(self, FMConfig: ForceModelConfig):
         '''force model config'''
         self.__FMConfig = FMConfig
-        sat = self.__FMConfig.NonConservativeConfig['sat']
+        self._NonConservativeConfig = self.__FMConfig.NonConservative()
+        self._NonConservativeConfig.__dict__ = self.__FMConfig.NonConservativeConfig
+
+        sat = self._NonConservativeConfig.sat
         include_ForceType = self.__FMConfig.include_ForceType.copy()
         self.__sat = [key for key, value in sat.items() if value]
         self.__include_ForceType = [key for key, value in include_ForceType.items() if value]

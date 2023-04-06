@@ -35,10 +35,10 @@ def demo1():
     # atmos = json.load(open('../setting/BenchMarkConfig/BenchMark_Atmos.json', 'r'))
     # FMConfig.__dict__ = atmos
     # benchMark.atmos_tide(FMConfig)
-    # '''gravity field'''
-    # gravity_field = json.load(open('../setting/BenchMarkConfig/BenchMark_Gravity.json', 'r'))
-    # FMConfig.__dict__ = gravity_field
-    # benchMark.gravity_field(FMConfig)
+    '''gravity field'''
+    gravity_field = json.load(open('../setting/BenchMarkConfig/BenchMark_Gravity.json', 'r'))
+    FMConfig.__dict__ = gravity_field
+    benchMark.gravity_field(FMConfig)
     # '''solidEarth tide'''
     # solid_earth = json.load(open('../setting/BenchMarkConfig/BenchMark_SolidEarth.json', 'r'))
     # FMConfig.__dict__ = solid_earth
@@ -47,10 +47,10 @@ def demo1():
     # earth_pole = json.load(open('../setting/BenchMarkConfig/BenchMark_EarthPole.json', 'r'))
     # FMConfig.__dict__ = earth_pole
     # benchMark.earth_pole(FMConfig)
-    '''ocean pole tide'''
-    ocean_pole = json.load(open('../setting/BenchMarkConfig/BenchMark_OceanPole.json', 'r'))
-    FMConfig.__dict__ = ocean_pole
-    benchMark.ocean_pole(FMConfig)
+    # '''ocean pole tide'''
+    # ocean_pole = json.load(open('../setting/BenchMarkConfig/BenchMark_OceanPole.json', 'r'))
+    # FMConfig.__dict__ = ocean_pole
+    # benchMark.ocean_pole(FMConfig)
     pass
 
 

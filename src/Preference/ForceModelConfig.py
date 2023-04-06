@@ -30,36 +30,54 @@ class ForceModelConfig:
                                     EnumType.GravHarType.SolidEarthTide.name: True,
                                     EnumType.GravHarType.ReferenceModel.name: True}
 
-        self.NonConservativeConfig = {"date_span": ['2008-01-01', '2008-01-31'],
-                                      "arcNo": 0,
-                                      "sat": {EnumType.SatID.A.name: True,
-                                              EnumType.SatID.B.name: True}}
+        self.NonConservativeConfig = self.NonConservative().__dict__
 
-        self.LoveNumberConfig = {
-            "Nmax": 30,
-            "method": EnumType.LoveNumberType.IERS.name
-        }
+        self.LoveNumberConfig = self.LoveNumber().__dict__
 
-        self.PoleTideConfig = {
-            "Kind": {'Solid Earth': True,
-                     'Ocean': False},
-            "SimpleOcean": False,
-            "Polar2wobble": 2,
-            "MaxDegreeOfOcean": self.LoveNumberConfig['Nmax'],
-            "LoveNumberType": self.LoveNumberConfig['method']
-        }
+        self.PoleTideConfig = self.PoleTide().__dict__
 
-        self.SolidTideConfig = {
-            "GM_Earth": 0.3986004415E+15,
-            "GM_Sun": 1.32712442076e20,
-            "GM_Moon": 0.49028010560e13,
-            "Radius_Earth": 0.6378136460E+07,
-            "isZeroTide": False
-        }
+        self.SolidTideConfig = self.SolidTide().__dict__
 
-        self.AtmosTideConfig = {
-            "SR": 1E-3,
-            "AODtide": {
+        self.AtmosTideConfig = self.AtmosTide().__dict__
+
+        self.OceanTideConfig = self.OceanTide().__dict__
+
+        self.ThreeBodyConfig = self.ThreeBody().__dict__
+
+        self.GravHarConfig = self.GravHar().__dict__
+
+        self.NonTideConfig = self.NonTide().__dict__
+
+        self.RefGravModelConfig = self.RefGravModel().__dict__
+
+        self.RelativityConfig = self.Relativity().__dict__
+
+        self.PathOfFilesConfig = self.PathOfFiles().__dict__
+
+    class NonConservative:
+        def __init__(self):
+            self.date_span = ['2008-01-01', '2008-01-31']
+            self.arcNo = 0
+            self.sat = {EnumType.SatID.A.name: True,
+                        EnumType.SatID.B.name: True}
+
+    class LoveNumber:
+        def __init__(self):
+            self.Nmax = 30
+            self.method = EnumType.LoveNumberType.IERS.name
+
+    class SolidTide:
+        def __init__(self):
+            self.GM_Earth = 0.3986004415E+15
+            self.GM_Sun = 1.32712442076e20
+            self.GM_Moon = 0.49028010560e13
+            self.Radius_Earth = 0.6378136460E+07
+            self.isZeroTide = False
+
+    class AtmosTide:
+        def __init__(self):
+            self.SR = 1E-3
+            self.AODtide = {
                 EnumType.TidesType.P1.name: True,
                 EnumType.TidesType.S1.name: True,
                 EnumType.TidesType.K1.name: True,
@@ -72,30 +90,32 @@ class ForceModelConfig:
                 EnumType.TidesType.T3.name: True,
                 EnumType.TidesType.S3.name: True,
                 EnumType.TidesType.R3.name: True,
-            },
-            "kind": EnumType.AODtype.ATM.name,
-            "Nmax": 180,
-            "BB2003tide": {EnumType.TidesType.S1.name: True,
-                           EnumType.TidesType.S2.name: True}
-        }
+            }
+            self.kind = EnumType.AODtype.ATM.name
+            self.Nmax = 180
+            self.BB2003tide = {EnumType.TidesType.S1.name: True,
+                               EnumType.TidesType.S2.name: True}
 
-        self.OceanTideConfig = {"gainFactor": 1e-3,
-                                "maxDegree": 120}
+    class OceanTide:
+        def __init__(self):
+            self.gainFactor = 1e-3
+            self.maxDegree = 120
 
-        self.ThreeBodyConfig = {
-            "ThreeBody_GM_Sun": 1.32712442076e20,
-            "ThreeBody_GM": {EnumType.Planets.Earth.name: 398600.44150e9,
-                             EnumType.Planets.Sun.name: 1.32712442076e20,
-                             EnumType.Planets.Moon.name: 0.49028010560e13,
-                             EnumType.Planets.Mercury.name: 1.32712442076e20 / 6023600.0,
-                             EnumType.Planets.Venus.name: 1.32712442076e20 / 408523.71,
-                             EnumType.Planets.Mars.name: 1.32712442076e20 / 3098708.0,
-                             EnumType.Planets.Jupiter.name: 1.32712442076e20 / 1047.3486,
-                             EnumType.Planets.Saturn.name: 1.32712442076e20 / 3497.898,
-                             EnumType.Planets.Uranus.name: 5794556.465751793e9,
-                             EnumType.Planets.Neptune.name: 6836527.100580024e9,
-                             EnumType.Planets.Pluto.name: 975.5011758767654e9},
-            "include_planets": {
+    class ThreeBody:
+        def __init__(self):
+            self.ThreeBody_GM_Sun = 1.32712442076e20
+            self.ThreeBody_GM = {EnumType.Planets.Earth.name: 398600.44150e9,
+                                 EnumType.Planets.Sun.name: 1.32712442076e20,
+                                 EnumType.Planets.Moon.name: 0.49028010560e13,
+                                 EnumType.Planets.Mercury.name: 1.32712442076e20 / 6023600.0,
+                                 EnumType.Planets.Venus.name: 1.32712442076e20 / 408523.71,
+                                 EnumType.Planets.Mars.name: 1.32712442076e20 / 3098708.0,
+                                 EnumType.Planets.Jupiter.name: 1.32712442076e20 / 1047.3486,
+                                 EnumType.Planets.Saturn.name: 1.32712442076e20 / 3497.898,
+                                 EnumType.Planets.Uranus.name: 5794556.465751793e9,
+                                 EnumType.Planets.Neptune.name: 6836527.100580024e9,
+                                 EnumType.Planets.Pluto.name: 975.5011758767654e9}
+            self.include_planets = {
                 EnumType.Planets.Sun.name: True,
                 EnumType.Planets.Moon.name: True,
                 EnumType.Planets.Mercury.name: True,
@@ -106,77 +126,87 @@ class ForceModelConfig:
                 EnumType.Planets.Saturn.name: True,
                 EnumType.Planets.Uranus.name: True,
                 EnumType.Planets.Neptune.name: True,
-                EnumType.Planets.Pluto.name: True},
-            "isJ2": False
-        }
+                EnumType.Planets.Pluto.name: True}
+            self.isJ2 = False
 
-        self.GravHarConfig = {
-            "setZero": [0, 1],
-            "degree_max": 90,
-            "degree_min": 2,
-            "GravHar_GM": 0.3986004415E+15,
-            "GravHar_Radius": 0.6378136460E+07,
-            "PosCoordinate": EnumType.Coordinate.GCRS.name,
-            "ACCCoordinate": EnumType.Coordinate.GCRS.name,
-        }
+    class GravHar:
+        def __init__(self):
+            self.setZero = [0, 1]
+            self.degree_max = 90
+            self.degree_min = 2
+            self.GravHar_GM = 0.3986004415E+15
+            self.GravHar_Radius = 0.6378136460E+07
+            self.PosCoordinate = EnumType.Coordinate.GCRS.name
+            self.ACCCoordinate = EnumType.Coordinate.GCRS.name
 
-        self.NonTideConfig = {
-            "kind": EnumType.AODtype.GLO.name,
-            "MaxDeg": 180,
-            "TS": 3,
-        }
+    class NonTide:
+        def __init__(self):
+            self.kind = EnumType.AODtype.GLO.name
+            self.MaxDeg = 180
+            self.TS = 3
 
-        self.RefGravModelConfig = {
-            "kind": 0,
-            "Nmax": 180,
-            "StaticModel": EnumType.StaticGravModel.EIGEN6_C4.name
-        }
+    class RefGravModel:
+        def __init__(self):
+            self.kind = 0
+            self.Nmax = 180
+            self.StaticModel = EnumType.StaticGravModel.EIGEN6_C4.name
 
-        self.RelativityConfig = {
-            "GM_Sun": 1.32712442076e20,
-            "GM_Earth": 0.3986004415E+15,
-            "C_Light": 299792458,
-            "J": [0, 0, 9.8e8],
-            "Gamma": 1,
-            "Beta": 1,
-            "kind": {
+    class Relativity:
+        def __init__(self):
+            self.GM_Sun = 1.32712442076e20
+            self.GM_Earth = 0.3986004415E+15
+            self.C_Light = 299792458
+            self.J = [0, 0, 9.8e8]
+            self.Gamma = 1
+            self.Beta = 1
+            self.kind = {
                 EnumType.RelativityType.SchwarzChild.name: True,
                 EnumType.RelativityType.LenseThirring.name: True,
                 EnumType.RelativityType.Desitter.name: True
             }
-        }
 
-        self.PathOfFilesConfig = {
-            "Ephemerides": "../data/ephemerides",
-            "AOD": "../data/AOD/RL06",
-            "EOT11a": "../data/eot11a",
-            "FES2014": "../data/FES2014",
-            "Atmos": "../data/atmos",
-            "Gif48": "../data/StaticGravityField/gif48.gfc",
-            "EIGEN6_C4": "../data/StaticGravityField/EIGEN6-C4.gfc",
-            "GOCO02s": "../data/StaticGravityField/GOCO02s.gfc",
-            "PoleTide": "../data/poletide",
-            "LoverNumber": "../data/LoveNumber",
-            "poleTideModel": "desaiscopolecoef.txt"
-        }
+    class PoleTide:
+        def __init__(self):
+            self.Kind = {
+                "Solid Earth": False,
+                "Ocean": True
+            }
+            self.SimpleOcean = False
+            self.Polar2wobble = 2
+            self.MaxDegreeOfOcean = 180
+            self.LoveNumberType = EnumType.LoveNumberType.Gegout97.name
+
+    class PathOfFiles:
+        def __init__(self):
+            self.Ephemerides = "../data/ephemerides"
+            self.AOD = "../data/AOD/RL06"
+            self.EOT11a = "../data/eot11a"
+            self.FES2014 = "../data/FES2014"
+            self.Atmos = "../data/atmos"
+            self.Gif48 = "../data/StaticGravityField/gif48.gfc"
+            self.EIGEN6_C4 = "../data/StaticGravityField/EIGEN6-C4.gfc"
+            self.GOCO02s = "../data/StaticGravityField/GOCO02s.gfc"
+            self.PoleTide = "../data/poletide"
+            self.LoverNumber = "../data/LoveNumber"
+            self.poleTideModel = "desaiscopolecoef.txt"
 
 
 def demo1():
-    Obj1 = ForceModelConfig()
+    Obj1 = ForceModelConfig
 
     dict1 = json.load(open('../../setting/ForceModelConfig.json', 'r'))
     Obj1.__dict__ = dict1
 
-    dict2 = json.load(open('../../setting/ForceModelConfig2.json', 'r'))
-    Obj1.__dict__ = dict2
+    # dict2 = json.load(open('../../setting/ForceModelConfig2.json', 'r'))
+    # Obj1.__dict__ = dict2
 
-    print(Obj1.NonConservativeConfig)
-    print(Obj1.NonConservativeConfig)
+    print(Obj1)
+    print(Obj1)
 
 
 def demo2():
     Obj1 = ForceModelConfig()
-    tc_dict = vars(Obj1)
+    tc_dict = Obj1.__dict__
     with open('../../setting/ForceModelConfig.json', 'w') as f:
         json.dump(tc_dict, f, indent=4)
 

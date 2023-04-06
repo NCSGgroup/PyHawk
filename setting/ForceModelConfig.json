@@ -38,13 +38,13 @@
     },
     "PoleTideConfig": {
         "Kind": {
-            "Solid Earth": true,
-            "Ocean": false
+            "Solid Earth": false,
+            "Ocean": true
         },
         "SimpleOcean": false,
         "Polar2wobble": 2,
-        "MaxDegreeOfOcean": 30,
-        "LoveNumberType": "IERS"
+        "MaxDegreeOfOcean": 180,
+        "LoveNumberType": "Gegout97"
     },
     "SolidTideConfig": {
         "GM_Earth": 398600441500000.0,
