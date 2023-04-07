@@ -31,6 +31,8 @@ class AODRL06(AbsNonTide):
         self.__TS = 3
         self.__MaxDeg = 100
         self.__FMConfig = None
+        self._NonTideConfig = None
+        self._pathConfig = None
         self.__previousAOD, self.__nextAOD = None, None
 
     def configure(self, FMConfig: ForceModelConfig):
@@ -43,11 +45,17 @@ class AODRL06(AbsNonTide):
         :return:
         """
         self.__FMConfig = FMConfig
+        '''config AOD'''
+        self._NonTideConfig = self.__FMConfig.NonTide()
+        self._NonTideConfig.__dict__.update(self.__FMConfig.NonTideConfig.copy())
+        '''config path'''
+        self._pathConfig = self.__FMConfig.PathOfFiles()
+        self._pathConfig.__dict__.update(self.__FMConfig.PathOfFilesConfig.copy())
 
-        FileDir = self.__FMConfig.PathOfFilesConfig['AOD']
-        AOD_type = self.__FMConfig.NonTideConfig['kind']
-        self.__MaxDeg = self.__FMConfig.NonTideConfig['MaxDeg']
-        self.__TS = self.__FMConfig.NonTideConfig['TS']
+        FileDir = self._pathConfig.AOD
+        AOD_type = self._NonTideConfig.kind
+        self.__MaxDeg = self._NonTideConfig.MaxDeg
+        self.__TS = self._NonTideConfig.TS
         self.__ld = LoadNonTide().load(FileDir).setType(kind=AOD_type)
 
         return self

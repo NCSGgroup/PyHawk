@@ -16,13 +16,16 @@ class ConfigForce:
         self.__FMConfig = None
         self.__sat = None
         self.__include_ForceType = None
+        self._NonConservativeConfig = None
+        self._ThreeBodyConfig = None
 
     def configure(self, FMConfig: ForceModelConfig):
         '''force model config'''
         self.__FMConfig = FMConfig
         self._NonConservativeConfig = self.__FMConfig.NonConservative()
-        self._NonConservativeConfig.__dict__ = self.__FMConfig.NonConservativeConfig
-
+        self._NonConservativeConfig.__dict__.update(self.__FMConfig.NonConservativeConfig.copy())
+        self._ThreeBodyConfig = self.__FMConfig.ThreeBody()
+        self._ThreeBodyConfig.__dict__.update(self.__FMConfig.ThreeBodyConfig.copy())
         sat = self._NonConservativeConfig.sat
         include_ForceType = self.__FMConfig.include_ForceType.copy()
         self.__sat = [key for key, value in sat.items() if value]
@@ -43,7 +46,7 @@ class ConfigForce:
                 obj = RelativityIERS2010().configure(FMConfig=self.__FMConfig)
                 self.__forceType[force] = obj
             if force == ForceType.PlanetaryPerturbation.name:
-                if self.__FMConfig.ThreeBodyConfig['isJ2']:
+                if self._ThreeBodyConfig.isJ2:
                     obj = ThreeBodyPlusJ2().configure(FMConfig=self.__FMConfig)
                 else:
                     obj = ThreeBody().configure(FMConfig=self.__FMConfig)

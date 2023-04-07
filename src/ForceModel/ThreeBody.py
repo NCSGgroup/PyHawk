@@ -14,11 +14,15 @@ class AbsThreeBody(BaseSecondDerivative):
         self._sat = None
         self._GM = None
         self._FMConfig = None
+        self._ThreeBodyConfig = None
 
     def configure(self, FMConfig: ForceModelConfig):
         self._FMConfig = FMConfig
-        self._GM = self._FMConfig.ThreeBodyConfig['ThreeBody_GM']
-        planets = self._FMConfig.ThreeBodyConfig['include_planets']
+        '''config ThreeBody'''
+        self._ThreeBodyConfig = self._FMConfig.ThreeBody()
+        self._ThreeBodyConfig.__dict__.update(self._FMConfig.ThreeBodyConfig.copy())
+        self._GM = self._ThreeBodyConfig.ThreeBody_GM
+        planets = self._ThreeBodyConfig.include_planets
         self._Planets = [key for key, value in planets.items() if value]
         return self
 

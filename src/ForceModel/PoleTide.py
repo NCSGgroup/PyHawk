@@ -12,6 +12,8 @@ class AbsPoleTide(BaseGravCS):
     def __init__(self):
         super(AbsPoleTide, self).__init__()
         self._FMConfig = None
+        self._PoleTideConfig = None
+        self._PathConfig = None
 
     def configure(self, FMConfig: ForceModelConfig):
         self._FMConfig = FMConfig
@@ -39,7 +41,7 @@ class PoleTideIERS2010(AbsPoleTide):
         self._FMConfig = FMConfig
         '''config pole tide'''
         self._PoleTideConfig = self._FMConfig.PoleTide()
-        self._PoleTideConfig.__dict__ = self._FMConfig.PoleTideConfig
+        self._PoleTideConfig.__dict__.update(self._FMConfig.PoleTideConfig.copy())
 
         self.__simpleOcean = self._PoleTideConfig.SimpleOcean
         self.__version = self._PoleTideConfig.Polar2wobble
@@ -49,7 +51,7 @@ class PoleTideIERS2010(AbsPoleTide):
         self.__loveNum = self._PoleTideConfig.LoveNumberType
         '''config path'''
         self._PathConfig = self._FMConfig.PathOfFiles()
-        self._PathConfig.__dict__ = self._FMConfig.PathOfFilesConfig
+        self._PathConfig.__dict__.update(self._FMConfig.PathOfFilesConfig.copy())
 
         self.__fileLove = self._PathConfig.LoverNumber
         self.__fileDir = self._PathConfig.PoleTide

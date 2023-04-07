@@ -49,13 +49,14 @@ class RelativityIERS2010(AbsRelativity):
         self.__satVel = None
         self.__sunState = None
         self.__FMConfig = None
+        self._RelativityConfig = None
 
     def configure(self, FMConfig: ForceModelConfig):
         self.__FMConfig = FMConfig
 
         '''config relativiy'''
         self._RelativityConfig = self.__FMConfig.Relativity()
-        self._RelativityConfig.__dict__ = self.__FMConfig.RelativityConfig
+        self._RelativityConfig.__dict__.update(self.__FMConfig.RelativityConfig.copy())
 
         self.__GM_Earth = self._RelativityConfig.GM_Earth
         self.__GM_Sun = self._RelativityConfig.GM_Sun

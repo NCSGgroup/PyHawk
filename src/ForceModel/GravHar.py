@@ -12,7 +12,6 @@ from numpy import ndarray, array, zeros, asarray, asfarray, asmatrix
 import pathlib as _pathlib
 import glob as _glob
 import src.Preference.Pre_ForceModel as Pre_ForceModel
-from src.Preference.Pre_ForceModel import GravHarConfig
 from src.Preference.ForceModelConfig import ForceModelConfig
 import os
 
@@ -27,11 +26,9 @@ class AbsGravHar(BaseSecondDerivative):
         self._Cpot = None
         self._Spot = None
         self._FMConfig = None
+        self._GravHarConfig = None
 
     def configure(self, FMConfig: ForceModelConfig):
-        self._FMConfig = FMConfig
-        self._GM = self._FMConfig.GravHarConfig['GravHar_GM']
-        self._Radius = self._FMConfig.GravHarConfig['GravHar_Radius']
         return self
 
     def setPar(self, Cpot: np.ndarray, Spot: np.ndarray, Pos: np.ndarray):
@@ -411,7 +408,7 @@ class PyGravHar(AbsGravHar):
 
         return DU2XYZ
 
-    def getDaDp(self, degree_max: int = GravHarConfig.degree_max, degree_min=GravHarConfig.degree_min):
+    def getDaDp(self, degree_max: int, degree_min):
         """
         in [ITRS] frame
         Compute the partial derivative of acceleration with respect to harmonic coefficients
@@ -519,8 +516,10 @@ class ClibGravHar(AbsGravHar):
 
     def configure(self, FMConfig: ForceModelConfig):
         self._FMConfig = FMConfig
-        self._GM = self._FMConfig.GravHarConfig['GravHar_GM']
-        self._Radius = self._FMConfig.GravHarConfig['GravHar_Radius']
+        self._GravHarConfig = self._FMConfig.GravHar()
+        self._GravHarConfig.__dict__.update(self._FMConfig.GravHarConfig.copy())
+        self._GM = self._GravHarConfig.GravHar_GM
+        self._Radius = self._GravHarConfig.GravHar_Radius
 
         self.__gravlib.setPar(self._GM, self._Radius)
         return self
@@ -585,8 +584,11 @@ class ClibGravHar(AbsGravHar):
     #     acc = np.array(acc)
     #     return acc.copy()
 
-    def getDaDp(self, degree_max: int = GravHarConfig.degree_max, degree_min=GravHarConfig.degree_min):
-
+    def getDaDp(self, degree_max: int = None, degree_min: int = None):
+        if degree_max is None:
+            degree_max = self._GravHarConfig.degree_max
+        if degree_min is None:
+            degree_min = self._GravHarConfig.degree_min
         assert 1 <= degree_min <= degree_max <= self._Nmax
 
         dim = int((degree_max + 1) * (degree_max + 2) / 2)

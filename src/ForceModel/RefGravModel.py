@@ -19,24 +19,26 @@ class RefGravModel(AbsRefGravModel):
         self.__Nmax = None
         self.__kind = None
         self._FMConfig = None
+        self._RefGravModelConfig = None
+        self._pathConfig = None
         self.__staticModel = None
 
     def configure(self, FMConfig: ForceModelConfig):
         self._FMConfig = FMConfig
         '''config refGravModel'''
         self._RefGravModelConfig = self._FMConfig.RefGravModel()
-        self._RefGravModelConfig.__dict__ = self._FMConfig.RefGravModelConfig
+        self._RefGravModelConfig.__dict__.update(self._FMConfig.RefGravModelConfig.copy())
         self.__kind = self._RefGravModelConfig.kind
         staticModel = self._RefGravModelConfig.StaticModel
         '''config path'''
-        self._path = self._FMConfig.PathOfFiles()
-        self._path.__dict__ = self._FMConfig.PathOfFilesConfig
+        self._pathConfig = self._FMConfig.PathOfFiles()
+        self._pathConfig.__dict__.update(self._FMConfig.PathOfFilesConfig.copy())
         if staticModel == StaticGravModel.Gif48.name:
-            self.__staticModel = LoadGif48().load(self._path.Gif48)
+            self.__staticModel = LoadGif48().load(self._pathConfig.Gif48)
         elif staticModel == StaticGravModel.EIGEN6_C4.name:
-            self.__staticModel = LoadGif48().load(self._path.EIGEN6_C4)
+            self.__staticModel = LoadGif48().load(self._pathConfig.EIGEN6_C4)
         elif staticModel == StaticGravModel.GOCO02s.name:
-            self.__staticModel = LoadGif48().load(self._path.GOCO02s)
+            self.__staticModel = LoadGif48().load(self._pathConfig.GOCO02s)
         return self
 
     def getStaticModel(self):

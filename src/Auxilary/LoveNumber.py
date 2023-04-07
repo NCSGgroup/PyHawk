@@ -13,12 +13,20 @@ class LoveNumber:
         self.__Nmax = None
         self.__method = None
         self.__FMConfig = None
+        self.__LoveNumberConfig = None
+        self.__PathOfFilesConfig = None
 
     def configure(self, FMConfig: ForceModelConfig):
         self.__FMConfig = FMConfig
-        self.__Nmax = self.__FMConfig.LoveNumberConfig['Nmax']
-        self.__method = self.__FMConfig.LoveNumberConfig['method']
-        self.__path = self.__FMConfig.PathOfFilesConfig['LoverNumber']
+        '''config love number'''
+        self.__LoveNumberConfig = self.__FMConfig.LoveNumber()
+        self.__LoveNumberConfig.__dict__.update(self.__FMConfig.LoveNumberConfig.copy())
+        self.__Nmax = self.__LoveNumberConfig.Nmax
+        self.__method = self.__LoveNumberConfig.method
+        '''config path'''
+        self.__PathOfFilesConfig = self.__FMConfig.PathOfFiles()
+        self.__PathOfFilesConfig.__dict__.update(self.__FMConfig.PathOfFilesConfig.copy())
+        self.__path = self.__PathOfFilesConfig.LoverNumber
         return self
 
     def setPath(self, fileDir:str):

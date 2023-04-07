@@ -12,14 +12,16 @@ class AbsOceanTide(BaseGravCS):
         self._SR = None
         self._tdb_mjd = -1000000
         self._FMConfig = None
+        self._OceanTideConfig = None
+        self._PathOfFilesConfig = None
         self._ng = FunNutArg()
 
     def configure(self, FMConfig: ForceModelConfig):
         self._FMConfig = FMConfig
         self._OceanTideConfig = self._FMConfig.OceanTide()
-        self._OceanTideConfig.__dict__ = self._FMConfig.OceanTideConfig
+        self._OceanTideConfig.__dict__.update(self._FMConfig.OceanTideConfig.copy())
         self._PathOfFilesConfig = self._FMConfig.PathOfFiles()
-        self._PathOfFilesConfig.__dict__ = self._FMConfig.PathOfFilesConfig
+        self._PathOfFilesConfig.__dict__.update(self._FMConfig.PathOfFilesConfig.copy())
         return self
 
     def speedUp(self):
