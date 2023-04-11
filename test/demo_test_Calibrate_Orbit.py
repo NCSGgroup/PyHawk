@@ -19,13 +19,14 @@ import src.Preference.Pre_AdjustOrbit as Pre_AdjustOrbit
 import pathlib
 import h5py
 import multiprocessing
+from src.Solver.DesignMatrix import GravityDesignMat
 
 
-def demo1(start, end):
+def demo():
 
-    # """step 1: Read raw data"""
+    """step 1: Read raw data"""
     # fr = Frame(EOP().load())
-    # s = GRACE_OLD_RL02().configure().setDate()
+    # s = GRACE_NEW_RL02().configure().setDate()
     # s.read_double_sat()
     # """step 2: Convert orbit from ITRS frame into GCRS frame"""
     # kine = KinematicOrbit(L1b=s).configure()
@@ -37,28 +38,55 @@ def demo1(start, end):
     # arc = ArcSelect(gf).configure()
     # arc.unpackArcs().makeReport()
     """step 5: init AdjustOrbit"""
-    for i in range(start,end):
-        adjust = AdjustOrbit(arcNo=i).configure(Orbit_var_2nd_diff).calibrate(iteration=2)
-        # initTime, initR, endTime, endR = adjust.draw()
-        # firstR, secondR, thirdR = adjust.getR()
-        # np.savez('adjust.npz', R1=firstR, R2=secondR, R3=thirdR)
+    # adjust = AdjustOrbit().configure(Orbit_var_2nd_diff).calibrate(iteration=2)
+    # initTime, initR, endTime, endR = adjust.draw()
+    # firstR, secondR, thirdR = adjust.getR()
+    # np.savez('adjust.npz', R1=firstR, R2=secondR, R3=thirdR)
+    '''step 6: get DesignMatrix'''
+    dm = GravityDesignMat(0).configure()
+    dm.orbit_integration()
+    dm.get_orbit_design_matrix()
+    # dm.get_sst_design_matrix()
+
+
+def demo1(start, end):
+
+    """step 1: Read raw data"""
+    fr = Frame(EOP().load())
+    s = GRACE_NEW_RL02().configure().setDate()
+    s.read_double_sat()
+    """step 2: Convert orbit from ITRS frame into GCRS frame"""
+    kine = KinematicOrbit(L1b=s).configure()
+    kine.read_double_sat()
+    kine.GNVandKiOrbitItrs2Gcrs(fr)
+    """step 3: Gap fix"""
+    gf = GapFix(s).configure()
+    gf.fix_all().makeReport()
+    arc = ArcSelect(gf).configure()
+    arc.unpackArcs().makeReport()
+    # """step 5: init AdjustOrbit"""
+    # for i in range(start,end):
+    #     adjust = AdjustOrbit(arcNo=i).configure(Orbit_var_2nd_diff).calibrate(iteration=2)
+    #     # initTime, initR, endTime, endR = adjust.draw()
+    #     # firstR, secondR, thirdR = adjust.getR()
+    #     # np.savez('adjust.npz', R1=firstR, R2=secondR, R3=thirdR)
 
 
 def draw():
     dir = pathlib.Path(Pre_AdjustOrbit.PathOfFiles.StateVectorDataTemp). \
-        joinpath('2008-01-01_2008-01-31')
-    filename = dir.joinpath(str(1) + '_AB.hdf5')
+        joinpath('2016-01-01_2016-01-31')
+    filename = dir.joinpath(str(0) + '_AB.hdf5')
     h5 = h5py.File(filename, 'r')
-    orbit_nominal = h5['r'][()][:,3:6,0]
+    orbit_nominal = h5['r'][()][:, 0:3, 0]
     print(np.shape(orbit_nominal))
     h5.close()
 
     rd = ArcData()
-    GNV = rd.getData(arc=1, kind=EnumType.Payload.GNV, sat=EnumType.SatID.B)
+    GNV = rd.getData(arc=0, kind=EnumType.Payload.GNV, sat=EnumType.SatID.A)
     GNVTime = GNV[:, 0]
     GNVR = GNV[:, 1:4]
 
-    plt.title('2008-1-1 sat-A arc-0 (constant and trend)', fontsize=24)
+    plt.title('2016-1-1 sat-A arc-0 (constant and trend)', fontsize=24)
     plt.plot(np.array(GNVTime), np.array(GNVR[:, 0]) - orbit_nominal[:, 0], label="X")
     plt.plot(np.array(GNVTime), np.array(GNVR[:, 1]) - orbit_nominal[:, 1], label="Y")
     plt.plot(np.array(GNVTime), np.array(GNVR[:, 2]) - orbit_nominal[:, 2], label="Z")
@@ -80,26 +108,26 @@ def rms(x: np.ndarray):
 
 
 if __name__ == '__main__':
-    # demo1()
+    demo()
     # draw()
-    p1 = multiprocessing.Process(target=demo1, args=(0, 41))
-    p2 = multiprocessing.Process(target=demo1, args=(41, 82))
-    p3 = multiprocessing.Process(target=demo1, args=(82, 123))
-    p4 = multiprocessing.Process(target=demo1, args=(123, 164))
-    p5 = multiprocessing.Process(target=demo1, args=(164, 205))
-    p6 = multiprocessing.Process(target=demo1, args=(205, 243))
-
-    p1.start()
-    p2.start()
-    p3.start()
-    p4.start()
-    p5.start()
-    p6.start()
-
-    p1.join()
-    p2.join()
-    p3.join()
-    p4.join()
-    p5.join()
-    p6.join()
+    # p1 = multiprocessing.Process(target=demo1, args=(0, 41))
+    # p2 = multiprocessing.Process(target=demo1, args=(41, 82))
+    # p3 = multiprocessing.Process(target=demo1, args=(82, 123))
+    # p4 = multiprocessing.Process(target=demo1, args=(123, 164))
+    # p5 = multiprocessing.Process(target=demo1, args=(164, 205))
+    # p6 = multiprocessing.Process(target=demo1, args=(205, 243))
+    #
+    # p1.start()
+    # p2.start()
+    # p3.start()
+    # p4.start()
+    # p5.start()
+    # p6.start()
+    #
+    # p1.join()
+    # p2.join()
+    # p3.join()
+    # p4.join()
+    # p5.join()
+    # p6.join()
 

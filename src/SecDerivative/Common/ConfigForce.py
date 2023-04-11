@@ -39,6 +39,10 @@ class ConfigForce:
     def __instanceForce(self):
         for force in self.__include_ForceType:
             obj = None
+            if force == ForceType.NonConserveForce.name:
+                for sat in self.__sat:
+                    obj = NonConByAcc(sat=sat, arcNo=self.__arc).configure(FMConfig=self.__FMConfig)
+                    self.__forceType[force + sat] = obj
             if force == ForceType.GravHar.name:
                 obj = ConfigGravHar(self.__ep).configure(self.__FMConfig)
                 self.__forceType[force] = obj
@@ -51,10 +55,6 @@ class ConfigForce:
                 else:
                     obj = ThreeBody().configure(FMConfig=self.__FMConfig)
                 self.__forceType[force] = obj
-            if force == ForceType.NonConserveForce.name:
-                for sat in self.__sat:
-                    obj = NonConByAcc(sat=sat, arcNo=self.__arc).configure()
-                    self.__forceType[force + sat.name] = obj
 
     def getForceType(self):
         return self.__forceType

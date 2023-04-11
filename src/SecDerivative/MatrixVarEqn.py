@@ -152,6 +152,18 @@ class MatrixVarEqn:
         else:
             if isIncludeSensitivityMatrix:
                 PhirSrp = np.hstack((PhirSrp, ap))
+        # if isIncludeTransitionMatrix:
+        #     Phir = PhirSr[:, 1:7]
+        #     PhirS = np.matmul(ar, Phir)
+        #     PhirSrp = np.hstack((PhirSrp, PhirS))
+        #
+        # if isIncludeSensitivityMatrix:
+        #     Sr = PhirSr[:, 7:]
+        #     if isIncludeTransitionMatrix:
+        #         Srp = np.matmul(ar, Sr) + ap
+        #     else:
+        #         Srp = ap
+        #     PhirSrp = np.hstack((PhirSrp, Srp))
 
         return PhirSrp
 

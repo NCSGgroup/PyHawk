@@ -11,9 +11,9 @@ import numpy as np
 
 class ForceModelConfig:
     def __init__(self):
-        self.include_ForceType = {EnumType.ForceType.GravHar.name: True,
+        self.include_ForceType = {EnumType.ForceType.NonConserveForce.name: True,
+                                  EnumType.ForceType.GravHar.name: True,
                                   EnumType.ForceType.Relativity.name: True,
-                                  EnumType.ForceType.NonConserveForce.name: True,
                                   EnumType.ForceType.PlanetaryPerturbation.name: True}
 
         self.instance_GravHar = {EnumType.GravHarType.NonTide.name: EnumType.InstanceNonTide.AODRL06.name,
@@ -56,7 +56,7 @@ class ForceModelConfig:
 
     class NonConservative:
         def __init__(self):
-            self.date_span = ['2008-01-01', '2008-01-31']
+            self.date_span = ['2016-01-01', '2016-01-31']
             self.arcNo = 0
             self.sat = {EnumType.SatID.A.name: True,
                         EnumType.SatID.B.name: True}
@@ -72,7 +72,7 @@ class ForceModelConfig:
             self.GM_Sun = 1.32712442076e20
             self.GM_Moon = 0.49028010560e13
             self.Radius_Earth = 0.6378136460E+07
-            self.isZeroTide = False
+            self.isZeroTide = True
 
     class AtmosTide:
         def __init__(self):
@@ -124,9 +124,9 @@ class ForceModelConfig:
                 EnumType.Planets.Mars.name: True,
                 EnumType.Planets.Jupiter.name: True,
                 EnumType.Planets.Saturn.name: True,
-                EnumType.Planets.Uranus.name: True,
-                EnumType.Planets.Neptune.name: True,
-                EnumType.Planets.Pluto.name: True}
+                EnumType.Planets.Uranus.name: False,
+                EnumType.Planets.Neptune.name: False,
+                EnumType.Planets.Pluto.name: False}
             self.isJ2 = False
 
     class GravHar:
@@ -148,8 +148,8 @@ class ForceModelConfig:
     class RefGravModel:
         def __init__(self):
             self.kind = 0
-            self.Nmax = 180
-            self.StaticModel = EnumType.StaticGravModel.EIGEN6_C4.name
+            self.Nmax = 160
+            self.StaticModel = EnumType.StaticGravModel.Gif48.name
 
     class Relativity:
         def __init__(self):
@@ -173,8 +173,8 @@ class ForceModelConfig:
             }
             self.SimpleOcean = False
             self.Polar2wobble = 2
-            self.MaxDegreeOfOcean = 180
-            self.LoveNumberType = EnumType.LoveNumberType.Gegout97.name
+            self.MaxDegreeOfOcean = 30
+            self.LoveNumberType = EnumType.LoveNumberType.IERS.name
 
     class PathOfFiles:
         def __init__(self):
@@ -189,6 +189,7 @@ class ForceModelConfig:
             self.PoleTide = "../data/poletide"
             self.LoverNumber = "../data/LoveNumber"
             self.poleTideModel = "desaiscopolecoef.txt"
+            self.temp_non_conservative_data = "../temp/NonConservativeForce"
 
 
 def demo1():
