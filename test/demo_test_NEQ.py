@@ -33,12 +33,14 @@ def demo():
     for i in tqdm(range(0, 243), desc='Solve normal equations: '):
         res_filename = res_dir.joinpath(str(i) + '.hdf5')
         h5 = h5py.File(res_filename, 'r')
-        NMatrix = NMatrix + (h5['Orbit_N_A'][:] + h5['Orbit_N_B'][:]) * 1E-12 + h5['RangeRate_N'][:]
-        LMatrix = LMatrix + (h5['Orbit_l_A'][:] + h5['Orbit_l_B'][:]) * 1E-12 + h5['RangeRate_l'][:].reshape((3717, 1))
+        NMatrix = NMatrix + h5['Orbit_N_A'][:] + h5['Orbit_N_B'][:]
+        LMatrix = LMatrix + h5['Orbit_l_A'][:] + h5['Orbit_l_B'][:]
+        # NMatrix = NMatrix + (h5['Orbit_N_A'][:] + h5['Orbit_N_B'][:]) * 1E-12 + h5['RangeRate_N'][:]
+        # LMatrix = LMatrix + (h5['Orbit_l_A'][:] + h5['Orbit_l_B'][:]) * 1E-12 + h5['RangeRate_l'][:].reshape((3717, 1))
 
     x = np.linalg.lstsq(NMatrix, LMatrix[:, 0], rcond=None)[0]
     print(x)
-    np.savez('CS-3.24.npz', cs=x)
+    np.savez('CS-4.18.npz', cs=x)
 
 
 def draw():
@@ -76,7 +78,7 @@ def draw():
 
 
 def csReshape():
-    data = np.load('CS-3.24.npz')['cs']
+    data = np.load('CS-4.18.npz')['cs']
     sort = SortCS(Pre_Parameterization.StokesCoefficients.SortMethod,
                   Pre_Parameterization.StokesCoefficients.MaxDegree,
                   Pre_Parameterization.StokesCoefficients.MinDegree)
@@ -89,11 +91,12 @@ def csReshape():
     C, S = GeoMathKit.CS_1dTo2d(c), GeoMathKit.CS_1dTo2d(s)
 
     print(C)
-    np.savez('CS2d-3.24.npz', c=C, s=S)
+    np.savez('CS2d-4.18.npz', c=C, s=S)
     pass
 
 
 if __name__ == '__main__':
+    # demo()
     # demo1(36,37)
     # p1 = multiprocessing.Process(target=demo1, args=(0, 41))
     # p2 = multiprocessing.Process(target=demo1, args=(41, 82))

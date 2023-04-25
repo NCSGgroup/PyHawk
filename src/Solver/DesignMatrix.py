@@ -31,8 +31,8 @@ class GravityDesignMat:
         return self
 
     def orbit_integration(self):
-        adjustDM = AdjustOrbitForDM(arcNo=self._arcNo)
-        adjustDM.configure(Orbit_var_2nd_diff)
+        adjustDM = AdjustOrbitForDM()
+        adjustDM.configure(Orbit_var_2nd_diff, arcNo=self._arcNo)
         '''define the directory of res output'''
         res_dir = self._res.joinpath(self._date_span[0] + '_' + self._date_span[1])
         if not res_dir.is_dir():

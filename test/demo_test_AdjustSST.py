@@ -30,7 +30,7 @@ def draw1():
     date_end = '2008-01-31'
     arcNo = 0
 
-    plt.style.use(['grid'])
+    # plt.style.use(['grid'])
     # plt.style.use('fivethirtyeight')
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
@@ -45,7 +45,7 @@ def draw1():
     postfit = h5['post_residual'][()]
 
     ax.plot(t2, postfit, label='postfit')
-    ax.plot(t1, prefit, label='prefit')
+    # ax.plot(t1, prefit, label='prefit')
 
     ax.legend()
     plt.show()
@@ -53,10 +53,19 @@ def draw1():
 
 
 def drawRMS():
-    R = np.load("RangeRateRMS.npz")
-    RMS = R['RMS']
+    # R = np.load("RangeRateRMS.npz")
+    # RMS = R['RMS']
+    date_begin = '2008-01-01'
+    date_end = '2008-01-31'
+    res_dir = pathlib.Path(Pre_AdjustOrbit.PathOfFiles.RangeRateTemp).joinpath(date_begin + '_' + date_end)
+    RMS = []
+    for i in range(0, 243):
+        res_filename = res_dir.joinpath('RangeRate_' + str(i) + '.hdf5')
+        h5 = h5py.File(res_filename, 'r')
+        postfit = h5['post_residual'][()]
+        RMS.append(rms(postfit))
 
-    plt.style.use(['grid'])
+    # plt.style.use(['grid'])
     plt.title('RangeRateRMS(2008-1-1~2008-1-31)', fontsize=24)
     plt.plot(np.arange(len(RMS)), RMS, label="PostResidualsRMS")
     plt.xlabel('arcNo', fontsize=20)
@@ -79,5 +88,6 @@ def rms(x: np.ndarray):
 
 
 if __name__ == '__main__':
-    demo2()
+    # demo2()
     # drawRMS()
+    draw1()

@@ -18,7 +18,7 @@ class ForceModelConfig:
 
         self.instance_GravHar = {EnumType.GravHarType.NonTide.name: EnumType.InstanceNonTide.AODRL06.name,
                                  EnumType.GravHarType.PoleTide.name: EnumType.InstancePoleTide.PoleTideIERS2010.name,
-                                 EnumType.GravHarType.OceanTide.name: EnumType.InstanceOceanTide.EOT11a.name,
+                                 EnumType.GravHarType.OceanTide.name: EnumType.InstanceOceanTide.FES2014.name,
                                  EnumType.GravHarType.AtmosphereTide.name: EnumType.InstanceAtmosTide.AtmosAOD.name,
                                  EnumType.GravHarType.SolidEarthTide.name: EnumType.InstanceSolidTide.SolidTideIERS2010.name,
                                  EnumType.GravHarType.ReferenceModel.name: EnumType.InstanceReferenceModel.RefGravModel.name}
@@ -56,7 +56,7 @@ class ForceModelConfig:
 
     class NonConservative:
         def __init__(self):
-            self.date_span = ['2016-01-01', '2016-01-31']
+            self.date_span = ['2008-01-01', '2008-01-31']
             self.arcNo = 0
             self.sat = {EnumType.SatID.A.name: True,
                         EnumType.SatID.B.name: True}
@@ -132,17 +132,17 @@ class ForceModelConfig:
     class GravHar:
         def __init__(self):
             self.setZero = [0, 1]
-            self.degree_max = 90
+            self.degree_max = 60
             self.degree_min = 2
             self.GravHar_GM = 0.3986004415E+15
-            self.GravHar_Radius = 0.6378136460E+07
+            self.GravHar_Radius = 0.6378136300E+07
             self.PosCoordinate = EnumType.Coordinate.GCRS.name
             self.ACCCoordinate = EnumType.Coordinate.GCRS.name
 
     class NonTide:
         def __init__(self):
             self.kind = EnumType.AODtype.GLO.name
-            self.MaxDeg = 180
+            self.MaxDeg = 100
             self.TS = 3
 
     class RefGravModel:
@@ -154,21 +154,21 @@ class ForceModelConfig:
     class Relativity:
         def __init__(self):
             self.GM_Sun = 1.32712442076e20
-            self.GM_Earth = 0.3986004415E+15
+            self.GM_Earth = 398600441800000.0
             self.C_Light = 299792458
             self.J = [0, 0, 9.8e8]
             self.Gamma = 1
             self.Beta = 1
             self.kind = {
                 EnumType.RelativityType.SchwarzChild.name: True,
-                EnumType.RelativityType.LenseThirring.name: True,
-                EnumType.RelativityType.Desitter.name: True
+                EnumType.RelativityType.LenseThirring.name: False,
+                EnumType.RelativityType.Desitter.name: False
             }
 
     class PoleTide:
         def __init__(self):
             self.Kind = {
-                "Solid Earth": False,
+                "Solid Earth": True,
                 "Ocean": True
             }
             self.SimpleOcean = False

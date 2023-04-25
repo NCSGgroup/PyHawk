@@ -6,13 +6,15 @@ import pathlib as pathlib
 import src.Preference.Pre_Accelerometer as Pre_Accelerometer
 import src.Preference.Pre_Constants as Pre_Constants
 from src.Interface.ArcOperation import ArcData
+from src.Preference.AccelerometerConfig import AccelerometerConfig
 
 
 class AccCaliPar:
-    def __init__(self, sat, arcNo, acc_strategy=Pre_Accelerometer.cali, **kwargs):
+    def __init__(self, sat, arcNo, accConfig:AccelerometerConfig, acc_strategy=Pre_Accelerometer.cali, **kwargs):
         self.sat = sat
         self.arcNo = arcNo
-        self.acc_strategy = acc_strategy
+        self.accConfig = accConfig
+        # self.acc_strategy = acc_strategy
         # if kwargs:
         #     self.__parFlag = 0
         #     self.AccCaliValue = kwargs.get('AccCaliPar')
@@ -27,17 +29,17 @@ class AccCaliPar:
         cali_value = Pre_Accelerometer.cali_value
 
         #======= strategy ======
-        isScale = self.acc_strategy['Scale']
-        isBias_constant = self.acc_strategy['Bias_constant']
-        isBias_trend = self.acc_strategy['Bias_trend']
-        isBias_quadratic = self.acc_strategy['Bias_quadratic']
+        isScale = self.accConfig.cali['Scale'].copy()
+        isBias_constant = self.accConfig.cali['Bias_constant'].copy()
+        isBias_trend = self.accConfig.cali['Bias_trend'].copy()
+        isBias_quadratic = self.accConfig.cali['Bias_quadratic'].copy()
         self.isCali = [isScale, isBias_constant, isBias_trend, isBias_quadratic]
 
         #======= value ======
-        scale = cali_value['Scale']
-        bias_constant = cali_value['Bias_constant']
-        bias_trend = cali_value['Bias_trend']
-        bias_quadratic = cali_value['Bias_quadratic']
+        scale = self.accConfig.cali_value['Scale'].copy()
+        bias_constant = self.accConfig.cali_value['Bias_constant'].copy()
+        bias_trend = self.accConfig.cali_value['Bias_trend'].copy()
+        bias_quadratic = self.accConfig.cali_value['Bias_quadratic'].copy()
         self.scale = np.array(scale, dtype=np.float).reshape((3, 3))
         self.bias = np.array([bias_constant, bias_trend, bias_quadratic], dtype=np.float)
 
@@ -76,10 +78,11 @@ class Accelerometer:
         self.__bias = ap.bias
         self.__scale = ap.scale
         self.__isCali = ap.isCali
+        self.__accConfig = ap.accConfig
         self.__acc = self.__rd.getData(arc=self.__arcNo, kind=Payload.ACC, sat=self.__sat)
         self.__sca = self.__rd.getData(arc=self.__arcNo, kind=Payload.SCA, sat=self.__sat)
         assert np.max(np.abs(self.__acc[:, 0] - self.__sca[:, 0])) < Pre_Constants.num_tolerance
-        self.__dataTemp = kwargs.get('dataTemp', Pre_Accelerometer.temp_non_conservative_data)
+        self.__dataTemp = kwargs.get('dataTemp', ap.accConfig.temp_non_conservative_data)
         '''Above defines a fully populated scale matrix (span to 1-d)'''
         '''
         for example
@@ -95,22 +98,22 @@ class Accelerometer:
         self.__sca = Quat(q=q).transform
         pass
 
-    @DeprecationWarning
-    def setPar(self, **kwargs):
-        """
-        set parameters from json file
-        :param kwargs: define the value of the parameters. [3-axis]
-        :return:
-        """
-        scale = kwargs.get('Scale', Pre_Accelerometer.cali_value['Scale'])
-        # scale = kwargs.get('Scale', [0.9465, 0.9842, 0.9303])  # for sat B
-        bias_constant = kwargs.get('Bias_constant', Pre_Accelerometer.cali_value['Bias_constant'])
-        bias_trend = kwargs.get('Bias_trend', Pre_Accelerometer.cali_value['Bias_trend'])
-        bias_quadratic = kwargs.get('Bias_quadratic', Pre_Accelerometer.cali_value['Bias_quadratic'])
-
-        self.__scale = np.array(scale, dtype=np.float).reshape((3, 3))
-        self.__bias = np.array([bias_constant, bias_trend, bias_quadratic], dtype=np.float)
-        return self
+    # @DeprecationWarning
+    # def setPar(self, **kwargs):
+    #     """
+    #     set parameters from json file
+    #     :param kwargs: define the value of the parameters. [3-axis]
+    #     :return:
+    #     """
+    #     scale = kwargs.get('Scale', Pre_Accelerometer.cali_value['Scale'])
+    #     # scale = kwargs.get('Scale', [0.9465, 0.9842, 0.9303])  # for sat B
+    #     bias_constant = kwargs.get('Bias_constant', Pre_Accelerometer.cali_value['Bias_constant'])
+    #     bias_trend = kwargs.get('Bias_trend', Pre_Accelerometer.cali_value['Bias_trend'])
+    #     bias_quadratic = kwargs.get('Bias_quadratic', Pre_Accelerometer.cali_value['Bias_quadratic'])
+    #
+    #     self.__scale = np.array(scale, dtype=np.float).reshape((3, 3))
+    #     self.__bias = np.array([bias_constant, bias_trend, bias_quadratic], dtype=np.float)
+    #     return self
 
     # @DeprecationWarning
     def setParFromList(self, paralist:list):

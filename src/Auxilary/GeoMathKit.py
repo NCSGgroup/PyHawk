@@ -452,7 +452,6 @@ class GeoMathKit:
 
         N = Nxx - tm @ Nyx
         l = Wx - tm @ Wy
-        print(Nyy_inv @ Wy)
         return N, l
 
     @staticmethod

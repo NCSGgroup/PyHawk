@@ -42,6 +42,7 @@ class GravimetryODE:
             rB, vB = MatrixVarEqn.getVarEq2ndIni(self.__ParNum, Pre_Parameterization.TransitionMatrix.isRequired, True,
                                                  pv2)
             self.__r0, self.__v0 = np.vstack((rA, rB)), np.vstack((vA, vB))
+            pass
         elif len(r0) == len(v0) == 3:
             self.__isSingle = True
             pv = np.append(r0, v0)
