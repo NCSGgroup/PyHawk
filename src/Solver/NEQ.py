@@ -59,18 +59,18 @@ class GravityNEQperArc:
             joinpath(self.__date_span[0] + '_' + self.__date_span[1])
         res_filename = res_dir.joinpath('Orbit_' + str(self.__arcNo) + '_' + self._satName + '.hdf5')
         h5 = h5py.File(res_filename, 'r')
-        # self.__orbit_nominal = h5['r'][()]
+        self.__orbit_nominal = h5['r'][()]
         self.__t_nominal = h5['t'][()]
         self.__local_r = h5['local_r'][()]
         self.__global_r = h5['global_r'][()]
         h5.close()
 
-        state_dir = pathlib.Path(Pre_AdjustOrbit.PathOfFiles.StateVectorDataTemp). \
-            joinpath(self.__date_span[0] + '_' + self.__date_span[1])
-        state_filename = state_dir.joinpath(str(self.__arcNo) + '_' + self._satName + '.hdf5')
-        h5 = h5py.File(state_filename, 'r')
-        self.__orbit_nominal = h5['r'][()][:, :, 0]
-        h5.close()
+        # state_dir = pathlib.Path(Pre_AdjustOrbit.PathOfFiles.StateVectorDataTemp). \
+        #     joinpath(self.__date_span[0] + '_' + self.__date_span[1])
+        # state_filename = state_dir.joinpath(str(self.__arcNo) + '_' + self._satName + '.hdf5')
+        # h5 = h5py.File(state_filename, 'r')
+        # self.__orbit_nominal = h5['r'][()][:, :, 0]
+        # h5.close()
 
         for i in tqdm(range(3), desc='Build normal equations: '):
             if i == 0:

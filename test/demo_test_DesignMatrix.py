@@ -3,37 +3,57 @@ import sys
 sys.path.append('../')
 import multiprocessing
 from src.Solver.DesignMatrix import GravityDesignMat
+import src.Preference.Pre_Solver as Pre_Solver
+import pathlib
+import h5py
+import src.Preference.EnumType as EnumType
+from src.Interface.ArcOperation import ArcSelect, ArcData
+import numpy as np
+import matplotlib.pyplot as plt
+from src.Preference.AccelerometerConfig import AccelerometerConfig
+import json
 
 
-def demo1(start, end):
+def demo1():
+    accConfig_A = AccelerometerConfig()
+    acc_A = json.load(open('../setting/Calibrate/AccelerometerConfig_A.json', 'r'))
+    accConfig_A.__dict__ = acc_A
+    accConfig_B = AccelerometerConfig()
+    acc_B = json.load(open('../setting/Calibrate/AccelerometerConfig_B.json', 'r'))
+    accConfig_B.__dict__ = acc_B
 
-    for i in range(start, end):
-        print(i)
-        dm = GravityDesignMat(i).configure()
-        dm.orbit_integration()
-        dm.get_orbit_design_matrix()
-        dm.get_sst_design_matrix()
+    dm = GravityDesignMat(0).configure(accConfig=[accConfig_A, accConfig_B])
+    # dm.orbit_integration()
+    # dm.get_orbit_design_matrix()
+    dm.get_sst_design_matrix()
+
+
+def demo2():
+    date_span = ['2008-01-01', '2008-01-31']
+    res_dir = pathlib.Path(Pre_Solver.PathOfFiles.DesignMatrixTemp).joinpath(date_span[0] + '_' + date_span[1])
+    res_filename = res_dir.joinpath(str(0) + '_AB.hdf5')
+    h5 = h5py.File(res_filename, 'r')
+    print(h5['r'][:])
+    rd = ArcData(date_span=date_span)
+    GNV = rd.getData(arc=0, kind=EnumType.Payload.GNV, sat=EnumType.SatID.A)
+    GNVTime = GNV[:, 0]
+    GNVR = GNV[:, 1:4]
+
+    diff = h5['r'][:][:, 0:3, 0] - GNVR
+
+    plt.title('2008-1-1 diff', fontsize=24)
+    plt.plot(np.array(GNVTime), diff[:, 0], label="X")
+    plt.plot(np.array(GNVTime), diff[:, 1], label="Y")
+    plt.plot(np.array(GNVTime), diff[:, 2], label="Z")
+    plt.xlabel('GPS time [sec]', fontsize=20)
+    plt.ylabel(r'$m$', fontsize=20)
+    plt.yticks(fontsize=18)
+    plt.legend(loc='upper left', fontsize=20)
+    # plt.savefig('../result/img/{}-{}.png'.format(length[0], length[-1]), dpi=300)
+    # plt.grid(ls='--')
+    plt.show()
 
 
 if __name__ == '__main__':
-    # demo1(15, 18)
-    p1 = multiprocessing.Process(target=demo1, args=(0, 41))
-    p2 = multiprocessing.Process(target=demo1, args=(41, 82))
-    p3 = multiprocessing.Process(target=demo1, args=(82, 123))
-    p4 = multiprocessing.Process(target=demo1, args=(123, 164))
-    p5 = multiprocessing.Process(target=demo1, args=(164, 205))
-    p6 = multiprocessing.Process(target=demo1, args=(205, 243))
-
-    p1.start()
-    p2.start()
-    p3.start()
-    p4.start()
-    p5.start()
-    p6.start()
-
-    p1.join()
-    p2.join()
-    p3.join()
-    p4.join()
-    p5.join()
-    p6.join()
+    demo1()
+    # demo2()

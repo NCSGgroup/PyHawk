@@ -31,6 +31,8 @@ class SSTpartial:
         rhow = np.sqrt(diff_pos[:, 0] ** 2 + diff_pos[:, 1] ** 2 + diff_pos[:, 2] ** 2)
         rhow_dot = np.sum(diff_pos * diff_vel, 1) / rhow
 
+        # e12 = diff_pos / rhow[:, None]
+        # rhow_dot = diff_vel * e12
         self.Range = rhow[:, None]
         self.RangeRate = rhow_dot[:, None]
         pass

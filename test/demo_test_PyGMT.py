@@ -73,10 +73,10 @@ def readDat():
 
 
 def draw():
-    res = np.load("PreKBRR.npz", allow_pickle=True)
+    res = np.load("PostKBRR.npz", allow_pickle=True)
     x = np.degrees(np.array(res['x']))
     y = np.degrees(np.array(res['y']))
-    z = res['z']
+    z = res['z'] * 1e7
     # data = pygmt.datasets.load_sample_data(name="japan_quakes")
     # data = data[["longitude", "latitude", "depth_km"]]
     # region = [130, 152.5, 32.5, 52.5]
@@ -86,7 +86,7 @@ def draw():
 
     grid = pygmt.xyz2grd(x=x, y=y, z=z, spacing=(1, 1), region="d", duplicate='r')
     fig = pygmt.Figure()
-    pygmt.makecpt(cmap='seis', series=[-1e-5, 1e-5])
+    pygmt.makecpt(series=[0, 7, 1])
     # fig.basemap(frame="afg")
     fig.grdimage(grid=grid, region="d", projection="Q12c", frame="afg")
     fig.coast(shorelines="1/0.5p", projection="Q12c")
@@ -95,6 +95,6 @@ def draw():
 
 
 if __name__ == '__main__':
-    getKBRRGMT()
+    # getKBRRGMT()
     draw()
     # readDat()

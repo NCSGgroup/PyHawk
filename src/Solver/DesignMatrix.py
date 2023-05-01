@@ -24,14 +24,16 @@ class GravityDesignMat:
             else:
                 self._satName = self._satName + sat.name
         self._res = None
+        self._accConfig = None
         pass
 
-    def configure(self):
+    def configure(self, accConfig):
+        self._accConfig = accConfig
         self._res = Pre_Solver.PathOfFiles.DesignMatrixTemp
         return self
 
     def orbit_integration(self):
-        adjustDM = AdjustOrbitForDM()
+        adjustDM = AdjustOrbitForDM(self._accConfig)
         adjustDM.configure(Orbit_var_2nd_diff, arcNo=self._arcNo)
         '''define the directory of res output'''
         res_dir = self._res.joinpath(self._date_span[0] + '_' + self._date_span[1])

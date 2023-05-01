@@ -12,6 +12,8 @@ from src.ODE.Instance.GravimetryODE import GravimetryODE
 from src.Interface.Accelerometer import Accelerometer, AccCaliPar
 from src.Frame.Frame import Frame, EOP
 import src.Preference.Pre_Accelerometer as Pre_Accelerometer
+from src.Preference.AccelerometerConfig import AccelerometerConfig
+
 
 
 class AdjustOrbit:
@@ -129,7 +131,6 @@ class AdjustOrbit:
                 self.secondR = self._ode_res[1]
             elif i == 2:
                 self.thirdR = self._ode_res[1]
-
         filename = self._state_dir.joinpath(str(self._arcNo) + '_' + self._satName + '.hdf5')
         h5 = h5py.File(filename, 'r')
         self._endTime = h5['t'][:]
@@ -213,17 +214,16 @@ class AdjustOrbitForDM(AdjustOrbit):
     Make an orbit integration with the calibrated parameters again. No calibration is required.
     Configuration could be totally different anyway from the orbit calibration.
     """
-    def __init__(self, date_span=Pre_Interface.date_span, arcNo=Pre_Interface.arcNo, sat=Pre_Interface.sat,
+    def __init__(self, accConfig, date_span=Pre_Interface.date_span, sat=Pre_Interface.sat,
                  kind=EnumType.Payload.GNV):
-        super().__init__(date_span, arcNo, sat, kind)
-        self._arcNo = arcNo
+        super().__init__(accConfig, date_span, sat, kind)
 
     def updateInit(self):
         sat = self._sat
         ac = self._ac
         time_ini = self._startTime
 
-        cali_res = self.getInit()
+        cali_res = self.getInit(accConfig=self.accConfig)
         if EnumType.ParaType.Accelerometer.name in cali_res.keys():
             acc_par = cali_res[EnumType.ParaType.Accelerometer.name]
             scale = acc_par[0]
@@ -239,7 +239,8 @@ class AdjustOrbitForDM(AdjustOrbit):
 
         return self
 
-    def getInit(self, **kwargs):
+    def getInit(self, accConfig, **kwargs):
+
         res_filename = self._res_dir.joinpath(str(self._arcNo) + '_' + self._satName + '.hdf5')
         h5 = h5py.File(res_filename, 'r')
         res = {}
@@ -248,27 +249,37 @@ class AdjustOrbitForDM(AdjustOrbit):
         h5.close()
         # --------------------------------------------------------------
         '''pass the parameters into accelerometers'''
-        acc_strategy = kwargs.get("strategy", Pre_Accelerometer.cali)
-        isScale = acc_strategy['Scale']
-        isBias_constant = acc_strategy['Bias_constant']
-        isBias_trend = acc_strategy['Bias_trend']
-        isBias_quadratic = acc_strategy['Bias_quadratic']
-        isCali = [isScale, isBias_constant, isBias_trend, isBias_quadratic]
         cali = []
-        for term in isCali:
-            '''span to 1-d list'''
-            cali = cali + term
-        cali = np.vstack((cali, cali))
+        scale = []
+        bias = []
+        for acc_config in accConfig:
+            cal1_single = []
+            scale_single = []
+            bias_single = []
+            isScale = acc_config.cali['Scale'].copy()
+            isBias_constant = acc_config.cali['Bias_constant'].copy()
+            isBias_trend = acc_config.cali['Bias_trend'].copy()
+            isBias_quadratic = acc_config.cali['Bias_quadratic'].copy()
+            isCali = [isScale, isBias_constant, isBias_trend, isBias_quadratic]
+            for term in isCali:
+                '''span to 1-d list'''
+                cal1_single = cal1_single + term
+            if not cali:
+                cali = cal1_single
+            else:
+                cali = np.vstack((cali, cal1_single))
 
-        cali_value = kwargs.get("strategy", Pre_Accelerometer.cali_value)
-        scale = cali_value['Scale']
-        bias_constant = cali_value['Bias_constant']
-        bias_trend = cali_value['Bias_trend']
-        bias_quadratic = cali_value['Bias_quadratic']
-        scale = np.array(scale, dtype=np.float).reshape((3, 3))
-        bias = np.array([bias_constant, bias_trend, bias_quadratic], dtype=np.float)
-        scale, bias = scale.flatten(), bias.flatten()
-        scale, bias = np.vstack((scale, scale)), np.vstack((bias, bias))
+            scale_single = acc_config.cali_value['Scale'].copy()
+            bias_constant = acc_config.cali_value['Bias_constant'].copy()
+            bias_trend = acc_config.cali_value['Bias_trend'].copy()
+            bias_quadratic = acc_config.cali_value['Bias_quadratic']
+            scale_single = np.array(scale_single, dtype=np.float).reshape((3, 3))
+            bias_single = np.array([bias_constant, bias_trend, bias_quadratic], dtype=np.float)
+            scale_single, bias_single = scale_single.flatten(), bias_single.flatten()
+            if not len(scale):
+                scale, bias = scale_single, bias_single
+            else:
+                scale, bias = np.vstack((scale, scale_single)), np.vstack((bias, bias_single))
 
         if EnumType.ParaType.Accelerometer.name in res.keys():
             accIni = res[EnumType.ParaType.Accelerometer.name]

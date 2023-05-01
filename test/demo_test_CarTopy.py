@@ -12,7 +12,7 @@ import numpy as np
 
 if __name__ == '__main__':
     # getKBRRGMT()
-    res = np.load("PreKBRR.npz", allow_pickle=True)
+    res = np.load("PostKBRR.npz", allow_pickle=True)
     x = np.degrees(np.array(res['x']))
     y = np.degrees(np.array(res['y']))
     z = res['z']
@@ -25,7 +25,7 @@ if __name__ == '__main__':
     ax.coastlines()  # 调用ax的方法画海岸线
     # clist = ['red', 'lime', 'blue']
     # newcmp = LinearSegmentedColormap.from_list('chaos', clist)
-    l = ax.scatter(x, y, c=z, s=1, cmap=plt.cm.Spectral, vmax=1e-5, vmin=-1e-5)
+    l = ax.scatter(x, y, c=z, s=1, cmap=plt.cm.Spectral, vmax=1e-6, vmin=-1e-6)
     ax.set_xticks(x_extent, crs=ccrs.PlateCarree())  # 添加经纬度
     ax.set_yticks(y_extent, crs=ccrs.PlateCarree())
     fig.colorbar(mappable=l)

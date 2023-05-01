@@ -84,20 +84,28 @@ def demo():
     # arc = ArcSelect(gf).configure()
     # arc.unpackArcs().makeReport()
     """step 5: init AdjustOrbit"""
-    # adjust = AdjustOrbit().configure(Orbit_var_2nd_diff).Calibrate(iteration=2)
+    date_span = ['2008-01-01', '2008-01-31']
+    accConfig_A = AccelerometerConfig()
+    acc_A = json.load(open('../setting/Calibrate/AccelerometerConfig_A.json', 'r'))
+    accConfig_A.__dict__ = acc_A
+    accConfig_B = AccelerometerConfig()
+    acc_B = json.load(open('../setting/Calibrate/AccelerometerConfig_B.json', 'r'))
+    accConfig_B.__dict__ = acc_B
+    AdjustOrbit(accConfig=[accConfig_A, accConfig_B],date_span=date_span).\
+        configure(Orbit_var_2nd_diff, arcNo=0).calibrate(iteration=2)
     # initTime, initR, endTime, endR = adjust.draw()
     # firstR, secondR, thirdR = adjust.getR()
     # np.savez('adjust.npz', R1=firstR, R2=secondR, R3=thirdR)
 
-    RR = RangeRate(23)
-    RR.configure()
-    RR.calibrate()
+    # RR = RangeRate(23)
+    # RR.configure()
+    # RR.calibrate()
     # '''step 6: get DesignMatrix'''
-    # dm = GravityDesignMat(0).configure()
+    # dm = GravityDesignMat(0).configure(accConfig=[accConfig_A, accConfig_B])
     # dm.orbit_integration()
     # dm.get_orbit_design_matrix()
     # dm.get_sst_design_matrix()
-    # '''setp 8: get NEQ'''
+    # # '''setp 8: get NEQ'''
     # neq = GravityNEQperArc(0)
     # neq.configure().get_neq()
 
@@ -111,24 +119,24 @@ def demo1(start, end):
     acc_B = json.load(open('../setting/Calibrate/AccelerometerConfig_B.json', 'r'))
     accConfig_B.__dict__ = acc_B
 
-    """step 5: init AdjustOrbit"""
-    for i in range(start, end):
-        AdjustOrbit(accConfig=[accConfig_A, accConfig_B]).configure(Orbit_var_2nd_diff, arcNo=i).calibrate(iteration=2)
-    """step 6: adjustSST"""
-    for i in range(start, end):
-        RR = RangeRate(i, date_span=date_span)
-        RR.configure()
-        RR.calibrate()
-    # """step 7: DesignMatrix"""
+    # """step 5: init AdjustOrbit"""
     # for i in range(start, end):
-    #     dm = GravityDesignMat(i).configure()
-    #     dm.orbit_integration()
-    #     dm.get_orbit_design_matrix()
-    #     dm.get_sst_design_matrix()
-    # '''setp 8: get NEQ'''
+    #     AdjustOrbit(accConfig=[accConfig_A, accConfig_B]).configure(Orbit_var_2nd_diff, arcNo=i).calibrate(iteration=2)
+    # """step 6: adjustSST"""
     # for i in range(start, end):
-    #     neq = GravityNEQperArc(i)
-    #     neq.configure().get_neq()
+    #     RR = RangeRate(i, date_span=date_span)
+    #     RR.configure()
+    #     RR.calibrate()
+    """step 7: DesignMatrix"""
+    for i in range(start, end):
+        dm = GravityDesignMat(i).configure(accConfig=[accConfig_A, accConfig_B])
+        dm.orbit_integration()
+        dm.get_orbit_design_matrix()
+        dm.get_sst_design_matrix()
+    '''setp 8: get NEQ'''
+    for i in range(start, end):
+        neq = GravityNEQperArc(i)
+        neq.configure().get_neq()
 
 
 def getRMS():
@@ -292,15 +300,17 @@ def cacluateNL():
         h5 = h5py.File(res_filename, 'r')
         # NMatrix = NMatrix + h5['Orbit_N_A'][:] + h5['Orbit_N_B'][:]
         # LMatrix = LMatrix + h5['Orbit_l_A'][:] + h5['Orbit_l_B'][:]
-        NMatrix = NMatrix + (h5['Orbit_N_A'][:] + h5['Orbit_N_B'][:]) * 1E-12 + h5['RangeRate_N'][:]
-        LMatrix = LMatrix + (h5['Orbit_l_A'][:] + h5['Orbit_l_B'][:]) * 1E-12 + h5['RangeRate_l'][:].reshape((3717, 1))
+        # NMatrix = NMatrix + h5['RangeRate_N'][:]
+        # LMatrix = LMatrix + h5['RangeRate_l'][:].reshape((3717, 1))
+        NMatrix = NMatrix + h5['Orbit_N_A'][:] + h5['Orbit_N_B'][:] + h5['RangeRate_N'][:] * 2.5E11
+        LMatrix = LMatrix + h5['Orbit_l_A'][:] + h5['Orbit_l_B'][:] + h5['RangeRate_l'][:].reshape((3717, 1)) * 2.5E11
     x = np.linalg.lstsq(NMatrix, LMatrix[:, 0], rcond=None)[0]
     print(x)
-    np.savez('CS-4.19.npz', cs=x)
+    np.savez('CS-4.28.npz', cs=x)
 
 
 def csReshape():
-    data = np.load('CS-4.19.npz')['cs']
+    data = np.load('CS-4.28.npz')['cs']
     sort = SortCS(Pre_Parameterization.StokesCoefficients.SortMethod,
                   Pre_Parameterization.StokesCoefficients.MaxDegree,
                   Pre_Parameterization.StokesCoefficients.MinDegree)
@@ -312,21 +322,19 @@ def csReshape():
 
     C, S = GeoMathKit.CS_1dTo2d(c), GeoMathKit.CS_1dTo2d(s)
 
-    print(C)
-    np.savez('CS2d-4.19.npz', c=C, s=S)
+    np.savez('CS2d-4.28.npz', c=C, s=S)
     pass
 
 
 if __name__ == '__main__':
     # adjust()
+
     #
     # demo()
     # draw()
     # drawMatrix()
-
-    # cacluateNL()
-    # csReshape()
-    #
     # getRMS()
-    getKBRRRMS()
+    # getKBRRRMS()
     # drawRMS()
+    cacluateNL()
+    csReshape()
