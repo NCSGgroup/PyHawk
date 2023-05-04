@@ -16,11 +16,11 @@ class AbsAtmosTide(BaseGravCS):
         self._SR = None
         self._tdb_mjd = -1000000
         self._FMConfig = None
+        self._pathConfig = None
+        self._AtmosTideConfig = None
         self._ng = FunNutArg()
 
     def configure(self, FMConfig:ForceModelConfig):
-        self._FMConfig = FMConfig
-        self.setSampleRate()
         return self
 
     def setSampleRate(self):
@@ -29,7 +29,7 @@ class AbsAtmosTide(BaseGravCS):
         :param SR: the desired sample rate [seconds]
         :return:
         """
-        self._SR = self._FMConfig.AtmosTideConfig['SR']
+        self._SR = self._AtmosTideConfig.SR
         return self
 
     def getCS(self):
@@ -51,8 +51,10 @@ class AtmosBB2003(AbsAtmosTide):
         self.__nutarg = None
 
     def configure(self, FMConfig:ForceModelConfig):
-        self._FMConfig = FMConfig
-        BB2003tide = self._FMConfig.AtmosTideConfig['BB2003tide']
+        '''config Atmos'''
+        self._AtmosTideConfig = self._FMConfig.AtmosTide()
+        self._AtmosTideConfig.__dict__.update(self._FMConfig.AtmosTideConfig.copy())
+        BB2003tide = self._AtmosTideConfig.BB2003tide
         self.__kind = [key for key, value in BB2003tide.items() if value]
         self.setSampleRate()
         return self
@@ -253,7 +255,13 @@ class AtmosAOD(AbsAtmosTide):
 
     def configure(self, FMConfig:ForceModelConfig):
         self._FMConfig = FMConfig
-        AODtide = self._FMConfig.AtmosTideConfig['AODtide']
+        '''config Atmos'''
+        self._AtmosTideConfig = self._FMConfig.AtmosTide()
+        self._AtmosTideConfig.__dict__.update(self._FMConfig.AtmosTideConfig.copy())
+        '''config path'''
+        self._pathConfig = self._FMConfig.PathOfFiles()
+        self._pathConfig.__dict__.update(self._FMConfig.PathOfFilesConfig.copy())
+        AODtide = self._AtmosTideConfig.AODtide
         self.__AODtide = [key for key, value in AODtide.items() if value]
 
         self.__doodson = {
@@ -313,8 +321,8 @@ class AtmosAOD(AbsAtmosTide):
         :param fileDir: path of the tide files
         :return:
         """
-        fileDir = self._FMConfig.PathOfFilesConfig['Atmos']
-        Nmax = self._FMConfig.AtmosTideConfig['Nmax']
+        fileDir = self._pathConfig.Atmos
+        Nmax = self._AtmosTideConfig.Nmax
         adt = LoadAtmosTide().load(fileIn=fileDir)
         spec = AODtype.ATM
 

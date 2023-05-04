@@ -11,7 +11,7 @@ import pathlib as pathlib
 
 mission = Mission.GRACE_RL02
 date_span = ['2008-01-01', '2008-01-31']
-arcNo = 1
+arcNo = 0
 sat = {SatID.A: True,
        SatID.B: True}
 date_delete = []
@@ -41,7 +41,7 @@ gapfix_cubic_mis_max = 80
 gapfix_cubic_int = 150
 
 arc_length = 3
-min_arcLen = 3
+min_arcLen = 2
 
 
 class PathOfFiles:

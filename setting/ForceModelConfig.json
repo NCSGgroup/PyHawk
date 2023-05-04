@@ -1,14 +1,14 @@
 {
     "include_ForceType": {
+        "NonConserveForce": true,
         "GravHar": true,
         "Relativity": true,
-        "NonConserveForce": true,
         "PlanetaryPerturbation": true
     },
     "instance_GravHar": {
         "NonTide": "AODRL06",
         "PoleTide": "PoleTideIERS2010",
-        "OceanTide": "EOT11a",
+        "OceanTide": "FES2014",
         "AtmosphereTide": "AtmosAOD",
         "SolidEarthTide": "SolidTideIERS2010",
         "ReferenceModel": "RefGravModel"
@@ -39,7 +39,7 @@
     "PoleTideConfig": {
         "Kind": {
             "Solid Earth": true,
-            "Ocean": false
+            "Ocean": true
         },
         "SimpleOcean": false,
         "Polar2wobble": 2,
@@ -51,7 +51,7 @@
         "GM_Sun": 1.32712442076e+20,
         "GM_Moon": 4902801056000.0,
         "Radius_Earth": 6378136.46,
-        "isZeroTide": false
+        "isZeroTide": true
     },
     "AtmosTideConfig": {
         "SR": 0.001,
@@ -104,9 +104,9 @@
             "Mars": true,
             "Jupiter": true,
             "Saturn": true,
-            "Uranus": true,
-            "Neptune": true,
-            "Pluto": true
+            "Uranus": false,
+            "Neptune": false,
+            "Pluto": false
         },
         "isJ2": false
     },
@@ -115,26 +115,26 @@
             0,
             1
         ],
-        "degree_max": 90,
+        "degree_max": 60,
         "degree_min": 2,
         "GravHar_GM": 398600441500000.0,
-        "GravHar_Radius": 6378136.46,
+        "GravHar_Radius": 6378136.3,
         "PosCoordinate": "GCRS",
         "ACCCoordinate": "GCRS"
     },
     "NonTideConfig": {
         "kind": "GLO",
-        "MaxDeg": 180,
+        "MaxDeg": 100,
         "TS": 3
     },
     "RefGravModelConfig": {
         "kind": 0,
-        "Nmax": 180,
-        "StaticModel": "EIGEN6_C4"
+        "Nmax": 160,
+        "StaticModel": "Gif48"
     },
     "RelativityConfig": {
         "GM_Sun": 1.32712442076e+20,
-        "GM_Earth": 398600441500000.0,
+        "GM_Earth": 398600441800000.0,
         "C_Light": 299792458,
         "J": [
             0,
@@ -145,8 +145,8 @@
         "Beta": 1,
         "kind": {
             "SchwarzChild": true,
-            "LenseThirring": true,
-            "Desitter": true
+            "LenseThirring": false,
+            "Desitter": false
         }
     },
     "PathOfFilesConfig": {
@@ -160,6 +160,7 @@
         "GOCO02s": "../data/StaticGravityField/GOCO02s.gfc",
         "PoleTide": "../data/poletide",
         "LoverNumber": "../data/LoveNumber",
-        "poleTideModel": "desaiscopolecoef.txt"
+        "poleTideModel": "desaiscopolecoef.txt",
+        "temp_non_conservative_data": "../temp/NonConservativeForce"
     }
 }

@@ -6,6 +6,7 @@ import src.Preference.EnumType as EnumType
 import h5py
 import pathlib
 import numpy as np
+from src.Preference.ForceModelConfig import ForceModelConfig
 
 
 class AbsNonConservative(BaseSecondDerivative):
@@ -17,7 +18,8 @@ class AbsNonConservative(BaseSecondDerivative):
 
 class NonConByAcc(AbsNonConservative):
 
-    def __init__(self, sat: EnumType.SatID, range=NonConservative.date_span, arcNo=NonConservative.arcNo):
+    def __init__(self, sat: EnumType.SatID, range=ForceModelConfig().NonConservative().date_span,
+                 arcNo=ForceModelConfig().NonConservative().arcNo):
         """
         Load the saved-already acc and dadp, and output the acc/dadp for the given time epoch.
         :param fileDir: acc and dadp have been computed beforehand and saved in given directory.
@@ -30,15 +32,25 @@ class NonConByAcc(AbsNonConservative):
         self.sat = sat
         self._range = range
         self._arcNo = arcNo
+        self._FMConfig = None
+        self._NonConservative = None
+        self._pathConfig = None
 
-    def configure(self, **kwargs):
-        self.__dataTemp = kwargs.get('dataTemp', PathOfFiles.temp_non_conservative_data)
+    def configure(self, FMConfig: ForceModelConfig):
+        self._FMConfig = FMConfig
+        '''config NonConservative'''
+        self._NonConservative = self._FMConfig.NonConservative()
+        self._NonConservative.__dict__.update(self._FMConfig.NonConservativeConfig.copy())
+        '''config path'''
+        self._pathConfig = self._FMConfig.PathOfFiles()
+        self._pathConfig.__dict__.update(self._FMConfig.PathOfFilesConfig.copy())
+
+        self.__dataTemp = self._pathConfig.temp_non_conservative_data
         self.__loadAccelerometer()
         return self
 
     def __loadAccelerometer(self):
-        filename = pathlib.Path(self.__dataTemp).joinpath(
-            self._range[0] + '_' + self._range[1] + '_' + self.sat.name + '_' + str(self._arcNo) + '.hdf5')
+        filename = self.__dataTemp + '/' + self._range[0] + '_' + self._range[1] + '_' + self.sat + '_' + str(self._arcNo) + '.hdf5'
         h5data = h5py.File(filename, "r")
 
         self.__time = h5data['time'][()]

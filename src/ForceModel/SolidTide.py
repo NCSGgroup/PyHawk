@@ -17,13 +17,9 @@ class AbsSolidTide(BaseGravCS):
         self._GM_Moon = None
         self._Radius_Earth = None
         self._FMConfig = None
+        self._SolidTideConfig = None
 
     def configure(self, FMConfig: ForceModelConfig):
-        self._FMConfig = FMConfig
-        self._GM_Earth = self._FMConfig.SolidTideConfig['GM_Earth']
-        self._GM_Sun = self._FMConfig.SolidTideConfig['GM_Sun']
-        self._GM_Moon = self._FMConfig.SolidTideConfig['GM_Moon']
-        self._Radius_Earth = self._FMConfig.SolidTideConfig['Radius_Earth']
         return self
 
 
@@ -41,11 +37,14 @@ class SolidTideIERS2010(AbsSolidTide):
 
     def configure(self, FMConfig: ForceModelConfig):
         self._FMConfig = FMConfig
-        self._GM_Earth = self._FMConfig.SolidTideConfig['GM_Earth']
-        self._GM_Sun = self._FMConfig.SolidTideConfig['GM_Sun']
-        self._GM_Moon = self._FMConfig.SolidTideConfig['GM_Moon']
-        self._Radius_Earth = self._FMConfig.SolidTideConfig['Radius_Earth']
-        self.__isZeroTide = self._FMConfig.SolidTideConfig['isZeroTide']
+        '''config SolidTideConfig'''
+        self._SolidTideConfig = self._FMConfig.SolidTide()
+        self._SolidTideConfig.__dict__.update(self._FMConfig.SolidTideConfig.copy())
+        self._GM_Earth = self._SolidTideConfig.GM_Earth
+        self._GM_Sun = self._SolidTideConfig.GM_Sun
+        self._GM_Moon = self._SolidTideConfig.GM_Moon
+        self._Radius_Earth = self._SolidTideConfig.Radius_Earth
+        self.__isZeroTide = self._SolidTideConfig.isZeroTide
         return self
 
     def getCS(self):

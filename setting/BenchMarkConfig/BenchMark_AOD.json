@@ -32,6 +32,36 @@
       "B": true
     }
   },
+  "ThreeBodyConfig": {
+    "ThreeBody_GM_Sun": 1.32712442076e+20,
+    "ThreeBody_GM": {
+      "Earth": 398600441500000.0,
+      "Sun": 1.32712442076e20,
+      "Moon": 0.49028010560e13,
+      "Mercury": 22032080828076.234,
+      "Venus": 324858603864142.9,
+      "Mars": 42828314922219.195,
+      "Jupiter": 1.267127698227696e+17,
+      "Saturn": 3.794062664949063e+16,
+      "Uranus": 5794556465751793.0,
+      "Neptune": 6836527100580024.0,
+      "Pluto": 975501175876.7654
+    },
+    "include_planets": {
+      "Sun": false,
+      "Moon": false,
+      "Mercury": true,
+      "Venus": true,
+      "Earth": false,
+      "Mars": true,
+      "Jupiter": true,
+      "Saturn": true,
+      "Uranus": false,
+      "Neptune": false,
+      "Pluto": false
+    },
+    "isJ2": false
+  },
   "NonTideConfig": {
     "kind": "GLO",
     "MaxDeg": 180,

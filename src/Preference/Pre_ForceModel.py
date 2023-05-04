@@ -27,7 +27,7 @@ instance_GravHar = {GravHarType.NonTide: InstanceNonTide.AODRL06,
 
 
 class NonConservative:
-    date_span = ['2008-01-01', '2008-01-31']
+    date_span = ['2016-01-01', '2016-01-31']
     arcNo = 0
     sat = {SatID.A: True,
            SatID.B: True}
@@ -60,9 +60,9 @@ class ThreeBodyConfig:
         EnumType.Planets.Mars.name: True,
         EnumType.Planets.Jupiter.name: True,
         EnumType.Planets.Saturn.name: True,
-        EnumType.Planets.Uranus.name: True,
-        EnumType.Planets.Neptune.name: True,
-        EnumType.Planets.Pluto.name: True}
+        EnumType.Planets.Uranus.name: False,
+        EnumType.Planets.Neptune.name: False,
+        EnumType.Planets.Pluto.name: False}
     isJ2 = False
 
 

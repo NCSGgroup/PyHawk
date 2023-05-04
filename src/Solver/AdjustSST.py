@@ -1,3 +1,4 @@
+
 import pathlib
 import h5py
 import src.Preference.Pre_AdjustOrbit as Pre_AdjustOrbit
@@ -54,7 +55,7 @@ class RangeRate:
         self.__upper_RMS = kwargs.get('upper_RMS', Pre_AdjustOrbit.RangeRate.OutlierLimit)
         self.__kbr_fit = kwargs.get('kbr_fit', Pre_AdjustOrbit.RangeRate.ParameterFitting)
         self.__iterations = kwargs.get('iterations', Pre_AdjustOrbit.RangeRate.Iterations)
-        '''the arc length to calibrate kbr: unit [hour]'''
+        '''the arc length to Calibrate kbr: unit [hour]'''
         self.__kbr_arc = kbr_arc * 3600
 
         return self
@@ -63,7 +64,7 @@ class RangeRate:
         obs = self.pre_residual()
         n = self.mean_motion_of_the_mid_point()
 
-        '''divide arcs to calibrate kbr individually'''
+        '''divide arcs to Calibrate kbr individually'''
         node = [self.__Time[0]]
         t1 = self.__Time[0]
         while True:
@@ -87,7 +88,7 @@ class RangeRate:
             arclist_n.append(n[index])
             arclist_obs.append(obs[index])
 
-        '''calibrate kbr arc by arc'''
+        '''Calibrate kbr arc by arc'''
         post_t, post_residual = np.zeros(0), np.zeros(0)
         dm_list = []
         for i in tqdm(range(len(arclist_t)), desc='SST rang-rate calibration: '):

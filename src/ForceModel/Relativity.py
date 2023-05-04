@@ -49,18 +49,22 @@ class RelativityIERS2010(AbsRelativity):
         self.__satVel = None
         self.__sunState = None
         self.__FMConfig = None
+        self._RelativityConfig = None
 
     def configure(self, FMConfig: ForceModelConfig):
         self.__FMConfig = FMConfig
 
-        self.__GM_Earth = self.__FMConfig.RelativityConfig['GM_Earth']
-        self.__GM_Sun = self.__FMConfig.RelativityConfig['GM_Sun']
-        self.__C_Light = self.__FMConfig.RelativityConfig['C_Light']
-        self._gamma = self.__FMConfig.RelativityConfig['Gamma']
-        self._beta = self.__FMConfig.RelativityConfig['Beta']
-        self._J = self.__FMConfig.RelativityConfig['J']
+        '''config relativiy'''
+        self._RelativityConfig = self.__FMConfig.Relativity()
+        self._RelativityConfig.__dict__.update(self.__FMConfig.RelativityConfig.copy())
 
-        kind = self.__FMConfig.RelativityConfig['kind']
+        self.__GM_Earth = self._RelativityConfig.GM_Earth
+        self.__GM_Sun = self._RelativityConfig.GM_Sun
+        self.__C_Light = self._RelativityConfig.C_Light
+        self._gamma = self._RelativityConfig.Gamma
+        self._beta = self._RelativityConfig.Beta
+        self._J = self._RelativityConfig.J
+        kind = self._RelativityConfig.kind
         self.kind = [key for key, value in kind.items() if value]
         return self
 

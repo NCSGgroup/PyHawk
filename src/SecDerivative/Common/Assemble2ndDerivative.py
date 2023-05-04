@@ -120,7 +120,7 @@ class Assemble2ndDerivative:
                 if Pre_Parameterization.TransitionMatrix.isRequired:
                     self.__isExistDaDx = True
                     self.__dadx += obj.getDaDx()
-            if item == (EnumType.ForceType.NonConserveForce.name + self.__Sat.name):
+            elif item == (EnumType.ForceType.NonConserveForce.name + self.__Sat.name):
                 obj = obj.setTime(self.__time)
                 self.__acc += obj.getAcceleration()
                 if Pre_Parameterization.Accelerometer.isRequired:

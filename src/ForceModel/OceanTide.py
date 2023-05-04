@@ -12,14 +12,20 @@ class AbsOceanTide(BaseGravCS):
         self._SR = None
         self._tdb_mjd = -1000000
         self._FMConfig = None
+        self._OceanTideConfig = None
+        self._PathOfFilesConfig = None
         self._ng = FunNutArg()
 
     def configure(self, FMConfig: ForceModelConfig):
         self._FMConfig = FMConfig
+        self._OceanTideConfig = self._FMConfig.OceanTide()
+        self._OceanTideConfig.__dict__.update(self._FMConfig.OceanTideConfig.copy())
+        self._PathOfFilesConfig = self._FMConfig.PathOfFiles()
+        self._PathOfFilesConfig.__dict__.update(self._FMConfig.PathOfFilesConfig.copy())
         return self
 
     def speedUp(self):
-        self._SR = self._FMConfig.OceanTideConfig['gainFactor']
+        self._SR = self._OceanTideConfig.gainFactor
         return self
 
     @staticmethod
@@ -54,8 +60,8 @@ class EOT11a(AbsOceanTide):
         :param fileDir: the path and dir of "eot11a"
         :return:
         """
-        maxDegree = self._FMConfig.OceanTideConfig['maxDegree']
-        fileDir = self._FMConfig.PathOfFilesConfig['EOT11a']
+        maxDegree = self._OceanTideConfig.maxDegree
+        fileDir = self._PathOfFilesConfig.EOT11a
         assert maxDegree <= 120
 
         # read Stokes Coefficients from 18 major tide constitution
@@ -196,8 +202,8 @@ class FES2014(AbsOceanTide):
         :param fileDir: the path and dir of "eot11a"
         :return:
         """
-        maxDegree = self._FMConfig.OceanTideConfig['maxDegree']
-        fileDir = self._FMConfig.PathOfFilesConfig['FES2014']
+        maxDegree = self._OceanTideConfig.maxDegree
+        fileDir = self._PathOfFilesConfig.FES2014
         assert maxDegree <= 180
 
         # read Stokes Coefficients from 18 major tide constitution

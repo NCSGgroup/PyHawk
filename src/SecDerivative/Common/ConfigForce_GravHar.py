@@ -32,14 +32,17 @@ class ConfigGravHar:
         self.__instance_GravHar = None
         self.__ep = ep
         self.GravHarForce = {}
+        self._GravHarConfig = None
         pass
 
     def configure(self, FMConfig: ForceModelConfig):
         '''force model config'''
         self.__FMConfig = FMConfig
-        self.setZero = self.__FMConfig.GravHarConfig['setZero'].copy()
-        self.InputPosCoordinate = self.__FMConfig.GravHarConfig['PosCoordinate']
-        self.OutputCoordinate = self.__FMConfig.GravHarConfig['ACCCoordinate']
+        self._GravHarConfig = self.__FMConfig.GravHar()
+        self._GravHarConfig.__dict__.update(self.__FMConfig.GravHarConfig.copy())
+        self.setZero = self._GravHarConfig.setZero.copy()
+        self.InputPosCoordinate = self._GravHarConfig.PosCoordinate
+        self.OutputCoordinate = self._GravHarConfig.ACCCoordinate
         '''include force'''
         include_GravHarType = self.__FMConfig.include_GravHarType.copy()
         instance_GravHar = self.__FMConfig.instance_GravHar.copy()

@@ -5,7 +5,7 @@ import numpy as np
 
 
 def demo1():
-    sat = SatID.A
+    sat = SatID.B
     rd = ArcData()
     ap = AccCaliPar(sat=sat, arcNo=0)
 

@@ -24,7 +24,7 @@ class ODEcoeffGenerator:
     10. GaussJackson predictor, corrector, mid-corrector in difference form
     11. GaussJackson predictor, corrector, mid-corrector in ordinate form
 
-    Note: All the coefficients are given in a list of fraction form. Check the results by running demo provided.
+    Note: All the coefficients are given in a list of fraction form. Check the results by running benchmark provided.
     """
 
     def __init__(self, order=8):
