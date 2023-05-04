@@ -37,6 +37,7 @@ class SortCS:
         self.__Nmax = degree_max
         self.__Nmin = degree_min
 
+
     def sort(self, C, S):
         """
         Sorting C, S in given law and combine them as a one-dimension vector

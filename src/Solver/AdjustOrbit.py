@@ -174,7 +174,6 @@ class AdjustOrbit:
             obs = self.__obsGNV
         else:
             obs = refOrbit
-
         '''least-square solver'''
         residual = obs - xyz[:, :, 0]
 
