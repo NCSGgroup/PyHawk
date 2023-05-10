@@ -15,7 +15,6 @@ import src.Preference.Pre_Accelerometer as Pre_Accelerometer
 from src.Preference.AccelerometerConfig import AccelerometerConfig
 
 
-
 class AdjustOrbit:
     def __init__(self, accConfig, date_span=Pre_Interface.date_span, sat=Pre_Interface.sat,
                  kind=EnumType.Payload.GNV):
@@ -187,8 +186,8 @@ class AdjustOrbit:
         DesignMatrixB = xyz[:, 3:6, 1:].reshape((len(xyz) * 3, -1))
         bB = residual[:, 3:6].flatten()
         xB = np.linalg.lstsq(DesignMatrixB, bB, rcond=None)[0]
-
         self._res = np.vstack((xA, xB))
+
         return self
 
     def _save_StateVectors(self, state):
@@ -292,7 +291,7 @@ class AdjustOrbitForDM(AdjustOrbit):
 
         return res
 
-    def calibrate(self,**kwargs):
+    def calibrate(self, **kwargs):
         ode = self._ode
         '''step 15: orbit integration'''
         if 'ChangeTempPath' in kwargs.keys():
