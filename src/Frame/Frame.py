@@ -1,7 +1,7 @@
 from src.Frame.EOP import EOP
 import src.Frame.SOFA as sf
-import src.Preference.Pre_Frame as Pre_Frame
-import src.Preference.Pre_Constants as Pre_Constants
+import src.Preference.backups.Pre_Frame as Pre_Frame
+import src.Preference.backups.Pre_Constants as Pre_Constants
 from src.Preference.EnumType import TimeFormat, CoordinateTransform
 import numpy as np
 

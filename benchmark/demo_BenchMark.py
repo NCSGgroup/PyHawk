@@ -4,7 +4,7 @@
 # @File    : demo_BenchMark.py
 # @Software: PyCharm
 from benchmark.BenchMarkForJson import BenchMark
-from src.Preference.ForceModelConfig import ForceModelConfig
+from src.Preference.Pre_ForceModel import ForceModelConfig
 import json
 
 

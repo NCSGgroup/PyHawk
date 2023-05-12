@@ -1,15 +1,12 @@
 from src.Frame.Frame import Frame
-from src.ForceModel.ThreeBody import AbsThreeBody
-from src.ForceModel.Relativity import AbsRelativity
 from src.SecDerivative.Common.ConfigForce import ConfigForce
 from src.SecDerivative.Common.ConfigForce_GravHar import ConfigGravHar
 from src.Frame.PlanetEphemerides import PlanetEphemerides
-from src.ForceModel.NonConservative import AbsNonConservative
 import src.Preference.EnumType as EnumType
 from src.Auxilary.SortCS import SortCS
-import src.Preference.Pre_Parameterization as Pre_Parameterization
+import src.Preference.backups.Pre_Parameterization as Pre_Parameterization
 import numpy as np
-from src.Preference.ForceModelConfig import ForceModelConfig
+from src.Preference.Pre_ForceModel import ForceModelConfig
 
 
 class Assemble2ndDerivative:

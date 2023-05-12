@@ -6,7 +6,7 @@
 @Description:
 """
 from src.Auxilary.GeoMathKit import GeoMathKit
-import src.Preference.Pre_Frame as Pre_Frame
+import src.Preference.backups.Pre_Frame as Pre_Frame
 import numpy as np
 
 
@@ -26,7 +26,7 @@ class EOP:
     1. IERS2010 chapter 5, section 5.5.1 and 5.5.3 ,page 50
     """
 
-    def __init__(self, isCorrection:bool=Pre_Frame.isCorrection_EOP, isRadian:bool=Pre_Frame.isRadian_EOP):
+    def __init__(self, isCorrection:bool= Pre_Frame.isCorrection_EOP, isRadian:bool= Pre_Frame.isRadian_EOP):
         """
 
         :param isCorrection: To decide if the correction for EOP parameters due to oceanic effect and Lunisolar effect is carried out or not.

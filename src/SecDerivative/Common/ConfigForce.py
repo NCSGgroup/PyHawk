@@ -4,7 +4,7 @@ from src.Preference.EnumType import ForceType
 from src.SecDerivative.Common.ConfigForce_GravHar import ConfigGravHar
 from src.Frame.PlanetEphemerides import PlanetEphemerides
 from src.ForceModel.NonConservative import NonConByAcc
-from src.Preference.ForceModelConfig import ForceModelConfig
+from src.Preference.Pre_ForceModel import ForceModelConfig
 
 
 class ConfigForce:

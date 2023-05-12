@@ -10,7 +10,7 @@
 from src.Preference.EnumType import CSseq
 import numpy as np
 from src.Auxilary.GeoMathKit import GeoMathKit
-import src.Preference.Pre_ForceModel as Pre_ForceModel
+import src.Preference.backups.Pre_ForceModel as Pre_ForceModel
 
 
 class SortCS:

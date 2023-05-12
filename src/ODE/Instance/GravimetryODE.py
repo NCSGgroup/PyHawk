@@ -1,10 +1,9 @@
 from src.SecDerivative.Common.Assemble2ndDerivative import Assemble2ndDerivative
 from src.ODE.Common.ComplexODE import ComplexODE, ConfigComplexODE
 from src.Preference.EnumType import SingleStepType, MultiStepType
-from src.SecDerivative.VarEqn import VarEqn
 from src.SecDerivative.MatrixVarEqn import MatrixVarEqn
 import numpy as np
-import src.Preference.Pre_Parameterization as Pre_Parameterization
+import src.Preference.backups.Pre_Parameterization as Pre_Parameterization
 
 
 class GravimetryODE:

@@ -1,6 +1,6 @@
 import numpy as np
 from src.ODE.Common.ODEcoeffGenerator import ODEcoeffGenerator
-import src.Preference.Pre_ODE as Pre_ODE
+import src.Preference.backups.Pre_ODE as Pre_ODE
 
 
 class MultiStepOde:
@@ -92,7 +92,7 @@ class ABM8(MultiStepOde):
         self.__iniV = iniV
         return self
 
-    def propagate(self, N: int=Pre_ODE.MultiStepConfig.Npoints, hs=Pre_ODE.MultiStepConfig.stepsize):
+    def propagate(self, N: int= Pre_ODE.MultiStepConfig.Npoints, hs=Pre_ODE.MultiStepConfig.stepsize):
         """
         The propagator starts to work for N steps from the given initial epoch
         :param N: Steps the propagator will extend
@@ -245,7 +245,7 @@ class GaussJackson(MultiStepOde):
 
         return self
 
-    def propagate(self, N: int=Pre_ODE.MultiStepConfig.Npoints, hs=Pre_ODE.MultiStepConfig.stepsize):
+    def propagate(self, N: int= Pre_ODE.MultiStepConfig.Npoints, hs=Pre_ODE.MultiStepConfig.stepsize):
         """
         The propagator starts to work for N steps from the given initial epoch
         :param N: Steps the propagator will extend
@@ -601,7 +601,7 @@ class MatrixGaussJackson(MultiStepOde):
 
         return self
 
-    def propagate(self, N: int=Pre_ODE.MultiStepConfig.Npoints, hs=Pre_ODE.MultiStepConfig.stepsize):
+    def propagate(self, N: int= Pre_ODE.MultiStepConfig.Npoints, hs=Pre_ODE.MultiStepConfig.stepsize):
         """
         The propagator starts to work for N steps from the given initial epoch
         :param N: Steps the propagator will extend

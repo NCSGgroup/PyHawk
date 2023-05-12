@@ -1,16 +1,14 @@
-import os
 import sys
 sys.path.append('../')
-import multiprocessing
 from src.Solver.DesignMatrix import GravityDesignMat
-import src.Preference.Pre_Solver as Pre_Solver
+import src.Preference.backups.Pre_Solver as Pre_Solver
 import pathlib
 import h5py
 import src.Preference.EnumType as EnumType
-from src.Interface.ArcOperation import ArcSelect, ArcData
+from src.Interface.ArcOperation import ArcData
 import numpy as np
 import matplotlib.pyplot as plt
-from src.Preference.AccelerometerConfig import AccelerometerConfig
+from src.Preference.Pre_Accelerometer import AccelerometerConfig
 import json
 
 

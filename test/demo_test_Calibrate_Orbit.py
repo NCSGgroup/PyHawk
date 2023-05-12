@@ -1,33 +1,27 @@
-import os,sys
+import sys
 sys.path.append("../")
-from src.Interface.KinematicOrbit import KinematicOrbit
-from src.Interface.L1b import GRACE_OLD_RL02, GRACE_FO_RL04, GRACE_NEW_RL02
-from src.Interface.ArcOperation import ArcSelect, ArcData
-from src.Frame.Frame import Frame, EOP
-from src.Interface.GapFix import GapFix
+from src.Interface.ArcOperation import ArcData
 import src.Preference.EnumType as EnumType
 import numpy as np
-import time
 from tqdm import tqdm
 from src.SecDerivative.Instance.DualOrbitAndVar import Orbit_var_2nd_diff
 from src.Solver.AdjustOrbit import AdjustOrbit
 import matplotlib.pyplot as plt
-import src.Preference.Pre_AdjustOrbit as Pre_AdjustOrbit
+import src.Preference.backups.Pre_AdjustOrbit as Pre_AdjustOrbit
 import pathlib
 import h5py
-import src.Preference.Pre_Solver as Pre_Solver
+import src.Preference.backups.Pre_Solver as Pre_Solver
 import multiprocessing
-from src.Solver.AdjustSST import RangeRate
 from src.Solver.DesignMatrix import GravityDesignMat
 from src.Solver.NEQ import GravityNEQperArc
-import src.Preference.Pre_NEQ as Pre_NEQ
-import src.Preference.Pre_Interface as Pre_Interface
+import src.Preference.backups.Pre_NEQ as Pre_NEQ
+import src.Preference.backups.Pre_Interface as Pre_Interface
 from src.Auxilary.SortCS import SortCS
 from src.Auxilary.GeoMathKit import GeoMathKit
-import src.Preference.Pre_Parameterization as Pre_Parameterization
-from src.Interface.LoadSH import LoadSH, LoadGif48
-from src.Preference.Pre_ForceModel import RefGravModelConfig, PathOfFiles
-from src.Preference.AccelerometerConfig import AccelerometerConfig
+import src.Preference.backups.Pre_Parameterization as Pre_Parameterization
+from src.Interface.LoadSH import LoadGif48
+from src.Preference.backups.Pre_ForceModel import PathOfFiles
+from src.Preference.Pre_Accelerometer import AccelerometerConfig
 import json
 
 

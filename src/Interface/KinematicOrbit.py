@@ -1,13 +1,11 @@
 import numpy as np
-import logging as lg
 from tqdm import trange
 import os
 from tqdm import tqdm
 from src.Frame.Frame import Frame
 from src.Preference.EnumType import SatID, Payload
 from src.Interface.L1b import L1b as Level_1B
-import src.Preference.Pre_Interface as Pre_Interface
-import pathlib as pathlib
+import src.Preference.backups.Pre_Interface as Pre_Interface
 
 
 class KinematicOrbit:

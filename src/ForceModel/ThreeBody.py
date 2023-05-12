@@ -2,7 +2,7 @@ from src.ForceModel.BaseSecondDerivative import BaseSecondDerivative
 import numpy as np
 from src.Frame.Frame import Frame
 from src.Auxilary.GeoMathKit import GeoMathKit
-from src.Preference.ForceModelConfig import ForceModelConfig
+from src.Preference.Pre_ForceModel import ForceModelConfig
 
 
 class AbsThreeBody(BaseSecondDerivative):

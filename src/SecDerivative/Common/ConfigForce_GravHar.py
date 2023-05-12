@@ -14,7 +14,7 @@ from src.Auxilary.GeoMathKit import GeoMathKit
 from src.Frame.PlanetEphemerides import PlanetEphemerides
 import src.Preference.EnumType as EnumType
 from src.ForceModel.GravHar import ClibGravHar
-from src.Preference.ForceModelConfig import ForceModelConfig
+from src.Preference.Pre_ForceModel import ForceModelConfig
 
 
 class ConfigGravHar:

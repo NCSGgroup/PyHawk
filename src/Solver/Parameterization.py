@@ -1,6 +1,6 @@
 import numpy as np
-from src.Preference.EnumType import ParaType, ParaField
-import src.Preference.Pre_Parameterization as Pre_Parameterization
+from src.Preference.EnumType import ParaType
+import src.Preference.backups.Pre_Parameterization as Pre_Parameterization
 
 
 class Parameterization:

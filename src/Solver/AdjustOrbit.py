@@ -1,18 +1,13 @@
 import h5py
-import pathlib
-import src.Preference.Pre_AdjustOrbit as Pre_AdjustOrbit
-import src.Preference.Pre_Interface as Pre_Interface
-import src.Preference.Pre_Parameterization as Pre_Parameterization
-from src.Interface.ArcOperation import ArcSelect, ArcData
+import src.Preference.backups.Pre_AdjustOrbit as Pre_AdjustOrbit
+import src.Preference.backups.Pre_Interface as Pre_Interface
+import src.Preference.backups.Pre_Parameterization as Pre_Parameterization
+from src.Interface.ArcOperation import ArcData
 import src.Preference.EnumType as EnumType
 import numpy as np
-import time
-from src.SecDerivative.Instance.DualOrbitAndVar import Orbit_var_2nd_diff
 from src.ODE.Instance.GravimetryODE import GravimetryODE
 from src.Interface.Accelerometer import Accelerometer, AccCaliPar
 from src.Frame.Frame import Frame, EOP
-import src.Preference.Pre_Accelerometer as Pre_Accelerometer
-from src.Preference.AccelerometerConfig import AccelerometerConfig
 
 
 class AdjustOrbit:

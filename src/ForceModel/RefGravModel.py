@@ -1,8 +1,7 @@
 from src.ForceModel.BaseGravCS import BaseGravCS
 from src.Interface.LoadSH import LoadSH, LoadGif48
-from src.Preference.Pre_ForceModel import RefGravModelConfig, PathOfFiles
 from src.Preference.EnumType import StaticGravModel
-from src.Preference.ForceModelConfig import ForceModelConfig
+from src.Preference.Pre_ForceModel import ForceModelConfig
 
 
 class AbsRefGravModel(BaseGravCS):

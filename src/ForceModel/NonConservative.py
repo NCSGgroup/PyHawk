@@ -1,12 +1,10 @@
 from src.ForceModel.BaseSecondDerivative import BaseSecondDerivative
-from src.Preference.Pre_ForceModel import NonConservative, PathOfFiles
-from src.Auxilary.GeoMathKit import GeoMathKit
+from src.Preference.backups.Pre_ForceModel import NonConservative
 from src.Frame.Frame import Frame
 import src.Preference.EnumType as EnumType
 import h5py
-import pathlib
 import numpy as np
-from src.Preference.ForceModelConfig import ForceModelConfig
+from src.Preference.Pre_ForceModel import ForceModelConfig
 
 
 class AbsNonConservative(BaseSecondDerivative):

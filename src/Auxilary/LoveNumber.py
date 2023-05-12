@@ -3,7 +3,7 @@ import numpy as np
 from scipy import interpolate
 import scipy.io as scio
 from src.Preference.EnumType import LoveNumberType
-from src.Preference.ForceModelConfig import ForceModelConfig
+from src.Preference.Pre_ForceModel import ForceModelConfig
 
 
 class LoveNumber:

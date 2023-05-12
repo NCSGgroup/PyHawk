@@ -1,8 +1,4 @@
-import numpy as np
 from src.Frame.Frame import Frame
-import src.Preference.Pre_ForceModel as Pre_ForceModel
-from src.Auxilary.GeoMathKit import GeoMathKit
-from src.Preference.EnumType import GravHarType
 
 
 class BaseGravCS:

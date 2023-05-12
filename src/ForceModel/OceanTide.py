@@ -2,7 +2,7 @@ from src.ForceModel.BaseGravCS import BaseGravCS
 from src.Auxilary.GeoMathKit import GeoMathKit
 from src.Auxilary.FunNutArg import FunNutArg
 from src.Preference.EnumType import InstanceOceanTide
-from src.Preference.ForceModelConfig import ForceModelConfig
+from src.Preference.Pre_ForceModel import ForceModelConfig
 import numpy as np
 
 

@@ -6,7 +6,7 @@
 
 from src.Frame.Frame import Frame
 from src.Frame.EOP import EOP
-from src.Preference.ForceModelConfig import ForceModelConfig
+from src.Preference.Pre_ForceModel import ForceModelConfig
 from src.SecDerivative.Common.Assemble2ndDerivative import Assemble2ndDerivative
 import src.Preference.EnumType as EnumType
 import numpy as np

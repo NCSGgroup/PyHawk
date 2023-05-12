@@ -1,8 +1,7 @@
 from src.ForceModel.BaseGravCS import BaseGravCS
-from src.Preference.Pre_ForceModel import PoleTideConfig, PathOfFiles
 from src.Auxilary.LoveNumber import LoveNumber
 from src.Auxilary.GeoMathKit import GeoMathKit
-from src.Preference.ForceModelConfig import ForceModelConfig
+from src.Preference.Pre_ForceModel import ForceModelConfig
 from src.Frame.Frame import Frame
 import numpy as np
 

@@ -2,8 +2,8 @@ import numpy as np
 import datetime
 import h5py
 from tqdm import tqdm
-import src.Preference.Pre_Interface as Pre_Interface
-from src.Preference.EnumType import SatID, Payload, Mission
+import src.Preference.backups.Pre_Interface as Pre_Interface
+from src.Preference.EnumType import SatID, Payload
 from src.Interface.GapFix import GapFix
 
 

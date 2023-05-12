@@ -1,19 +1,15 @@
-import os
 import sys
 sys.path.append('../')
 from src.ForceModel.BaseSecondDerivative import BaseSecondDerivative
 import numpy as np
 import warnings
 import platform
-from ctypes import cdll, byref, POINTER
-from ctypes import c_int, c_char, c_double, c_char_p
+from ctypes import cdll
+from ctypes import c_int, c_double
 from numpy.ctypeslib import ndpointer
-from numpy import ndarray, array, zeros, asarray, asfarray, asmatrix
 import pathlib as _pathlib
 import glob as _glob
-import src.Preference.Pre_ForceModel as Pre_ForceModel
-from src.Preference.ForceModelConfig import ForceModelConfig
-import os
+from src.Preference.Pre_ForceModel import ForceModelConfig
 
 
 class AbsGravHar(BaseSecondDerivative):

@@ -1,7 +1,7 @@
 import numpy as np
 
 import src.Preference.EnumType as EnumType
-import src.Preference.Pre_ForceModel as Pre_ForceModel
+import src.Preference.backups.Pre_ForceModel as Pre_ForceModel
 
 
 class ConfigFMbyJson:

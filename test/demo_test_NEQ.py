@@ -1,19 +1,17 @@
 import sys
 sys.path.append('../')
-import multiprocessing
 from src.Solver.NEQ import GravityNEQperArc
-from src.Preference.EnumType import SatID
-import src.Preference.Pre_NEQ as Pre_NEQ
-import src.Preference.Pre_Interface as Pre_Interface
+import src.Preference.backups.Pre_NEQ as Pre_NEQ
+import src.Preference.backups.Pre_Interface as Pre_Interface
 import pathlib
 import h5py
 import numpy as np
 from tqdm import tqdm
 from src.Auxilary.SortCS import SortCS
 from src.Auxilary.GeoMathKit import GeoMathKit
-import src.Preference.Pre_Parameterization as Pre_Parameterization
-from src.Interface.LoadSH import LoadSH, LoadGif48
-from src.Preference.Pre_ForceModel import RefGravModelConfig, PathOfFiles
+import src.Preference.backups.Pre_Parameterization as Pre_Parameterization
+from src.Interface.LoadSH import LoadGif48
+from src.Preference.backups.Pre_ForceModel import PathOfFiles
 
 
 def demo1(start, end):

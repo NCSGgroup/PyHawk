@@ -4,7 +4,7 @@ from src.Preference.EnumType import TimeFormat
 from src.ConfigJson.ConfigByJson import ConfigFMbyJson
 import json
 import numpy as np
-import src.Preference.Pre_ForceModel as Pre_ForceModel
+import src.Preference.backups.Pre_ForceModel as Pre_ForceModel
 
 
 def demo1():

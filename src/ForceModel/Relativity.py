@@ -1,10 +1,7 @@
 from src.ForceModel.BaseSecondDerivative import BaseSecondDerivative
-from src.Preference.Pre_ForceModel import RelativityConfig
 from src.Preference.EnumType import RelativityType
 import numpy as np
-from src.Frame.Frame import Frame
-from src.Auxilary.GeoMathKit import GeoMathKit
-from src.Preference.ForceModelConfig import ForceModelConfig
+from src.Preference.Pre_ForceModel import ForceModelConfig
 
 
 class AbsRelativity(BaseSecondDerivative):
