@@ -1,10 +1,10 @@
 import src.Preference.backups.Pre_Interface as Pre_Interface
-import src.Preference.backups.Pre_Solver as Pre_Solver
 from src.Preference.EnumType import SSTObserve
 from src.Solver.AdjustOrbit import AdjustOrbitForDM
 from src.SecDerivative.Instance.DualOrbitAndVar import Orbit_var_2nd_diff
 from src.Solver.Parameterization import Parameterization
 from src.Auxilary.SSTpartial import SSTpartial
+from src.Preference.Pre_Solver import SolverConfig
 import numpy as np
 import h5py
 
@@ -25,11 +25,13 @@ class GravityDesignMat:
                 self._satName = self._satName + sat.name
         self._res = None
         self._accConfig = None
+        self._solverConfig = None
         pass
 
-    def configure(self, accConfig):
+    def configure(self, accConfig, solverConfig: SolverConfig):
         self._accConfig = accConfig
-        self._res = Pre_Solver.PathOfFiles.DesignMatrixTemp
+        self._solverConfig = solverConfig
+        self._res = self._solverConfig.DesignMatrixTemp
         return self
 
     def orbit_integration(self):
@@ -75,13 +77,13 @@ class GravityDesignMat:
         Obtain the SST design matrix with the orbit design matrix.
         :return:
         """
-        SSTOption = Pre_Solver.GravityInversion.SSTOption
+        SSTOption = self._solverConfig.SSTOption
 
-        if SSTOption == SSTObserve.Range:
+        if SSTOption == SSTObserve.Range.name:
             self.__getRangeDM()
-        elif SSTOption == SSTObserve.RangeRate:
+        elif SSTOption == SSTObserve.RangeRate.name:
             self.__getRangeRateDM()
-        elif SSTOption == SSTObserve.RangeAcc:
+        elif SSTOption == SSTObserve.RangeAcc.name:
             self.__getRangeAccDM()
 
     def __getRangeDM(self):

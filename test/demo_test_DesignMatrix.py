@@ -9,6 +9,7 @@ from src.Interface.ArcOperation import ArcData
 import numpy as np
 import matplotlib.pyplot as plt
 from src.Preference.Pre_Accelerometer import AccelerometerConfig
+from src.Preference.Pre_Solver import SolverConfig
 import json
 
 
@@ -20,7 +21,10 @@ def demo1():
     acc_B = json.load(open('../setting/Calibrate/AccelerometerConfig_B.json', 'r'))
     accConfig_B.__dict__ = acc_B
 
-    dm = GravityDesignMat(0).configure(accConfig=[accConfig_A, accConfig_B])
+    solverConfig = SolverConfig()
+    solverDict = json.load(open('../setting/Calibrate/GravityInversionConfig.json', 'r'))
+    solverConfig.__dict__ = solverDict
+    dm = GravityDesignMat(0).configure(accConfig=[accConfig_A, accConfig_B], solverConfig=solverConfig)
     # dm.orbit_integration()
     # dm.get_orbit_design_matrix()
     dm.get_sst_design_matrix()

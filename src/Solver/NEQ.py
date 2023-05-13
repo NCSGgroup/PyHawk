@@ -5,6 +5,7 @@ from src.Preference.EnumType import Payload, SatID, SSTObserve
 from src.Interface.ArcOperation import ArcData
 import src.Preference.backups.Pre_Solver as Pre_Solver
 from src.Auxilary.GeoMathKit import GeoMathKit
+from src.Preference.Pre_Solver import SolverConfig
 import numpy as np
 import pathlib
 import h5py
@@ -29,6 +30,7 @@ class GravityNEQperArc:
         self.__local_r = None
         self.__global_r = None
         self.__configSST = None
+        self._solverConfig = None
         self._sat = [key for key, value in sat.items() if value]
 
         for sat in self._sat:
@@ -44,7 +46,8 @@ class GravityNEQperArc:
         self.__saveData = h5py.File(res_filename, 'w')
         pass
 
-    def configure(self, **kwargs):
+    def configure(self, solverConfig: SolverConfig, **kwargs):
+        self._solverConfig = solverConfig
         self.__config['satA'] = kwargs.get("configA", Pre_NEQ.OrbitA)
         self.__config['satB'] = kwargs.get("configB", Pre_NEQ.OrbitB)
         self.__config['SST'] = kwargs.get("configSST", Pre_NEQ.SST)
@@ -55,7 +58,7 @@ class GravityNEQperArc:
         three steps to acquire the normal equations. Assure the 'configure' is called before.
         :return:
         """
-        res_dir = pathlib.Path(Pre_Solver.PathOfFiles.DesignMatrixTemp). \
+        res_dir = pathlib.Path(self._solverConfig.DesignMatrixTemp). \
             joinpath(self.__date_span[0] + '_' + self.__date_span[1])
         res_filename = res_dir.joinpath('Orbit_' + str(self.__arcNo) + '_' + self._satName + '.hdf5')
         h5 = h5py.File(res_filename, 'r')
@@ -147,7 +150,7 @@ class GravityNEQperArc:
 
         assert config.measurement == SSTObserve.RangeRate.value, 'Range-rate is not allowed by user setting'
 
-        dm_dir = pathlib.Path(Pre_Solver.PathOfFiles.DesignMatrixTemp).joinpath(self.__date_span[0] + '_' + self.__date_span[1])
+        dm_dir = pathlib.Path(self._solverConfig.DesignMatrixTemp).joinpath(self.__date_span[0] + '_' + self.__date_span[1])
         res_filename = dm_dir.joinpath(SSTObserve.RangeRate.name + '_' + str(self.__arcNo) + '.hdf5')
         h5 = h5py.File(res_filename, 'r')
         t_dm = h5['t'][()]
