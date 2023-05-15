@@ -7,6 +7,7 @@ from src.Auxilary.SortCS import SortCS
 import src.Preference.backups.Pre_Parameterization as Pre_Parameterization
 import numpy as np
 from src.Preference.Pre_ForceModel import ForceModelConfig
+from src.Preference.Pre_Parameterization import ParameterConfig
 
 
 class Assemble2ndDerivative:
@@ -35,7 +36,7 @@ class Assemble2ndDerivative:
         self.__dadp = np.array([[], [], []])
         self.__dadx = np.zeros((3, 3), dtype=float)
 
-    def configure(self, FMConfig = ForceModelConfig()):
+    def configure(self, FMConfig = ForceModelConfig(), ParameterConfig = ParameterConfig()):
         self.__ep = PlanetEphemerides().configure(FMConfig=FMConfig).setPlanets()
         self.configForce = ConfigForce(arc=self._arc, ep=self.__ep).configure(FMConfig=FMConfig)
         self.ForceType = self.configForce.getForceType()

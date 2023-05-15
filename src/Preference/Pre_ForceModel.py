@@ -208,7 +208,7 @@ def demo1():
 def demo2():
     Obj1 = ForceModelConfig()
     tc_dict = Obj1.__dict__
-    with open('../../setting/ForceModelConfig.json', 'w') as f:
+    with open('../../setting/Calibrate/ForceModelConfig.json', 'w') as f:
         json.dump(tc_dict, f, indent=4)
 
 

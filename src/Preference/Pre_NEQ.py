@@ -1,3 +1,4 @@
+import json
 
 
 class NEQConfig:
@@ -8,20 +9,35 @@ class NEQConfig:
         self.PathOfFilesConfig = self.PathOfFiles().__dict__
 
     class OrbitA:
-        IsRequired = True
-        UseKinematicOrbit = False
-        FixKinematicOrbit = False
+        def __init__(self):
+            self.IsRequired = True
+            self.UseKinematicOrbit = False
+            self.FixKinematicOrbit = False
 
     class OrbitB:
-        IsRequired = True
-        UseKinematicOrbit = False
-        FixKinematicOrbit = False
+        def __init__(self):
+            self.IsRequired = True
+            self.UseKinematicOrbit = False
+            self.FixKinematicOrbit = False
 
     class SST:
-        IsRequired = True
-        measurement = 2
-        CalibrateEmpiricalParameters = False
+        def __init__(self):
+            self.IsRequired = True
+            self.measurement = 2
+            self.CalibrateEmpiricalParameters = False
 
     class PathOfFiles:
-        NormalEqTemp = "../temp/NEQ"
+        def __init__(self):
+            self.NormalEqTemp = "../temp/NEQ"
+
+
+def class_to_json():
+    Obj1 = NEQConfig()
+    tc_dict = Obj1.__dict__
+    with open('../../setting/Calibrate/NEQConfig.json', 'w') as f:
+        json.dump(tc_dict, f, indent=4)
+
+
+if __name__ == '__main__':
+    class_to_json()
 

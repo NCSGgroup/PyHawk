@@ -3,7 +3,7 @@ from src.ODE.Common.ComplexODE import ComplexODE, ConfigComplexODE
 from src.Preference.EnumType import SingleStepType, MultiStepType
 from src.SecDerivative.MatrixVarEqn import MatrixVarEqn
 import numpy as np
-import src.Preference.backups.Pre_Parameterization as Pre_Parameterization
+from src.Preference.Pre_Parameterization import ParameterConfig
 
 
 class GravimetryODE:
@@ -15,16 +15,29 @@ class GravimetryODE:
         self.__secDer = None
         self.__ParNum = 0
         self.__isSingle = True
-        self.setParNum()
+        self.ParameterConfig = None
+        self.TransitionMatrixConfig = None
+        self.AccelerometerConfig = None
+        self.StokesCoefficientsConfig = None
         pass
 
-    def setParNum(self):
-        if Pre_Parameterization.TransitionMatrix.isRequired:
-            self.__ParNum += Pre_Parameterization.TransitionMatrix.Parameter_Number
-        if Pre_Parameterization.Accelerometer.isRequired:
-            self.__ParNum += Pre_Parameterization.Accelerometer.Parameter_Number
-        if Pre_Parameterization.StokesCoefficients.isRequired:
-            self.__ParNum += Pre_Parameterization.StokesCoefficients.Parameter_Number
+    def setParNum(self, ParameterConfig: ParameterConfig):
+        '''config TransitionMatrix'''
+        self.ParameterConfig = ParameterConfig
+        self.TransitionMatrixConfig = self.ParameterConfig.TransitionMatrix()
+        self.TransitionMatrixConfig.__dict__.update(self.ParameterConfig.TransitionMatrixConfig.copy())
+        '''config AccelerometerConfig'''
+        self.AccelerometerConfig = self.ParameterConfig.Accelerometer()
+        self.AccelerometerConfig.__dict__.update(self.ParameterConfig.AccelerometerConfig.copy())
+        '''config StokesCoefficientsConfig'''
+        self.StokesCoefficientsConfig = self.ParameterConfig.StokesCoefficients()
+        self.StokesCoefficientsConfig.__dict__.update(self.ParameterConfig.StokesCoefficientsConfig.copy())
+        if self.TransitionMatrixConfig.isRequired:
+            self.__ParNum += self.TransitionMatrixConfig.Parameter_Number
+        if self.AccelerometerConfig.isRequired:
+            self.__ParNum += self.AccelerometerConfig.Parameter_Number
+        if self.StokesCoefficientsConfig.isRequired:
+            self.__ParNum += self.StokesCoefficientsConfig.Parameter_Number
         return self
 
     def setInitial(self, t0=None, r0=None, v0=None):
@@ -36,16 +49,16 @@ class GravimetryODE:
             self.__isSingle = False
             pv1 = np.append(r0[0], v0[0])
             pv2 = np.append(r0[1], v0[1])
-            rA, vA = MatrixVarEqn.getVarEq2ndIni(self.__ParNum, Pre_Parameterization.TransitionMatrix.isRequired, True,
+            rA, vA = MatrixVarEqn.getVarEq2ndIni(self.__ParNum, self.TransitionMatrixConfig.isRequired, True,
                                                  pv1)
-            rB, vB = MatrixVarEqn.getVarEq2ndIni(self.__ParNum, Pre_Parameterization.TransitionMatrix.isRequired, True,
+            rB, vB = MatrixVarEqn.getVarEq2ndIni(self.__ParNum, self.TransitionMatrixConfig.isRequired, True,
                                                  pv2)
             self.__r0, self.__v0 = np.vstack((rA, rB)), np.vstack((vA, vB))
             pass
         elif len(r0) == len(v0) == 3:
             self.__isSingle = True
             pv = np.append(r0, v0)
-            r, v = MatrixVarEqn.getVarEq2ndIni(self.__ParNum, Pre_Parameterization.TransitionMatrix.isRequired, True, pv)
+            r, v = MatrixVarEqn.getVarEq2ndIni(self.__ParNum, self.TransitionMatrixConfig.isRequired, True, pv)
             self.__r0, self.__v0 = r, v
 
         return self

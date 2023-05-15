@@ -1,4 +1,5 @@
 from src.Preference.EnumType import SingleStepType, MultiStepType
+import json
 
 
 class ODEConfig:
@@ -9,28 +10,43 @@ class ODEConfig:
         self.KO = self.KO().__dict__
 
     class Complex:
-        SingleStepType = SingleStepType.RKN.name
-        MultiStepType = MultiStepType.MatrixGaussJackson.name
+        def __init__(self):
+            self.SingleStepType = SingleStepType.RKN.name
+            self.MultiStepType = MultiStepType.MatrixGaussJackson.name
 
     class SingleStep:
-        stepsize = 5
-        Npoints = 2156
-        isRecord = True
-        SingleStepOde = SingleStepType.RKN.name
+        def __init__(self):
+            self.stepsize = 5
+            self.Npoints = 2156
+            self.isRecord = True
+            self.SingleStepOde = SingleStepType.RKN.name
 
     class MultiStep:
-        stepsize = 5
-        Npoints = 2156
-        order = 8
-        isRecord = True
-        iterNum = 10
-        rltot = 1e-13
-        MultiStepOde = MultiStepType.GaussJackson.name
+        def __init__(self):
+            self.stepsize = 5
+            self.Npoints = 2156
+            self.order = 8
+            self.isRecord = True
+            self.iterNum = 10
+            self.rltot = 1e-13
+            self.MultiStepOde = MultiStepType.GaussJackson.name
 
     class KO:
-        stepsize = 30
-        Npoints = 720 * 2
-        isRecord = True
-        GM = 398600.4415
-        rltot = 1e-9
+        def __init__(self):
+            self.stepsize = 30
+            self.Npoints = 720 * 2
+            self.isRecord = True
+            self.GM = 398600.4415
+            self.rltot = 1e-9
+
+
+def class_to_json():
+    Obj1 = ODEConfig()
+    tc_dict = Obj1.__dict__
+    with open('../../setting/Calibrate/ODEConfig.json', 'w') as f:
+        json.dump(tc_dict, f, indent=4)
+
+
+if __name__ == '__main__':
+    class_to_json()
 

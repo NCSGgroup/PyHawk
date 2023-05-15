@@ -11,7 +11,7 @@ class SolverConfig:
 def class_to_json():
     Obj1 = SolverConfig()
     tc_dict = Obj1.__dict__
-    with open('../../setting/Calibrate/GravityInversionConfig.json', 'w') as f:
+    with open('../../setting/Calibrate/SolverConfig.json', 'w') as f:
         json.dump(tc_dict, f, indent=4)
 
 

@@ -3,18 +3,16 @@ from Quaternion import Quat, Quaternion
 from src.Preference.EnumType import Payload
 import h5py
 import pathlib as pathlib
-import src.Preference.backups.Pre_Accelerometer as Pre_Accelerometer
 import src.Preference.backups.Pre_Constants as Pre_Constants
 from src.Interface.ArcOperation import ArcData
 from src.Preference.Pre_Accelerometer import AccelerometerConfig
 
 
 class AccCaliPar:
-    def __init__(self, sat, arcNo, accConfig:AccelerometerConfig, acc_strategy=Pre_Accelerometer.cali, **kwargs):
+    def __init__(self, sat, arcNo, accConfig:AccelerometerConfig,**kwargs):
         self.sat = sat
         self.arcNo = arcNo
         self.accConfig = accConfig
-        # self.acc_strategy = acc_strategy
         # if kwargs:
         #     self.__parFlag = 0
         #     self.AccCaliValue = kwargs.get('AccCaliPar')
@@ -26,15 +24,12 @@ class AccCaliPar:
         cali_value = None
         # if self.__parFlag == 0:
         #     cali_value = self.AccCaliValue
-        cali_value = Pre_Accelerometer.cali_value
-
         #======= strategy ======
         isScale = self.accConfig.cali['Scale'].copy()
         isBias_constant = self.accConfig.cali['Bias_constant'].copy()
         isBias_trend = self.accConfig.cali['Bias_trend'].copy()
         isBias_quadratic = self.accConfig.cali['Bias_quadratic'].copy()
         self.isCali = [isScale, isBias_constant, isBias_trend, isBias_quadratic]
-
         #======= value ======
         scale = self.accConfig.cali_value['Scale'].copy()
         bias_constant = self.accConfig.cali_value['Bias_constant'].copy()

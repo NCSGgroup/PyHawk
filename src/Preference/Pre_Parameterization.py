@@ -1,4 +1,5 @@
 import src.Preference.EnumType as EnumType
+import json
 
 
 class ParameterConfig:
@@ -27,4 +28,15 @@ class ParameterConfig:
             self.SortMethod = EnumType.CSseq.SortByOrder.name
             self.MaxDegree = 60
             self.MinDegree = 2
+
+
+def class_to_json():
+    Obj1 = ParameterConfig()
+    tc_dict = Obj1.__dict__
+    with open('../../setting/Calibrate/ParameterConfig.json', 'w') as f:
+        json.dump(tc_dict, f, indent=4)
+
+
+if __name__ == '__main__':
+    class_to_json()
 

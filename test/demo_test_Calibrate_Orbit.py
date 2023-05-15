@@ -79,15 +79,15 @@ def demo():
     # arc = ArcSelect(gf).configure()
     # arc.unpackArcs().makeReport()
     # """step 5: init AdjustOrbit"""
-    # date_span = ['2008-01-01', '2008-01-31']
-    # accConfig_A = AccelerometerConfig()
-    # acc_A = json.load(open('../setting/Calibrate/AccelerometerConfig_A.json', 'r'))
-    # accConfig_A.__dict__ = acc_A
-    # accConfig_B = AccelerometerConfig()
-    # acc_B = json.load(open('../setting/Calibrate/AccelerometerConfig_B.json', 'r'))
-    # accConfig_B.__dict__ = acc_B
-    # AdjustOrbit(accConfig=[accConfig_A, accConfig_B],date_span=date_span).\
-    #     configure(Orbit_var_2nd_diff, arcNo=0).calibrate(iteration=2)
+    date_span = ['2008-01-01', '2008-01-31']
+    accConfig_A = AccelerometerConfig()
+    acc_A = json.load(open('../setting/Calibrate/AccelerometerConfig_A.json', 'r'))
+    accConfig_A.__dict__ = acc_A
+    accConfig_B = AccelerometerConfig()
+    acc_B = json.load(open('../setting/Calibrate/AccelerometerConfig_B.json', 'r'))
+    accConfig_B.__dict__ = acc_B
+    AdjustOrbit(accConfig=[accConfig_A, accConfig_B], date_span=date_span).\
+        configure(Orbit_var_2nd_diff, arcNo=0).calibrate(iteration=2)
     # initTime, initR, endTime, endR = adjust.draw()
     # firstR, secondR, thirdR = adjust.getR()
     # np.savez('adjust.npz', R1=firstR, R2=secondR, R3=thirdR)
@@ -96,16 +96,16 @@ def demo():
     # RR.configure()
     # RR.calibrate()
     # '''step 6: get DesignMatrix'''
-    solverConfig = SolverConfig()
-    solverDict = json.load(open('../setting/Calibrate/GravityInversionConfig.json', 'r'))
-    solverConfig.__dict__ = solverDict
+    # solverConfig = SolverConfig()
+    # solverDict = json.load(open('../setting/Calibrate/SolverConfig.json', 'r'))
+    # solverConfig.__dict__ = solverDict
     # dm = GravityDesignMat(0).configure(accConfig=[accConfig_A, accConfig_B])
     # dm.orbit_integration()
     # dm.get_orbit_design_matrix()
     # dm.get_sst_design_matrix()
     # # '''setp 8: get NEQ'''
-    neq = GravityNEQperArc(0)
-    neq.configure(solverConfig=solverConfig).get_neq()
+    # neq = GravityNEQperArc(0)
+    # neq.configure(solverConfig=solverConfig).get_neq()
 
 
 def demo1(start, end):

@@ -1,13 +1,13 @@
 import h5py
 import src.Preference.backups.Pre_AdjustOrbit as Pre_AdjustOrbit
 import src.Preference.backups.Pre_Interface as Pre_Interface
-import src.Preference.backups.Pre_Parameterization as Pre_Parameterization
 from src.Interface.ArcOperation import ArcData
 import src.Preference.EnumType as EnumType
 import numpy as np
 from src.ODE.Instance.GravimetryODE import GravimetryODE
 from src.Interface.Accelerometer import Accelerometer, AccCaliPar
 from src.Frame.Frame import Frame, EOP
+from src.Preference.Pre_Parameterization import ParameterConfig
 
 
 class AdjustOrbit:
@@ -44,9 +44,24 @@ class AdjustOrbit:
         self._sat = [key for key, value in sat.items() if value]
         self._kind = kind
         self.accConfig = accConfig
+        self.ParameterConfig = None
+        self.TransitionMatrixConfig = None
+        self.AccelerometerConfig = None
+        self.StokesCoefficientsConfig = None
 
-    def configure(self, SerDer, arcNo, **kwargs):
+    def configure(self, SerDer, arcNo, ParameterConfig: ParameterConfig, **kwargs):
         self._arcNo = arcNo
+        '''config TransitionMatrix'''
+        self.ParameterConfig = ParameterConfig
+        self.TransitionMatrixConfig = self.ParameterConfig.TransitionMatrix()
+        self.TransitionMatrixConfig.__dict__.update(self.ParameterConfig.TransitionMatrixConfig.copy())
+        '''config AccelerometerConfig'''
+        self.AccelerometerConfig = self.ParameterConfig.Accelerometer()
+        self.AccelerometerConfig.__dict__.update(self.ParameterConfig.AccelerometerConfig.copy())
+        '''config StokesCoefficientsConfig'''
+        self.StokesCoefficientsConfig = self.ParameterConfig.StokesCoefficients()
+        self.StokesCoefficientsConfig.__dict__.update(self.ParameterConfig.StokesCoefficientsConfig.copy())
+        '''define path'''
         self._state_path = kwargs.get('state_dir', Pre_AdjustOrbit.PathOfFiles.StateVectorDataTemp)
         self._res_path = kwargs.get('res_dir', Pre_AdjustOrbit.PathOfFiles.OrbitAdjustResTemp)
         """define satName"""
@@ -80,7 +95,8 @@ class AdjustOrbit:
         """step 4: Propagator config"""
         self._startTime, self._startPos, self._startVel = self._secDer.getInitData()
         self._obsGNV = self._secDer.getInitState()
-        self._ode = GravimetryODE().setInitial(self._startTime, self._startPos.copy(), self._startVel.copy()).\
+        self._ode = GravimetryODE().setParNum(self.ParameterConfig).\
+            setInitial(self._startTime, self._startPos.copy(), self._startVel.copy()).\
             set2ndDerivative(self._secDer)
         return self
 
@@ -137,7 +153,7 @@ class AdjustOrbit:
         res = self._res
         h5 = self._res_h5
 
-        key = Pre_Parameterization.TransitionMatrix
+        key = self.TransitionMatrixConfig
         if key.isRequired:
             iniOrbit += res[:, 0:key.Parameter_Number]
             if key.__name__ in h5:
@@ -145,9 +161,9 @@ class AdjustOrbit:
             else:
                 h5.create_dataset(key.__name__, data=iniOrbit)
 
-        key = Pre_Parameterization.Accelerometer
+        key = self.AccelerometerConfig
         if key.isRequired:
-            left = Pre_Parameterization.TransitionMatrix.Parameter_Number
+            left = self.TransitionMatrixConfig.Parameter_Number
             right = left + key.Parameter_Number
             iniAcc += res[:, left:right]
             if key.__name__ in h5:

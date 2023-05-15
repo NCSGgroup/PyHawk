@@ -5,6 +5,7 @@ from src.SecDerivative.Instance.DualOrbitAndVar import Orbit_var_2nd_diff
 from src.Solver.Parameterization import Parameterization
 from src.Auxilary.SSTpartial import SSTpartial
 from src.Preference.Pre_Solver import SolverConfig
+from src.Preference.Pre_Parameterization import ParameterConfig
 import numpy as np
 import h5py
 
@@ -26,17 +27,19 @@ class GravityDesignMat:
         self._res = None
         self._accConfig = None
         self._solverConfig = None
+        self._parameterConfig = None
         pass
 
-    def configure(self, accConfig, solverConfig: SolverConfig):
+    def configure(self, accConfig, solverConfig: SolverConfig, parameterConfig: ParameterConfig):
         self._accConfig = accConfig
         self._solverConfig = solverConfig
+        self._parameterConfig = parameterConfig
         self._res = self._solverConfig.DesignMatrixTemp
         return self
 
     def orbit_integration(self):
         adjustDM = AdjustOrbitForDM(self._accConfig)
-        adjustDM.configure(Orbit_var_2nd_diff, arcNo=self._arcNo)
+        adjustDM.configure(Orbit_var_2nd_diff, arcNo=self._arcNo, ParameterConfig=self._parameterConfig)
         '''define the directory of res output'''
         res_dir = self._res.joinpath(self._date_span[0] + '_' + self._date_span[1])
         if not res_dir.is_dir():
