@@ -1,0 +1,8 @@
+{
+    "J2000_MJD": 51544.5,
+    "Diff_Tai_GPS": 19,
+    "Diff_Tai_TT": 32.184,
+    "SecForOneDay": 86400,
+    "DJMJD0": 2400000.5,
+    "num_tolerance": 1e-05
+}
