@@ -7,6 +7,7 @@ from src.SecDerivative.Instance.DualOrbitAndVar import Orbit_var_2nd_diff
 from src.Solver.AdjustOrbit import AdjustOrbit,AdjustOrbitForDM
 import matplotlib.pyplot as plt
 import src.Preference.backups.Pre_AdjustOrbit as Pre_AdjustOrbit
+import src.Preference.backups.Pre_Solver as Pre_Solver
 import pathlib
 import h5py
 
@@ -188,6 +189,36 @@ def drawfix():
     plt.show()
 
 
+def checkOrbitAndDM():
+    Orbit = pathlib.Path(Pre_AdjustOrbit.PathOfFiles.StateVectorDataTemp). \
+        joinpath('2008-01-01_2008-01-31')
+    Orbitname = Orbit.joinpath(str(36) + '_AB.hdf5')
+    h51 = h5py.File(Orbitname, 'r')
+    GNVTime = h51['t'][()]
+    OrbitData = h51['r'][()][:, 0:3, 0]
+    h51.close()
+
+    date_span = ['2008-01-01', '2008-01-31']
+    res_dir = pathlib.Path(Pre_Solver.PathOfFiles.DesignMatrixTemp).joinpath(date_span[0] + '_' + date_span[1])
+    res_filename = res_dir.joinpath(str(36) + '_AB.hdf5')
+    h52 = h5py.File(res_filename, 'r')
+    DMData = h52['r'][()][:, 0:3, 0]
+
+    diff = OrbitData - DMData
+
+    plt.title('2008-1-1 sat-A arc-0 (constant and trend)', fontsize=24)
+
+    plt.plot(np.array(GNVTime), diff[:, 0], label="X")
+    plt.plot(np.array(GNVTime), diff[:, 1], label="Y")
+    plt.plot(np.array(GNVTime), diff[:, 2], label="Z")
+    plt.ylim(-0.0005, 0.0005)
+    plt.xlabel('GPS time [sec]', fontsize=20)
+    plt.ylabel(r'$m$', fontsize=20)
+    plt.yticks(fontsize=18)
+    plt.legend(loc='upper left', fontsize=20)
+    plt.show()
+
+
 if __name__ == '__main__':
     # p1 = multiprocessing.Process(target=demo1, args=(0, 10))
     # p2 = multiprocessing.Process(target=demo1, args=(10, 20))
@@ -233,6 +264,6 @@ if __name__ == '__main__':
     # print(Accelerometer)
     # demo2()
     # drawfix()
-    demo(1, 2)
-    #
+    # demo(1, 2)
+    checkOrbitAndDM()
 

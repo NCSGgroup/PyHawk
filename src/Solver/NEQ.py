@@ -58,9 +58,8 @@ class GravityNEQperArc:
         three steps to acquire the normal equations. Assure the 'configure' is called before.
         :return:
         """
-        res_dir = pathlib.Path(self._solverConfig.DesignMatrixTemp). \
-            joinpath(self.__date_span[0] + '_' + self.__date_span[1])
-        res_filename = res_dir.joinpath('Orbit_' + str(self.__arcNo) + '_' + self._satName + '.hdf5')
+        res_dir = self._solverConfig.DesignMatrixTemp + '/' + self.__date_span[0] + '_' + self.__date_span[1]
+        res_filename = res_dir + '/Orbit_' + str(self.__arcNo) + '_' + self._satName + '.hdf5'
         h5 = h5py.File(res_filename, 'r')
         self.__orbit_nominal = h5['r'][()]
         self.__t_nominal = h5['t'][()]

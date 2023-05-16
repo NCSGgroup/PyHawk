@@ -7,5 +7,6 @@ class GravityInversion:
 
 
 class PathOfFiles:
-    root_dir = pathlib.Path(__file__).parent.parent.parent
+    root_dir = pathlib.Path(__file__).parent.parent.parent.parent
     DesignMatrixTemp = root_dir.joinpath('temp', 'DesignMatrixSH/')
+

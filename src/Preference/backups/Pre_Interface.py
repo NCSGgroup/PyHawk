@@ -45,7 +45,7 @@ min_arcLen = 2
 
 
 class PathOfFiles:
-    root_dir = pathlib.Path(__file__).parent.parent.parent
+    root_dir = pathlib.Path(__file__).parent.parent.parent.parent
 
     # ======================= For the data interface===============================
     payload_ACC = root_dir.joinpath('data', mission.name)

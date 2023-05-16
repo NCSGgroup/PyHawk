@@ -33,5 +33,5 @@ cali_value = {'Scale': [0.9595, 0, 0,
 #                 }
 
 
-root_dir = pathlib.Path(__file__).parent.parent.parent
+root_dir = pathlib.Path(__file__).parent.parent.parent.parent
 temp_non_conservative_data = root_dir.joinpath('temp', 'NonConservativeForce')

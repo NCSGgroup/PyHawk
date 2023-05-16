@@ -1,6 +1,6 @@
 import src.Preference.backups.Pre_Interface as Pre_Interface
 from src.Preference.EnumType import SSTObserve
-from src.Solver.AdjustOrbit import AdjustOrbitForDM
+from src.Solver.AdjustOrbit import AdjustOrbitForDM, AdjustDM
 from src.SecDerivative.Instance.DualOrbitAndVar import Orbit_var_2nd_diff
 from src.Solver.Parameterization import Parameterization
 from src.Auxilary.SSTpartial import SSTpartial
@@ -38,14 +38,15 @@ class GravityDesignMat:
         return self
 
     def orbit_integration(self):
-        adjustDM = AdjustOrbitForDM(self._accConfig)
-        adjustDM.configure(Orbit_var_2nd_diff, arcNo=self._arcNo, ParameterConfig=self._parameterConfig)
-        '''define the directory of res output'''
-        res_dir = self._res.joinpath(self._date_span[0] + '_' + self._date_span[1])
-        if not res_dir.is_dir():
-            res_dir.mkdir(exist_ok=True)
-        kwargs = {'ChangeTempPath': res_dir}
-        adjustDM.updateInit().calibrate(**kwargs)
+        adjustDM = AdjustDM()
+        adjustDM.configure(SerDer=Orbit_var_2nd_diff, arcNo=self._arcNo,
+                           ParameterConfig=self._parameterConfig, SolverConfig=self._solverConfig)
+        # '''define the directory of res output'''
+        # res_dir = self._res.joinpath(self._date_span[0] + '_' + self._date_span[1])
+        # if not res_dir.is_dir():
+        #     res_dir.mkdir(exist_ok=True)
+        # kwargs = {'ChangeTempPath': res_dir}
+        adjustDM.calibrate()
 
         return self
 
@@ -61,8 +62,8 @@ class GravityDesignMat:
         r, local_r, global_r = pp.split_global_local(dm_r, isIncludeStateVec=True)
         v, local_v, global_v = pp.split_global_local(dm_v, isIncludeStateVec=True)
 
-        res_dir = self._res.joinpath(self._date_span[0] + '_' + self._date_span[1])
-        res_filename = res_dir.joinpath('Orbit_' + str(self._arcNo) + '_' + self._satName + '.hdf5')
+        res_dir = self._res + '/' + self._date_span[0] + '_' + self._date_span[1]
+        res_filename = res_dir + '/Orbit_' + str(self._arcNo) + '_' + self._satName + '.hdf5'
 
         h5 = h5py.File(res_filename, 'w')
         h5.create_dataset('t', data=DM_orbit['t'])
@@ -93,8 +94,8 @@ class GravityDesignMat:
         pass
 
     def __getRangeRateDM(self):
-        res_dir = self._res.joinpath(self._date_span[0] + '_' + self._date_span[1])
-        res_filename = res_dir.joinpath('Orbit_' + str(self._arcNo) + '_' + self._satName + '.hdf5')
+        res_dir = self._res + '/' + self._date_span[0] + '_' + self._date_span[1]
+        res_filename = res_dir + '/Orbit_' + str(self._arcNo) + '_' + self._satName + '.hdf5'
         DM_orbit = h5py.File(res_filename, 'r')
 
         rA, rB, vA, vB = DM_orbit['r'][:, 0:3], DM_orbit['r'][:, 3:6], DM_orbit['v'][:, 0:3], DM_orbit['v'][:, 3:6]
@@ -112,8 +113,8 @@ class GravityDesignMat:
                  dd_v2[:, None, :] @ DM_orbit['global_v'][:, 3:6]
 
         '''make a record'''
-        res_dir = self._res.joinpath(self._date_span[0] + '_' + self._date_span[1])
-        res_filename = res_dir.joinpath(SSTObserve.RangeRate.name + '_' + str(self._arcNo) + '.hdf5')
+        res_dir = self._res + '/' + self._date_span[0] + '_' + self._date_span[1]
+        res_filename = res_dir + '/' + SSTObserve.RangeRate.name + '_' + str(self._arcNo) + '.hdf5'
         h5 = h5py.File(res_filename, 'w')
         h5.create_dataset('t', data=DM_orbit['t'][:])
         h5.create_dataset('local', data=np.concatenate((local_1[:, 0, :], local_2[:, 0, :]), axis=1))
@@ -130,8 +131,8 @@ class GravityDesignMat:
         :return:
         """
         orbit = {}
-        res_dir = self._res.joinpath(self._date_span[0] + '_' + self._date_span[1])
-        res_filename = res_dir.joinpath(str(self._arcNo) + '_' + self._satName + '.hdf5')
+        res_dir = self._res + '/' + self._date_span[0] + '_' + self._date_span[1]
+        res_filename = res_dir + '/' + str(self._arcNo) + '_' + self._satName + '.hdf5'
         h5 = h5py.File(res_filename, 'r')
         orbit['r'] = h5['r'][()]
         orbit['v'] = h5['v'][()]

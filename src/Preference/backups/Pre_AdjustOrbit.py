@@ -11,7 +11,7 @@ class RangeRate:
 
 
 class PathOfFiles:
-    root_dir = pathlib.Path(__file__).parent.parent.parent
+    root_dir = pathlib.Path(__file__).parent.parent.parent.parent
 
     # ======================= For the Adjust===============================
     StateVectorDataTemp = root_dir.joinpath('temp', 'StateVector')

@@ -23,6 +23,7 @@ from src.Interface.LoadSH import LoadGif48
 from src.Preference.backups.Pre_ForceModel import PathOfFiles
 from src.Preference.Pre_Accelerometer import AccelerometerConfig
 from src.Preference.Pre_Solver import SolverConfig
+from src.Preference.Pre_Parameterization import ParameterConfig
 import json
 
 
@@ -86,8 +87,11 @@ def demo():
     accConfig_B = AccelerometerConfig()
     acc_B = json.load(open('../setting/Calibrate/AccelerometerConfig_B.json', 'r'))
     accConfig_B.__dict__ = acc_B
-    AdjustOrbit(accConfig=[accConfig_A, accConfig_B], date_span=date_span).\
-        configure(Orbit_var_2nd_diff, arcNo=0).calibrate(iteration=2)
+    parameterConfig = ParameterConfig()
+    Parameter = json.load(open('../setting/Calibrate/ParameterConfig.json', 'r'))
+    parameterConfig.__dict__ = Parameter
+    # AdjustOrbit(accConfig=[accConfig_A, accConfig_B], date_span=date_span).\
+    #     configure(SerDer=Orbit_var_2nd_diff, arcNo=0, ParameterConfig=parameterConfig).calibrate(iteration=2)
     # initTime, initR, endTime, endR = adjust.draw()
     # firstR, secondR, thirdR = adjust.getR()
     # np.savez('adjust.npz', R1=firstR, R2=secondR, R3=thirdR)
@@ -96,16 +100,16 @@ def demo():
     # RR.configure()
     # RR.calibrate()
     # '''step 6: get DesignMatrix'''
-    # solverConfig = SolverConfig()
-    # solverDict = json.load(open('../setting/Calibrate/SolverConfig.json', 'r'))
-    # solverConfig.__dict__ = solverDict
-    # dm = GravityDesignMat(0).configure(accConfig=[accConfig_A, accConfig_B])
+    solverConfig = SolverConfig()
+    solverDict = json.load(open('../setting/Calibrate/SolverConfig.json', 'r'))
+    solverConfig.__dict__ = solverDict
+    dm = GravityDesignMat(0).configure(accConfig=[accConfig_A, accConfig_B],solverConfig=solverConfig,parameterConfig=parameterConfig)
     # dm.orbit_integration()
     # dm.get_orbit_design_matrix()
     # dm.get_sst_design_matrix()
     # # '''setp 8: get NEQ'''
-    # neq = GravityNEQperArc(0)
-    # neq.configure(solverConfig=solverConfig).get_neq()
+    neq = GravityNEQperArc(0)
+    neq.configure(solverConfig=solverConfig).get_neq()
 
 
 def demo1(start, end):
@@ -116,7 +120,12 @@ def demo1(start, end):
     accConfig_B = AccelerometerConfig()
     acc_B = json.load(open('../setting/Calibrate/AccelerometerConfig_B.json', 'r'))
     accConfig_B.__dict__ = acc_B
-
+    solverConfig = SolverConfig()
+    solverDict = json.load(open('../setting/Calibrate/SolverConfig.json', 'r'))
+    solverConfig.__dict__ = solverDict
+    parameterConfig = ParameterConfig()
+    Parameter = json.load(open('../setting/Calibrate/ParameterConfig.json', 'r'))
+    parameterConfig.__dict__ = Parameter
     # """step 5: init AdjustOrbit"""
     # for i in range(start, end):
     #     AdjustOrbit(accConfig=[accConfig_A, accConfig_B]).configure(Orbit_var_2nd_diff, arcNo=i).calibrate(iteration=2)
@@ -127,14 +136,14 @@ def demo1(start, end):
     #     RR.calibrate()
     """step 7: DesignMatrix"""
     for i in range(start, end):
-        dm = GravityDesignMat(i).configure(accConfig=[accConfig_A, accConfig_B])
+        dm = GravityDesignMat(i).configure(accConfig=[accConfig_A, accConfig_B],solverConfig=solverConfig,parameterConfig=parameterConfig)
         dm.orbit_integration()
         dm.get_orbit_design_matrix()
         dm.get_sst_design_matrix()
     '''setp 8: get NEQ'''
     for i in range(start, end):
         neq = GravityNEQperArc(i)
-        neq.configure().get_neq()
+        neq.configure(solverConfig=solverConfig).get_neq()
 
 
 def getRMS():
@@ -304,27 +313,45 @@ def cacluateNL():
         LMatrix = LMatrix + h5['Orbit_l_A'][:] + h5['Orbit_l_B'][:] + h5['RangeRate_l'][:].reshape((3717, 1)) * 2.5E11
     x = np.linalg.lstsq(NMatrix, LMatrix[:, 0], rcond=None)[0]
     print(x)
-    np.savez('CS-4.28.npz', cs=x)
+    np.savez('CS-5.16.npz', cs=x)
 
 
 def csReshape():
-    data = np.load('CS-4.28.npz')['cs']
+    data = np.load('CS-5.16.npz')['cs']
     sort = SortCS(Pre_Parameterization.StokesCoefficients.SortMethod,
                   Pre_Parameterization.StokesCoefficients.MaxDegree,
                   Pre_Parameterization.StokesCoefficients.MinDegree)
     c, s = sort.invert(data)
 
-    static_c,static_s = LoadGif48().load(PathOfFiles.EIGEN6_C4).getCS(90)
+    # static_c,static_s = LoadGif48().load(PathOfFiles.EIGEN6_C4).getCS(90)
 
     # C, S = c + static_c, s + static_s
 
     C, S = GeoMathKit.CS_1dTo2d(c), GeoMathKit.CS_1dTo2d(s)
 
-    np.savez('CS2d-4.28.npz', c=C, s=S)
+    np.savez('CS2d-5.16.npz', c=C, s=S)
     pass
 
 
 if __name__ == '__main__':
+    # p1 = multiprocessing.Process(target=demo1, args=(0, 40))
+    # p2 = multiprocessing.Process(target=demo1, args=(40, 80))
+    # p3 = multiprocessing.Process(target=demo1, args=(80, 120))
+    # p4 = multiprocessing.Process(target=demo1, args=(120, 160))
+    # p5 = multiprocessing.Process(target=demo1, args=(160, 200))
+    # p6 = multiprocessing.Process(target=demo1, args=(200, 243))
+    # p1.start()
+    # p2.start()
+    # p3.start()
+    # p4.start()
+    # p5.start()
+    # p6.start()
+    # p1.join()
+    # p2.join()
+    # p3.join()
+    # p4.join()
+    # p5.join()
+    # p6.join()
     # adjust()
 
     #

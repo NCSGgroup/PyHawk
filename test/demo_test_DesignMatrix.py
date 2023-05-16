@@ -25,7 +25,7 @@ def demo1():
     solverConfig = SolverConfig()
     solverDict = json.load(open('../setting/Calibrate/SolverConfig.json', 'r'))
     solverConfig.__dict__ = solverDict
-    dm = GravityDesignMat(0).configure(accConfig=[accConfig_A, accConfig_B], solverConfig=solverConfig, ParameterConfig= ParameterConfig)
+    dm = GravityDesignMat(0).configure(accConfig=[accConfig_A, accConfig_B], solverConfig=solverConfig, parameterConfig= ParameterConfig)
     # dm.orbit_integration()
     # dm.get_orbit_design_matrix()
     dm.get_sst_design_matrix()
