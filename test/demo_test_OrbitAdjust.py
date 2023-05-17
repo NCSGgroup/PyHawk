@@ -158,30 +158,30 @@ def drawfix():
     dir = pathlib.Path(Pre_AdjustOrbit.PathOfFiles.StateVectorDataTemp). \
         joinpath('2008-01-01_2008-01-31')
 
-    filename1 = dir.joinpath(str(2) + '_AB.hdf5')
+    filename1 = dir.joinpath(str(0) + '_AB.hdf5')
     h51 = h5py.File(filename1, 'r')
     afterData = h51['r'][()][:, 0:3, 0]
     h51.close()
 
-    filename2 = dir.joinpath(str(2) + '_AB-1.hdf5')
-    h52 = h5py.File(filename2, 'r')
-    beforeData = h52['r'][()][:, 0:3, 0]
-    h52.close()
+    # filename2 = dir.joinpath(str(2) + '_AB-1.hdf5')
+    # h52 = h5py.File(filename2, 'r')
+    # beforeData = h52['r'][()][:, 0:3, 0]
+    # h52.close()
 
     rd = ArcData()
-    GNV = rd.getData(arc=2, kind=EnumType.Payload.GNV, sat=EnumType.SatID.A)
+    GNV = rd.getData(arc=0, kind=EnumType.Payload.GNV, sat=EnumType.SatID.A)
     GNVTime = GNV[:, 0]
     GNVR = GNV[:, 1:4]
 
     afterDiff = afterData - GNVR
-    beforeDiff = beforeData - GNVR
+    # beforeDiff = beforeData - GNVR
 
     plot1 = np.sqrt(afterDiff[:,0]**2 + afterDiff[:,1]**2 + afterDiff[:,2]**2)
-    plot2 = np.sqrt(beforeDiff[:,0] ** 2 + beforeDiff[:,1] ** 2 + beforeDiff[:,2] ** 2)
+    # plot2 = np.sqrt(beforeDiff[:,0] ** 2 + beforeDiff[:,1] ** 2 + beforeDiff[:,2] ** 2)
 
-    plt.title('2008-1-1 sat-A arc-2 (constant and trend)', fontsize=24)
+    plt.title('2008-1-1 sat-A arc-0 (constant and trend)', fontsize=24)
     plt.plot(np.array(GNVTime), plot1, label="after")
-    plt.plot(np.array(GNVTime), plot2, label="before")
+    # plt.plot(np.array(GNVTime), plot2, label="before")
     plt.xlabel('GPS time [sec]', fontsize=20)
     plt.ylabel(r'$m$', fontsize=20)
     plt.yticks(fontsize=18)

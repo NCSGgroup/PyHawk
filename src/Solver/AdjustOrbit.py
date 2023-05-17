@@ -103,7 +103,7 @@ class AdjustOrbit:
         return self
 
     def calibrate(self, iteration: int = 2):
-        assert iteration >= 2
+        # assert iteration >= 2
         res_filename = self._res_dir.joinpath(str(self._arcNo) + '_' + self._satName + '.hdf5')
         self._res_h5 = h5py.File(res_filename, 'w')
         ode = self._ode

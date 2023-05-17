@@ -90,8 +90,11 @@ def demo():
     parameterConfig = ParameterConfig()
     Parameter = json.load(open('../setting/Calibrate/ParameterConfig.json', 'r'))
     parameterConfig.__dict__ = Parameter
-    AdjustOrbit(accConfig=[accConfig_A, accConfig_B], date_span=date_span).\
-        configure(SerDer=Orbit_var_2nd_diff, arcNo=0, ParameterConfig=parameterConfig).calibrate(iteration=2)
+    solverConfig = SolverConfig()
+    solverDict = json.load(open('../setting/Calibrate/SolverConfig.json', 'r'))
+    solverConfig.__dict__ = solverDict
+    # AdjustOrbit(accConfig=[accConfig_A, accConfig_B], date_span=date_span).\
+    #     configure(SerDer=Orbit_var_2nd_diff, arcNo=0, ParameterConfig=parameterConfig).calibrate(iteration=1)
     # initTime, initR, endTime, endR = adjust.draw()
     # firstR, secondR, thirdR = adjust.getR()
     # np.savez('adjust.npz', R1=firstR, R2=secondR, R3=thirdR)
@@ -100,11 +103,10 @@ def demo():
     # RR.configure()
     # RR.calibrate()
     # '''step 6: get DesignMatrix'''
-    solverConfig = SolverConfig()
-    solverDict = json.load(open('../setting/Calibrate/SolverConfig.json', 'r'))
-    solverConfig.__dict__ = solverDict
-    # dm = GravityDesignMat(0).configure(accConfig=[accConfig_A, accConfig_B],solverConfig=solverConfig,parameterConfig=parameterConfig)
-    # dm.orbit_integration()
+
+    dm = GravityDesignMat(0).configure(accConfig=[accConfig_A, accConfig_B],
+                                       solverConfig=solverConfig, parameterConfig=parameterConfig)
+    dm.orbit_integration()
     # dm.get_orbit_design_matrix()
     # dm.get_sst_design_matrix()
     # # '''setp 8: get NEQ'''
@@ -148,7 +150,7 @@ def demo1(start, end):
 
 def getRMS():
     dir = pathlib.Path(Pre_AdjustOrbit.PathOfFiles.StateVectorDataTemp). \
-        joinpath('2008-01-01_2008-01-31')
+        joinpath('2008-02-01_2008-02-29')
     RMSX = []
     RMSY = []
     RMSZ = []
@@ -194,13 +196,13 @@ def drawRMS():
     listX = []
     listY = []
     listZ = []
-    for i in range(0, 30):
+    for i in range(0, 29):
         listX.append(sum(RMSX[i * 8:(i+1) * 8]) / 8)
         listY.append(sum(RMSY[i * 8:(i+1) * 8]) / 8)
         listZ.append(sum(RMSZ[i * 8:(i+1) * 8]) / 8)
 
     plt.style.use(['grid'])
-    plt.title('AdjustRMS(2008-1-1~2008-1-31)', fontsize=24)
+    plt.title('AdjustRMS(2008-2-1~2008-2-29)', fontsize=24)
     plt.plot(np.arange(len(RMSX)), RMSX, linestyle='--', marker='o', label="RMS-X")
     plt.plot(np.arange(len(RMSY)), RMSY, linestyle='--', marker='s', label="RMS-Y")
     plt.plot(np.arange(len(RMSZ)), RMSZ, linestyle='--', marker='^', label="RMS-Z")
@@ -212,21 +214,6 @@ def drawRMS():
     # plt.grid(ls='--')
     plt.show()
 
-
-def drawKBRRMS():
-    R = np.load("2008-1-KBRRRMS.npz")
-    RMS = R['RMS']
-
-    plt.style.use(['grid'])
-    plt.title('AdjustKBRRMS(2008-1-1~2008-1-31)', fontsize=24)
-    plt.plot(np.arange(len(RMS)), RMS, linestyle='--', marker='o', label="RMS")
-    plt.xlabel('arcNo', fontsize=20)
-    plt.ylabel(r'$m$', fontsize=20)
-    plt.yticks(fontsize=18)
-    plt.legend(loc='upper left', fontsize=20)
-    # plt.savefig('../result/img/{}-{}.png'.format(length[0], length[-1]), dpi=300)
-    # plt.grid(ls='--')
-    plt.show()
 
 def draw():
     dir = pathlib.Path(Pre_AdjustOrbit.PathOfFiles.StateVectorDataTemp). \
@@ -315,30 +302,28 @@ def cacluateNL():
         (Pre_Interface.date_span[0] + '_' + Pre_Interface.date_span[1])
     # res_filename = res_dir.joinpath(str(0) + '.hdf5')
     # h5 = h5py.File(res_filename, 'r')
-    NMatrix = np.zeros((12, 12))
-    LMatrix = np.zeros((12, 1))
-    for i in tqdm(range(0, 1), desc='Solve normal equations: '):
+    NMatrix = np.zeros((3717, 3717))
+    LMatrix = np.zeros((3717, 1))
+    for i in tqdm(range(0, 243), desc='Solve normal equations: '):
         res_filename = res_dir.joinpath(str(i) + '.hdf5')
         h5 = h5py.File(res_filename, 'r')
-        NMatrix = NMatrix + h5['Orbit_N_A'][:]
-        LMatrix = LMatrix + h5['Orbit_l_A'][:]
+        NMatrix = NMatrix + h5['Orbit_N_A'][:] + h5['Orbit_N_B'][:]
+        LMatrix = LMatrix + h5['Orbit_l_A'][:] + h5['Orbit_l_B'][:]
         # NMatrix = NMatrix + h5['RangeRate_N'][:]
         # LMatrix = LMatrix + h5['RangeRate_l'][:].reshape((3717, 1))
         # NMatrix = NMatrix + h5['Orbit_N_A'][:] + h5['Orbit_N_B'][:] + h5['RangeRate_N'][:] * 2.5E11
         # LMatrix = LMatrix + h5['Orbit_l_A'][:] + h5['Orbit_l_B'][:] + h5['RangeRate_l'][:].reshape((3717, 1)) * 2.5E11
-    # x1 = np.linalg.lstsq(NMatrix, LMatrix[:, 0], rcond=None)[0]
-    x2 = np.linalg.inv(NMatrix.copy()) @ LMatrix
-    print(x2)
-    np.savez('localParameter.npz', cs=x2)
+    x = np.linalg.lstsq(NMatrix, LMatrix[:, 0], rcond=None)[0]
+    print(x)
+    np.savez('CS-5.16-Orbit.npz', cs=x)
 
 
 def csReshape():
-    data = np.load('CS-5.17.npz')['cs']
+    data = np.load('CS-5.16-Orbit.npz')['cs']
     sort = SortCS(Pre_Parameterization.StokesCoefficients.SortMethod,
                   Pre_Parameterization.StokesCoefficients.MaxDegree,
                   Pre_Parameterization.StokesCoefficients.MinDegree)
-
-    c, s = sort.invert(data[:,0])
+    c, s = sort.invert(data)
 
     # static_c,static_s = LoadGif48().load(PathOfFiles.EIGEN6_C4).getCS(90)
 
@@ -346,7 +331,7 @@ def csReshape():
 
     C, S = GeoMathKit.CS_1dTo2d(c), GeoMathKit.CS_1dTo2d(s)
 
-    np.savez('CS2d-5.17.npz', c=C, s=S)
+    np.savez('CS2d-5.16-Orbit.npz', c=C, s=S)
     pass
 
 
@@ -380,4 +365,3 @@ if __name__ == '__main__':
     # drawRMS()
     # cacluateNL()
     # csReshape()
-    # drawKBRRMS()
