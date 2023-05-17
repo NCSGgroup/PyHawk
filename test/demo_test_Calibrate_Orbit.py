@@ -90,8 +90,11 @@ def demo():
     parameterConfig = ParameterConfig()
     Parameter = json.load(open('../setting/Calibrate/ParameterConfig.json', 'r'))
     parameterConfig.__dict__ = Parameter
+    solverConfig = SolverConfig()
+    solverDict = json.load(open('../setting/Calibrate/SolverConfig.json', 'r'))
+    solverConfig.__dict__ = solverDict
     # AdjustOrbit(accConfig=[accConfig_A, accConfig_B], date_span=date_span).\
-    #     configure(SerDer=Orbit_var_2nd_diff, arcNo=0, ParameterConfig=parameterConfig).calibrate(iteration=2)
+    #     configure(SerDer=Orbit_var_2nd_diff, arcNo=0, ParameterConfig=parameterConfig).calibrate(iteration=1)
     # initTime, initR, endTime, endR = adjust.draw()
     # firstR, secondR, thirdR = adjust.getR()
     # np.savez('adjust.npz', R1=firstR, R2=secondR, R3=thirdR)
@@ -100,16 +103,15 @@ def demo():
     # RR.configure()
     # RR.calibrate()
     # '''step 6: get DesignMatrix'''
-    solverConfig = SolverConfig()
-    solverDict = json.load(open('../setting/Calibrate/SolverConfig.json', 'r'))
-    solverConfig.__dict__ = solverDict
-    dm = GravityDesignMat(0).configure(accConfig=[accConfig_A, accConfig_B],solverConfig=solverConfig,parameterConfig=parameterConfig)
-    # dm.orbit_integration()
+
+    dm = GravityDesignMat(0).configure(accConfig=[accConfig_A, accConfig_B],
+                                       solverConfig=solverConfig, parameterConfig=parameterConfig)
+    dm.orbit_integration()
     # dm.get_orbit_design_matrix()
     # dm.get_sst_design_matrix()
     # # '''setp 8: get NEQ'''
-    neq = GravityNEQperArc(0)
-    neq.configure(solverConfig=solverConfig).get_neq()
+    # neq = GravityNEQperArc(0)
+    # neq.configure(solverConfig=solverConfig).get_neq()
 
 
 def demo1(start, end):
@@ -305,19 +307,19 @@ def cacluateNL():
     for i in tqdm(range(0, 243), desc='Solve normal equations: '):
         res_filename = res_dir.joinpath(str(i) + '.hdf5')
         h5 = h5py.File(res_filename, 'r')
-        # NMatrix = NMatrix + h5['Orbit_N_A'][:] + h5['Orbit_N_B'][:]
-        # LMatrix = LMatrix + h5['Orbit_l_A'][:] + h5['Orbit_l_B'][:]
+        NMatrix = NMatrix + h5['Orbit_N_A'][:] + h5['Orbit_N_B'][:]
+        LMatrix = LMatrix + h5['Orbit_l_A'][:] + h5['Orbit_l_B'][:]
         # NMatrix = NMatrix + h5['RangeRate_N'][:]
         # LMatrix = LMatrix + h5['RangeRate_l'][:].reshape((3717, 1))
-        NMatrix = NMatrix + h5['Orbit_N_A'][:] + h5['Orbit_N_B'][:] + h5['RangeRate_N'][:] * 2.5E11
-        LMatrix = LMatrix + h5['Orbit_l_A'][:] + h5['Orbit_l_B'][:] + h5['RangeRate_l'][:].reshape((3717, 1)) * 2.5E11
+        # NMatrix = NMatrix + h5['Orbit_N_A'][:] + h5['Orbit_N_B'][:] + h5['RangeRate_N'][:] * 2.5E11
+        # LMatrix = LMatrix + h5['Orbit_l_A'][:] + h5['Orbit_l_B'][:] + h5['RangeRate_l'][:].reshape((3717, 1)) * 2.5E11
     x = np.linalg.lstsq(NMatrix, LMatrix[:, 0], rcond=None)[0]
     print(x)
-    np.savez('CS-5.16.npz', cs=x)
+    np.savez('CS-5.16-Orbit.npz', cs=x)
 
 
 def csReshape():
-    data = np.load('CS-5.16.npz')['cs']
+    data = np.load('CS-5.16-Orbit.npz')['cs']
     sort = SortCS(Pre_Parameterization.StokesCoefficients.SortMethod,
                   Pre_Parameterization.StokesCoefficients.MaxDegree,
                   Pre_Parameterization.StokesCoefficients.MinDegree)
@@ -329,7 +331,7 @@ def csReshape():
 
     C, S = GeoMathKit.CS_1dTo2d(c), GeoMathKit.CS_1dTo2d(s)
 
-    np.savez('CS2d-5.16.npz', c=C, s=S)
+    np.savez('CS2d-5.16-Orbit.npz', c=C, s=S)
     pass
 
 
