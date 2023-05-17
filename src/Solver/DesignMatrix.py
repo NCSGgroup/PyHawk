@@ -1,6 +1,7 @@
 import src.Preference.backups.Pre_Interface as Pre_Interface
 from src.Preference.EnumType import SSTObserve
-from src.Solver.AdjustOrbit import AdjustOrbitForDM, AdjustDM
+from src.Solver.AdjustOrbit import AdjustOrbitForDM
+from src.Solver.AdjustDM import AdjustDM
 from src.SecDerivative.Instance.DualOrbitAndVar import Orbit_var_2nd_diff
 from src.Solver.Parameterization import Parameterization
 from src.Auxilary.SSTpartial import SSTpartial

@@ -129,9 +129,10 @@ class GravityNEQperArc:
         n_local = np.shape(local_r)[-1]
         n_global = np.shape(global_r)[-1]
         local_r = local_r.reshape((-1, n_local))
-        global_r = global_r.reshape((-1, n_global))
+        # global_r = global_r.reshape((-1, n_global))
 
-        N, l = GeoMathKit.keepGlobal(dm_global=global_r, dm_local=local_r, obs=obs)
+        # N, l = GeoMathKit.keepGlobal(dm_global=global_r, dm_local=local_r, obs=obs)
+        N, l = GeoMathKit.keepLocal(dm_local=local_r, obs=obs)
 
         self.__saveData.create_dataset('Orbit_N_%1s' % sat.name, data=N)
         self.__saveData.create_dataset('Orbit_l_%1s' % sat.name, data=l)

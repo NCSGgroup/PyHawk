@@ -10,7 +10,7 @@
         "AllisGlobal": false
     },
     "StokesCoefficientsConfig": {
-        "isRequired": true,
+        "isRequired": false,
         "Parameter_Number": 3717,
         "AllisGlobal": true,
         "SortMethod": "SortByOrder",

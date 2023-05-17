@@ -455,6 +455,28 @@ class GeoMathKit:
         return N, l
 
     @staticmethod
+    def keepLocal(dm_local: np.ndarray, obs: np.ndarray):
+        """
+        Ax + By = z
+        x--global parameter
+        y--local parameter
+        z--obs
+        Our aim: remove the local parameters and keep only the global parameters to be solved.
+        :param dm_global: design matrix for the global parameters
+        :param dm_local: design matrix for the local parameters
+        :param obs: observations
+        :return: Normal equations related only to the global parameters （Nx = l）
+        """
+        # time
+        Nyy = dm_local.T @ dm_local
+
+        Wy = dm_local.T @ obs
+
+        N = Nyy
+        l = Wy
+        return N, l
+
+    @staticmethod
     def solveLocal(dm_global, dm_local, obs, global_p):
         """
         Ax + By = z
