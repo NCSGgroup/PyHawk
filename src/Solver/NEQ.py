@@ -176,6 +176,7 @@ class GravityNEQperArc:
 
         '''Combination'''
         if config.CalibrateEmpiricalParameters:
+
             local_dm = np.concatenate((local_dm_empirical, local_dm), axis=1)
 
         N, l = GeoMathKit.keepGlobal(dm_global=global_dm, dm_local=local_dm, obs=obs)

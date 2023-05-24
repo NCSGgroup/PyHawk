@@ -152,7 +152,7 @@ class AtmosTideConfig:
 
 
 class PathOfFiles:
-    root_dir = pathlib.Path(__file__).parent.parent.parent
+    root_dir = pathlib.Path(__file__).parent.parent.parent.parent
 
     # ======================= For the ForceModel===============================
     EOT11a = root_dir.joinpath('data', 'eot11a')
