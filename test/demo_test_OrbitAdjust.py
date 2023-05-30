@@ -198,10 +198,6 @@ def checkOrbitAndDM():
     OrbitData = h51['r'][()][:, 0:3, 0]
     h51.close()
 
-    # rd = ArcData()
-    # GNV = rd.getData(arc=0, kind=EnumType.Payload.GNV, sat=EnumType.SatID.A)
-    # GNVTime = GNV[:, 0]
-    # GNVR = GNV[:, 1:4]
     date_span = ['2008-01-01', '2008-01-31']
     res_dir = pathlib.Path(Pre_Solver.PathOfFiles.DesignMatrixTemp).joinpath(date_span[0] + '_' + date_span[1])
     res_filename = res_dir.joinpath(str(0) + '_AB.hdf5')
@@ -215,7 +211,7 @@ def checkOrbitAndDM():
     plt.plot(np.array(GNVTime), diff[:, 0], label="X")
     plt.plot(np.array(GNVTime), diff[:, 1], label="Y")
     plt.plot(np.array(GNVTime), diff[:, 2], label="Z")
-    # plt.ylim(-0.0005, 0.0005)
+    plt.ylim(-0.0005, 0.0005)
     plt.xlabel('GPS time [sec]', fontsize=20)
     plt.ylabel(r'$m$', fontsize=20)
     plt.yticks(fontsize=18)

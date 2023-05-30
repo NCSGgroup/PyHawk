@@ -93,8 +93,8 @@ def demo():
     solverConfig = SolverConfig()
     solverDict = json.load(open('../setting/Calibrate/SolverConfig.json', 'r'))
     solverConfig.__dict__ = solverDict
-    # AdjustOrbit(accConfig=[accConfig_A, accConfig_B], date_span=date_span).\
-    #     configure(SerDer=Orbit_var_2nd_diff, arcNo=0, ParameterConfig=parameterConfig).calibrate(iteration=1)
+    AdjustOrbit(accConfig=[accConfig_A, accConfig_B], date_span=date_span).\
+        configure(SerDer=Orbit_var_2nd_diff, arcNo=0, ParameterConfig=parameterConfig).calibrate(iteration=2)
     # initTime, initR, endTime, endR = adjust.draw()
     # firstR, secondR, thirdR = adjust.getR()
     # np.savez('adjust.npz', R1=firstR, R2=secondR, R3=thirdR)
@@ -104,9 +104,9 @@ def demo():
     # RR.calibrate()
     # '''step 6: get DesignMatrix'''
 
-    dm = GravityDesignMat(0).configure(accConfig=[accConfig_A, accConfig_B],
-                                       solverConfig=solverConfig, parameterConfig=parameterConfig)
-    dm.orbit_integration()
+    # dm = GravityDesignMat(0).configure(accConfig=[accConfig_A, accConfig_B],
+    #                                    solverConfig=solverConfig, parameterConfig=parameterConfig)
+    # dm.orbit_integration()
     # dm.get_orbit_design_matrix()
     # dm.get_sst_design_matrix()
     # # '''setp 8: get NEQ'''

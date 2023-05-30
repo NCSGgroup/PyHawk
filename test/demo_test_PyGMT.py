@@ -1,5 +1,3 @@
-import sys
-sys.path.append("../")
 from src.Auxilary.GeoMathKit import GeoMathKit
 import src.Preference.EnumType as EnumType
 from src.Interface.ArcOperation import ArcData
@@ -36,13 +34,13 @@ def getKBRRGMT():
         res_dir = pathlib.Path(Pre_AdjustOrbit.PathOfFiles.RangeRateTemp).joinpath(date_span[0] + '_' + date_span[1])
         res_filename = res_dir.joinpath('RangeRate_' + str(i) + '.hdf5')
         h5 = h5py.File(res_filename, 'r')
-        # t1 = h5['pre_t'][()]
+        t1 = h5['pre_t'][()]
         t2 = h5['post_t'][()]
-        # Prefit.extend(h5['pre_residual'][()])
-        Postfit.extend(h5['post_residual'][()])
+        Prefit.extend(h5['pre_residual'][()])
+        # Postfit.extend(h5['post_residual'][()])
         # postfit = h5['post_residual'][()]
 
-        new_index = [list(GNVTime).index(x) for x in t2]
+        new_index = [list(GNVTime).index(x) for x in t1]
         new_Time = GNVTime[new_index]
         new_GNVR = GNVR[new_index]
         # new_KBRR = h5['pre_residual'][()][new_index]
@@ -55,7 +53,7 @@ def getKBRRGMT():
             Lon.append(lon)
             Lat.append(lat)
 
-    np.savez('PostKBRR.npz', x=Lon, y=Lat, z=Prefit)
+    np.savez('PreKBRR.npz', x=Lon, y=Lat, z=Prefit)
 
 
 def readDat():
@@ -97,6 +95,6 @@ def draw():
 
 
 if __name__ == '__main__':
-    getKBRRGMT()
+    # getKBRRGMT()
     draw()
     # readDat()
