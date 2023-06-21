@@ -8,7 +8,6 @@
 """
 
 # -*- coding: utf-8 -*-
-
 import warnings
 import platform
 from ctypes import cdll, byref, POINTER
@@ -20,6 +19,7 @@ from numpy import ndarray, array, zeros, asarray, asfarray, asmatrix
 
 import pathlib as _pathlib
 import glob as _glob
+import sys
 
 # # Attempt to find sofa library to load
 # _sofalib_filename = _glob.glob(str(_pathlib.Path(__file__).parent) + '/_sofa_c*')
