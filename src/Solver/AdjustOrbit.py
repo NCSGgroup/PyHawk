@@ -200,7 +200,6 @@ class AdjustOrbit:
         bB = residual[:, 3:6].flatten()
         xB = np.linalg.lstsq(DesignMatrixB, bB, rcond=None)[0]
         self._res = np.vstack((xA, xB))
-        print(xA)
         return self
 
     def _save_StateVectors(self, state):

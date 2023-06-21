@@ -123,7 +123,7 @@
         "ACCCoordinate": "GCRS"
     },
     "NonTideConfig": {
-        "kind": "GLO",
+        "kind": "OCN",
         "MaxDeg": 100,
         "TS": 3
     },

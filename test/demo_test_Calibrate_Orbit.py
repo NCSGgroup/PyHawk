@@ -24,6 +24,7 @@ from src.Preference.backups.Pre_ForceModel import PathOfFiles
 from src.Preference.Pre_Accelerometer import AccelerometerConfig
 from src.Preference.Pre_Solver import SolverConfig
 from src.Preference.Pre_Parameterization import ParameterConfig
+from src.Solver.AdjustSST import RangeRate
 import json
 
 
@@ -93,23 +94,20 @@ def demo():
     solverConfig = SolverConfig()
     solverDict = json.load(open('../setting/Calibrate/SolverConfig.json', 'r'))
     solverConfig.__dict__ = solverDict
-    # AdjustOrbit(accConfig=[accConfig_A, accConfig_B], date_span=date_span).\
-    #     configure(SerDer=Orbit_var_2nd_diff, arcNo=0, ParameterConfig=parameterConfig).calibrate(iteration=3)
-    # initTime, initR, endTime, endR = adjust.draw()
-    # firstR, secondR, thirdR = adjust.getR()
-    # np.savez('adjust.npz', R1=firstR, R2=secondR, R3=thirdR)
+    AdjustOrbit(accConfig=[accConfig_A, accConfig_B], date_span=date_span).\
+        configure(SerDer=Orbit_var_2nd_diff, arcNo=0, ParameterConfig=parameterConfig).calibrate(iteration=3)
 
-    # RR = RangeRate(23)
-    # RR.configure()
-    # RR.calibrate()
-    # '''step 6: get DesignMatrix'''
+    RR = RangeRate(0)
+    RR.configure()
+    RR.calibrate()
+    '''step 6: get DesignMatrix'''
 
-    # dm = GravityDesignMat(0).configure(accConfig=[accConfig_A, accConfig_B],
-    #                                    solverConfig=solverConfig, parameterConfig=parameterConfig)
-    # dm.orbit_integration()
-    # dm.get_orbit_design_matrix()
-    # dm.get_sst_design_matrix()
-    # # '''setp 8: get NEQ'''
+    dm = GravityDesignMat(0).configure(accConfig=[accConfig_A, accConfig_B],
+                                       solverConfig=solverConfig, parameterConfig=parameterConfig)
+    dm.orbit_integration()
+    dm.get_orbit_design_matrix()
+    dm.get_sst_design_matrix()
+    '''setp 8: get NEQ'''
     neq = GravityNEQperArc(0)
     neq.configure(solverConfig=solverConfig).get_neq()
 
@@ -357,7 +355,7 @@ if __name__ == '__main__':
     # adjust()
 
     #
-    # demo()
+    demo()
     # draw()
     # drawMatrix()
     # getRMS()

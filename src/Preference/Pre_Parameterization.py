@@ -22,7 +22,7 @@ class ParameterConfig:
 
     class StokesCoefficients:
         def __init__(self):
-            self.isRequired = True
+            self.isRequired = False
             self.Parameter_Number = 3717
             self.AllisGlobal = True
             self.SortMethod = EnumType.CSseq.SortByOrder.name

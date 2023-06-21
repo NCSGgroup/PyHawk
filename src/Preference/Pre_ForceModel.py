@@ -56,7 +56,7 @@ class ForceModelConfig:
 
     class NonConservative:
         def __init__(self):
-            self.date_span = ['2008-01-01', '2008-01-31']
+            self.date_span = ['2008-01-01', '2008-01-03']
             self.arcNo = 0
             self.sat = {EnumType.SatID.A.name: True,
                         EnumType.SatID.B.name: True}
@@ -141,7 +141,7 @@ class ForceModelConfig:
 
     class NonTide:
         def __init__(self):
-            self.kind = EnumType.AODtype.GLO.name
+            self.kind = EnumType.AODtype.OCN.name
             self.MaxDeg = 100
             self.TS = 3
 

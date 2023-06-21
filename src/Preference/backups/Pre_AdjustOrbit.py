@@ -5,7 +5,7 @@ import src.Preference.EnumType as EnumType
 class RangeRate:
     ParameterFitting = EnumType.SSTFitOption.biasC0C1_OneCPR
     OutlierTimes = 3 #how
-    OutlierLimit = 7e-07
+    OutlierLimit = 5e-05
     ArcLength = 1.5
     Iterations = 2 #times
 
