@@ -24,30 +24,24 @@ from src.Preference.backups.Pre_ForceModel import PathOfFiles
 from src.Preference.Pre_Accelerometer import AccelerometerConfig
 from src.Preference.Pre_Solver import SolverConfig
 from src.Preference.Pre_Parameterization import ParameterConfig
-import json
-from src.Frame.Frame import Frame
-from src.Interface.L1b import GRACE_OLD_RL02
-from src.Frame.EOP import EOP
-from src.Interface.KinematicOrbit import KinematicOrbit
-from src.Interface.GapFix import GapFix
-from src.Interface.ArcOperation import ArcSelect
 from src.Solver.AdjustSST import RangeRate
+import json
 
 
 def adjust():
-    """step 1: Read raw data"""
-    fr = Frame(EOP().load())
-    s = GRACE_OLD_RL02().configure().setDate()
-    s.read_double_sat()
-    """step 2: Convert orbit from ITRS frame into GCRS frame"""
-    kine = KinematicOrbit(L1b=s).configure()
-    # kine.read_double_sat()
-    kine.GNVandKiOrbitItrs2Gcrs(fr)
-    """step 3: Gap fix"""
-    gf = GapFix(s).configure()
-    gf.fix_all().makeReport()
-    arc = ArcSelect(gf).configure()
-    arc.unpackArcs().makeReport()
+    # """step 1: Read raw data"""
+    # fr = Frame(EOP().load())
+    # s = GRACE_OLD_RL02().configure().setDate()
+    # s.read_double_sat()
+    # """step 2: Convert orbit from ITRS frame into GCRS frame"""
+    # kine = KinematicOrbit(L1b=s).configure()
+    # # kine.read_double_sat()
+    # kine.GNVandKiOrbitItrs2Gcrs(fr)
+    # """step 3: Gap fix"""
+    # gf = GapFix(s).configure()
+    # gf.fix_all().makeReport()
+    # arc = ArcSelect(gf).configure()
+    # arc.unpackArcs().makeReport()
 
     p1 = multiprocessing.Process(target=demo1, args=(0, 41))
     p2 = multiprocessing.Process(target=demo1, args=(41, 82))
@@ -100,25 +94,56 @@ def demo():
     solverConfig = SolverConfig()
     solverDict = json.load(open('../setting/Calibrate/SolverConfig.json', 'r'))
     solverConfig.__dict__ = solverDict
-    # AdjustOrbit(accConfig=[accConfig_A, accConfig_B], date_span=date_span).\
-    #     configure(SerDer=Orbit_var_2nd_diff, arcNo=0, ParameterConfig=parameterConfig).calibrate(iteration=3)
-    # initTime, initR, endTime, endR = adjust.draw()
-    # firstR, secondR, thirdR = adjust.getR()
-    # np.savez('adjust.npz', R1=firstR, R2=secondR, R3=thirdR)
+    AdjustOrbit(accConfig=[accConfig_A, accConfig_B], date_span=date_span).\
+        configure(SerDer=Orbit_var_2nd_diff, arcNo=0, ParameterConfig=parameterConfig).calibrate(iteration=3)
 
-    # RR = RangeRate(23)
-    # RR.configure()
-    # RR.calibrate()
-    # '''step 6: get DesignMatrix'''
+    RR = RangeRate(0)
+    RR.configure()
+    RR.calibrate()
+    '''step 6: get DesignMatrix'''
 
-    # dm = GravityDesignMat(0).configure(accConfig=[accConfig_A, accConfig_B],
-    #                                    solverConfig=solverConfig, parameterConfig=parameterConfig)
-    # dm.orbit_integration()
-    # dm.get_orbit_design_matrix()
-    # dm.get_sst_design_matrix()
-    # # '''setp 8: get NEQ'''
+    dm = GravityDesignMat(0).configure(accConfig=[accConfig_A, accConfig_B],
+                                       solverConfig=solverConfig, parameterConfig=parameterConfig)
+    dm.orbit_integration()
+    dm.get_orbit_design_matrix()
+    dm.get_sst_design_matrix()
+    '''setp 8: get NEQ'''
     neq = GravityNEQperArc(0)
     neq.configure(solverConfig=solverConfig).get_neq()
+
+
+def demo1(start, end):
+    date_span = ['2008-01-01', '2008-01-31']
+    accConfig_A = AccelerometerConfig()
+    acc_A = json.load(open('../setting/Calibrate/AccelerometerConfig_A.json', 'r'))
+    accConfig_A.__dict__ = acc_A
+    accConfig_B = AccelerometerConfig()
+    acc_B = json.load(open('../setting/Calibrate/AccelerometerConfig_B.json', 'r'))
+    accConfig_B.__dict__ = acc_B
+    solverConfig = SolverConfig()
+    solverDict = json.load(open('../setting/Calibrate/SolverConfig.json', 'r'))
+    solverConfig.__dict__ = solverDict
+    parameterConfig = ParameterConfig()
+    Parameter = json.load(open('../setting/Calibrate/ParameterConfig.json', 'r'))
+    parameterConfig.__dict__ = Parameter
+    # """step 5: init AdjustOrbit"""
+    # for i in range(start, end):
+    #     AdjustOrbit(accConfig=[accConfig_A, accConfig_B]).configure(Orbit_var_2nd_diff, arcNo=i).calibrate(iteration=2)
+    # """step 6: adjustSST"""
+    # for i in range(start, end):
+    #     RR = RangeRate(i, date_span=date_span)
+    #     RR.configure()
+    #     RR.calibrate()
+    # """step 7: DesignMatrix"""
+    # for i in range(start, end):
+    #     dm = GravityDesignMat(i).configure(accConfig=[accConfig_A, accConfig_B],solverConfig=solverConfig,parameterConfig=parameterConfig)
+    #     dm.orbit_integration()
+    #     dm.get_orbit_design_matrix()
+    #     dm.get_sst_design_matrix()
+    '''setp 8: get NEQ'''
+    for i in range(start, end):
+        neq = GravityNEQperArc(i)
+        neq.configure(solverConfig=solverConfig).get_neq()
 
 
 def getRMS():
@@ -308,40 +333,6 @@ def csReshape():
     pass
 
 
-def demo1(start, end):
-    date_span = ['2008-01-01', '2008-01-02']
-    accConfig_A = AccelerometerConfig()
-    acc_A = json.load(open('../setting/Calibrate/AccelerometerConfig_A.json', 'r'))
-    accConfig_A.__dict__ = acc_A
-    accConfig_B = AccelerometerConfig()
-    acc_B = json.load(open('../setting/Calibrate/AccelerometerConfig_B.json', 'r'))
-    accConfig_B.__dict__ = acc_B
-    solverConfig = SolverConfig()
-    solverDict = json.load(open('../setting/Calibrate/SolverConfig.json', 'r'))
-    solverConfig.__dict__ = solverDict
-    parameterConfig = ParameterConfig()
-    Parameter = json.load(open('../setting/Calibrate/ParameterConfig.json', 'r'))
-    parameterConfig.__dict__ = Parameter
-    """step 5: init AdjustOrbit"""
-    for i in range(start, end):
-        AdjustOrbit(accConfig=[accConfig_A, accConfig_B]).configure(Orbit_var_2nd_diff, arcNo=i).calibrate(iteration=2)
-    """step 6: adjustSST"""
-    for i in range(start, end):
-        RR = RangeRate(i, date_span=date_span)
-        RR.configure()
-        RR.calibrate()
-    # """step 7: DesignMatrix"""
-    # for i in range(start, end):
-    #     dm = GravityDesignMat(i).configure(accConfig=[accConfig_A, accConfig_B],solverConfig=solverConfig,parameterConfig=parameterConfig)
-    #     dm.orbit_integration()
-    #     dm.get_orbit_design_matrix()
-    #     dm.get_sst_design_matrix()
-    # '''setp 8: get NEQ'''
-    # for i in range(start, end):
-    #     neq = GravityNEQperArc(i)
-    #     neq.configure(solverConfig=solverConfig).get_neq()
-
-
 if __name__ == '__main__':
     # p1 = multiprocessing.Process(target=demo1, args=(0, 40))
     # p2 = multiprocessing.Process(target=demo1, args=(40, 80))
@@ -361,14 +352,14 @@ if __name__ == '__main__':
     # p4.join()
     # p5.join()
     # p6.join()
-    adjust()
+    # adjust()
 
-    # demo()
+    #
+    demo()
     # draw()
     # drawMatrix()
     # getRMS()
     # getKBRRRMS()
     # drawRMS()
     # cacluateNL()
-    # csReshape()
-
+    csReshape()
