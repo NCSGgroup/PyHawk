@@ -1,6 +1,6 @@
 import numpy as np
 from src.Preference.EnumType import ParaType
-import src.Preference.backups.Pre_Parameterization as Pre_Parameterization
+from src.Preference.Pre_Parameterization import ParameterConfig
 
 
 class Parameterization:
@@ -9,6 +9,10 @@ class Parameterization:
     To define the parameters to be estimated or solved.
     """
     def __init__(self):
+        self._ParameterConfig = None
+        self._TransitionMatrixConfig = None
+        self._AccelerometerConfig = None
+        self._StokesCoefficientsConfig = None
         self.__reset()
 
     def __reset(self):
@@ -20,10 +24,21 @@ class Parameterization:
     def getInfo(self):
         pass
 
-    def configure(self, **kwargs):
-        self.__config[ParaType.TransitionMatrix] = kwargs.get("TransitionMatrix", Pre_Parameterization.TransitionMatrix)
-        self.__config[ParaType.Accelerometer] = kwargs.get("Accelerometer", Pre_Parameterization.Accelerometer)
-        self.__config[ParaType.StokesCoefficients] = kwargs.get("StokesCoefficients", Pre_Parameterization.StokesCoefficients)
+    def configure(self, parameterConfig: ParameterConfig):
+        self._ParameterConfig = parameterConfig
+        '''config TransitionMatrix'''
+        self._TransitionMatrixConfig = self._ParameterConfig.TransitionMatrix()
+        self._TransitionMatrixConfig.__dict__.update(self._ParameterConfig.TransitionMatrixConfig.copy())
+        '''config AccelerometerConfig'''
+        self._AccelerometerConfig = self._ParameterConfig.Accelerometer()
+        self._AccelerometerConfig.__dict__.update(self._ParameterConfig.AccelerometerConfig.copy())
+        '''config StokesCoefficientsConfig'''
+        self._StokesCoefficientsConfig = self._ParameterConfig.StokesCoefficients()
+        self._StokesCoefficientsConfig.__dict__.update(self._ParameterConfig.StokesCoefficientsConfig.copy())
+
+        self.__config[ParaType.TransitionMatrix] = self._TransitionMatrixConfig
+        self.__config[ParaType.Accelerometer] = self._AccelerometerConfig
+        self.__config[ParaType.StokesCoefficients] = self._StokesCoefficientsConfig
         return self
 
     def split_global_local(self, dm: np.ndarray, isIncludeStateVec=False):
