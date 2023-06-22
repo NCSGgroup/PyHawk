@@ -43,6 +43,7 @@ class NonConByAcc(AbsNonConservative):
         self._pathConfig = self._FMConfig.PathOfFiles()
         self._pathConfig.__dict__.update(self._FMConfig.PathOfFilesConfig.copy())
 
+        self._range = self._NonConservative.date_span
         self.__dataTemp = self._pathConfig.temp_non_conservative_data
         self.__loadAccelerometer()
         return self

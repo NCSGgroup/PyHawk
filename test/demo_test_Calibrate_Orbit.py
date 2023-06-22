@@ -1,6 +1,6 @@
 import sys
-
 sys.path.append("../")
+
 from src.Interface.ArcOperation import ArcData
 import src.Preference.EnumType as EnumType
 import numpy as np
@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 import src.Preference.backups.Pre_AdjustOrbit as Pre_AdjustOrbit
 import pathlib
 import h5py
-import src.Preference.backups.Pre_Solver as Pre_Solver
 import multiprocessing
 from src.Solver.DesignMatrix import GravityDesignMat
 from src.Solver.NEQ import GravityNEQperArc
@@ -25,7 +24,13 @@ from src.Preference.Pre_Accelerometer import AccelerometerConfig
 from src.Preference.Pre_Solver import SolverConfig
 from src.Preference.Pre_Parameterization import ParameterConfig
 from src.Preference.Pre_ForceModel import ForceModelConfig
+from src.Frame.EOP import EOP
+from src.Interface.KinematicOrbit import KinematicOrbit
+from src.Interface.GapFix import GapFix
+from src.Interface.ArcOperation import ArcSelect
 from src.Solver.AdjustSST import RangeRate
+from src.Frame.Frame import Frame
+from src.Interface.L1b import GRACE_NEW_RL02, GRACE_OLD_RL02
 import json
 
 
@@ -67,9 +72,9 @@ def adjust():
 
 
 def demo():
-    """step 1: Read raw data"""
+    # """step 1: Read raw data"""
     # fr = Frame(EOP().load())
-    # s = GRACE_NEW_RL02().configure().setDate()
+    # s = GRACE_OLD_RL02().configure().setDate()
     # s.read_double_sat()
     # """step 2: Convert orbit from ITRS frame into GCRS frame"""
     # kine = KinematicOrbit(L1b=s).configure()
@@ -80,7 +85,7 @@ def demo():
     # gf.fix_all().makeReport()
     # arc = ArcSelect(gf).configure()
     # arc.unpackArcs().makeReport()
-    # """step 5: init AdjustOrbit"""
+    """step 5: init AdjustOrbit"""
     date_span = ['2008-01-01', '2008-01-31']
     accConfig_A = AccelerometerConfig()
     acc_A = json.load(open('../setting/Calibrate/AccelerometerConfig_A.json', 'r'))
@@ -97,9 +102,9 @@ def demo():
     solverConfig = SolverConfig()
     solverDict = json.load(open('../setting/Calibrate/SolverConfig.json', 'r'))
     solverConfig.__dict__ = solverDict
-    AdjustOrbit(accConfig=[accConfig_A, accConfig_B], date_span=date_span). \
-        configure(SerDer=Orbit_var_2nd_diff, arcNo=0, FMConfig=fmConfig, ParameterConfig=parameterConfig).calibrate(
-        iteration=3)
+    # AdjustOrbit(accConfig=[accConfig_A, accConfig_B], date_span=date_span). \
+    #     configure(SerDer=Orbit_var_2nd_diff, arcNo=0, FMConfig=fmConfig, ParameterConfig=parameterConfig).calibrate(
+    #     iteration=3)
 
     RR = RangeRate(0)
     RR.configure()

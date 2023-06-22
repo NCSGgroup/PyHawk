@@ -176,7 +176,6 @@ class GRACE_OLD_RL02(L1b):
         try:
             f = open(path, 'rb')
         except FileNotFoundError as e:
-            print(path)
             return None
 
         NumOfAcc = None
@@ -309,7 +308,7 @@ class GRACE_OLD_RL02(L1b):
             f = open(path, 'rb')
         except FileNotFoundError as e:
             # lg.error(e)
-            print(path)
+            # print(path)
             return None
 
         NumOfGNV = None
@@ -376,7 +375,7 @@ class GRACE_NEW_RL02(L1b):
         try:
             f = open(path, 'rb')
         except FileNotFoundError as e:
-            print(path)
+            # print(path)
             return None
 
         NumOfAcc = None
@@ -416,7 +415,7 @@ class GRACE_NEW_RL02(L1b):
             f = open(path, 'rb')
         except FileNotFoundError as e:
             # lg.error(e)
-            print(path)
+            # print(path)
             return None
 
         NumOfSCA = None
@@ -458,7 +457,7 @@ class GRACE_NEW_RL02(L1b):
             f = open(path, 'rb')
         except FileNotFoundError as e:
             # lg.error(e)
-            print(path)
+            # print(path)
             return None
 
         NumOfKBR = None
@@ -509,7 +508,7 @@ class GRACE_NEW_RL02(L1b):
             f = open(path, 'rb')
         except FileNotFoundError as e:
             # lg.error(e)
-            print(path)
+            # print(path)
             return None
 
         NumOfGNV = None
@@ -576,7 +575,7 @@ class GRACE_FO_RL04(L1b):
         try:
             f = open(path, 'r')
         except FileNotFoundError as e:
-            print(path)
+            # print(path)
             return None
 
         NumOfAct = None
@@ -610,7 +609,7 @@ class GRACE_FO_RL04(L1b):
         try:
             f = open(path, 'r')
         except FileNotFoundError as e:
-            print(path)
+            # print(path)
             return None
 
         NumOfSCA = None
