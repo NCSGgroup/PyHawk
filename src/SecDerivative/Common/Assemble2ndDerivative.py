@@ -4,7 +4,7 @@ from src.SecDerivative.Common.ConfigForce_GravHar import ConfigGravHar
 from src.Frame.PlanetEphemerides import PlanetEphemerides
 import src.Preference.EnumType as EnumType
 from src.Auxilary.SortCS import SortCS
-import src.Preference.backups.Pre_Parameterization as Pre_Parameterization
+# import src.Preference.backups.Pre_Parameterization as Pre_Parameterization
 import numpy as np
 from src.Preference.Pre_ForceModel import ForceModelConfig
 from src.Preference.Pre_Parameterization import ParameterConfig
@@ -20,9 +20,7 @@ class Assemble2ndDerivative:
         self.__S = None
         self._arc = None
         self.__Sat = EnumType.SatID.A
-        self.__sort = SortCS(Pre_Parameterization.StokesCoefficients.SortMethod,
-                             Pre_Parameterization.StokesCoefficients.MaxDegree,
-                             Pre_Parameterization.StokesCoefficients.MinDegree)
+        self.__sort = None
         self.__isExistDaDx = False
         self.__isExistDaDp = False
         self.__externalEOP = None
@@ -35,8 +33,27 @@ class Assemble2ndDerivative:
         self.__acc = np.zeros(3, dtype=float)
         self.__dadp = np.array([[], [], []])
         self.__dadx = np.zeros((3, 3), dtype=float)
+        self.__FMConfig = None
+        self._ParameterConfig = None
+        self._TransitionMatrixConfig = None
+        self._AccelerometerConfig = None
+        self._StokesCoefficientsConfig = None
 
-    def configure(self, FMConfig = ForceModelConfig(), ParameterConfig = ParameterConfig()):
+    def configure(self, FMConfig: ForceModelConfig, ParameterConfig: ParameterConfig):
+        self._ParameterConfig = ParameterConfig
+        '''config TransitionMatrix'''
+        self._TransitionMatrixConfig = self._ParameterConfig.TransitionMatrix()
+        self._TransitionMatrixConfig.__dict__.update(self._ParameterConfig.TransitionMatrixConfig.copy())
+        '''config AccelerometerConfig'''
+        self._AccelerometerConfig = self._ParameterConfig.Accelerometer()
+        self._AccelerometerConfig.__dict__.update(self._ParameterConfig.AccelerometerConfig.copy())
+        '''config StokesCoefficientsConfig'''
+        self._StokesCoefficientsConfig = self._ParameterConfig.StokesCoefficients()
+        self._StokesCoefficientsConfig.__dict__.update(self._ParameterConfig.StokesCoefficientsConfig.copy())
+        '''config sort'''
+        self.__sort = SortCS(self._StokesCoefficientsConfig.SortMethod,
+                             self._StokesCoefficientsConfig.MaxDegree,
+                             self._StokesCoefficientsConfig.MinDegree)
         self.__ep = PlanetEphemerides().configure(FMConfig=FMConfig).setPlanets()
         self.configForce = ConfigForce(arc=self._arc, ep=self.__ep).configure(FMConfig=FMConfig)
         self.ForceType = self.configForce.getForceType()
@@ -95,13 +112,13 @@ class Assemble2ndDerivative:
                 if obj.OutputCoordinate == EnumType.Coordinate.GCRS.name:
                     acc = self.__time.AccITRS2GCRS(acc, rm).flatten()
                 self.__acc += acc
-                if Pre_Parameterization.TransitionMatrix.isRequired:
+                if self._TransitionMatrixConfig.isRequired:
                     res = cgh.getDaDx()
                     self.__isExistDaDx = True
                     self.__dadx += self.__time.dadrITRS2GCRS(res, self.__time.getRotationMatrix)
-                if Pre_Parameterization.StokesCoefficients.isRequired:
-                    du2c, du2s = cgh.getDaDp(degree_max=Pre_Parameterization.StokesCoefficients.MaxDegree,
-                                             degree_min=Pre_Parameterization.StokesCoefficients.MinDegree)
+                if self._StokesCoefficientsConfig.isRequired:
+                    du2c, du2s = cgh.getDaDp(degree_max=self._StokesCoefficientsConfig.MaxDegree,
+                                             degree_min=self._StokesCoefficientsConfig.MinDegree)
                     res = np.array([self.__sort.sort(du2c[0], du2s[0]),
                                     self.__sort.sort(du2c[1], du2s[1]),
                                     self.__sort.sort(du2c[2], du2s[2])])
@@ -109,19 +126,19 @@ class Assemble2ndDerivative:
                     self.__isExistDaDp = True
                     self.__dadp = np.hstack((self.__dadp, res))
             elif item == EnumType.ForceType.Relativity.name:
-                obj = obj.setSunState(*(self.__ep.getSunPosAndVel(self.__time)))\
+                obj = obj.setSunState(*(self.__ep.getSunPosAndVel(self.__time))) \
                     .setSatState(self.__pos.copy(), self.__vel.copy())
                 self.__acc += obj.getAcceleration()
             elif item == EnumType.ForceType.PlanetaryPerturbation.name:
                 obj = obj.setTime(self.__time).setPlanetPos(self.__ep.getPosPlanets()).setSatPos(self.__pos.copy())
                 self.__acc += obj.getAcceleration()
-                if Pre_Parameterization.TransitionMatrix.isRequired:
+                if self._TransitionMatrixConfig.isRequired:
                     self.__isExistDaDx = True
                     self.__dadx += obj.getDaDx()
             elif item == (EnumType.ForceType.NonConserveForce.name + self.__Sat.name):
                 obj = obj.setTime(self.__time)
                 self.__acc += obj.getAcceleration()
-                if Pre_Parameterization.Accelerometer.isRequired:
+                if self._AccelerometerConfig.isRequired:
                     self.__isExistDaDp = True
                     self.__dadp = np.hstack((self.__dadp, obj.getDaDp()))
 

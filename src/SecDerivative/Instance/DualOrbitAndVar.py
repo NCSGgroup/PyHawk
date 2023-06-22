@@ -1,11 +1,12 @@
 import numpy as np
-
 from src.SecDerivative.Common.Assemble2ndDerivative import Assemble2ndDerivative
 from src.Frame.Frame import Frame
 from src.Preference.EnumType import TimeFormat, Payload, SatID
 from src.SecDerivative.VarEqn import VarEqn
 from src.SecDerivative.MatrixVarEqn import MatrixVarEqn
 from src.Interface.ArcOperation import ArcData
+from src.Preference.Pre_ForceModel import ForceModelConfig
+from src.Preference.Pre_Parameterization import ParameterConfig
 
 
 class Orbit_var_2nd_diff(Assemble2ndDerivative):
@@ -19,11 +20,14 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
         self.__initVel = None
         self.__PosAndVel = None
 
-    def setInitData(self, arc: int, kind: Payload):
+    def configures(self, arc: int, FMConfig :ForceModelConfig, ParConfig :ParameterConfig):
         self._arc = arc
-        self.configure()
-        GNVA = self.__rd.getData(arc=arc, kind=kind, sat=SatID.A)
-        GNVB = self.__rd.getData(arc=arc, kind=kind, sat=SatID.B)
+        self.configure(FMConfig=FMConfig, ParameterConfig=ParConfig)
+        return self
+
+    def setInitData(self, kind: Payload):
+        GNVA = self.__rd.getData(arc=self._arc, kind=kind, sat=SatID.A)
+        GNVB = self.__rd.getData(arc=self._arc, kind=kind, sat=SatID.B)
         startPosA, startPosB = GNVA[4, 1:4], GNVB[4, 1:4]
         startVelA, startVelB = GNVA[4, 4:7], GNVB[4, 4:7]
         self.__initTime = GNVA[4, 0]

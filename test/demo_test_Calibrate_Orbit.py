@@ -1,4 +1,5 @@
 import sys
+
 sys.path.append("../")
 from src.Interface.ArcOperation import ArcData
 import src.Preference.EnumType as EnumType
@@ -18,12 +19,12 @@ import src.Preference.backups.Pre_NEQ as Pre_NEQ
 import src.Preference.backups.Pre_Interface as Pre_Interface
 from src.Auxilary.SortCS import SortCS
 from src.Auxilary.GeoMathKit import GeoMathKit
-import src.Preference.backups.Pre_Parameterization as Pre_Parameterization
 from src.Interface.LoadSH import LoadGif48
 from src.Preference.backups.Pre_ForceModel import PathOfFiles
 from src.Preference.Pre_Accelerometer import AccelerometerConfig
 from src.Preference.Pre_Solver import SolverConfig
 from src.Preference.Pre_Parameterization import ParameterConfig
+from src.Preference.Pre_ForceModel import ForceModelConfig
 from src.Solver.AdjustSST import RangeRate
 import json
 
@@ -66,7 +67,6 @@ def adjust():
 
 
 def demo():
-
     """step 1: Read raw data"""
     # fr = Frame(EOP().load())
     # s = GRACE_NEW_RL02().configure().setDate()
@@ -88,14 +88,18 @@ def demo():
     accConfig_B = AccelerometerConfig()
     acc_B = json.load(open('../setting/Calibrate/AccelerometerConfig_B.json', 'r'))
     accConfig_B.__dict__ = acc_B
+    fmConfig = ForceModelConfig()
+    fmDict = json.load(open('../setting/Calibrate/ForceModelConfig.json', 'r'))
+    fmConfig.__dict__ = fmDict
     parameterConfig = ParameterConfig()
     Parameter = json.load(open('../setting/Calibrate/ParameterConfig.json', 'r'))
     parameterConfig.__dict__ = Parameter
     solverConfig = SolverConfig()
     solverDict = json.load(open('../setting/Calibrate/SolverConfig.json', 'r'))
     solverConfig.__dict__ = solverDict
-    AdjustOrbit(accConfig=[accConfig_A, accConfig_B], date_span=date_span).\
-        configure(SerDer=Orbit_var_2nd_diff, arcNo=0, ParameterConfig=parameterConfig).calibrate(iteration=3)
+    AdjustOrbit(accConfig=[accConfig_A, accConfig_B], date_span=date_span). \
+        configure(SerDer=Orbit_var_2nd_diff, arcNo=0, FMConfig=fmConfig, ParameterConfig=parameterConfig).calibrate(
+        iteration=3)
 
     RR = RangeRate(0)
     RR.configure()
@@ -103,7 +107,7 @@ def demo():
     '''step 6: get DesignMatrix'''
 
     dm = GravityDesignMat(0).configure(accConfig=[accConfig_A, accConfig_B],
-                                       solverConfig=solverConfig, parameterConfig=parameterConfig)
+                                       solverConfig=solverConfig, FMConfig=fmConfig, parameterConfig=parameterConfig)
     dm.orbit_integration()
     dm.get_orbit_design_matrix()
     dm.get_sst_design_matrix()
@@ -182,7 +186,7 @@ def getKBRRRMS():
         postfit = h5['post_residual'][()]
         RMS.append(rms(postfit))
         h5.close()
-    np.savez('2008-1-KBRRRMS.npz', RMS = RMS)
+    np.savez('2008-1-KBRRRMS.npz', RMS=RMS)
 
 
 def drawRMS():
@@ -195,9 +199,9 @@ def drawRMS():
     listY = []
     listZ = []
     for i in range(0, 29):
-        listX.append(sum(RMSX[i * 8:(i+1) * 8]) / 8)
-        listY.append(sum(RMSY[i * 8:(i+1) * 8]) / 8)
-        listZ.append(sum(RMSZ[i * 8:(i+1) * 8]) / 8)
+        listX.append(sum(RMSX[i * 8:(i + 1) * 8]) / 8)
+        listY.append(sum(RMSY[i * 8:(i + 1) * 8]) / 8)
+        listZ.append(sum(RMSZ[i * 8:(i + 1) * 8]) / 8)
 
     plt.style.use(['grid'])
     plt.title('AdjustRMS(2008-2-1~2008-2-29)', fontsize=24)
@@ -296,7 +300,7 @@ def rms(x: np.ndarray):
 
 
 def cacluateNL():
-    res_dir = pathlib.Path(Pre_NEQ.PathOfFiles.NormalEqTemp).joinpath\
+    res_dir = pathlib.Path(Pre_NEQ.PathOfFiles.NormalEqTemp).joinpath \
         (Pre_Interface.date_span[0] + '_' + Pre_Interface.date_span[1])
     # res_filename = res_dir.joinpath(str(0) + '.hdf5')
     # h5 = h5py.File(res_filename, 'r')
@@ -362,4 +366,4 @@ if __name__ == '__main__':
     # getKBRRRMS()
     # drawRMS()
     # cacluateNL()
-    csReshape()
+    # csReshape()

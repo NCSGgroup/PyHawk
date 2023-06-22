@@ -6,6 +6,7 @@ from src.Solver.Parameterization import Parameterization
 from src.Auxilary.SSTpartial import SSTpartial
 from src.Preference.Pre_Solver import SolverConfig
 from src.Preference.Pre_Parameterization import ParameterConfig
+from src.Preference.Pre_ForceModel import ForceModelConfig
 import numpy as np
 import h5py
 
@@ -28,19 +29,21 @@ class GravityDesignMat:
         self._accConfig = None
         self._solverConfig = None
         self._parameterConfig = None
+        self._FMConfig = None
         pass
 
-    def configure(self, accConfig, solverConfig: SolverConfig, parameterConfig: ParameterConfig):
+    def configure(self, accConfig, solverConfig: SolverConfig, FMConfig: ForceModelConfig, parameterConfig: ParameterConfig):
         self._accConfig = accConfig
         self._solverConfig = solverConfig
         self._parameterConfig = parameterConfig
+        self._FMConfig = FMConfig
         self._res = self._solverConfig.DesignMatrixTemp
         return self
 
     def orbit_integration(self):
         adjustDM = AdjustDM()
-        adjustDM.configure(SerDer=Orbit_var_2nd_diff, arcNo=self._arcNo,
-                           ParameterConfig=self._parameterConfig, SolverConfig=self._solverConfig)
+        adjustDM.configure(SerDer=Orbit_var_2nd_diff, arcNo=self._arcNo, ParameterConfig=self._parameterConfig,
+                           FMConfig=self._FMConfig, SolverConfig=self._solverConfig)
         # '''define the directory of res output'''
         # res_dir = self._res.joinpath(self._date_span[0] + '_' + self._date_span[1])
         # if not res_dir.is_dir():
@@ -53,7 +56,7 @@ class GravityDesignMat:
     def get_orbit_design_matrix(self):
 
         DM_orbit = self.__load_state_vec()
-        pp = Parameterization().configure()
+        pp = Parameterization().configure(parameterConfig=self._parameterConfig)
 
         dm_r = DM_orbit['r']
         dm_v = DM_orbit['v']
