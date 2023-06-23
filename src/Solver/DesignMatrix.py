@@ -8,6 +8,7 @@ from src.Preference.Pre_Solver import SolverConfig
 from src.Preference.Pre_Parameterization import ParameterConfig
 from src.Preference.Pre_ForceModel import ForceModelConfig
 from src.Preference.Pre_ODE import ODEConfig
+from src.Preference.Pre_AdjustOrbit import AdjustOrbitConfig
 import numpy as np
 import h5py
 
@@ -32,10 +33,13 @@ class GravityDesignMat:
         self._parameterConfig = None
         self._FMConfig = None
         self._ODEConfig = None
+        self._AdjustConfig = None
         pass
 
-    def configure(self, accConfig, solverConfig: SolverConfig, ODEConfig:ODEConfig, FMConfig: ForceModelConfig, parameterConfig: ParameterConfig):
+    def configure(self, accConfig, solverConfig: SolverConfig, AdjustOrbitConfig: AdjustOrbitConfig,
+                  ODEConfig:ODEConfig, FMConfig: ForceModelConfig, parameterConfig: ParameterConfig):
         self._accConfig = accConfig
+        self._AdjustConfig = AdjustOrbitConfig
         self._solverConfig = solverConfig
         self._parameterConfig = parameterConfig
         self._FMConfig = FMConfig
@@ -46,6 +50,7 @@ class GravityDesignMat:
     def orbit_integration(self):
         adjustDM = AdjustDM()
         adjustDM.configure(SerDer=Orbit_var_2nd_diff, arcNo=self._arcNo, ParameterConfig=self._parameterConfig,
+                           AdjustConfig=self._AdjustConfig,
                            FMConfig=self._FMConfig, SolverConfig=self._solverConfig, ODEConfig=self._ODEConfig)
         # '''define the directory of res output'''
         # res_dir = self._res.joinpath(self._date_span[0] + '_' + self._date_span[1])

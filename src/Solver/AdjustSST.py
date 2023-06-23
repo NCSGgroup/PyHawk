@@ -1,7 +1,6 @@
 
 import pathlib
 import h5py
-import src.Preference.backups.Pre_AdjustOrbit as Pre_AdjustOrbit
 from src.Interface.ArcOperation import ArcData
 import src.Preference.backups.Pre_Interface as Pre_Interface
 import src.Preference.EnumType as EnumType
@@ -10,6 +9,8 @@ from src.Auxilary.KeplerOrbitElements import OrbitalElements
 from tqdm import tqdm
 import numpy as np
 import scipy.linalg
+from src.Preference.Pre_AdjustOrbit import AdjustOrbitConfig
+import os
 
 
 class RangeRate:
@@ -20,12 +21,35 @@ class RangeRate:
         self.__kbr_fit = None
         self.__iterations = None
         self.__kbr_arc = None
+        self.__arcNo = arcNo
+        self.__date_span = date_span
+        self._AdjustOrbitConfig = None
+        self._RangeRateConfig = None
+        self._PathfileConfig = None
+        pass
+
+    def configure(self, AdjustOrbitConfig:AdjustOrbitConfig, **kwargs):
+        self._AdjustOrbitConfig = AdjustOrbitConfig
+        '''config adjust orbit'''
+        self._RangeRateConfig = self._AdjustOrbitConfig.RangeRate()
+        self._RangeRateConfig.__dict__.update(self._AdjustOrbitConfig.RangeRateConfig.copy())
+        self._PathfileConfig = self._AdjustOrbitConfig.PathOfFiles()
+        self._PathfileConfig.__dict__.update(self._AdjustOrbitConfig.PathOfFilesConfig.copy())
+
+        kbr_arc = self._RangeRateConfig.ArcLength
+        self.__rms_times = self._RangeRateConfig.OutlierTimes
+        self.__upper_RMS = self._RangeRateConfig.OutlierLimit
+        self.__kbr_fit = self._RangeRateConfig.ParameterFitting
+        self.__iterations = self._RangeRateConfig.Iterations
+        '''the arc length to Calibrate kbr: unit [hour]'''
+        self.__kbr_arc = kbr_arc * 3600
+
         """load data"""
-        filename = pathlib.Path(Pre_AdjustOrbit.PathOfFiles.StateVectorDataTemp).\
-            joinpath(date_span[0] + '_' + date_span[1]).joinpath(str(arcNo) + '_AB.hdf5')
+        filename = self._PathfileConfig.StateVectorDataTemp + '/' +\
+                   self.__date_span[0] + '_' + self.__date_span[1] + '/' + str(self.__arcNo) + '_AB.hdf5'
         h5AB = h5py.File(filename, 'r')
-        rd = ArcData(date_span=date_span)
-        KBR = rd.getData(arc=arcNo, kind=EnumType.Payload.KBR)
+        rd = ArcData(date_span=self.__date_span)
+        KBR = rd.getData(arc=self.__arcNo, kind=EnumType.Payload.KBR)
 
         kbr_time = KBR[:, 0]
         self.__kbr_r = KBR[:, 2]
@@ -40,24 +64,11 @@ class RangeRate:
         self.__VelB = h5AB['v'][:][new_index, 3:6, 0]
 
         '''define the directory of range-rate output'''
-        res_dir = pathlib.Path(Pre_AdjustOrbit.PathOfFiles.RangeRateTemp). \
-            joinpath(date_span[0] + '_' + date_span[1])
-        if not res_dir.is_dir():
-            res_dir.mkdir(exist_ok=True)
-        res_filename = res_dir.joinpath('RangeRate_' + str(arcNo) + '.hdf5')
+        res_dir = self._PathfileConfig.RangeRateTemp + '/' + self.__date_span[0] + '_' + self.__date_span[1]
+        if not os.path.exists(res_dir):
+            os.makedirs(res_dir)
+        res_filename = res_dir + '/RangeRate_' + str(self.__arcNo) + '.hdf5'
         self.__resh5 = h5py.File(res_filename, "w")
-
-        pass
-
-    def configure(self, **kwargs):
-        kbr_arc = kwargs.get('kbr_arc', Pre_AdjustOrbit.RangeRate.ArcLength)
-        self.__rms_times = kwargs.get('rms_times', Pre_AdjustOrbit.RangeRate.OutlierTimes)
-        self.__upper_RMS = kwargs.get('upper_RMS', Pre_AdjustOrbit.RangeRate.OutlierLimit)
-        self.__kbr_fit = kwargs.get('kbr_fit', Pre_AdjustOrbit.RangeRate.ParameterFitting)
-        self.__iterations = kwargs.get('iterations', Pre_AdjustOrbit.RangeRate.Iterations)
-        '''the arc length to Calibrate kbr: unit [hour]'''
-        self.__kbr_arc = kbr_arc * 3600
-
         return self
 
     def calibrate(self):
@@ -142,21 +153,21 @@ class RangeRate:
 
 class FitSST:
 
-    def __init__(self, t: np.ndarray, n: np.ndarray, option: EnumType.SSTFitOption):
+    def __init__(self, t: np.ndarray, n: np.ndarray, option):
         """
         :param t: epoch of the kbr data  [second]
         :param n: mean motion of the sat. [kepler orbital element]
         :param option: to choose which method is applied.
         """
         method = {
-            EnumType.SSTFitOption.biasC0C1: self.__func1,
-            EnumType.SSTFitOption.biasC0C1C2: self.__func2,
-            EnumType.SSTFitOption.biasC0C1C2C3: self.__func3,
-            EnumType.SSTFitOption.biasC0_OneCPR: self.__func4,
-            EnumType.SSTFitOption.biasC0C1_OneCPR: self.__func5,
-            EnumType.SSTFitOption.biasC0C1C2_OneCPR: self.__func6,
-            EnumType.SSTFitOption.twice_biasC0C1_OneCPR: self.__func7,
-            EnumType.SSTFitOption.twice_biasC0C1C2_OneCPR: self.__func8
+            EnumType.SSTFitOption.biasC0C1.name: self.__func1,
+            EnumType.SSTFitOption.biasC0C1C2.name: self.__func2,
+            EnumType.SSTFitOption.biasC0C1C2C3.name: self.__func3,
+            EnumType.SSTFitOption.biasC0_OneCPR.name: self.__func4,
+            EnumType.SSTFitOption.biasC0C1_OneCPR.name: self.__func5,
+            EnumType.SSTFitOption.biasC0C1C2_OneCPR.name: self.__func6,
+            EnumType.SSTFitOption.twice_biasC0C1_OneCPR.name: self.__func7,
+            EnumType.SSTFitOption.twice_biasC0C1C2_OneCPR.name: self.__func8
         }
 
         self.__DesignMatrix = method[option](t, n)

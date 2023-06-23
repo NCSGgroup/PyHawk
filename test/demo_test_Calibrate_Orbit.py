@@ -8,7 +8,6 @@ from tqdm import tqdm
 from src.SecDerivative.Instance.DualOrbitAndVar import Orbit_var_2nd_diff
 from src.Solver.AdjustOrbit import AdjustOrbit
 import matplotlib.pyplot as plt
-import src.Preference.backups.Pre_AdjustOrbit as Pre_AdjustOrbit
 import pathlib
 import h5py
 import multiprocessing
@@ -32,7 +31,7 @@ from src.Interface.L1b import GRACE_NEW_RL02, GRACE_OLD_RL02
 import json
 from src.Preference.Pre_ODE import ODEConfig
 from src.Preference.Pre_NEQ import NEQConfig
-
+from src.Preference.Pre_AdjustOrbit import AdjustOrbitConfig
 
 def adjust():
     # """step 1: Read raw data"""
@@ -108,23 +107,27 @@ def demo():
     neqConfig = NEQConfig()
     neqDict = json.load(open('../setting/Calibrate/NEQConfig.json', 'r'))
     neqConfig.__dict__ = neqDict
+    adjustOrbitConfig = AdjustOrbitConfig()
+    adjustOrbitDict = json.load(open('../setting/Calibrate/AdjustOrbitConfig.json', 'r'))
+    adjustOrbitConfig.__dict__ = adjustOrbitDict
     AdjustOrbit(accConfig=[accConfig_A, accConfig_B], date_span=date_span). \
-        configure(SerDer=Orbit_var_2nd_diff, arcNo=0, ODEConfig=odeConfig,
-                  FMConfig=fmConfig, ParameterConfig=parameterConfig).calibrate(iteration=3)
+        configure(SerDer=Orbit_var_2nd_diff, arcNo=0, ODEConfig=odeConfig, FMConfig=fmConfig,
+                  AdjustOrbitConfig=adjustOrbitConfig, ParameterConfig=parameterConfig).calibrate(iteration=3)
 
     RR = RangeRate(0)
-    RR.configure()
+    RR.configure(AdjustOrbitConfig=adjustOrbitConfig)
     RR.calibrate()
     '''step 6: get DesignMatrix'''
 
     dm = GravityDesignMat(0).configure(accConfig=[accConfig_A, accConfig_B], ODEConfig=odeConfig,
-                                       solverConfig=solverConfig, FMConfig=fmConfig, parameterConfig=parameterConfig)
+                                       AdjustOrbitConfig=adjustOrbitConfig, solverConfig=solverConfig,
+                                       FMConfig=fmConfig, parameterConfig=parameterConfig)
     dm.orbit_integration()
     dm.get_orbit_design_matrix()
     dm.get_sst_design_matrix()
     '''setp 8: get NEQ'''
     neq = GravityNEQperArc(0)
-    neq.configure(solverConfig=solverConfig, NEQConfig=neqConfig).get_neq()
+    neq.configure(solverConfig=solverConfig, NEQConfig=neqConfig, AdjustOrbitConfig=adjustOrbitConfig).get_neq()
 
 
 def demo1(start, end):

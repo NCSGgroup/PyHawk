@@ -1,12 +1,11 @@
 import src.Preference.backups.Pre_Interface as Pre_Interface
-import src.Preference.backups.Pre_AdjustOrbit as Pre_AdjustOrbit
 from src.Preference.Pre_NEQ import NEQConfig
 from src.Preference.EnumType import Payload, SatID, SSTObserve
 from src.Interface.ArcOperation import ArcData
 from src.Auxilary.GeoMathKit import GeoMathKit
 from src.Preference.Pre_Solver import SolverConfig
+from src.Preference.Pre_AdjustOrbit import AdjustOrbitConfig
 import numpy as np
-import pathlib
 import h5py
 from tqdm import tqdm
 import os
@@ -36,6 +35,7 @@ class GravityNEQperArc:
         self._OrbitBConfig = None
         self._SSTConfig = None
         self._PathOfFilesConfig = None
+        self._AdjustPathConfig = None
         self._sat = [key for key, value in sat.items() if value]
 
         for sat in self._sat:
@@ -45,9 +45,12 @@ class GravityNEQperArc:
                 self._satName = self._satName + sat.name
         pass
 
-    def configure(self, NEQConfig:NEQConfig, solverConfig: SolverConfig, **kwargs):
+    def configure(self, NEQConfig:NEQConfig, AdjustOrbitConfig:AdjustOrbitConfig, solverConfig: SolverConfig, **kwargs):
         self._NEQConfig = NEQConfig
         self._solverConfig = solverConfig
+        '''config adjust path'''
+        self._AdjustPathConfig = AdjustOrbitConfig.PathOfFiles()
+        self._AdjustPathConfig.__dict__.update(AdjustOrbitConfig.PathOfFilesConfig.copy())
         '''config NEQ'''
         self._OrbitAConfig = self._NEQConfig.OrbitA()
         self._OrbitAConfig.__dict__.update(self._NEQConfig.OrbitAConfig.copy())
@@ -164,16 +167,16 @@ class GravityNEQperArc:
 
         assert config.measurement == SSTObserve.RangeRate.value, 'Range-rate is not allowed by user setting'
 
-        dm_dir = pathlib.Path(self._solverConfig.DesignMatrixTemp).joinpath(self.__date_span[0] + '_' + self.__date_span[1])
-        res_filename = dm_dir.joinpath(SSTObserve.RangeRate.name + '_' + str(self.__arcNo) + '.hdf5')
+        dm_dir = self._solverConfig.DesignMatrixTemp + '/' + self.__date_span[0] + '_' + self.__date_span[1]
+        res_filename = dm_dir + '/' + SSTObserve.RangeRate.name + '_' + str(self.__arcNo) + '.hdf5'
         h5 = h5py.File(res_filename, 'r')
         t_dm = h5['t'][()]
         global_dm = h5['global'][()]
         local_dm = h5['local'][()]
         h5.close()
 
-        dm_dir = pathlib.Path(Pre_AdjustOrbit.PathOfFiles.RangeRateTemp).joinpath(self.__date_span[0] + '_' + self.__date_span[1])
-        res_filename = dm_dir.joinpath(SSTObserve.RangeRate.name + '_' + str(self.__arcNo) + '.hdf5')
+        dm_dir = self._AdjustPathConfig.RangeRateTemp + '/' + self.__date_span[0] + '_' + self.__date_span[1]
+        res_filename = dm_dir + '/' + SSTObserve.RangeRate.name + '_' + str(self.__arcNo) + '.hdf5'
         h5 = h5py.File(res_filename, 'r')
         t_obs = h5['post_t'][()]
         obs = h5['post_residual'][()]

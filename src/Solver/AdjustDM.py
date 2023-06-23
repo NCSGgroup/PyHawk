@@ -1,5 +1,4 @@
 import h5py
-import src.Preference.backups.Pre_AdjustOrbit as Pre_AdjustOrbit
 import src.Preference.backups.Pre_Interface as Pre_Interface
 from src.Interface.ArcOperation import ArcData
 import src.Preference.EnumType as EnumType
@@ -10,6 +9,7 @@ from src.Preference.Pre_Parameterization import ParameterConfig
 from src.Preference.Pre_Solver import SolverConfig
 from src.Preference.Pre_ForceModel import ForceModelConfig
 from src.Preference.Pre_ODE import ODEConfig
+from src.Preference.Pre_AdjustOrbit import AdjustOrbitConfig
 
 
 class AdjustDM:
@@ -21,6 +21,8 @@ class AdjustDM:
         self._SerDer = None
         self._arcNo = None
         self._FMConfig = None
+        self._AdjustConfig = None
+        self._AdjustPathConfig = None
         self._ParameterConfig = None
         self._TransitionMatrixConfig = None
         self._AccelerometerConfig = None
@@ -40,12 +42,17 @@ class AdjustDM:
                 self._satName = self._satName + sat.name
         pass
 
-    def configure(self, SerDer, arcNo:int, ODEConfig:ODEConfig, FMConfig: ForceModelConfig, ParameterConfig: ParameterConfig, SolverConfig: SolverConfig):
+    def configure(self, SerDer, arcNo:int, ODEConfig:ODEConfig, AdjustConfig:AdjustOrbitConfig,
+                  FMConfig: ForceModelConfig, ParameterConfig: ParameterConfig, SolverConfig: SolverConfig):
         self._SerDer = SerDer
         self._arcNo = arcNo
         self._FMConfig = FMConfig
         self._SolverConfig = SolverConfig
+        self._AdjustConfig = AdjustConfig
         self._resPath = self._SolverConfig.DesignMatrixTemp
+        '''config adjust path'''
+        self._AdjustPathConfig = self._AdjustConfig.PathOfFiles()
+        self._AdjustPathConfig.__dict__.update(self._AdjustConfig.PathOfFilesConfig.copy())
         '''config ODE'''
         self._ODEConfig = ODEConfig
         '''config TransitionMatrix'''
@@ -86,9 +93,9 @@ class AdjustDM:
         pass
 
     def __getInit(self):
-        self._initPath = Pre_AdjustOrbit.PathOfFiles.OrbitAdjustResTemp
-        self._initPath = self._initPath.joinpath(self._date_span[0] + '_' + self._date_span[1])
-        res_filename = self._initPath.joinpath(str(self._arcNo) + '_' + self._satName + '.hdf5')
+        self._initPath = self._AdjustPathConfig.OrbitAdjustResTemp
+        self._initPath = self._initPath + '/' + self._date_span[0] + '_' + self._date_span[1]
+        res_filename = self._initPath + '/' + str(self._arcNo) + '_' + self._satName + '.hdf5'
         h5 = h5py.File(res_filename, 'r')
         res = {}
         for key in h5:

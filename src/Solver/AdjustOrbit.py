@@ -1,5 +1,4 @@
 import h5py
-import src.Preference.backups.Pre_AdjustOrbit as Pre_AdjustOrbit
 import src.Preference.backups.Pre_Interface as Pre_Interface
 from src.Interface.ArcOperation import ArcData
 import src.Preference.EnumType as EnumType
@@ -12,6 +11,8 @@ from src.SecDerivative.Common.Assemble2ndDerivative import Assemble2ndDerivative
 from src.Preference.Pre_Solver import SolverConfig
 from src.Preference.Pre_ForceModel import ForceModelConfig
 from src.Preference.Pre_ODE import ODEConfig
+from src.Preference.Pre_AdjustOrbit import AdjustOrbitConfig
+import os
 
 
 class AdjustOrbit:
@@ -54,9 +55,14 @@ class AdjustOrbit:
         self.StokesCoefficientsConfig = None
         self.FMConfig = None
         self.ODEConfig = None
+        self.AdjustPath = None
 
-    def configure(self, SerDer, arcNo, ODEConfig:ODEConfig, FMConfig: ForceModelConfig,ParameterConfig: ParameterConfig,**kwargs):
+    def configure(self, SerDer, arcNo, AdjustOrbitConfig:AdjustOrbitConfig,
+                  ODEConfig:ODEConfig, FMConfig: ForceModelConfig,ParameterConfig: ParameterConfig,**kwargs):
         self._arcNo = arcNo
+        '''config Adjust path'''
+        self.AdjustPath = AdjustOrbitConfig.PathOfFiles()
+        self.AdjustPath.__dict__.update(AdjustOrbitConfig.PathOfFilesConfig.copy())
         '''config ODE'''
         self.ODEConfig = ODEConfig
         '''config Force model'''
@@ -72,8 +78,8 @@ class AdjustOrbit:
         self.StokesCoefficientsConfig = self.ParameterConfig.StokesCoefficients()
         self.StokesCoefficientsConfig.__dict__.update(self.ParameterConfig.StokesCoefficientsConfig.copy())
         '''define path'''
-        self._state_path = kwargs.get('state_dir', Pre_AdjustOrbit.PathOfFiles.StateVectorDataTemp)
-        self._res_path = kwargs.get('res_dir', Pre_AdjustOrbit.PathOfFiles.OrbitAdjustResTemp)
+        self._state_path = self.AdjustPath.StateVectorDataTemp
+        self._res_path = self.AdjustPath.OrbitAdjustResTemp
         """define satName"""
         for sat in self._sat:
             if self._satName is None:
@@ -81,14 +87,14 @@ class AdjustOrbit:
             else:
                 self._satName = self._satName + sat.name
         """Define the directory to deposit the state vectors"""
-        self._state_dir = self._state_path.joinpath(self._date_span[0] + '_' + self._date_span[1])
-        if not self._state_dir.is_dir():
-            self._state_dir.mkdir(exist_ok=True)
+        self._state_dir = self._state_path + '/' + self._date_span[0] + '_' + self._date_span[1]
+        if not os.path.exists(self._state_dir):
+            os.makedirs(self._state_dir)
 
         '''define the directory of res output'''
-        self._res_dir = self._res_path.joinpath(self._date_span[0] + '_' + self._date_span[1])
-        if not self._res_dir.is_dir():
-            self._res_dir.mkdir(exist_ok=True)
+        self._res_dir = self._res_path + '/' + self._date_span[0] + '_' + self._date_span[1]
+        if not os.path.exists(self._res_dir):
+            os.makedirs(self._res_dir)
 
         """step 1: combine the SCA and ACC data to obtain the non-conservative force as well as dadp arc by arc"""
         rd = ArcData(date_span=self._date_span)
@@ -113,14 +119,14 @@ class AdjustOrbit:
 
     def calibrate(self, iteration: int = 2):
         # assert iteration >= 2
-        res_filename = self._res_dir.joinpath(str(self._arcNo) + '_' + self._satName + '.hdf5')
+        res_filename = self._res_dir + '/' + str(self._arcNo) + '_' + self._satName + '.hdf5'
         self._res_h5 = h5py.File(res_filename, 'w')
         ode = self._ode
         '''step 1: orbit integration and save data'''
         self._ode_res = ode.propagate()
         self._save_StateVectors(self._ode_res)
 
-        filename = self._state_dir.joinpath(str(self._arcNo) + '_' + self._satName + '.hdf5')
+        filename = self._state_dir + '/' + str(self._arcNo) + '_' + self._satName + '.hdf5'
         h5 = h5py.File(filename, 'r')
         self._initTime = h5['t'][:]
         self._initR = h5['r'][:]
@@ -152,7 +158,6 @@ class AdjustOrbit:
                 self.secondR = self._ode_res[1]
             elif i == 2:
                 self.thirdR = self._ode_res[1]
-        filename = self._state_dir.joinpath(str(self._arcNo) + '_' + self._satName + '.hdf5')
         h5 = h5py.File(filename, 'r')
         self._endTime = h5['t'][:]
         self._endR = h5['r'][:]
@@ -213,7 +218,7 @@ class AdjustOrbit:
 
     def _save_StateVectors(self, state):
         res_dir = self._state_dir
-        res_filename = res_dir.joinpath(str(self._arcNo) + '_' + self._satName + '.hdf5')
+        res_filename = res_dir + '/' + str(self._arcNo) + '_' + self._satName + '.hdf5'
         h5 = h5py.File(res_filename, 'w')
         h5.create_dataset('t', data=state[0])
         h5.create_dataset('r', data=state[1])
