@@ -9,6 +9,7 @@ from src.Frame.Frame import Frame, EOP
 from src.Preference.Pre_Parameterization import ParameterConfig
 from src.Preference.Pre_Solver import SolverConfig
 from src.Preference.Pre_ForceModel import ForceModelConfig
+from src.Preference.Pre_ODE import ODEConfig
 
 
 class AdjustDM:
@@ -24,6 +25,7 @@ class AdjustDM:
         self._TransitionMatrixConfig = None
         self._AccelerometerConfig = None
         self._StokesCoefficientsConfig = None
+        self._ODEConfig = None
         self._SolverConfig = None
         self._resPath = None
         self._initPath = None
@@ -38,12 +40,14 @@ class AdjustDM:
                 self._satName = self._satName + sat.name
         pass
 
-    def configure(self, SerDer, arcNo:int, FMConfig: ForceModelConfig, ParameterConfig: ParameterConfig, SolverConfig: SolverConfig):
+    def configure(self, SerDer, arcNo:int, ODEConfig:ODEConfig, FMConfig: ForceModelConfig, ParameterConfig: ParameterConfig, SolverConfig: SolverConfig):
         self._SerDer = SerDer
         self._arcNo = arcNo
         self._FMConfig = FMConfig
         self._SolverConfig = SolverConfig
         self._resPath = self._SolverConfig.DesignMatrixTemp
+        '''config ODE'''
+        self._ODEConfig = ODEConfig
         '''config TransitionMatrix'''
         self._ParameterConfig = ParameterConfig
         self._TransitionMatrixConfig = self._ParameterConfig.TransitionMatrix()
@@ -62,8 +66,8 @@ class AdjustDM:
             setInitData(kind=self._kind)
         init_r, init_v = self.__getInit()
         startTime, _, _ = self._SerDer.getInitData()
-        self._ODE = GravimetryODE().setParNum(self._ParameterConfig). \
-            setInitial(startTime, init_r.copy(), init_v.copy()). \
+        self._ODE = GravimetryODE().configure(ODEConfig=self._ODEConfig, ParameterConfig=self._ParameterConfig)\
+            .setParNum().setInitial(startTime, init_r.copy(), init_v.copy()). \
             set2ndDerivative(self._SerDer)
         return self
 

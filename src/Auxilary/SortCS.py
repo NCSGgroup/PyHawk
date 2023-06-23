@@ -10,7 +10,6 @@
 from src.Preference.EnumType import CSseq
 import numpy as np
 from src.Auxilary.GeoMathKit import GeoMathKit
-import src.Preference.backups.Pre_ForceModel as Pre_ForceModel
 
 
 class SortCS:
@@ -21,8 +20,7 @@ class SortCS:
     Notice, all is given in one-dimension
     """
 
-    def __init__(self, method=CSseq.SortByOrder, degree_max=Pre_ForceModel.SortCSConfig.degree_max,
-                 degree_min=Pre_ForceModel.SortCSConfig.degree_min):
+    def __init__(self, degree_max, degree_min, method=CSseq.SortByOrder):
 
         if method == CSseq.Normal:
             self.__sort = self.__method1(degree_max, degree_min)

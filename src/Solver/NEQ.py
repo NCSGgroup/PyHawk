@@ -1,6 +1,6 @@
 import src.Preference.backups.Pre_Interface as Pre_Interface
 import src.Preference.backups.Pre_AdjustOrbit as Pre_AdjustOrbit
-import src.Preference.backups.Pre_NEQ as Pre_NEQ
+from src.Preference.Pre_NEQ import NEQConfig
 from src.Preference.EnumType import Payload, SatID, SSTObserve
 from src.Interface.ArcOperation import ArcData
 from src.Auxilary.GeoMathKit import GeoMathKit
@@ -9,6 +9,7 @@ import numpy as np
 import pathlib
 import h5py
 from tqdm import tqdm
+import os
 
 
 class GravityNEQperArc:
@@ -28,8 +29,13 @@ class GravityNEQperArc:
         self.__t_nominal = None
         self.__local_r = None
         self.__global_r = None
-        self.__configSST = None
         self._solverConfig = None
+        self.__saveData = None
+        self._NEQConfig = None
+        self._OrbitAConfig = None
+        self._OrbitBConfig = None
+        self._SSTConfig = None
+        self._PathOfFilesConfig = None
         self._sat = [key for key, value in sat.items() if value]
 
         for sat in self._sat:
@@ -37,19 +43,29 @@ class GravityNEQperArc:
                 self._satName = sat.name
             else:
                 self._satName = self._satName + sat.name
-
-        res_dir = pathlib.Path(Pre_NEQ.PathOfFiles.NormalEqTemp).joinpath(date_span[0] + '_' + date_span[1])
-        if not res_dir.is_dir():
-            res_dir.mkdir(exist_ok=True)
-        res_filename = res_dir.joinpath(str(arcNo) + '.hdf5')
-        self.__saveData = h5py.File(res_filename, 'w')
         pass
 
-    def configure(self, solverConfig: SolverConfig, **kwargs):
+    def configure(self, NEQConfig:NEQConfig, solverConfig: SolverConfig, **kwargs):
+        self._NEQConfig = NEQConfig
         self._solverConfig = solverConfig
-        self.__config['satA'] = kwargs.get("configA", Pre_NEQ.OrbitA)
-        self.__config['satB'] = kwargs.get("configB", Pre_NEQ.OrbitB)
-        self.__config['SST'] = kwargs.get("configSST", Pre_NEQ.SST)
+        '''config NEQ'''
+        self._OrbitAConfig = self._NEQConfig.OrbitA()
+        self._OrbitAConfig.__dict__.update(self._NEQConfig.OrbitAConfig.copy())
+        self._OrbitBConfig = self._NEQConfig.OrbitB()
+        self._OrbitBConfig.__dict__.update(self._NEQConfig.OrbitBConfig.copy())
+        self._SSTConfig = self._NEQConfig.SST()
+        self._SSTConfig.__dict__.update(self._NEQConfig.SSTConfig.copy())
+        self._PathOfFilesConfig = self._NEQConfig.PathOfFiles()
+        self._PathOfFilesConfig.__dict__.update(self._NEQConfig.PathOfFilesConfig.copy())
+        self.__config['satA'] = self._OrbitAConfig
+        self.__config['satB'] = self._OrbitBConfig
+        self.__config['SST'] = self._SSTConfig
+
+        res_dir = self._PathOfFilesConfig.NormalEqTemp + '/' + self.__date_begin + '_' + self.__date_end
+        if not os.path.exists(res_dir):
+            os.makedirs(res_dir)
+        res_filename = res_dir + '/' + str(self.__arcNo) + '.hdf5'
+        self.__saveData = h5py.File(res_filename, 'w')
         return self
 
     def get_neq(self):

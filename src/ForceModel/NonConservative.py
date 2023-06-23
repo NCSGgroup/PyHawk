@@ -1,5 +1,4 @@
 from src.ForceModel.BaseSecondDerivative import BaseSecondDerivative
-from src.Preference.backups.Pre_ForceModel import NonConservative
 from src.Frame.Frame import Frame
 import src.Preference.EnumType as EnumType
 import h5py
@@ -9,7 +8,7 @@ from src.Preference.Pre_ForceModel import ForceModelConfig
 
 class AbsNonConservative(BaseSecondDerivative):
 
-    def __init__(self,  sat: EnumType.SatID, range=NonConservative.date_span, arcNo=NonConservative.arcNo):
+    def __init__(self,  sat: EnumType.SatID, range, arcNo):
         super(AbsNonConservative, self).__init__()
         self._GPStime = None
 

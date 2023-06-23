@@ -1,6 +1,5 @@
 import numpy as np
 import cmath
-from src.Preference.backups.Pre_ODE import KO
 
 
 class KeplerOrbit:
@@ -12,10 +11,10 @@ class KeplerOrbit:
 
     def __init__(self):
 
-        self.setRecord()
+        self.setRecord(isRecord=True)
         pass
 
-    def propagate(self, Nstep=KO.Npoints, hs=KO.stepsize):
+    def propagate(self, Nstep, hs):
         """
 
         :param Nstep: Steps to be integrated
@@ -42,7 +41,7 @@ class KeplerOrbit:
         else:
             return t[-1], r_final[-1], v_final[-1]
 
-    def setRecord(self, isRecord=KO.isRecord):
+    def setRecord(self, isRecord):
         self.__isRecord = isRecord
         return self
 
@@ -61,12 +60,12 @@ class KeplerOrbit:
 
         return self
 
-    def setArg(self, GM=KO.GM):
+    def setArg(self, GM, rltot):
         self.__GM = GM
+        self._tol = rltot
         return self
 
-    def __keplerUniversal(self, r0, v0, t, mu=KO.GM):
-        tol = KO.rltot
+    def __keplerUniversal(self, r0, v0, t, mu):
 
         v0Mag = np.sqrt(np.sum(v0 ** 2, 1))
         r0Mag = np.sqrt(np.sum(r0 ** 2, 1))
@@ -118,7 +117,7 @@ class KeplerOrbit:
 
         Smut = np.sqrt(mu) * t
 
-        while any(abs(err) > tol):
+        while any(abs(err) > self._tol):
             X02 = X0 ** 2
             X03 = X02 * X0
             psi = X02 * alpha

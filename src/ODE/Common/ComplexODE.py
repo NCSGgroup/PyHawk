@@ -2,47 +2,66 @@ import numpy as np
 from tqdm import tqdm
 from src.ODE.Common.SingleStepODE import RK4, RK8, RKN
 from src.ODE.Common.MultiStepODE import GaussJackson, ABM8, MatrixGaussJackson
-import src.Preference.backups.Pre_ODE as Pre_ODE
 from src.Preference.EnumType import SingleStepType, MultiStepType
+from src.Preference.Pre_ODE import ODEConfig
 
 
 class ConfigComplexODE:
 
-    def __init__(self, single: SingleStepType = Pre_ODE.ComplexConfig.SingleStepType,
-                 multi: MultiStepType = Pre_ODE.ComplexConfig.MultiStepType):
+    def __init__(self):
         self.stepSize = None
         self.multiStepSize = None
         self.Npoints = None
         self.order = None
         self.SingleStepOde = None
         self.MultiStepOde = None
+        self.ODEConfig = None
+        self.__ComplexConfig = None
+        self.__SingleConfig = None
+        self.__MultiConfig = None
+        self.__KeplerConfig = None
         self.desc = 'Orbit integration'
 
-        if single is SingleStepType.RK4:
+    def configure(self, ODEConfig:ODEConfig):
+        self.ODEConfig = ODEConfig
+        '''config ODE'''
+        self.__ComplexConfig = self.ODEConfig.Complex()
+        self.__ComplexConfig.__dict__.update(self.ODEConfig.ComplexConfig.copy())
+        self.__SingleConfig = self.ODEConfig.SingleStep()
+        self.__SingleConfig.__dict__.update(self.ODEConfig.SingleStepConfig.copy())
+        self.__MultiConfig = self.ODEConfig.MultiStep()
+        self.__MultiConfig.__dict__.update(self.ODEConfig.MultiStepConfig.copy())
+        self.__KeplerConfig = self.ODEConfig.KO()
+        self.__KeplerConfig.__dict__.update(self.ODEConfig.KOConfig.copy())
+        single = self.__ComplexConfig.SingleStepType
+        multi = self.__ComplexConfig.MultiStepType
+        '''instance ODE'''
+        if single == SingleStepType.RK4.name:
             self.SingleStepOde = RK4()
-        elif single is SingleStepType.RK8:
+        elif single == SingleStepType.RK8.name:
             self.SingleStepOde = RK8()
-        elif single is SingleStepType.RKN:
+        elif single == SingleStepType.RKN.name:
             self.SingleStepOde = RKN()
 
-        if multi is MultiStepType.GaussJackson:
+        if multi == MultiStepType.GaussJackson.name:
             self.MultiStepOde = GaussJackson()
-        elif multi is MultiStepType.MatrixGaussJackson:
+        elif multi == MultiStepType.MatrixGaussJackson.name:
             self.MultiStepOde = MatrixGaussJackson()
-        elif multi is MultiStepType.ABM8:
+        elif multi == MultiStepType.ABM8.name:
             self.MultiStepOde = ABM8()
+        return self
 
-    def setOdePar(self, singleStepSize=Pre_ODE.SingleStepConfig.stepsize,
-                  multiStepSize=Pre_ODE.MultiStepConfig.stepsize,
-                  Npoints=Pre_ODE.MultiStepConfig.Npoints,
-                  order=Pre_ODE.MultiStepConfig.order):
+    def setOdePar(self):
+        singleStepSize = self.__SingleConfig.stepsize
+        multiStepSize = self.__MultiConfig.stepsize
         assert singleStepSize == multiStepSize
         self.stepSize = singleStepSize
-        self.Npoints = Npoints
-        self.order = order
+        self.Npoints = self.__MultiConfig.Npoints
+        self.order = self.__MultiConfig.order
         if isinstance(self.MultiStepOde, GaussJackson) or \
                 isinstance(self.MultiStepOde, MatrixGaussJackson):
-            self.MultiStepOde.setOrder().setIterArgs()
+            self.MultiStepOde.setOrder(order=self.order).\
+                setIterArgs(iterNum=self.__MultiConfig.iterNum, rltot=self.__MultiConfig.rltot)
         return self
 
 
@@ -50,11 +69,12 @@ class ComplexODE:
 
     def __init__(self, config: ConfigComplexODE):
         self.__desc = config.desc
-        self.__SingleStepOde = config.SingleStepOde.setRecord()
-        self.__MultiStepOde = config.MultiStepOde
+        self.__SingleStepOde = config.SingleStepOde.configure(ODEConfig=config.ODEConfig).setRecord()
+        self.__MultiStepOde = config.MultiStepOde.configure(ODEConfig=config.ODEConfig)
         self.__stepSize = config.stepSize
         self.__Npoints = config.Npoints
         self.__order = config.order
+        self.__secDer = None
 
         pass
 

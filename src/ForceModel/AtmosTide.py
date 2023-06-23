@@ -324,7 +324,7 @@ class AtmosAOD(AbsAtmosTide):
         fileDir = self._pathConfig.Atmos
         Nmax = self._AtmosTideConfig.Nmax
         adt = LoadAtmosTide().load(fileIn=fileDir)
-        spec = AODtype.ATM
+        spec = self._AtmosTideConfig.kind
 
         tideCS = {}
         for tide in self.__AODtide:

@@ -11,6 +11,7 @@ from src.Preference.Pre_Parameterization import ParameterConfig
 from src.SecDerivative.Common.Assemble2ndDerivative import Assemble2ndDerivative
 from src.Preference.Pre_Solver import SolverConfig
 from src.Preference.Pre_ForceModel import ForceModelConfig
+from src.Preference.Pre_ODE import ODEConfig
 
 
 class AdjustOrbit:
@@ -52,9 +53,12 @@ class AdjustOrbit:
         self.AccelerometerConfig = None
         self.StokesCoefficientsConfig = None
         self.FMConfig = None
+        self.ODEConfig = None
 
-    def configure(self, SerDer, arcNo, FMConfig: ForceModelConfig,ParameterConfig: ParameterConfig, **kwargs):
+    def configure(self, SerDer, arcNo, ODEConfig:ODEConfig, FMConfig: ForceModelConfig,ParameterConfig: ParameterConfig,**kwargs):
         self._arcNo = arcNo
+        '''config ODE'''
+        self.ODEConfig = ODEConfig
         '''config Force model'''
         self.FMConfig = FMConfig
         '''config TransitionMatrix'''
@@ -102,7 +106,7 @@ class AdjustOrbit:
         """step 4: Propagator config"""
         self._startTime, self._startPos, self._startVel = self._secDer.getInitData()
         self._obsGNV = self._secDer.getInitState()
-        self._ode = GravimetryODE().setParNum(self.ParameterConfig).\
+        self._ode = GravimetryODE().configure(ODEConfig=self.ODEConfig, ParameterConfig=self.ParameterConfig).setParNum().\
             setInitial(self._startTime, self._startPos.copy(), self._startVel.copy()).\
             set2ndDerivative(self._secDer)
         return self

@@ -48,7 +48,7 @@ def demo2():
     propagator = ComplexODE(config).setSecondDerivative(force_for_demo_use).setInitial(x0, r0, v0)
     X_GJ, R_GJ, v = propagator.propagate()
 
-    kepler = KeplerOrbit().setInitial(x0, r0, v0).setArg(GM=mu)
+    kepler = KeplerOrbit().setInitial(x0, r0, v0).setArg(GM=mu, rltot=1e-9)
     X_ke, R_ke, V_ke = kepler.propagate(Nstep + int(order / 2), h)
 
     print(X_GJ[4:])

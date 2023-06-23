@@ -1,11 +1,13 @@
 import numpy as np
-import src.Preference.backups.Pre_ODE as Pre_ODE
+from src.Preference.Pre_ODE import ODEConfig
 
 
 class SingleStepOde:
 
     def __init__(self):
         self._isRecord = None
+        self.__ODEConfig = None
+        self.__SingleConfig = None
         self._loadCoeff()
 
     def _loadCoeff(self):
@@ -54,6 +56,12 @@ class SingleStepOde:
 
         pass
 
+    def configure(self, ODEConfig:ODEConfig):
+        self.__ODEConfig = ODEConfig
+        self.__SingleConfig = self.__ODEConfig.SingleStep()
+        self.__SingleConfig.__dict__.update(self.__ODEConfig.SingleStepConfig.copy())
+        return self
+
     def setInitial(self, r_0, v_0, x_0):
         """
         Initialization
@@ -66,14 +74,14 @@ class SingleStepOde:
         self._x_0 = x_0
         return self
 
-    def setRecord(self, isRecord=Pre_ODE.SingleStepConfig.isRecord):
+    def setRecord(self):
         """
         If isRecord=True, the orbit track (a list of vectors at every epoch) rather than
         the final epoch will be output.
         :param isRecord: Boolean
         :return:
         """
-        self._isRecord = isRecord
+        self._isRecord = self.__SingleConfig.isRecord
         return self
 
     def setForce(self, func):
@@ -88,9 +96,8 @@ class SingleStepOde:
 
         return self
 
-    def propagate(self, Npoints: int = Pre_ODE.SingleStepConfig.Npoints, stepsize=Pre_ODE.SingleStepConfig.stepsize):
+    def propagate(self, Npoints: int, stepsize):
         """
-
         :param Npoints:
         :param stepsize: Positive--forward integration; Negative--backward integration
         :return: the orbit track (time, pos and vel) at every passed epoch

@@ -51,9 +51,9 @@ class Assemble2ndDerivative:
         self._StokesCoefficientsConfig = self._ParameterConfig.StokesCoefficients()
         self._StokesCoefficientsConfig.__dict__.update(self._ParameterConfig.StokesCoefficientsConfig.copy())
         '''config sort'''
-        self.__sort = SortCS(self._StokesCoefficientsConfig.SortMethod,
-                             self._StokesCoefficientsConfig.MaxDegree,
-                             self._StokesCoefficientsConfig.MinDegree)
+        self.__sort = SortCS(method=self._StokesCoefficientsConfig.SortMethod,
+                             degree_max=self._StokesCoefficientsConfig.MaxDegree,
+                             degree_min=self._StokesCoefficientsConfig.MinDegree)
         self.__ep = PlanetEphemerides().configure(FMConfig=FMConfig).setPlanets()
         self.configForce = ConfigForce(arc=self._arc, ep=self.__ep).configure(FMConfig=FMConfig)
         self.ForceType = self.configForce.getForceType()

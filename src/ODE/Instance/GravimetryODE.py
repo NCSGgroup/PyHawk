@@ -4,6 +4,7 @@ from src.Preference.EnumType import SingleStepType, MultiStepType
 from src.SecDerivative.MatrixVarEqn import MatrixVarEqn
 import numpy as np
 from src.Preference.Pre_Parameterization import ParameterConfig
+from src.Preference.Pre_ODE import ODEConfig
 
 
 class GravimetryODE:
@@ -16,14 +17,17 @@ class GravimetryODE:
         self.__ParNum = 0
         self.__isSingle = True
         self.ParameterConfig = None
+        self.ODEConfig = None
         self.TransitionMatrixConfig = None
         self.AccelerometerConfig = None
         self.StokesCoefficientsConfig = None
         pass
 
-    def setParNum(self, ParameterConfig: ParameterConfig):
-        '''config TransitionMatrix'''
+    def configure(self, ODEConfig: ODEConfig, ParameterConfig: ParameterConfig):
+        self.ODEConfig = ODEConfig
         self.ParameterConfig = ParameterConfig
+
+        '''config TransitionMatrix'''
         self.TransitionMatrixConfig = self.ParameterConfig.TransitionMatrix()
         self.TransitionMatrixConfig.__dict__.update(self.ParameterConfig.TransitionMatrixConfig.copy())
         '''config AccelerometerConfig'''
@@ -32,6 +36,9 @@ class GravimetryODE:
         '''config StokesCoefficientsConfig'''
         self.StokesCoefficientsConfig = self.ParameterConfig.StokesCoefficients()
         self.StokesCoefficientsConfig.__dict__.update(self.ParameterConfig.StokesCoefficientsConfig.copy())
+        return self
+
+    def setParNum(self):
         if self.TransitionMatrixConfig.isRequired:
             self.__ParNum += self.TransitionMatrixConfig.Parameter_Number
         if self.AccelerometerConfig.isRequired:
@@ -84,10 +91,7 @@ class GravimetryODE:
     #         return acc
 
     def propagate(self):
-        if self.__isSingle:
-            config = ConfigComplexODE(SingleStepType.RKN, MultiStepType.GaussJackson).setOdePar()
-        else:
-            config = ConfigComplexODE(SingleStepType.RKN, MultiStepType.MatrixGaussJackson).setOdePar()
+        config = ConfigComplexODE().configure(ODEConfig=self.ODEConfig).setOdePar()
         propagator = ComplexODE(config).setSecondDerivative(self.__secDer).setInitial(self.__t0, self.__r0, self.__v0)
         return propagator.propagate()
 

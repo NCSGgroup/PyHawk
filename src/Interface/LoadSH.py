@@ -1,6 +1,5 @@
 import numpy as np
 import warnings
-from src.Preference.backups.Pre_ForceModel import PathOfFiles, AtmosTideConfig
 from src.Preference.EnumType import TidesType, AODtype
 import os
 
@@ -22,6 +21,7 @@ class LoadSH:
 
         self._sigmaC, self._sigmaS = None, None
         self._C, self._S = None, None
+        self._FMConfig = None
         pass
 
     def load(self, fileIn):
@@ -62,7 +62,7 @@ class LoadGif48(LoadSH):
         # self.__sigmaC, self.__sigmaS = None, None
         # self.__C, self.__S = None, None
 
-    def load(self, fileIn = PathOfFiles.Gif48):
+    def load(self, fileIn):
         """
         load gif48 fields
         :param fileIn: gif48 file and its path
@@ -190,7 +190,7 @@ class LoadAtmosTide(LoadSH):
         LoadSH.__init__(self)
         self.__AODdir = None
 
-    def load(self, fileIn = PathOfFiles.Atmos):
+    def load(self, fileIn):
         """
         set the directory of AOD products to be read
         :param fileIn:
@@ -199,8 +199,8 @@ class LoadAtmosTide(LoadSH):
         self.__AODdir = fileIn
         return self
 
-    def setInfo(self, tide: TidesType, kind=AtmosTideConfig.kind, sincos='sin'):
-        assert kind == AODtype.ATM or kind == AODtype.OCN
+    def setInfo(self, tide: TidesType, kind, sincos='sin'):
+        assert kind == AODtype.ATM.name or kind == AODtype.OCN.name
         assert sincos in ['sin', 'cos']
 
         '''search the directory by above information'''
@@ -212,7 +212,7 @@ class LoadAtmosTide(LoadSH):
         try:
             for root, dirs, files in os.walk(root_path):
                 for name in files:
-                    if (kind.name in name) and (tide.name in name):
+                    if (kind in name) and (tide.name in name):
                         target = os.path.join(root, name)
                         raise Break
         except Break as e:
@@ -329,7 +329,7 @@ class LoadNonTide(LoadSH):
                       AODtype.GLO.name: 'glo'}
         self.__epoch = None
 
-    def load(self, fileIn = PathOfFiles.AOD):
+    def load(self, fileIn):
         """
         set the directory of AOD products to be read
         :param fileIn:

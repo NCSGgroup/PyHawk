@@ -1,10 +1,12 @@
 import numpy as np
 from src.ODE.Common.ODEcoeffGenerator import ODEcoeffGenerator
-import src.Preference.backups.Pre_ODE as Pre_ODE
+from src.Preference.Pre_ODE import ODEConfig
 
 
 class MultiStepOde:
     def __init__(self):
+        self._ODEConfig = None
+        self._MultiConfig = None
         pass
 
     def setForce(self, func):
@@ -16,14 +18,20 @@ class MultiStepOde:
         self._func = func
         return self
 
-    def setRecord(self, isRecord = Pre_ODE.MultiStepConfig.isRecord):
+    def configure(self, ODEConfig:ODEConfig):
+        self._ODEConfig = ODEConfig
+        self._MultiConfig = self._ODEConfig.MultiStep()
+        self._MultiConfig.__dict__.update(self._ODEConfig.MultiStepConfig.copy())
+        return self
+
+    def setRecord(self):
         """
         If isRecord=True, the orbit track (a list of vectors at every epoch) rather than
         the final epoch will be output.
         :param isRecord: Boolean
         :return:
         """
-        self._isRecord = isRecord
+        self._isRecord = self._MultiConfig.isRecord
         return self
 
     def setInitial(self, iniX: list, iniR: list, iniV: list):
@@ -38,7 +46,7 @@ class MultiStepOde:
     def _loadCoeff(self):
         pass
 
-    def propagate(self, N: int= Pre_ODE.MultiStepConfig.Npoints, hs=Pre_ODE.MultiStepConfig.stepsize):
+    def propagate(self, N: int, hs):
         """
         The propagator starts to work for N steps from the given initial epoch
         :param N: Steps the propagator will extend
@@ -92,7 +100,7 @@ class ABM8(MultiStepOde):
         self.__iniV = iniV
         return self
 
-    def propagate(self, N: int= Pre_ODE.MultiStepConfig.Npoints, hs=Pre_ODE.MultiStepConfig.stepsize):
+    def propagate(self, N: int, hs):
         """
         The propagator starts to work for N steps from the given initial epoch
         :param N: Steps the propagator will extend
@@ -196,7 +204,7 @@ class GaussJackson(MultiStepOde):
         super(GaussJackson, self).__init__()
         self.order = None
 
-    def setOrder(self, order: int = Pre_ODE.MultiStepConfig.order):
+    def setOrder(self, order: int):
         self.order = order
         assert np.mod(self.order, 2) == 0 and 4 <= self.order <= 18
         self._loadCoeff()
@@ -216,7 +224,7 @@ class GaussJackson(MultiStepOde):
         assert Adam_Coef.shape == dim and GJ_Coeff.shape == dim
         self.__Adam_Coef, self.__GJ_Coeff = Adam_Coef, GJ_Coeff
 
-    def setIterArgs(self, iterNum: int = Pre_ODE.MultiStepConfig.iterNum, rltot=Pre_ODE.MultiStepConfig.rltot):
+    def setIterArgs(self, iterNum: int, rltot):
         """
         :param rltot: tolerance of stopping an iteration.
         :param iterNum: define a maximal number of iteration to lower computation burden.
@@ -245,7 +253,7 @@ class GaussJackson(MultiStepOde):
 
         return self
 
-    def propagate(self, N: int= Pre_ODE.MultiStepConfig.Npoints, hs=Pre_ODE.MultiStepConfig.stepsize):
+    def propagate(self, N: int, hs):
         """
         The propagator starts to work for N steps from the given initial epoch
         :param N: Steps the propagator will extend
@@ -551,7 +559,7 @@ class MatrixGaussJackson(MultiStepOde):
         super(MatrixGaussJackson, self).__init__()
         self.order = None
 
-    def setOrder(self, order: int = Pre_ODE.MultiStepConfig.order):
+    def setOrder(self, order: int):
         self.order = order
         assert np.mod(self.order, 2) == 0 and 4 <= self.order <= 18
         self._loadCoeff()
@@ -571,7 +579,7 @@ class MatrixGaussJackson(MultiStepOde):
         assert Adam_Coef.shape == dim and GJ_Coeff.shape == dim
         self.__Adam_Coef, self.__GJ_Coeff = Adam_Coef, GJ_Coeff
 
-    def setIterArgs(self, iterNum: int = Pre_ODE.MultiStepConfig.iterNum, rltot=Pre_ODE.MultiStepConfig.rltot):
+    def setIterArgs(self, iterNum: int, rltot):
         """
         :param rltot: tolerance of stopping an iteration.
         :param iterNum: define a maximal number of iteration to lower computation burden.
@@ -601,7 +609,7 @@ class MatrixGaussJackson(MultiStepOde):
 
         return self
 
-    def propagate(self, N: int= Pre_ODE.MultiStepConfig.Npoints, hs=Pre_ODE.MultiStepConfig.stepsize):
+    def propagate(self, N: int, hs):
         """
         The propagator starts to work for N steps from the given initial epoch
         :param N: Steps the propagator will extend

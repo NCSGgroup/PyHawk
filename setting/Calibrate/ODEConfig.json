@@ -18,7 +18,7 @@
         "rltot": 1e-13,
         "MultiStepOde": "GaussJackson"
     },
-    "KO": {
+    "KOConfig": {
         "stepsize": 30,
         "Npoints": 1440,
         "isRecord": true,

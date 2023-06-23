@@ -7,7 +7,7 @@ class ODEConfig:
         self.ComplexConfig = self.Complex().__dict__
         self.SingleStepConfig = self.SingleStep().__dict__
         self.MultiStepConfig = self.MultiStep().__dict__
-        self.KO = self.KO().__dict__
+        self.KOConfig = self.KO().__dict__
 
     class Complex:
         def __init__(self):
