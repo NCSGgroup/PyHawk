@@ -20,13 +20,13 @@ class SortCS:
     Notice, all is given in one-dimension
     """
 
-    def __init__(self, degree_max, degree_min, method=CSseq.SortByOrder):
+    def __init__(self, degree_max, degree_min, method=CSseq.SortByOrder.name):
 
-        if method == CSseq.Normal:
+        if method == CSseq.Normal.name:
             self.__sort = self.__method1(degree_max, degree_min)
-        elif method == CSseq.SortByOrder:
+        elif method == CSseq.SortByOrder.name:
             self.__sort = self.__method2(degree_max, degree_min)
-        elif method == CSseq.SortByDegree:
+        elif method == CSseq.SortByDegree.name:
             self.__sort = self.__method3(degree_max, degree_min)
         else:
             self.__sort = self.__method4(degree_max, degree_min)
@@ -34,7 +34,6 @@ class SortCS:
         self.__method = method
         self.__Nmax = degree_max
         self.__Nmin = degree_min
-
 
     def sort(self, C, S):
         """

@@ -384,5 +384,5 @@ if __name__ == '__main__':
     # getRMS()
     # getKBRRRMS()
     # drawRMS()
-    # cacluateNL()
-    # csReshape()
+    cacluateNL()
+    csReshape()

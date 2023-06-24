@@ -29,6 +29,7 @@ class NEQConfig:
     class PathOfFiles:
         def __init__(self):
             self.NormalEqTemp = "../temp/NEQ"
+            self.ResultCS = "../result/SH"
 
 
 def class_to_json():

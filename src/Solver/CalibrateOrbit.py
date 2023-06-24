@@ -128,4 +128,50 @@ class CalibrateOrbit:
         neq.configure(solverConfig=self.__solver_config, NEQConfig=self.__neq_config,
                       AdjustOrbitConfig=self.__adjust_config).get_neq()
 
+        self.__calculate_cs()
         pass
+
+    def __calculate_cs(self):
+        neq_path_config = self.__neq_config.PathOfFiles()
+        neq_path_config.__dict__.update(self.__neq_config.PathOfFilesConfig.copy())
+        interface_config = self.__interface_config
+        stokes_coefficients_config = self.__design_parameter_config.StokesCoefficients()
+        stokes_coefficients_config.__dict__.update(self.__design_parameter_config.StokesCoefficientsConfig.copy())
+        '''config force model path'''
+        force_model_path_config = self.__force_model_config.PathOfFiles()
+        force_model_path_config.__dict__.update(self.__force_model_config.PathOfFilesConfig.copy())
+
+        res_dir = neq_path_config.NormalEqTemp + '/' +\
+                  interface_config.date_span[0] + '_' + interface_config.date_span[1]
+        result_name = neq_path_config.ResultCS + '/' + \
+                      interface_config.date_span[0] + '_' + interface_config.date_span[1] + '.hdf5'
+
+        parameter_number = stokes_coefficients_config.Parameter_Number
+        NMatrix = np.zeros((parameter_number, parameter_number))
+        LMatrix = np.zeros((parameter_number, 1))
+        for i in tqdm(range(0, 1), desc='Solve normal equations: '):
+            res_filename = res_dir + '/' + str(i) + '.hdf5'
+            h5 = h5py.File(res_filename, 'r')
+            NMatrix = NMatrix + h5['Orbit_N_A'][:] + h5['Orbit_N_B'][:] + h5['RangeRate_N'][:] * 2.5E11
+            LMatrix = LMatrix + h5['Orbit_l_A'][:] + h5['Orbit_l_B'][:] + h5['RangeRate_l'][:].reshape(
+                (parameter_number, 1)) * 2.5E11
+
+        cs = np.linalg.lstsq(NMatrix, LMatrix[:, 0], rcond=None)[0]
+
+        sort = SortCS(method=stokes_coefficients_config.SortMethod,
+                      degree_max=stokes_coefficients_config.MaxDegree,
+                      degree_min=stokes_coefficients_config.MinDegree)
+        c, s = sort.invert(cs)
+
+        static_c, static_s = LoadGif48().load(force_model_path_config.Gif48).getCS(stokes_coefficients_config.MaxDegree)
+
+        C, S = c + static_c, s + static_s
+
+        C, S = GeoMathKit.CS_1dTo2d(C), GeoMathKit.CS_1dTo2d(S)
+
+        h5 = h5py.File(result_name, 'w')
+        h5.create_dataset('c', data=C)
+        h5.create_dataset('s', data=S)
+        h5.close()
+        pass
+

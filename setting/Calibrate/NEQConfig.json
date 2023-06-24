@@ -15,6 +15,7 @@
         "CalibrateEmpiricalParameters": false
     },
     "PathOfFilesConfig": {
-        "NormalEqTemp": "../temp/NEQ"
+        "NormalEqTemp": "../temp/NEQ",
+        "ResultCS": "../result/SH"
     }
 }
