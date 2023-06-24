@@ -32,21 +32,23 @@ import json
 from src.Preference.Pre_ODE import ODEConfig
 from src.Preference.Pre_NEQ import NEQConfig
 from src.Preference.Pre_AdjustOrbit import AdjustOrbitConfig
+from src.Preference.Pre_Interface import InterfaceConfig
+
 
 def adjust():
-    # """step 1: Read raw data"""
-    # fr = Frame(EOP().load())
-    # s = GRACE_OLD_RL02().configure().setDate()
-    # s.read_double_sat()
-    # """step 2: Convert orbit from ITRS frame into GCRS frame"""
-    # kine = KinematicOrbit(L1b=s).configure()
-    # # kine.read_double_sat()
-    # kine.GNVandKiOrbitItrs2Gcrs(fr)
-    # """step 3: Gap fix"""
-    # gf = GapFix(s).configure()
-    # gf.fix_all().makeReport()
-    # arc = ArcSelect(gf).configure()
-    # arc.unpackArcs().makeReport()
+    """step 1: Read raw data"""
+    fr = Frame(EOP().load())
+    s = GRACE_OLD_RL02().configure().setDate()
+    s.read_double_sat()
+    """step 2: Convert orbit from ITRS frame into GCRS frame"""
+    kine = KinematicOrbit(L1b=s).configure()
+    # kine.read_double_sat()
+    kine.GNVandKiOrbitItrs2Gcrs(fr)
+    """step 3: Gap fix"""
+    gf = GapFix(s).configure()
+    gf.fix_all().makeReport()
+    arc = ArcSelect(gf).configure()
+    arc.unpackArcs().makeReport()
 
     p1 = multiprocessing.Process(target=demo1, args=(0, 41))
     p2 = multiprocessing.Process(target=demo1, args=(41, 82))
@@ -71,21 +73,6 @@ def adjust():
 
 
 def demo():
-    # """step 1: Read raw data"""
-    # fr = Frame(EOP().load())
-    # s = GRACE_OLD_RL02().configure().setDate()
-    # s.read_double_sat()
-    # """step 2: Convert orbit from ITRS frame into GCRS frame"""
-    # kine = KinematicOrbit(L1b=s).configure()
-    # kine.read_double_sat()
-    # kine.GNVandKiOrbitItrs2Gcrs(fr)
-    # """step 3: Gap fix"""
-    # gf = GapFix(s).configure()
-    # gf.fix_all().makeReport()
-    # arc = ArcSelect(gf).configure()
-    # arc.unpackArcs().makeReport()
-    """step 5: init AdjustOrbit"""
-    date_span = ['2008-01-01', '2008-01-31']
     accConfig_A = AccelerometerConfig()
     acc_A = json.load(open('../setting/Calibrate/AccelerometerConfig_A.json', 'r'))
     accConfig_A.__dict__ = acc_A
@@ -110,6 +97,24 @@ def demo():
     adjustOrbitConfig = AdjustOrbitConfig()
     adjustOrbitDict = json.load(open('../setting/Calibrate/AdjustOrbitConfig.json', 'r'))
     adjustOrbitConfig.__dict__ = adjustOrbitDict
+    interfaceConfig = InterfaceConfig()
+    interfaceDict = json.load(open('../setting/Calibrate/InterfaceConfig.json', 'r'))
+    interfaceConfig.__dict__ = interfaceDict
+    """step 1: Read raw data"""
+    fr = Frame(EOP().load())
+    s = GRACE_OLD_RL02().configure(InterfaceConfig=interfaceConfig).setDate()
+    s.read_double_sat()
+    """step 2: Convert orbit from ITRS frame into GCRS frame"""
+    kine = KinematicOrbit(L1b=s).configure()
+    # kine.read_double_sat()
+    kine.GNVandKiOrbitItrs2Gcrs(fr)
+    """step 3: Gap fix"""
+    gf = GapFix(L1b=s).configure()
+    gf.fix_all().makeReport()
+    arc = ArcSelect(gf).configure()
+    arc.unpackArcs().makeReport()
+    """step 5: init AdjustOrbit"""
+    date_span = ['2008-01-01', '2008-01-31']
     AdjustOrbit(accConfig=[accConfig_A, accConfig_B], date_span=date_span). \
         configure(SerDer=Orbit_var_2nd_diff, arcNo=0, ODEConfig=odeConfig, FMConfig=fmConfig,
                   AdjustOrbitConfig=adjustOrbitConfig, ParameterConfig=parameterConfig).calibrate(iteration=3)

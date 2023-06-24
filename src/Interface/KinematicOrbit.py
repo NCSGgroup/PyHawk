@@ -20,10 +20,10 @@ class KinematicOrbit:
         pass
 
     def configure(self, **kwargs):
-        self.__path_kinematic = kwargs.get('path_kinematic', Pre_Interface.PathOfFiles.payload_Kinematic)
+        self.__path_kinematic = self.__L1b.InterfacePathConfig.payload_Kinematic
 
         '''isGCRS: tell the system that what's the frame of the GNV orbit. True--GCRS, False--ITRS'''
-        self.isGCRS = kwargs.get('isGCRS', Pre_Interface.is_orbit_GCRS[Payload.KinematicOrbit])
+        self.isGCRS = self.__L1b.InterfaceConfig.is_orbit_GCRS[Payload.KinematicOrbit.name]
 
         return self
 
@@ -38,7 +38,7 @@ class KinematicOrbit:
         st = date.split('-')
         IY, IM, ID = int(st[0]), int(st[1]), int(st[2])
         date_range = (round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 0, 0, 0))),
-                      round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 23, 59, 60 - self.__L1b.sr_payload[Payload.GNV]))))
+                      round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 23, 59, 60 - self.__L1b.sr_payload[Payload.GNV.name]))))
 
         path = self.__path_kinematic.joinpath(*[str(IY), date.split('-')[0] + '-' + date.split('-')[1], 'grace' +
                                                 str(sat.value) + '-kinematicOrbit-' + date + '.txt'])
@@ -110,8 +110,8 @@ class KinematicOrbit:
         pass
 
     def __CoordinateTrans1(self, fr: Frame):
-        GNVA = self.__L1b.getData(Payload.GNV, SatID.A)
-        GNVB = self.__L1b.getData(Payload.GNV, SatID.B)
+        GNVA = self.__L1b.getData(Payload.GNV.name, SatID.A)
+        GNVB = self.__L1b.getData(Payload.GNV.name, SatID.B)
         KiA = self.__KiOr_A
         KiB = self.__KiOr_B
 
@@ -175,8 +175,8 @@ class KinematicOrbit:
         pass
 
     def __CoordinateTrans2(self, fr: Frame):
-        GNVA = self.__L1b.getData(Payload.GNV, SatID.A)
-        GNVB = self.__L1b.getData(Payload.GNV, SatID.B)
+        GNVA = self.__L1b.getData(Payload.GNV.name, SatID.A)
+        GNVB = self.__L1b.getData(Payload.GNV.name, SatID.B)
 
         timeGNVA, timeGNVB = GNVA[:, 0].astype(np.int), GNVB[:, 0].astype(np.int)
 

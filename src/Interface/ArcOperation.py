@@ -18,25 +18,25 @@ class ArcSelect:
         self.__h5py = None
 
     def configure(self, **kwargs):
-        self.__arc_length = kwargs.get('arc length', Pre_Interface.arc_length)
-        self.__min_arcLen = kwargs.get('min arcLen', Pre_Interface.min_arcLen)
-        self.__arc_path = kwargs.get('report path', Pre_Interface.PathOfFiles.report_arc)
-        self.__raw_data_path = kwargs.get('raw data path', Pre_Interface.PathOfFiles.temp_raw_data)
-        self.__sr_target = kwargs.get('sr_target', Pre_Interface.sr_target)
+        self.__arc_length = self.__gf.L1b.InterfaceConfig.arc_length
+        self.__min_arcLen = self.__gf.L1b.InterfaceConfig.min_arcLen
+        self.__arc_path = self.__gf.L1b.InterfacePathConfig.report_arc
+        self.__raw_data_path = self.__gf.L1b.InterfacePathConfig.temp_raw_data
+        self.__sr_target = self.__gf.L1b.InterfaceConfig.sr_target
         return self
 
     def unpackArcs(self):
 
         # ------------------------loading data----------------------------------
-        ACC_A = self.__gf.getData(Payload.ACC, SatID.A)[0]
-        ACC_B = self.__gf.getData(Payload.ACC, SatID.B)[0]
-        SCA_A = self.__gf.getData(Payload.SCA, SatID.A)[0]
-        SCA_B = self.__gf.getData(Payload.SCA, SatID.B)[0]
-        GNV_A = self.__gf.getData(Payload.GNV, SatID.A)[0]
-        GNV_B = self.__gf.getData(Payload.GNV, SatID.B)[0]
-        KBR = self.__gf.getData(Payload.KBR, SatID.A)[0]
-        KiOrbA = self.__gf.L1b.getData(Payload.KinematicOrbit, SatID.A)
-        KiOrbB = self.__gf.L1b.getData(Payload.KinematicOrbit, SatID.B)
+        ACC_A = self.__gf.getData(Payload.ACC.name, SatID.A)[0]
+        ACC_B = self.__gf.getData(Payload.ACC.name, SatID.B)[0]
+        SCA_A = self.__gf.getData(Payload.SCA.name, SatID.A)[0]
+        SCA_B = self.__gf.getData(Payload.SCA.name, SatID.B)[0]
+        GNV_A = self.__gf.getData(Payload.GNV.name, SatID.A)[0]
+        GNV_B = self.__gf.getData(Payload.GNV.name, SatID.B)[0]
+        KBR = self.__gf.getData(Payload.KBR.name, SatID.A)[0]
+        KiOrbA = self.__gf.L1b.getData(Payload.KinematicOrbit.name, SatID.A)
+        KiOrbB = self.__gf.L1b.getData(Payload.KinematicOrbit.name, SatID.B)
 
         # -------------------------arc divide--------------------------------------
         timelist = [ACC_A[:, 0].copy(), ACC_B[:, 0].copy(), SCA_A[:, 0].copy(), SCA_B[:, 0].copy()]
@@ -45,26 +45,26 @@ class ArcSelect:
         self.__discardArcs()
 
         date = self.__gf.getDate()
-        filename = self.__raw_data_path.joinpath(date[0] + '_' + date[-1] + '.hdf5')
+        filename = self.__raw_data_path + '/' + date[0] + '_' + date[-1] + '.hdf5'
         # self.__h5py = h5py.File(self.data_path + date[0] + '_' + date[-1] + ".hdf5", "w")
         self.__h5py = h5py.File(filename, "w")
         # d1 = f.create_dataset("ACC_A", data=ACC_A)
-        if Payload.ACC in self.__gf.L1b.include_payloads:
+        if Payload.ACC.name in self.__gf.L1b.include_payloads:
             self.__unpack(ACC_A, Payload.ACC, SatID.A)
             self.__unpack(ACC_B, Payload.ACC, SatID.B)
-        if Payload.SCA in self.__gf.L1b.include_payloads:
+        if Payload.SCA.name in self.__gf.L1b.include_payloads:
             self.__unpack(SCA_A, Payload.SCA, SatID.A)
             self.__unpack(SCA_B, Payload.SCA, SatID.B)
-        if Payload.GNV in self.__gf.L1b.include_payloads:
+        if Payload.GNV.name in self.__gf.L1b.include_payloads:
             self.__unpack(GNV_A, Payload.GNV, SatID.A)
             self.__unpack(GNV_B, Payload.GNV, SatID.B)
-        if Payload.KBR in self.__gf.L1b.include_payloads:
+        if Payload.KBR.name in self.__gf.L1b.include_payloads:
             self.__unpack(KBR, Payload.KBR, SatID.A)
-        if Payload.KinematicOrbit in self.__gf.L1b.include_payloads:
+        if Payload.KinematicOrbit.name in self.__gf.L1b.include_payloads:
             self.__unpack(data=KiOrbA, sat=SatID.A, Gr=Payload.KinematicOrbit)
             self.__unpack(data=KiOrbB, sat=SatID.B, Gr=Payload.KinematicOrbit)
 
-        if Payload.LRI in self.__gf.L1b.include_payloads:
+        if Payload.LRI.name in self.__gf.L1b.include_payloads:
             pass
 
         return self
@@ -208,7 +208,7 @@ class ArcSelect:
     def makeReport(self):
 
         date = self.__gf.getDate()
-        path = self.__arc_path.joinpath(date[0] + '_' + date[-1] + '.txt')
+        path = self.__arc_path + '/' + date[0] + '_' + date[-1] + '.txt'
         with open(path, 'w') as f:
             f.write('This ia a summary of arc information.\n')
             f.write('Created by Yang Fan (yfan_cge@hust.edu.cn)\n')

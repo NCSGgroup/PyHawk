@@ -1,4 +1,3 @@
-import src.Preference.backups.Pre_Interface as Pre_Interface
 from src.Auxilary.GeoMathKit import GeoMathKit
 import numpy as np
 from tqdm import trange
@@ -7,6 +6,7 @@ import os
 import logging as lg
 import struct
 from src.Frame.Frame import Frame
+from src.Preference.Pre_Interface import InterfaceConfig
 
 
 class L1b:
@@ -28,21 +28,28 @@ class L1b:
         self.KiOrb_A = None
         self.KiOrb_B = None
 
+        self.InterfaceConfig = None
+        self.InterfacePathConfig = None
         pass
 
-    def configure(self, **kwargs):
-        self._path_ACC = kwargs.get('path_ACC', Pre_Interface.PathOfFiles.payload_ACC)
-        self._path_KBR = kwargs.get('path_KBR', Pre_Interface.PathOfFiles.payload_KBR)
-        self._path_SCA = kwargs.get('path_SCA', Pre_Interface.PathOfFiles.payload_SCA)
-        self._path_GNV = kwargs.get('path_GNV', Pre_Interface.PathOfFiles.payload_GNV)
-        self._path_LRI = kwargs.get('path_LRI', Pre_Interface.PathOfFiles.payload_LRI)
+    def configure(self, InterfaceConfig:InterfaceConfig, **kwargs):
+        '''config Interface'''
+        self.InterfaceConfig = InterfaceConfig
+        self.InterfacePathConfig = InterfaceConfig.PathOfFiles(self.InterfaceConfig)
+        self.InterfacePathConfig.__dict__.update(self.InterfaceConfig.PathOfFilesConfig.copy())
 
-        include_payloads = kwargs.get('include_payloads', Pre_Interface.include_payloads)
+        self._path_ACC = self.InterfacePathConfig.payload_ACC
+        self._path_KBR = self.InterfacePathConfig.payload_KBR
+        self._path_SCA = self.InterfacePathConfig.payload_SCA
+        self._path_GNV = self.InterfacePathConfig.payload_GNV
+        self._path_LRI = self.InterfacePathConfig.payload_LRI
+
+        include_payloads = self.InterfaceConfig.include_payloads
         self.include_payloads = [key for key, value in include_payloads.items() if value]
-        self.sr_payload = kwargs.get('sr_payload', Pre_Interface.sr_payload)
+        self.sr_payload = self.InterfaceConfig.sr_payload
 
         '''isGCRS: tell the system that what's the frame of the GNV orbit. True--GCRS, False--ITRS'''
-        self.is_GNV_GCRS = kwargs.get('is_GNV_GCRS', Pre_Interface.is_orbit_GCRS[Payload.GNV])
+        self.is_GNV_GCRS = self.InterfaceConfig.is_orbit_GCRS[Payload.GNV.name]
         return self
 
     def setDate(self, **kwargs):
@@ -52,8 +59,8 @@ class L1b:
         :param delete: delete the day that is not desired.
         :return:
         """
-        date_span = kwargs.get('date_span', Pre_Interface.date_span)
-        date_delete = kwargs.get('date_delete', Pre_Interface.date_delete)
+        date_span = self.InterfaceConfig.date_span
+        date_delete = self.InterfaceConfig.date_delete
 
         date_list = GeoMathKit.getEveryDay(*date_span)
         self._date = date_list
@@ -137,26 +144,26 @@ class L1b:
         GNV = None
         return GNV
 
-    def getData(self, type: Payload, sat: SatID):
+    def getData(self, type, sat: SatID):
 
-        if type == Payload.KBR:
+        if type == Payload.KBR.name:
             return self._KBR
-        elif type == Payload.ACC:
+        elif type == Payload.ACC.name:
             if sat == SatID.A:
                 return self._ACC_A
             else:
                 return self._ACC_B
-        elif type == Payload.SCA:
+        elif type == Payload.SCA.name:
             if sat == SatID.A:
                 return self._SCA_A
             else:
                 return self._SCA_B
-        elif type == Payload.GNV:
+        elif type == Payload.GNV.name:
             if sat == SatID.A:
                 return self.GNV_A
             else:
                 return self.GNV_B
-        elif type == Payload.KinematicOrbit:
+        elif type == Payload.KinematicOrbit.name:
             if sat == SatID.A:
                 return self.KiOrb_A
             else:
@@ -166,13 +173,12 @@ class L1b:
 class GRACE_OLD_RL02(L1b):
     def __init__(self):
         super(GRACE_OLD_RL02, self).__init__()
-        assert Pre_Interface.mission is Mission.GRACE_RL02
+        # assert self._InterfaceConfig.mission == Mission.GRACE_RL02.name
         pass
 
     def _readACC(self, date: str, sat: SatID):
-        path = self._path_ACC.joinpath(*[date.split('-')[0] + '-' + date.split('-')[1],
-                                       'ACC',
-               'G'+ sat.name +'-OG-1B-ACCDAT+JPL-ACC1B_' + date + '_' + sat.name + '_02.dat'])
+        path = self._path_ACC + '/' + date.split('-')[0] + '-' + date.split('-')[1]\
+               + '/ACC/G' + sat.name + '-OG-1B-ACCDAT+JPL-ACC1B_' + date + '_' + sat.name + '_02.dat'
         try:
             f = open(path, 'rb')
         except FileNotFoundError as e:
@@ -207,9 +213,8 @@ class GRACE_OLD_RL02(L1b):
         return ACC
 
     def _readSCA(self, date: str, sat: SatID):
-        path = self._path_SCA.joinpath(*[date.split('-')[0] + '-' + date.split('-')[1],
-                                       'SCA',
-               'G' + sat.name + '-OG-1B-SCAATT+JPL-SCA1B_' + date + '_' + sat.name + '_02.dat'])
+        path = self._path_SCA + '/' + date.split('-')[0] + '-' + date.split('-')[1]\
+               + '/SCA/G' + sat.name + '-OG-1B-SCAATT+JPL-SCA1B_' + date + '_' + sat.name + '_02.dat'
 
         try:
             f = open(path, 'rb')
@@ -249,9 +254,8 @@ class GRACE_OLD_RL02(L1b):
         return SCA
 
     def _readKBR(self, date: str):
-        path = self._path_KBR.joinpath(*[date.split('-')[0] + '-' + date.split('-')[1],
-                                         'KBR',
-                                         'GX-OG-1B-KBRDAT+JPL-KBR1B_' + date + '_X_02.dat'])
+        path = self._path_KBR + '/' + date.split('-')[0] + '-' + date.split('-')[1]\
+               + '/KBR/GX-OG-1B-KBRDAT+JPL-KBR1B_' + date + '_X_02.dat'
 
         try:
             f = open(path, 'rb')
@@ -299,11 +303,10 @@ class GRACE_OLD_RL02(L1b):
         st = date.split('-')
         IY, IM, ID = int(st[0]), int(st[1]), int(st[2])
         date_range = (round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 0, 0, 0))),
-                      round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 23, 59, 60 - self.sr_payload[Payload.GNV]))))
+                      round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 23, 59, 60 - self.sr_payload[Payload.GNV.name]))))
 
-        path = self._path_GNV.joinpath(*[date.split('-')[0] + '-' + date.split('-')[1],
-                                       'GNV',
-               'G'+ sat.name +'-OG-1B-NAVSOL+JPL-GNV1B_' + date + '_' + sat.name + '_02.dat'])
+        path = self._path_GNV + '/' + date.split('-')[0] + '-' + date.split('-')[1]\
+               + '/GNV/G' + sat.name + '-OG-1B-NAVSOL+JPL-GNV1B_' + date + '_' + sat.name + '_02.dat'
         try:
             f = open(path, 'rb')
         except FileNotFoundError as e:
@@ -365,7 +368,7 @@ class GRACE_OLD_RL02(L1b):
 class GRACE_NEW_RL02(L1b):
     def __init__(self):
         super(GRACE_NEW_RL02, self).__init__()
-        assert Pre_Interface.mission is Mission.GRACE_RL02
+        # assert self._InterfaceConfig.mission == Mission.GRACE_RL02.name
         pass
 
     def _readACC(self, date: str, sat: SatID):
@@ -499,7 +502,7 @@ class GRACE_NEW_RL02(L1b):
         st = date.split('-')
         IY, IM, ID = int(st[0]), int(st[1]), int(st[2])
         date_range = (round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 0, 0, 0))),
-                      round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 23, 59, 60 - self.sr_payload[Payload.GNV]))))
+                      round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 23, 59, 60 - self.sr_payload[Payload.GNV.name]))))
 
         path = self._path_ACC.joinpath(*[date.split('-')[0] + '-' + date.split('-')[1],
                                        'grace_1B_' + date + '_02.tar.gz_files',
@@ -565,7 +568,7 @@ class GRACE_NEW_RL02(L1b):
 class GRACE_FO_RL04(L1b):
     def __init__(self):
         super(GRACE_FO_RL04, self).__init__()
-        assert Pre_Interface.mission is Mission.GRACE_FO_RL04
+        # assert self._InterfaceConfig.mission == Mission.GRACE_FO_RL04.name
         pass
 
     def _readACC(self, date: str, sat: SatID):
@@ -685,7 +688,7 @@ class GRACE_FO_RL04(L1b):
         st = date.split('-')
         IY, IM, ID = int(st[0]), int(st[1]), int(st[2])
         date_range = (round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 0, 0, 0))),
-                      round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 23, 59, 60 - self.sr_payload[Payload.GNV]))))
+                      round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 23, 59, 60 - self.sr_payload[Payload.GNV.name]))))
 
         path = self._path_GNV.joinpath(*[date.split('-')[0] + '-' + date.split('-')[1],
                                          'gracefo_1B_' + date + '_RL04.ascii.noLRI.tgz_files',

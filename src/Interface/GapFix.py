@@ -17,11 +17,11 @@ class GapFix:
         pass
 
     def configure(self, **kwargs):
-        self.__linear_mis_max = kwargs.get('linear_mis_max', Pre_Interface.gapfix_linear_mis_max)
-        self.__quadra_mis_max = kwargs.get('quadra_mis_max', Pre_Interface.gapfix_quadra_mis_max)
-        self.__cubic_mis_max = kwargs.get('cubic_mis_max', Pre_Interface.gapfix_cubic_mis_max)
-        self.__cubic_int = kwargs.get('cubic_int', Pre_Interface.gapfix_cubic_int)
-        self.__report_path = kwargs.get('report_path', Pre_Interface.PathOfFiles.report_gap)
+        self.__linear_mis_max = self.L1b.InterfaceConfig.gapfix_linear_mis_max
+        self.__quadra_mis_max = self.L1b.InterfaceConfig.gapfix_quadra_mis_max
+        self.__cubic_mis_max = self.L1b.InterfaceConfig.gapfix_cubic_mis_max
+        self.__cubic_int = self.L1b.InterfaceConfig.gapfix_cubic_int
+        self.__report_path = self.L1b.InterfacePathConfig.report_gap
         return self
 
     def fix_all(self):
@@ -34,9 +34,9 @@ class GapFix:
         ACCgap_A, self.__ACC_A = self.__fix(Payload.ACC, SatID.A)
         ACCgap_B, self.__ACC_B = self.__fix(Payload.ACC, SatID.B)
 
-        KBR = self.L1b.getData(Payload.KBR, SatID.A)
-        GNV_A = self.L1b.getData(Payload.GNV, SatID.A)
-        GNV_B = self.L1b.getData(Payload.GNV, SatID.B)
+        KBR = self.L1b.getData(Payload.KBR.name, SatID.A)
+        GNV_A = self.L1b.getData(Payload.GNV.name, SatID.A)
+        GNV_B = self.L1b.getData(Payload.GNV.name, SatID.B)
 
         KBRgap = self.__detect(KBR, Payload.KBR)
         GNVgap_A = self.__detect(GNV_A, Payload.GNV)
@@ -52,30 +52,30 @@ class GapFix:
 
         return self
 
-    def getData(self, type: Payload, sat: SatID):
+    def getData(self, type, sat: SatID):
         """
 
         :param type:
         :param sat:
         :return: a tuple (data, gapinfo)
         """
-        if type == Payload.KBR:
-            return self.L1b.getData(Payload.KBR, SatID.A), self.__gap['KBR']
-        elif type == Payload.ACC:
+        if type == Payload.KBR.name:
+            return self.L1b.getData(Payload.KBR.name, SatID.A), self.__gap['KBR']
+        elif type == Payload.ACC.name:
             if sat == SatID.A:
                 return self.__ACC_A, self.__gap['ACC-A']
             else:
                 return self.__ACC_B, self.__gap['ACC-B']
-        elif type == Payload.SCA:
+        elif type == Payload.SCA.name:
             if sat == SatID.A:
                 return self.__SCA_A, self.__gap['SCA-A']
             else:
                 return self.__SCA_B, self.__gap['SCA-B']
-        elif type == Payload.GNV:
+        elif type == Payload.GNV.name:
             if sat == SatID.A:
-                return self.L1b.getData(Payload.GNV, SatID.A), self.__gap['GNV-A']
+                return self.L1b.getData(Payload.GNV.name, SatID.A), self.__gap['GNV-A']
             else:
-                return self.L1b.getData(Payload.GNV, SatID.B), self.__gap['GNV-B']
+                return self.L1b.getData(Payload.GNV.name, SatID.B), self.__gap['GNV-B']
 
     def getDate(self):
         return self.L1b.getDate()
@@ -89,7 +89,7 @@ class GapFix:
             else:
                 return len(x)
 
-        self.__report_path = self.__report_path.joinpath(date[0] + '_' + date[-1] + '.txt')
+        self.__report_path = self.__report_path + '/' + date[0] + '_' + date[-1] + '.txt'
         with open(self.__report_path, 'w') as f:
             f.write('This ia a summary of all gaps that cannot be fixed.\n')
             f.write('Created by Yang Fan (yfan_cge@hust.edu.cn)\n')
@@ -104,15 +104,15 @@ class GapFix:
 
             f.write('-------------------Please see more details in below:---------------------- \n')
             for term in self.L1b.include_payloads:
-                if term == Payload.KinematicOrbit:
+                if term == Payload.KinematicOrbit.name:
                     '''do nothing for Kinematic Orbits'''
                     continue
                 for sat in SatID:
-                    if sat == SatID.B and (term == Payload.KBR or term == Payload.LRI):
+                    if sat == SatID.B and (term == Payload.KBR.name or term == Payload.LRI.name):
                         continue
 
                     data, gapinfo = self.getData(term, sat)
-                    f.write('%s + %s :\n' % (term.name, sat.name))
+                    f.write('%s + %s :\n' % (term, sat.name))
 
                     if leng(gapinfo) == 0:
                         f.write('0\n')
@@ -126,7 +126,7 @@ class GapFix:
 
     def __fix(self, type: Payload, sat: SatID):
 
-        data = self.L1b.getData(type, sat)
+        data = self.L1b.getData(type.name, sat)
         gaplist = self.__detect(data, type)
 
         print('\n===============================================')
@@ -181,7 +181,7 @@ class GapFix:
 
         for term in self.L1b.include_payloads:
             for sat in SatID:
-                if sat == SatID.B and (term == Payload.KBR or term == Payload.LRI):
+                if sat == SatID.B and (term == Payload.KBR.name or term == Payload.LRI.name):
                     continue
 
                 data = self.L1b.getData(term, sat)
@@ -205,7 +205,7 @@ class GapFix:
         # else:
         #     stepsize = 5
 
-        stepsize = self.L1b.sr_payload[kind]
+        stepsize = self.L1b.sr_payload[kind.name]
 
         gaplist = []
 
@@ -255,7 +255,7 @@ class GapFix:
         # else:
         #     stepsize = 5
 
-        stepsize = self.L1b.sr_payload[kind]
+        stepsize = self.L1b.sr_payload[kind.name]
         for gap in gaplist:
 
             '''Gap: the number of missing data'''
@@ -296,7 +296,7 @@ class GapFix:
         #     stepsize = 1
         # else:
         #     stepsize = 5
-        stepsize = self.L1b.sr_payload[kind]
+        stepsize = self.L1b.sr_payload[kind.name]
 
         for i in range(len(gaplist)):
             gap = gaplist[i]
@@ -348,7 +348,7 @@ class GapFix:
         # else:
         #     stepsize = 5
 
-        stepsize = self.L1b.sr_payload[kind]
+        stepsize = self.L1b.sr_payload[kind.name]
 
         '''bug fix: gap list must not be shorter than 2'''
         if len(gaplist) <= 1:
