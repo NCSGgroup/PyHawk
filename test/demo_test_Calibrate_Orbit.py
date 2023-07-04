@@ -100,19 +100,19 @@ def demo():
     interfaceConfig = InterfaceConfig()
     interfaceDict = json.load(open('../setting/Calibrate/InterfaceConfig.json', 'r'))
     interfaceConfig.__dict__ = interfaceDict
-    """step 1: Read raw data"""
-    fr = Frame(EOP().load())
-    s = GRACE_OLD_RL02().configure(InterfaceConfig=interfaceConfig).setDate()
-    s.read_double_sat()
-    """step 2: Convert orbit from ITRS frame into GCRS frame"""
-    kine = KinematicOrbit(L1b=s).configure()
-    # kine.read_double_sat()
-    kine.GNVandKiOrbitItrs2Gcrs(fr)
-    """step 3: Gap fix"""
-    gf = GapFix(L1b=s).configure()
-    gf.fix_all().makeReport()
-    arc = ArcSelect(gf).configure()
-    arc.unpackArcs().makeReport()
+    # """step 1: Read raw data"""
+    # fr = Frame(EOP().load())
+    # s = GRACE_OLD_RL02().configure(InterfaceConfig=interfaceConfig).setDate()
+    # s.read_double_sat()
+    # """step 2: Convert orbit from ITRS frame into GCRS frame"""
+    # kine = KinematicOrbit(L1b=s).configure()
+    # # kine.read_double_sat()
+    # kine.GNVandKiOrbitItrs2Gcrs(fr)
+    # """step 3: Gap fix"""
+    # gf = GapFix(L1b=s).configure()
+    # gf.fix_all().makeReport()
+    # arc = ArcSelect(gf).configure()
+    # arc.unpackArcs().makeReport()
     """step 5: init AdjustOrbit"""
     date_span = ['2008-01-01', '2008-01-31']
     AdjustOrbit(accConfig=[accConfig_A, accConfig_B], date_span=date_span). \

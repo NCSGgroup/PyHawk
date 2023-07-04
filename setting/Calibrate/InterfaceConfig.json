@@ -38,7 +38,7 @@
     "arc_length": 3,
     "min_arcLen": 2,
     "PathOfFilesConfig": {
-        "payload_ACC": "../data/GRACE_RL02",
+        "payload_ACC": "D:\\py-hawk-v2\\data\\GRACE_RL02",
         "payload_SCA": "../data/GRACE_RL02",
         "payload_KBR": "../data/GRACE_RL02",
         "payload_GNV": "../data/GRACE_RL02",

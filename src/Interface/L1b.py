@@ -7,12 +7,14 @@ import logging as lg
 import struct
 from src.Frame.Frame import Frame
 from src.Preference.Pre_Interface import InterfaceConfig
+import pathlib as pathlib
+import sys
 
 
 class L1b:
 
     def __init__(self):
-
+        self.dir = pathlib.Path()
         self._date = None
         self._ACC_A = None
         self._ACC_B = None
@@ -177,8 +179,8 @@ class GRACE_OLD_RL02(L1b):
         pass
 
     def _readACC(self, date: str, sat: SatID):
-        path = self._path_ACC + '/' + date.split('-')[0] + '-' + date.split('-')[1]\
-               + '/ACC/G' + sat.name + '-OG-1B-ACCDAT+JPL-ACC1B_' + date + '_' + sat.name + '_02.dat'
+        path = str(self.dir.joinpath(self._path_ACC, date.split('-')[0] + '-' + date.split('-')[1],
+                     'ACC', 'G' + sat.name + '-OG-1B-ACCDAT+JPL-ACC1B_' + date + '_' + sat.name + '_02.dat'))
         try:
             f = open(path, 'rb')
         except FileNotFoundError as e:
@@ -213,9 +215,8 @@ class GRACE_OLD_RL02(L1b):
         return ACC
 
     def _readSCA(self, date: str, sat: SatID):
-        path = self._path_SCA + '/' + date.split('-')[0] + '-' + date.split('-')[1]\
-               + '/SCA/G' + sat.name + '-OG-1B-SCAATT+JPL-SCA1B_' + date + '_' + sat.name + '_02.dat'
-
+        path = str(self.dir.joinpath(self._path_SCA, date.split('-')[0] + '-' + date.split('-')[1],
+                         'SCA', 'G' + sat.name + '-OG-1B-SCAATT+JPL-SCA1B_' + date + '_' + sat.name + '_02.dat'))
         try:
             f = open(path, 'rb')
         except FileNotFoundError as e:
@@ -254,7 +255,7 @@ class GRACE_OLD_RL02(L1b):
         return SCA
 
     def _readKBR(self, date: str):
-        path = self._path_KBR + '/' + date.split('-')[0] + '-' + date.split('-')[1]\
+        path = os.getcwd() + '/' + self._path_KBR + '/' + date.split('-')[0] + '-' + date.split('-')[1]\
                + '/KBR/GX-OG-1B-KBRDAT+JPL-KBR1B_' + date + '_X_02.dat'
 
         try:
@@ -305,7 +306,7 @@ class GRACE_OLD_RL02(L1b):
         date_range = (round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 0, 0, 0))),
                       round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 23, 59, 60 - self.sr_payload[Payload.GNV.name]))))
 
-        path = self._path_GNV + '/' + date.split('-')[0] + '-' + date.split('-')[1]\
+        path = os.getcwd() + '/' + self._path_GNV + '/' + date.split('-')[0] + '-' + date.split('-')[1]\
                + '/GNV/G' + sat.name + '-OG-1B-NAVSOL+JPL-GNV1B_' + date + '_' + sat.name + '_02.dat'
         try:
             f = open(path, 'rb')
@@ -372,7 +373,7 @@ class GRACE_NEW_RL02(L1b):
         pass
 
     def _readACC(self, date: str, sat: SatID):
-        path = self._path_ACC.joinpath(*[date.split('-')[0] + '-' + date.split('-')[1],
+        path = os.getcwd() + '/' + self._path_ACC.joinpath(*[date.split('-')[0] + '-' + date.split('-')[1],
                                        'grace_1B_' + date + '_02.tar.gz_files',
                                          'ACC1B_' + date + '_' + sat.name + '_02.dat'])
         try:
@@ -410,7 +411,7 @@ class GRACE_NEW_RL02(L1b):
         return ACC
 
     def _readSCA(self, date: str, sat: SatID):
-        path = self._path_ACC.joinpath(*[date.split('-')[0] + '-' + date.split('-')[1],
+        path = os.getcwd() + '/' + self._path_ACC.joinpath(*[date.split('-')[0] + '-' + date.split('-')[1],
                                        'grace_1B_' + date + '_02.tar.gz_files',
                                          'SCA1B_' + date + '_' + sat.name + '_02.dat'])
 
@@ -452,7 +453,7 @@ class GRACE_NEW_RL02(L1b):
         return SCA
 
     def _readKBR(self, date: str):
-        path = self._path_ACC.joinpath(*[date.split('-')[0] + '-' + date.split('-')[1],
+        path = os.getcwd() + '/' + self._path_ACC.joinpath(*[date.split('-')[0] + '-' + date.split('-')[1],
                                        'grace_1B_' + date + '_02.tar.gz_files',
                                          'KBR1B_' + date + '_X_02.dat'])
 
@@ -504,7 +505,7 @@ class GRACE_NEW_RL02(L1b):
         date_range = (round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 0, 0, 0))),
                       round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 23, 59, 60 - self.sr_payload[Payload.GNV.name]))))
 
-        path = self._path_ACC.joinpath(*[date.split('-')[0] + '-' + date.split('-')[1],
+        path = os.getcwd() + '/' + self._path_ACC.joinpath(*[date.split('-')[0] + '-' + date.split('-')[1],
                                        'grace_1B_' + date + '_02.tar.gz_files',
                                          'GNV1B_' + date + '_' + sat.name + '_02.dat'])
         try:

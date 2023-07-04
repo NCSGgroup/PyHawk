@@ -1,3 +1,4 @@
+import os.path
 import sys
 sys.path.append("../")
 
@@ -37,6 +38,8 @@ from src.Preference.Pre_Interface import InterfaceConfig
 
 class CalibrateOrbit:
     def __init__(self):
+        self.__cur_path = os.path.abspath(__file__)
+        self.__parent_path = os.path.abspath(os.path.dirname(self.__cur_path) + os.path.sep + ".." + os.path.sep + "..")
         self.__acc_config_A = None
         self.__acc_config_B = None
         self.__force_model_config = None
@@ -51,43 +54,43 @@ class CalibrateOrbit:
 
     def loadJson(self):
         self.__acc_config_A = AccelerometerConfig()
-        acc_A = json.load(open('../setting/Calibrate/AccelerometerConfig_A.json', 'r'))
+        acc_A = json.load(open(os.path.join(self.__parent_path, 'setting/Calibrate/AccelerometerConfig_A.json'), 'r'))
         self.__acc_config_A.__dict__ = acc_A
 
         self.__acc_config_B = AccelerometerConfig()
-        acc_B = json.load(open('../setting/Calibrate/AccelerometerConfig_B.json', 'r'))
+        acc_B = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/AccelerometerConfig_B.json'), 'r'))
         self.__acc_config_B.__dict__ = acc_B
 
         self.__force_model_config = ForceModelConfig()
-        fmDict = json.load(open('../setting/Calibrate/ForceModelConfig.json', 'r'))
+        fmDict = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/ForceModelConfig.json'), 'r'))
         self.__force_model_config.__dict__ = fmDict
 
         self.__parameter_config = ParameterConfig()
-        Parameter = json.load(open('../setting/Calibrate/ParameterConfig.json', 'r'))
+        Parameter = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/ParameterConfig.json'), 'r'))
         self.__parameter_config.__dict__ = Parameter
 
         self.__solver_config = SolverConfig()
-        solverDict = json.load(open('../setting/Calibrate/SolverConfig.json', 'r'))
+        solverDict = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/SolverConfig.json'), 'r'))
         self.__solver_config.__dict__ = solverDict
 
         self.__ode_config = ODEConfig()
-        odeDict = json.load(open('../setting/Calibrate/ODEConfig.json', 'r'))
+        odeDict = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/ODEConfig.json'), 'r'))
         self.__ode_config.__dict__ = odeDict
 
         self.__neq_config = NEQConfig()
-        neqDict = json.load(open('../setting/Calibrate/NEQConfig.json', 'r'))
+        neqDict = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/NEQConfig.json'), 'r'))
         self.__neq_config.__dict__ = neqDict
 
         self.__adjust_config = AdjustOrbitConfig()
-        adjustOrbitDict = json.load(open('../setting/Calibrate/AdjustOrbitConfig.json', 'r'))
+        adjustOrbitDict = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/AdjustOrbitConfig.json'), 'r'))
         self.__adjust_config.__dict__ = adjustOrbitDict
 
         self.__interface_config = InterfaceConfig()
-        interfaceDict = json.load(open('../setting/Calibrate/InterfaceConfig.json', 'r'))
+        interfaceDict = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/InterfaceConfig.json'), 'r'))
         self.__interface_config.__dict__ = interfaceDict
 
         self.__design_parameter_config = ParameterConfig()
-        designParameter = json.load(open('../setting/Calibrate/DesignParameterConfig.json', 'r'))
+        designParameter = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/DesignParameterConfig.json'), 'r'))
         self.__design_parameter_config.__dict__ = designParameter
         return self
 

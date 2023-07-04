@@ -12,7 +12,6 @@ from src.Preference.EnumType import CoordinateTransform
 
 class PathOfFiles:
     root_dir = pathlib.Path(__file__).parent.parent.parent.parent
-
     # ======================= For the EOP===============================
     EOP = root_dir.joinpath('data', 'eop', 'eopc04_14_IAU2000.62-now')
     EOPgrav = root_dir.joinpath('data', 'eop', 'EOPgrav.txt')

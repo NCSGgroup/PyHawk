@@ -94,11 +94,11 @@ class GravityDesignMat:
         """
         SSTOption = self._solverConfig.SSTOption
 
-        if SSTOption == SSTObserve.Range.name:
+        if SSTObserve[SSTOption] == SSTObserve.Range:
             self.__getRangeDM()
-        elif SSTOption == SSTObserve.RangeRate.name:
+        elif SSTObserve[SSTOption] == SSTObserve.RangeRate:
             self.__getRangeRateDM()
-        elif SSTOption == SSTObserve.RangeAcc.name:
+        elif SSTObserve[SSTOption] == SSTObserve.RangeAcc:
             self.__getRangeAccDM()
 
     def __getRangeDM(self):
