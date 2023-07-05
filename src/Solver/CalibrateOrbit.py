@@ -34,6 +34,8 @@ from src.Preference.Pre_ODE import ODEConfig
 from src.Preference.Pre_NEQ import NEQConfig
 from src.Preference.Pre_AdjustOrbit import AdjustOrbitConfig
 from src.Preference.Pre_Interface import InterfaceConfig
+import multiprocessing
+from datetime import datetime
 
 
 class CalibrateOrbit:
@@ -50,6 +52,7 @@ class CalibrateOrbit:
         self.__neq_config = None
         self.__adjust_config = None
         self.__interface_config = None
+        self.__arcLen = None
         pass
 
     def loadJson(self):
@@ -95,43 +98,74 @@ class CalibrateOrbit:
         return self
 
     def run(self):
-        """step 1: Read raw data"""
-        fr = Frame(EOP().load())
-        s = GRACE_OLD_RL02().configure(InterfaceConfig=self.__interface_config).setDate()
-        s.read_double_sat()
-        """step 2: Convert orbit from ITRS frame into GCRS frame"""
-        kine = KinematicOrbit(L1b=s).configure()
-        # kine.read_double_sat()
-        kine.GNVandKiOrbitItrs2Gcrs(fr)
-        """step 3: Gap fix"""
-        gf = GapFix(L1b=s).configure()
-        gf.fix_all().makeReport()
-        arc = ArcSelect(gf=gf).configure()
-        arc.unpackArcs().makeReport()
-        """step 5: init AdjustOrbit"""
-        date_span = ['2008-01-01', '2008-01-31']
-        AdjustOrbit(accConfig=[self.__acc_config_A, self.__acc_config_B], date_span=date_span). \
-            configure(SerDer=Orbit_var_2nd_diff, arcNo=0, ODEConfig=self.__ode_config,
-                      FMConfig=self.__force_model_config, AdjustOrbitConfig=self.__adjust_config,
-                      ParameterConfig=self.__parameter_config).calibrate(iteration=2)
+        # """step 1: Read raw data"""
+        # fr = Frame(EOP().load())
+        # s = GRACE_OLD_RL02().configure(InterfaceConfig=self.__interface_config).setDate()
+        # s.read_double_sat()
+        # """step 2: Convert orbit from ITRS frame into GCRS frame"""
+        # kine = KinematicOrbit(L1b=s).configure()
+        # # kine.read_double_sat()
+        # kine.GNVandKiOrbitItrs2Gcrs(fr)
+        # """step 3: Gap fix"""
+        # gf = GapFix(L1b=s).configure()
+        # gf.fix_all().makeReport()
+        # arc = ArcSelect(gf=gf).configure()
+        # arc.unpackArcs().makeReport()
 
-        RR = RangeRate(0)
-        RR.configure(AdjustOrbitConfig=self.__adjust_config)
-        RR.calibrate()
-        '''step 6: get DesignMatrix'''
-        dm = GravityDesignMat(0).configure(accConfig=[self.__acc_config_A, self.__acc_config_B],
-                                           ODEConfig=self.__ode_config, AdjustOrbitConfig=self.__adjust_config,
-                                           solverConfig=self.__solver_config, FMConfig=self.__force_model_config,
-                                           parameterConfig=self.__design_parameter_config)
-        dm.orbit_integration()
-        dm.get_orbit_design_matrix()
-        dm.get_sst_design_matrix()
-        '''setp 8: get NEQ'''
-        neq = GravityNEQperArc(0)
-        neq.configure(solverConfig=self.__solver_config, NEQConfig=self.__neq_config,
-                      AdjustOrbitConfig=self.__adjust_config).get_neq()
-
+        self._parallel()
         self.__calculate_cs()
+        pass
+
+    def _parallel(self):
+        interface_config = self.__interface_config
+        date_span = interface_config.date_span
+        date_list = GeoMathKit.getEveryDay(*date_span)
+        days = datetime.strptime(date_list[-1], '%Y-%m-%d') - datetime.strptime(date_list[0], '%Y-%m-%d')
+        self.__arcLen = days.days * (24 / interface_config.arc_length)
+        step = int(self.__arcLen / 6)
+        p1 = multiprocessing.Process(target=self._unit, args=(0, step))
+        p2 = multiprocessing.Process(target=self._unit, args=(step, step*2))
+        p3 = multiprocessing.Process(target=self._unit, args=(step*2, step*3))
+        p4 = multiprocessing.Process(target=self._unit, args=(step*3, step*4))
+        p5 = multiprocessing.Process(target=self._unit, args=(step*4, step*5))
+        p6 = multiprocessing.Process(target=self._unit, args=(step*5, step*6))
+        p1.start()
+        p2.start()
+        p3.start()
+        p4.start()
+        p5.start()
+        p6.start()
+        p1.join()
+        p2.join()
+        p3.join()
+        p4.join()
+        p5.join()
+        p6.join()
+        pass
+
+    def _unit(self, start, end):
+        for i in range(start, end):
+            """step 5: init AdjustOrbit"""
+            AdjustOrbit(accConfig=[self.__acc_config_A, self.__acc_config_B]). \
+                configure(SerDer=Orbit_var_2nd_diff, arcNo=i, ODEConfig=self.__ode_config,
+                          FMConfig=self.__force_model_config, AdjustOrbitConfig=self.__adjust_config,
+                          ParameterConfig=self.__parameter_config).calibrate(iteration=2)
+
+            RR = RangeRate(arcNo=i)
+            RR.configure(AdjustOrbitConfig=self.__adjust_config)
+            RR.calibrate()
+            '''step 6: get DesignMatrix'''
+            dm = GravityDesignMat(arcNo=i).configure(accConfig=[self.__acc_config_A, self.__acc_config_B],
+                                               ODEConfig=self.__ode_config, AdjustOrbitConfig=self.__adjust_config,
+                                               solverConfig=self.__solver_config, FMConfig=self.__force_model_config,
+                                               parameterConfig=self.__design_parameter_config)
+            dm.orbit_integration()
+            dm.get_orbit_design_matrix()
+            dm.get_sst_design_matrix()
+            '''setp 8: get NEQ'''
+            neq = GravityNEQperArc(arcNo=i)
+            neq.configure(solverConfig=self.__solver_config, NEQConfig=self.__neq_config,
+                          AdjustOrbitConfig=self.__adjust_config).get_neq()
         pass
 
     def __calculate_cs(self):
@@ -152,7 +186,8 @@ class CalibrateOrbit:
         parameter_number = stokes_coefficients_config.Parameter_Number
         NMatrix = np.zeros((parameter_number, parameter_number))
         LMatrix = np.zeros((parameter_number, 1))
-        for i in tqdm(range(0, 1), desc='Solve normal equations: '):
+
+        for i in tqdm(range(0, self.__arcLen), desc='Solve normal equations: '):
             res_filename = res_dir + '/' + str(i) + '.hdf5'
             h5 = h5py.File(res_filename, 'r')
             NMatrix = NMatrix + h5['Orbit_N_A'][:] + h5['Orbit_N_B'][:] + h5['RangeRate_N'][:] * 2.5E11

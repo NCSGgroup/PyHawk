@@ -5,7 +5,6 @@ import src.Preference.EnumType as EnumType
 import numpy as np
 from src.SecDerivative.Instance.DualOrbitAndVar import Orbit_var_2nd_diff
 from src.Solver.AdjustOrbit import AdjustOrbit
-import src.Preference.backups.Pre_AdjustOrbit as Pre_AdjustOrbit
 import pathlib
 import h5py
 import multiprocessing

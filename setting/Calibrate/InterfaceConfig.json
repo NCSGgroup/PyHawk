@@ -39,13 +39,13 @@
     "min_arcLen": 2,
     "PathOfFilesConfig": {
         "payload_ACC": "D:\\py-hawk-v2\\data\\GRACE_RL02",
-        "payload_SCA": "../data/GRACE_RL02",
-        "payload_KBR": "../data/GRACE_RL02",
-        "payload_GNV": "../data/GRACE_RL02",
-        "payload_Kinematic": "../data/KinematicOrbit",
-        "payload_LRI": "../dataGRACE_RL02",
-        "report_gap": "../report/gap",
-        "report_arc": "../report/arc",
-        "temp_raw_data": "../temp/RawData"
+        "payload_SCA": "D:\\py-hawk-v2\\data\\GRACE_RL02",
+        "payload_KBR": "D:\\py-hawk-v2\\data\\GRACE_RL02",
+        "payload_GNV": "D:\\py-hawk-v2\\data\\GRACE_RL02",
+        "payload_Kinematic": "D:\\py-hawk-v2\\data\\KinematicOrbit",
+        "payload_LRI": "D:\\py-hawk-v2\\data\\GRACE_RL02",
+        "report_gap": "D:\\py-hawk-v2\\report\\gap",
+        "report_arc": "D:\\py-hawk-v2\\report\\arc",
+        "temp_raw_data": "D:\\py-hawk-v2\\temp\\RawData"
     }
 }
