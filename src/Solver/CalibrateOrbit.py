@@ -98,19 +98,19 @@ class CalibrateOrbit:
         return self
 
     def run(self):
-        # """step 1: Read raw data"""
-        # fr = Frame(EOP().load())
-        # s = GRACE_OLD_RL02().configure(InterfaceConfig=self.__interface_config).setDate()
-        # s.read_double_sat()
-        # """step 2: Convert orbit from ITRS frame into GCRS frame"""
-        # kine = KinematicOrbit(L1b=s).configure()
-        # # kine.read_double_sat()
-        # kine.GNVandKiOrbitItrs2Gcrs(fr)
-        # """step 3: Gap fix"""
-        # gf = GapFix(L1b=s).configure()
-        # gf.fix_all().makeReport()
-        # arc = ArcSelect(gf=gf).configure()
-        # arc.unpackArcs().makeReport()
+        """step 1: Read raw data"""
+        fr = Frame(EOP().load())
+        s = GRACE_OLD_RL02().configure(InterfaceConfig=self.__interface_config).setDate()
+        s.read_double_sat()
+        """step 2: Convert orbit from ITRS frame into GCRS frame"""
+        kine = KinematicOrbit(L1b=s).configure()
+        # kine.read_double_sat()
+        kine.GNVandKiOrbitItrs2Gcrs(fr)
+        """step 3: Gap fix"""
+        gf = GapFix(L1b=s).configure()
+        gf.fix_all().makeReport()
+        arc = ArcSelect(gf=gf).configure()
+        arc.unpackArcs().makeReport()
 
         self._parallel()
         self.__calculate_cs()
@@ -187,7 +187,11 @@ class CalibrateOrbit:
         NMatrix = np.zeros((parameter_number, parameter_number))
         LMatrix = np.zeros((parameter_number, 1))
 
-        for i in tqdm(range(0, self.__arcLen), desc='Solve normal equations: '):
+        date_span = interface_config.date_span
+        date_list = GeoMathKit.getEveryDay(*date_span)
+        days = datetime.strptime(date_list[-1], '%Y-%m-%d') - datetime.strptime(date_list[0], '%Y-%m-%d')
+        self.__arcLen = days.days * (24 / interface_config.arc_length)
+        for i in tqdm(range(0, int(self.__arcLen)), desc='Solve normal equations: '):
             res_filename = res_dir + '/' + str(i) + '.hdf5'
             h5 = h5py.File(res_filename, 'r')
             NMatrix = NMatrix + h5['Orbit_N_A'][:] + h5['Orbit_N_B'][:] + h5['RangeRate_N'][:] * 2.5E11
@@ -213,3 +217,6 @@ class CalibrateOrbit:
         h5.close()
         pass
 
+    def drawSH(self):
+
+        pass
