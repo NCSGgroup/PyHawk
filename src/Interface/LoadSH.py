@@ -157,12 +157,12 @@ class LoadGif48(LoadSH):
         #     sigmaC.append(value[5])
         #     sigmaS.append(value[6])
 
-        l = np.array(l).astype(np.int)
-        m = np.array(m).astype(np.int)
-        C = np.array(C).astype(np.float)
-        S = np.array(S).astype(np.float)
-        sigmaC = np.array(sigmaC).astype(np.float)
-        sigmaS = np.array(sigmaS).astype(np.float)
+        l = np.array(l).astype(np.int64)
+        m = np.array(m).astype(np.int64)
+        C = np.array(C).astype(np.float64)
+        S = np.array(S).astype(np.float64)
+        sigmaC = np.array(sigmaC).astype(np.float64)
+        sigmaS = np.array(sigmaS).astype(np.float64)
 
         if self.maxDegree is not None:
             assert len(l) == int((self.maxDegree + 1) * (self.maxDegree + 2) / 2)
@@ -175,10 +175,10 @@ class LoadGif48(LoadSH):
         self._sigmaC = np.zeros(len(l))
         self._sigmaS = np.zeros(len(l))
 
-        self._C[(l * (l + 1) / 2 + m).astype(np.int)] = C
-        self._S[(l * (l + 1) / 2 + m).astype(np.int)] = S
-        self._sigmaC[(l * (l + 1) / 2 + m).astype(np.int)] = sigmaC
-        self._sigmaS[(l * (l + 1) / 2 + m).astype(np.int)] = sigmaS
+        self._C[(l * (l + 1) / 2 + m).astype(np.int64)] = C
+        self._S[(l * (l + 1) / 2 + m).astype(np.int64)] = S
+        self._sigmaC[(l * (l + 1) / 2 + m).astype(np.int64)] = sigmaC
+        self._sigmaS[(l * (l + 1) / 2 + m).astype(np.int64)] = sigmaS
 
 
 class LoadAtmosTide(LoadSH):
@@ -296,10 +296,10 @@ class LoadAtmosTide(LoadSH):
             C.append(value[2])
             S.append(value[3])
 
-        l = np.array(l).astype(np.int)
-        m = np.array(m).astype(np.int)
-        C = np.array(C).astype(np.float)
-        S = np.array(S).astype(np.float)
+        l = np.array(l).astype(np.int64)
+        m = np.array(m).astype(np.int64)
+        C = np.array(C).astype(np.float64)
+        S = np.array(S).astype(np.float64)
 
         if self.maxDegree is not None:
             assert len(l) == int((self.maxDegree + 1) * (self.maxDegree + 2) / 2)
@@ -310,8 +310,8 @@ class LoadAtmosTide(LoadSH):
         self._C = np.zeros(len(l))
         self._S = np.zeros(len(l))
 
-        self._C[(l * (l + 1) / 2 + m).astype(np.int)] = C
-        self._S[(l * (l + 1) / 2 + m).astype(np.int)] = S
+        self._C[(l * (l + 1) / 2 + m).astype(np.int64)] = C
+        self._S[(l * (l + 1) / 2 + m).astype(np.int64)] = S
 
 
 class LoadNonTide(LoadSH):
@@ -448,10 +448,10 @@ class LoadNonTide(LoadSH):
             C.append(value[2])
             S.append(value[3])
 
-        l = np.array(l).astype(np.int)
-        m = np.array(m).astype(np.int)
-        C = np.array(C).astype(np.float)
-        S = np.array(S).astype(np.float)
+        l = np.array(l).astype(np.int64)
+        m = np.array(m).astype(np.int64)
+        C = np.array(C).astype(np.float64)
+        S = np.array(S).astype(np.float64)
 
         if self.maxDegree is not None:
             assert len(l) == int((self.maxDegree + 1) * (self.maxDegree + 2) / 2)
@@ -462,6 +462,6 @@ class LoadNonTide(LoadSH):
         self._C = np.zeros(len(l))
         self._S = np.zeros(len(l))
 
-        self._C[(l * (l + 1) / 2 + m).astype(np.int)] = C
-        self._S[(l * (l + 1) / 2 + m).astype(np.int)] = S
+        self._C[(l * (l + 1) / 2 + m).astype(np.int64)] = C
+        self._S[(l * (l + 1) / 2 + m).astype(np.int64)] = S
 

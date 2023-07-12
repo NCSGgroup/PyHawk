@@ -218,8 +218,8 @@ class GaussJackson(MultiStepOde):
         '''
         dim = (self.order + 2, self.order + 1)
         ODE = ODEcoeffGenerator(self.order)
-        Adam_Coef = np.array(ODE.SummedAdam_ordinate).astype(np.float)
-        GJ_Coeff = np.array(ODE.GaussJackson_ordinate).astype(np.float)
+        Adam_Coef = np.array(ODE.SummedAdam_ordinate).astype(np.float64)
+        GJ_Coeff = np.array(ODE.GaussJackson_ordinate).astype(np.float64)
 
         assert Adam_Coef.shape == dim and GJ_Coeff.shape == dim
         self.__Adam_Coef, self.__GJ_Coeff = Adam_Coef, GJ_Coeff
@@ -573,8 +573,8 @@ class MatrixGaussJackson(MultiStepOde):
         '''
         dim = (self.order + 2, self.order + 1)
         ODE = ODEcoeffGenerator(self.order)
-        Adam_Coef = np.array(ODE.SummedAdam_ordinate).astype(np.float)
-        GJ_Coeff = np.array(ODE.GaussJackson_ordinate).astype(np.float)
+        Adam_Coef = np.array(ODE.SummedAdam_ordinate).astype(np.float64)
+        GJ_Coeff = np.array(ODE.GaussJackson_ordinate).astype(np.float64)
 
         assert Adam_Coef.shape == dim and GJ_Coeff.shape == dim
         self.__Adam_Coef, self.__GJ_Coeff = Adam_Coef, GJ_Coeff

@@ -35,8 +35,8 @@ class AccCaliPar:
         bias_constant = self.accConfig.cali_value['Bias_constant'].copy()
         bias_trend = self.accConfig.cali_value['Bias_trend'].copy()
         bias_quadratic = self.accConfig.cali_value['Bias_quadratic'].copy()
-        self.scale = np.array(scale, dtype=np.float).reshape((3, 3))
-        self.bias = np.array([bias_constant, bias_trend, bias_quadratic], dtype=np.float)
+        self.scale = np.array(scale, dtype=np.float64).reshape((3, 3))
+        self.bias = np.array([bias_constant, bias_trend, bias_quadratic], dtype=np.float64)
 
         cali = []
         for term in self.isCali:
@@ -133,7 +133,7 @@ class Accelerometer:
         for term in self.__isCali:
             cali = cali + term
 
-        valuelist = np.zeros(18, dtype=np.float)
+        valuelist = np.zeros(18, dtype=np.float64)
         valuelist[cali] = np.array(paralist)
 
         scale = self.__scale.flatten()

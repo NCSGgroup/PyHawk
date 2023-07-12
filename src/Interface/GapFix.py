@@ -214,7 +214,7 @@ class GapFix:
         time3 = time[0:-1]
         diff = time2 - time3
 
-        temp = np.round(diff).astype(np.int) == stepsize
+        temp = np.round(diff).astype(np.int64) == stepsize
         if temp.all():
             return None
         else:
@@ -290,7 +290,7 @@ class GapFix:
 
         final = data[0:gaplist[0]['lr'] + 1, :]
 
-        time = data[:, 0].astype(np.int)
+        time = data[:, 0].astype(np.int64)
 
         # if kind == Payload.ACC:
         #     stepsize = 1
@@ -319,7 +319,7 @@ class GapFix:
                 '''interpolation'''
                 z_time = np.arange(time[gap['lr']] + stepsize, time[gap['rl']], stepsize)
                 z_value = f(z_time)
-                z_value[0] = np.round(z_value[0]).astype(np.float)
+                z_value[0] = np.round(z_value[0]).astype(np.float64)
 
                 '''combination'''
                 final = np.vstack((final, z_value.T))
@@ -342,7 +342,7 @@ class GapFix:
         """
 
         final = data[0:gaplist[0]['lr'] + 1, :]
-        time = data[:, 0].astype(np.int)
+        time = data[:, 0].astype(np.int64)
         # if kind == Payload.ACC:
         #     stepsize = 1
         # else:
@@ -368,7 +368,7 @@ class GapFix:
                 '''interpolation'''
                 z_time = np.arange(time[gap['lr']] + stepsize, time[gap_next['rl']], stepsize)
                 z_value = f(z_time)
-                z_value[0] = np.round(z_value[0]).astype(np.float)
+                z_value[0] = np.round(z_value[0]).astype(np.float64)
 
                 '''combination'''
                 final = np.vstack((final, z_value.T))

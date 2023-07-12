@@ -86,7 +86,7 @@ class AbsThreeBody(BaseSecondDerivative):
                 d = np.array(sat)
 
             norm_d = np.linalg.norm(d)
-            d = d.reshape((3, 1)).astype(np.float)
+            d = d.reshape((3, 1)).astype(np.float64)
             du2xyz_final += -self._GM[planet] * (1. / norm_d ** 3 * np.identity(3) -
                                                   3. * np.matmul(d, d.T) / norm_d ** 5)
 

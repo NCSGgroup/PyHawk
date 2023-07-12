@@ -111,12 +111,12 @@ class PoleTideIERS2010(AbsPoleTide):
             AnmI.append(value[4])
             BnmI.append(value[5])
 
-        n = np.array(n).astype(np.int)
-        m = np.array(m).astype(np.int)
-        AnmR = np.array(AnmR).astype(np.float)
-        BnmR = np.array(BnmR).astype(np.float)
-        AnmI = np.array(AnmI).astype(np.float)
-        BnmI = np.array(BnmI).astype(np.float)
+        n = np.array(n).astype(np.int64)
+        m = np.array(m).astype(np.int64)
+        AnmR = np.array(AnmR).astype(np.float64)
+        BnmR = np.array(BnmR).astype(np.float64)
+        AnmI = np.array(AnmI).astype(np.float64)
+        BnmI = np.array(BnmI).astype(np.float64)
 
         self.__AnmR = np.zeros(len(n))
         self.__BnmR = np.zeros(len(n))
@@ -124,10 +124,10 @@ class PoleTideIERS2010(AbsPoleTide):
         self.__BnmI = np.zeros(len(n))
 
         # start from (1,0)
-        self.__AnmR[(n * (n + 1) / 2 + m - 1).astype(np.int)] = AnmR
-        self.__BnmR[(n * (n + 1) / 2 + m - 1).astype(np.int)] = BnmR
-        self.__AnmI[(n * (n + 1) / 2 + m - 1).astype(np.int)] = AnmI
-        self.__BnmI[(n * (n + 1) / 2 + m - 1).astype(np.int)] = BnmI
+        self.__AnmR[(n * (n + 1) / 2 + m - 1).astype(np.int64)] = AnmR
+        self.__BnmR[(n * (n + 1) / 2 + m - 1).astype(np.int64)] = BnmR
+        self.__AnmI[(n * (n + 1) / 2 + m - 1).astype(np.int64)] = AnmI
+        self.__BnmI[(n * (n + 1) / 2 + m - 1).astype(np.int64)] = BnmI
 
         index = int(self.__maxdegree * (self.__maxdegree + 1) / 2 + self.__maxdegree)
         self.__AnmR = self.__AnmR[0: index]

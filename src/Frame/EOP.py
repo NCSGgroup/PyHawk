@@ -46,7 +46,7 @@ class EOP:
         this is purely for saving memory and accelerating the computation.
         :return:
         """
-        self.__ocean_narg = np.zeros((71, 6), np.int)
+        self.__ocean_narg = np.zeros((71, 6), np.int64)
         self.__ocean_xsin = np.zeros(71)
         self.__ocean_xcos = np.zeros(71)
         self.__ocean_ysin = np.zeros(71)
@@ -54,7 +54,7 @@ class EOP:
         self.__ocean_utsin = np.zeros(71)
         self.__ocean_utcos = np.zeros(71)
 
-        self.__grav_narg = np.zeros((10, 6), np.int)
+        self.__grav_narg = np.zeros((10, 6), np.int64)
         self.__grav_xsin = np.zeros(10)
         self.__grav_xcos = np.zeros(10)
         self.__grav_ysin = np.zeros(10)
@@ -121,13 +121,13 @@ class EOP:
             self.__dX.append(value[8])
             self.__dY.append(value[9])
 
-        self.__RJD = np.array(self.__RJD).astype(np.int)
-        self.__polarX = np.array(self.__polarX).astype(np.float)
-        self.__polarY = np.array(self.__polarY).astype(np.float)
-        self.__UT1 = np.array(self.__UT1).astype(np.float)
-        self.__LOD = np.array(self.__LOD).astype(np.float)
-        self.__dX = np.array(self.__dX).astype(np.float)
-        self.__dY = np.array(self.__dY).astype(np.float)
+        self.__RJD = np.array(self.__RJD).astype(np.int64)
+        self.__polarX = np.array(self.__polarX).astype(np.float64)
+        self.__polarY = np.array(self.__polarY).astype(np.float64)
+        self.__UT1 = np.array(self.__UT1).astype(np.float64)
+        self.__LOD = np.array(self.__LOD).astype(np.float64)
+        self.__dX = np.array(self.__dX).astype(np.float64)
+        self.__dY = np.array(self.__dY).astype(np.float64)
 
         '''load file of ocean correction'''
         if self.__isCorrection:

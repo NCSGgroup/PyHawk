@@ -17,7 +17,7 @@ class GravityDesignMat:
     """
     Gravity inversion in terms of spherical harmonic.
     """
-    def __init__(self, arcNo: int, sat=Pre_Interface.sat, date_span=Pre_Interface.date_span):
+    def __init__(self, arcNo: int, sat, date_span):
         self._arcNo = arcNo
         self._date_span = date_span
         self._satName = None
@@ -34,6 +34,8 @@ class GravityDesignMat:
         self._FMConfig = None
         self._ODEConfig = None
         self._AdjustConfig = None
+        self.__data_span = date_span
+        self.__sat = sat
         pass
 
     def configure(self, accConfig, solverConfig: SolverConfig, AdjustOrbitConfig: AdjustOrbitConfig,
@@ -48,7 +50,7 @@ class GravityDesignMat:
         return self
 
     def orbit_integration(self):
-        adjustDM = AdjustDM()
+        adjustDM = AdjustDM(date_span=self.__data_span, sat=self.__sat)
         adjustDM.configure(SerDer=Orbit_var_2nd_diff, arcNo=self._arcNo, ParameterConfig=self._parameterConfig,
                            AdjustConfig=self._AdjustConfig,
                            FMConfig=self._FMConfig, SolverConfig=self._solverConfig, ODEConfig=self._ODEConfig)

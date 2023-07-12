@@ -16,7 +16,7 @@ class GravityNEQperArc:
     Gravity inversion in terms of spherical harmonic.
     Retrieve the design matrix and observations, then transform the observation-equation into the normal equations.
     """
-    def __init__(self, arcNo: int, sat=Pre_Interface.sat, date_span=Pre_Interface.date_span):
+    def __init__(self, arcNo: int, sat, date_span):
         self.__date_span = date_span
         self.__date_begin = date_span[0]
         self.__date_end = date_span[1]
@@ -130,8 +130,8 @@ class GravityNEQperArc:
         t_obs = orbit_obs[:, 0]
         '''for the orbit, only position (r) is needed for the inversion'''
         '''find the common'''
-        int_t_obs = t_obs.astype(np.int)
-        int_t_nominal = t_nominal.astype(np.int)
+        int_t_obs = t_obs.astype(np.int64)
+        int_t_nominal = t_nominal.astype(np.int64)
         new_index = [list(int_t_nominal).index(x) for x in int_t_obs]
         '''Reassignment'''
         t_nominal = t_nominal[new_index]
@@ -183,8 +183,8 @@ class GravityNEQperArc:
         local_dm_empirical = h5['design_matrix'][()]
         h5.close()
 
-        int_t_obs = t_obs.astype(np.int)
-        int_t_dm = t_dm.astype(np.int)
+        int_t_obs = t_obs.astype(np.int64)
+        int_t_dm = t_dm.astype(np.int64)
         new_index = [list(int_t_dm).index(x) for x in int_t_obs]
 
         '''Reassignment'''

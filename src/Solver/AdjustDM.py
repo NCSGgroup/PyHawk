@@ -13,8 +13,7 @@ from src.Preference.Pre_AdjustOrbit import AdjustOrbitConfig
 
 
 class AdjustDM:
-    def __init__(self, date_span=Pre_Interface.date_span, sat=Pre_Interface.sat,
-                 kind=EnumType.Payload.GNV):
+    def __init__(self, date_span, sat, kind=EnumType.Payload.GNV):
         self._date_span = date_span
         self._sat = [key for key, value in sat.items() if value]
         self._kind = kind

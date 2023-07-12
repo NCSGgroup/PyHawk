@@ -14,7 +14,7 @@ import os
 
 
 class RangeRate:
-    def __init__(self, arcNo: int, date_span=Pre_Interface.date_span):
+    def __init__(self, arcNo: int, date_span):
         """init variable"""
         self.__rms_times = None
         self.__upper_RMS = None

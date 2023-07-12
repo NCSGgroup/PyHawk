@@ -102,8 +102,8 @@ class PyGravHar(AbsGravHar):
 
         # Calculate zonal terms V(n,0); set W(n,0)=0.0
 
-        V = np.zeros(shape=(self._Nmax + 3, self._Nmax + 3), dtype=np.float)
-        W = np.zeros(shape=(self._Nmax + 3, self._Nmax + 3), dtype=np.float)
+        V = np.zeros(shape=(self._Nmax + 3, self._Nmax + 3), dtype=np.float64)
+        W = np.zeros(shape=(self._Nmax + 3, self._Nmax + 3), dtype=np.float64)
 
         V[0, 0] = self._Radius / np.sqrt(R_SQR)
         V[1, 0] = np.sqrt(3) * z0 * V[0, 0]
@@ -185,7 +185,7 @@ class PyGravHar(AbsGravHar):
         vwnm2 = []
 
         for n in range(Nmax + 3):
-            m = np.arange(n + 1).astype(np.float)
+            m = np.arange(n + 1).astype(np.float64)
             # index = n * (n + 1) / 2 + m + 1
             # force coefficient
             f1mgt1_a = np.sqrt((2 * n + 1) * (n + m + 2) * (n + m + 1) / (2 * n + 3))
@@ -246,7 +246,7 @@ class PyGravHar(AbsGravHar):
         :return: three-dimensional accelerations a_x, a_y, a_z
         """
 
-        acc = np.zeros(3, dtype=np.float)
+        acc = np.zeros(3, dtype=np.float64)
 
         V, W = self.__V, self.__W
         (f1meq0, f2meq0, f1meq1, f2meq1, f3meq1, grdtcn1, grdtcn2, grdtcn3, grdtcn4,
@@ -289,7 +289,7 @@ class PyGravHar(AbsGravHar):
         :return: three-dimensional accelerations a_x, a_y, a_z
         """
 
-        acc = np.zeros(3, dtype=np.float)
+        acc = np.zeros(3, dtype=np.float64)
 
         V, W = self.__V, self.__W
         (f1meq0, f2meq0, f1meq1, f2meq1, f3meq1, grdtcn1, grdtcn2, grdtcn3, grdtcn4,
@@ -414,8 +414,8 @@ class PyGravHar(AbsGravHar):
         """
 
         assert 1 <= degree_min <= degree_max <= self._Nmax
-        du2c = np.zeros((3, int((degree_max + 1) * (degree_max + 2) / 2)), dtype=np.float)
-        du2s = np.zeros((3, int((degree_max + 1) * (degree_max + 2) / 2)), dtype=np.float)
+        du2c = np.zeros((3, int((degree_max + 1) * (degree_max + 2) / 2)), dtype=np.float64)
+        du2s = np.zeros((3, int((degree_max + 1) * (degree_max + 2) / 2)), dtype=np.float64)
 
         GM = self._GM
         R_ref = self._Radius
@@ -477,17 +477,17 @@ class ClibGravHar(AbsGravHar):
         '''
         interface def
         '''
-        self.__gravlib.calVW.argtypes = [ndpointer(dtype=np.float, ndim=1, flags='C_CONTIGUOUS'), c_int]
+        self.__gravlib.calVW.argtypes = [ndpointer(dtype=np.float64, ndim=1, flags='C_CONTIGUOUS'), c_int]
         self.__gravlib.preprocess.argtypes = [c_int]
         self.__gravlib.getPotential.argtypes = [c_int,
-                                                ndpointer(dtype=np.float, ndim=1, flags='C_CONTIGUOUS'),
-                                                ndpointer(dtype=np.float, ndim=1, flags='C_CONTIGUOUS')
+                                                ndpointer(dtype=np.float64, ndim=1, flags='C_CONTIGUOUS'),
+                                                ndpointer(dtype=np.float64, ndim=1, flags='C_CONTIGUOUS')
                                                 ]
         self.__gravlib.getPotential.restype = c_double
         self.__gravlib.getAcc.argtypes = [c_int,
-                                          ndpointer(dtype=np.float, ndim=1, flags='C_CONTIGUOUS'),
-                                          ndpointer(dtype=np.float, ndim=1, flags='C_CONTIGUOUS'),
-                                          ndpointer(dtype=np.float, ndim=1, flags='C_CONTIGUOUS')
+                                          ndpointer(dtype=np.float64, ndim=1, flags='C_CONTIGUOUS'),
+                                          ndpointer(dtype=np.float64, ndim=1, flags='C_CONTIGUOUS'),
+                                          ndpointer(dtype=np.float64, ndim=1, flags='C_CONTIGUOUS')
                                           ]
         self.__gravlib.getDu2xyz.argtypes = [c_int,
                                              ndpointer(dtype=float, ndim=1, flags='C_CONTIGUOUS'),
@@ -586,12 +586,12 @@ class ClibGravHar(AbsGravHar):
         assert 1 <= degree_min <= degree_max <= self._Nmax
 
         dim = int((degree_max + 1) * (degree_max + 2) / 2)
-        dx2c = np.zeros(dim, dtype=np.float)
-        dy2c = np.zeros(dim, dtype=np.float)
-        dz2c = np.zeros(dim, dtype=np.float)
-        dx2s = np.zeros(dim, dtype=np.float)
-        dy2s = np.zeros(dim, dtype=np.float)
-        dz2s = np.zeros(dim, dtype=np.float)
+        dx2c = np.zeros(dim, dtype=np.float64)
+        dy2c = np.zeros(dim, dtype=np.float64)
+        dz2c = np.zeros(dim, dtype=np.float64)
+        dx2s = np.zeros(dim, dtype=np.float64)
+        dy2s = np.zeros(dim, dtype=np.float64)
+        dz2s = np.zeros(dim, dtype=np.float64)
 
         self.__gravlib.getDu2CS(degree_min, degree_max, dx2c, dy2c, dz2c, dx2s, dy2s, dz2s)
         du2c = np.vstack((dx2c, dy2c))
