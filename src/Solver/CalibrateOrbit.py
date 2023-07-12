@@ -53,6 +53,8 @@ class CalibrateOrbit:
         self.__adjust_config = None
         self.__interface_config = None
         self.__arcLen = None
+        self.__date_span = None
+        self.__sat = None
         pass
 
     def loadJson(self):
@@ -115,11 +117,12 @@ class CalibrateOrbit:
         self._parallel()
         self.__calculate_cs()
         pass
-
+ 
     def _parallel(self):
         interface_config = self.__interface_config
-        date_span = interface_config.date_span
-        date_list = GeoMathKit.getEveryDay(*date_span)
+        self.__date_span = interface_config.date_span
+        self.__sat = interface_config.sat
+        date_list = GeoMathKit.getEveryDay(*self.__date_span)
         days = datetime.strptime(date_list[-1], '%Y-%m-%d') - datetime.strptime(date_list[0], '%Y-%m-%d')
         self.__arcLen = days.days * (24 / interface_config.arc_length)
         step = int(self.__arcLen / 6)
@@ -146,24 +149,27 @@ class CalibrateOrbit:
     def _unit(self, start, end):
         for i in range(start, end):
             """step 5: init AdjustOrbit"""
-            AdjustOrbit(accConfig=[self.__acc_config_A, self.__acc_config_B]). \
+            AdjustOrbit(accConfig=[self.__acc_config_A, self.__acc_config_B], date_span=self.__date_span, sat=self.__sat).\
                 configure(SerDer=Orbit_var_2nd_diff, arcNo=i, ODEConfig=self.__ode_config,
                           FMConfig=self.__force_model_config, AdjustOrbitConfig=self.__adjust_config,
                           ParameterConfig=self.__parameter_config).calibrate(iteration=2)
 
-            RR = RangeRate(arcNo=i)
+            RR = RangeRate(arcNo=i, date_span=self.__date_span)
             RR.configure(AdjustOrbitConfig=self.__adjust_config)
             RR.calibrate()
+
             '''step 6: get DesignMatrix'''
-            dm = GravityDesignMat(arcNo=i).configure(accConfig=[self.__acc_config_A, self.__acc_config_B],
-                                               ODEConfig=self.__ode_config, AdjustOrbitConfig=self.__adjust_config,
-                                               solverConfig=self.__solver_config, FMConfig=self.__force_model_config,
-                                               parameterConfig=self.__design_parameter_config)
+            dm = GravityDesignMat(arcNo=i, date_span=self.__date_span, sat=self.__sat).\
+                configure(accConfig=[self.__acc_config_A, self.__acc_config_B],
+                          ODEConfig=self.__ode_config, AdjustOrbitConfig=self.__adjust_config,
+                          solverConfig=self.__solver_config, FMConfig=self.__force_model_config,
+                          parameterConfig=self.__design_parameter_config)
             dm.orbit_integration()
             dm.get_orbit_design_matrix()
             dm.get_sst_design_matrix()
+
             '''setp 8: get NEQ'''
-            neq = GravityNEQperArc(arcNo=i)
+            neq = GravityNEQperArc(arcNo=i, date_span=self.__date_span, sat=self.__sat)
             neq.configure(solverConfig=self.__solver_config, NEQConfig=self.__neq_config,
                           AdjustOrbitConfig=self.__adjust_config).get_neq()
         pass

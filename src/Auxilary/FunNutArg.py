@@ -22,7 +22,7 @@ class FunNutArg:
             [125.04455501 * 3600, -6962890.5431, 7.4722, 0.007702, -0.00005939]
         ])
 
-        self.__coeff3 = np.deg2rad(coeff3 / 3600, dtype=np.float)
+        self.__coeff3 = np.deg2rad(coeff3 / 3600, dtype=np.float64)
 
         self.__flag = 0
 

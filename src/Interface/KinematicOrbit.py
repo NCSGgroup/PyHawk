@@ -46,7 +46,7 @@ class KinematicOrbit:
         res = None
 
         try:
-            res = np.loadtxt(path, dtype=np.float, comments='#', usecols=(0, 1, 2, 3))
+            res = np.loadtxt(path, dtype=np.float64, comments='#', usecols=(0, 1, 2, 3))
             res[:, 0] = np.round(Frame.mjd2sec(res[:, 0]))
         except FileNotFoundError as e:
             # lg.error(e)
@@ -115,8 +115,8 @@ class KinematicOrbit:
         KiA = self.__KiOr_A
         KiB = self.__KiOr_B
 
-        timeGNVA, timeGNVB, timeKiA, timeKiB = GNVA[:, 0].astype(np.int), GNVB[:, 0].astype(np.int), \
-                                               KiA[:, 0].astype(np.int), KiB[:, 0].astype(np.int)
+        timeGNVA, timeGNVB, timeKiA, timeKiB = GNVA[:, 0].astype(np.int64), GNVB[:, 0].astype(np.int64), \
+                                               KiA[:, 0].astype(np.int64), KiB[:, 0].astype(np.int64)
 
         commonT = set(timeGNVA).union(set(timeGNVB)).union(set(timeKiA)).union(set(timeKiB))
         commonT = list(commonT)
@@ -178,7 +178,7 @@ class KinematicOrbit:
         GNVA = self.__L1b.getData(Payload.GNV.name, SatID.A)
         GNVB = self.__L1b.getData(Payload.GNV.name, SatID.B)
 
-        timeGNVA, timeGNVB = GNVA[:, 0].astype(np.int), GNVB[:, 0].astype(np.int)
+        timeGNVA, timeGNVB = GNVA[:, 0].astype(np.int64), GNVB[:, 0].astype(np.int64)
 
         commonT = set(timeGNVA).union(set(timeGNVB))
         commonT = list(commonT)
@@ -220,7 +220,7 @@ class KinematicOrbit:
         KiA = self.__KiOr_A
         KiB = self.__KiOr_B
 
-        timeKiA, timeKiB = KiA[:, 0].astype(np.int), KiB[:, 0].astype(np.int)
+        timeKiA, timeKiB = KiA[:, 0].astype(np.int64), KiB[:, 0].astype(np.int64)
 
         commonT = set(timeKiA).union(set(timeKiB))
         commonT = list(commonT)

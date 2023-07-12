@@ -12,12 +12,12 @@ from src.Preference.Pre_Solver import SolverConfig
 from src.Preference.Pre_ForceModel import ForceModelConfig
 from src.Preference.Pre_ODE import ODEConfig
 from src.Preference.Pre_AdjustOrbit import AdjustOrbitConfig
+from src.Preference.Pre_Interface import InterfaceConfig
 import os
 
 
 class AdjustOrbit:
-    def __init__(self, accConfig, date_span=Pre_Interface.date_span, sat=Pre_Interface.sat,
-                 kind=EnumType.Payload.GNV):
+    def __init__(self, accConfig, date_span, sat, kind=EnumType.Payload.GNV):
         # ======================= For demoTest===============================
         self.fisrtR = None
         self.secondR = None

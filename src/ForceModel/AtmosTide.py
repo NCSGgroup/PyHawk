@@ -199,9 +199,9 @@ class AtmosBB2003(AbsAtmosTide):
                 Cminus = wave[:, 4] * np.sin(np.deg2rad(wave[:, 5]))
                 Sminus = wave[:, 4] * np.cos(np.deg2rad(wave[:, 5]))
 
-            l, m = wave[:, 0].astype(np.int), wave[:, 1].astype(np.int)
+            l, m = wave[:, 0].astype(np.int64), wave[:, 1].astype(np.int64)
             lm = l * (l + 1) / 2 + m
-            lm = lm.astype(np.int)
+            lm = lm.astype(np.int64)
             # 1 bar = 100 mbar, thus the factor should be divided by 100 to keep unitless
             factor = 4 * np.pi * G * AE ** 2 * RHOW / GM * (1 + Kn[l]) / (2 * l + 1) / 100
 

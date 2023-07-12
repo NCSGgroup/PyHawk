@@ -64,6 +64,7 @@ class ArcSelect:
             self.__unpack(data=KiOrbA, sat=SatID.A, Gr=Payload.KinematicOrbit)
             self.__unpack(data=KiOrbB, sat=SatID.B, Gr=Payload.KinematicOrbit)
 
+        self.__h5py.close()
         if Payload.LRI.name in self.__gf.L1b.include_payloads:
             pass
 
@@ -79,9 +80,9 @@ class ArcSelect:
         # stepsize = 5
 
         '''find the intersection of four instruments: ACC-A, ACC-B, SCA-A, SCA-B'''
-        commonTime = set(timelist[0].astype(np.int))
+        commonTime = set(timelist[0].astype(np.int64))
         for i in range(1, len(timelist)):
-            commonTime = commonTime & set(timelist[i].astype(np.int))
+            commonTime = commonTime & set(timelist[i].astype(np.int64))
 
         commonTime = np.array(list(commonTime))
         commonTime.sort()
@@ -95,7 +96,7 @@ class ArcSelect:
         '''create a virtual time arr that has no discontinuity but marks the commonTime '''
         VirtualTime = np.arange(begin, end + 1, stepsize)
         indexOfCommon = np.zeros(len(VirtualTime), dtype=bool)
-        indexOfCommon[((commonTime - commonTime[0]) / stepsize).astype(np.int)] = True
+        indexOfCommon[((commonTime - commonTime[0]) / stepsize).astype(np.int64)] = True
 
         '''basic arc division defined by arc length'''
         arcD1 = np.arange(0, len(VirtualTime), al)
@@ -131,11 +132,11 @@ class ArcSelect:
 
         stepsize = self.__sr_target
         '''find the intersection of four instruments: ACC-A, ACC-B, SCA-A, SCA-B'''
-        # commonTime = set(timelist[0].astype(np.int)) & set(timelist[1].astype(np.int)) \
-        #              & set(timelist[2].astype(np.int)) & set(timelist[3].astype(np.int))
-        commonTime = set(timelist[0].astype(np.int))
+        # commonTime = set(timelist[0].astype(np.int64)) & set(timelist[1].astype(np.int64)) \
+        #              & set(timelist[2].astype(np.int64)) & set(timelist[3].astype(np.int64))
+        commonTime = set(timelist[0].astype(np.int64))
         for i in range(1, len(timelist)):
-            commonTime = commonTime & set(timelist[i].astype(np.int))
+            commonTime = commonTime & set(timelist[i].astype(np.int64))
 
         commonTime = np.array(list(commonTime))
         commonTime.sort()
@@ -149,7 +150,7 @@ class ArcSelect:
         '''create a virtual time arr that has no discontinuity but marks the commonTime '''
         VirtualTime = np.arange(begin, end + 1, stepsize)
         indexOfCommon = np.zeros(len(VirtualTime), dtype=bool)
-        indexOfCommon[((commonTime - commonTime[0]) / stepsize).astype(np.int)] = True
+        indexOfCommon[((commonTime - commonTime[0]) / stepsize).astype(np.int64)] = True
 
         '''Gaps will first divide the data into several arcs'''
         li = ArcSelect.divideArcByBool(indexOfCommon)
@@ -191,11 +192,11 @@ class ArcSelect:
         name = Gr.name + '_' + sat.name
 
         for i, arc in enumerate(tqdm(arcs, desc='Arc unpacking for ' + name), 0):
-            time = data[:, 0].astype(np.int)
+            time = data[:, 0].astype(np.int64)
             x1 = data[time >= arc[0], :]
-            time = x1[:, 0].astype(np.int)
+            time = x1[:, 0].astype(np.int64)
             x1 = x1[time <= arc[-1], :]
-            time = x1[:, 0].astype(np.int)
+            time = x1[:, 0].astype(np.int64)
             '''resample to make data consistent'''
             x1 = x1[time % self.__sr_target == 0, :]
             self.__h5py.create_dataset(name + '_arc' + str(i), data=x1)

@@ -49,7 +49,7 @@ class SortCS:
         size = int((Nmax + 1) * (Nmax + 2) / 2)
         assert len(C) == len(S) == size
 
-        CS = np.zeros((Nmax + 1) * (Nmax + 2) - Nmin * (Nmin + 1) - (Nmax - Nmin + 1), dtype=np.float)
+        CS = np.zeros((Nmax + 1) * (Nmax + 2) - Nmin * (Nmin + 1) - (Nmax - Nmin + 1), dtype=np.float64)
 
         CS[indexCS_C] = C[indexC]
         CS[indexCS_S] = S[indexS]
@@ -71,7 +71,7 @@ class SortCS:
 
         CS = np.array(CS)
         size = int((Nmax + 1) * (Nmax + 2) / 2)
-        C, S = np.zeros(size, dtype=np.float), np.zeros(size, dtype=np.float)
+        C, S = np.zeros(size, dtype=np.float64), np.zeros(size, dtype=np.float64)
 
         C[indexC] = CS[indexCS_C]
         S[indexS] = CS[indexCS_S]

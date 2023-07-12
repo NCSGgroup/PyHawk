@@ -349,8 +349,8 @@ class GeoMathKit:
         :return:
         """
         def index(N):
-            n = (np.round(np.sqrt(2 * N))).astype(np.int) - 1
-            m = N - (n * (n + 1) / 2).astype(np.int) - 1
+            n = (np.round(np.sqrt(2 * N))).astype(np.int64) - 1
+            m = N - (n * (n + 1) / 2).astype(np.int64) - 1
             return n, m
 
         CS_index = np.arange(len(CS)) + 1
