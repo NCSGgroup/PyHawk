@@ -1,7 +1,6 @@
 import numpy as np
 from scipy import interpolate
 from src.Interface.L1b import L1b as Level_1B
-import src.Preference.backups.Pre_Interface as Pre_Interface
 from src.Preference.EnumType import Payload, SatID
 import datetime
 

@@ -1,10 +1,10 @@
-import src.Preference.backups.Pre_Interface as Pre_Interface
 from src.Preference.Pre_NEQ import NEQConfig
 from src.Preference.EnumType import Payload, SatID, SSTObserve
 from src.Interface.ArcOperation import ArcData
 from src.Auxilary.GeoMathKit import GeoMathKit
 from src.Preference.Pre_Solver import SolverConfig
 from src.Preference.Pre_AdjustOrbit import AdjustOrbitConfig
+from src.Preference.Pre_Interface import InterfaceConfig
 import numpy as np
 import h5py
 from tqdm import tqdm
@@ -36,6 +36,7 @@ class GravityNEQperArc:
         self._SSTConfig = None
         self._PathOfFilesConfig = None
         self._AdjustPathConfig = None
+        self._InterfaceConfig = None
         self._sat = [key for key, value in sat.items() if value]
 
         for sat in self._sat:
@@ -45,9 +46,11 @@ class GravityNEQperArc:
                 self._satName = self._satName + sat.name
         pass
 
-    def configure(self, NEQConfig:NEQConfig, AdjustOrbitConfig:AdjustOrbitConfig, solverConfig: SolverConfig, **kwargs):
+    def configure(self, NEQConfig:NEQConfig, AdjustOrbitConfig: AdjustOrbitConfig,
+                  solverConfig: SolverConfig, InterfaceConfig: InterfaceConfig, **kwargs):
         self._NEQConfig = NEQConfig
         self._solverConfig = solverConfig
+        self._InterfaceConfig = InterfaceConfig
         '''config adjust path'''
         self._AdjustPathConfig = AdjustOrbitConfig.PathOfFiles()
         self._AdjustPathConfig.__dict__.update(AdjustOrbitConfig.PathOfFilesConfig.copy())
@@ -120,7 +123,7 @@ class GravityNEQperArc:
         if not config.IsRequired:
             return None
 
-        rd = ArcData(date_span=self.__date_span)
+        rd = ArcData(interfaceConfig=self._InterfaceConfig)
 
         if config.UseKinematicOrbit:
             orbit_obs = rd.getData(arc=self.__arcNo, kind=Payload.KinematicOrbit, sat=sat)[:, 0:4]

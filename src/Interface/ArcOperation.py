@@ -2,9 +2,9 @@ import numpy as np
 import datetime
 import h5py
 from tqdm import tqdm
-import src.Preference.backups.Pre_Interface as Pre_Interface
 from src.Preference.EnumType import SatID, Payload
 from src.Interface.GapFix import GapFix
+from src.Preference.Pre_Interface import InterfaceConfig
 
 
 class ArcSelect:
@@ -258,10 +258,13 @@ class ArcSelect:
 
 class ArcData:
 
-    def __init__(self, date_span=Pre_Interface.date_span,
-                 raw_data_path=Pre_Interface.PathOfFiles.temp_raw_data):
-        self.date_span = date_span
-        filename = raw_data_path.joinpath(date_span[0] + '_' + date_span[1] + ".hdf5")
+    def __init__(self, interfaceConfig: InterfaceConfig):
+        self.date_span = interfaceConfig.date_span
+        self.InterfaceConfig = interfaceConfig
+        self.InterfacePathConfig = InterfaceConfig.PathOfFiles(self.InterfaceConfig)
+        self.InterfacePathConfig.__dict__.update(self.InterfaceConfig.PathOfFilesConfig.copy())
+        raw_data_path = self.InterfacePathConfig.temp_raw_data
+        filename = raw_data_path.joinpath(self.date_span[0] + '_' + self.date_span[1] + ".hdf5")
         self.__h5data = h5py.File(filename, "r")
         pass
 

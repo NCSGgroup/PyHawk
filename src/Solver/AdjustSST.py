@@ -2,7 +2,6 @@
 import pathlib
 import h5py
 from src.Interface.ArcOperation import ArcData
-import src.Preference.backups.Pre_Interface as Pre_Interface
 import src.Preference.EnumType as EnumType
 from src.Auxilary.Outlier import Outlier
 from src.Auxilary.KeplerOrbitElements import OrbitalElements
@@ -10,6 +9,8 @@ from tqdm import tqdm
 import numpy as np
 import scipy.linalg
 from src.Preference.Pre_AdjustOrbit import AdjustOrbitConfig
+from src.Preference.Pre_Interface import InterfaceConfig
+
 import os
 
 
@@ -26,10 +27,12 @@ class RangeRate:
         self._AdjustOrbitConfig = None
         self._RangeRateConfig = None
         self._PathfileConfig = None
+        self._InterfaceConfig = None
         pass
 
-    def configure(self, AdjustOrbitConfig:AdjustOrbitConfig, **kwargs):
+    def configure(self, AdjustOrbitConfig:AdjustOrbitConfig, InterfaceConfig: InterfaceConfig,**kwargs):
         self._AdjustOrbitConfig = AdjustOrbitConfig
+        self._InterfaceConfig = InterfaceConfig
         '''config adjust orbit'''
         self._RangeRateConfig = self._AdjustOrbitConfig.RangeRate()
         self._RangeRateConfig.__dict__.update(self._AdjustOrbitConfig.RangeRateConfig.copy())
@@ -48,7 +51,7 @@ class RangeRate:
         filename = self._PathfileConfig.StateVectorDataTemp + '/' +\
                    self.__date_span[0] + '_' + self.__date_span[1] + '/' + str(self.__arcNo) + '_AB.hdf5'
         h5AB = h5py.File(filename, 'r')
-        rd = ArcData(date_span=self.__date_span)
+        rd = ArcData(interfaceConfig=self._InterfaceConfig)
         KBR = rd.getData(arc=self.__arcNo, kind=EnumType.Payload.KBR)
 
         kbr_time = KBR[:, 0]

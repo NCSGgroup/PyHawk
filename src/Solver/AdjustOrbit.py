@@ -1,5 +1,4 @@
 import h5py
-import src.Preference.backups.Pre_Interface as Pre_Interface
 from src.Interface.ArcOperation import ArcData
 import src.Preference.EnumType as EnumType
 import numpy as np
@@ -53,13 +52,17 @@ class AdjustOrbit:
         self.TransitionMatrixConfig = None
         self.AccelerometerConfig = None
         self.StokesCoefficientsConfig = None
+        self._InterfaceConfig = None
         self.FMConfig = None
         self.ODEConfig = None
         self.AdjustPath = None
 
     def configure(self, SerDer, arcNo, AdjustOrbitConfig:AdjustOrbitConfig,
-                  ODEConfig:ODEConfig, FMConfig: ForceModelConfig,ParameterConfig: ParameterConfig,**kwargs):
+                  ODEConfig:ODEConfig, FMConfig: ForceModelConfig,
+                  ParameterConfig: ParameterConfig, InterfaceConfig: InterfaceConfig, **kwargs):
         self._arcNo = arcNo
+        '''config Interface Config'''
+        self._InterfaceConfig = InterfaceConfig
         '''config Adjust path'''
         self.AdjustPath = AdjustOrbitConfig.PathOfFiles()
         self.AdjustPath.__dict__.update(AdjustOrbitConfig.PathOfFilesConfig.copy())
@@ -97,7 +100,7 @@ class AdjustOrbit:
             os.makedirs(self._res_dir)
 
         """step 1: combine the SCA and ACC data to obtain the non-conservative force as well as dadp arc by arc"""
-        rd = ArcData(date_span=self._date_span)
+        rd = ArcData(interfaceConfig=self._InterfaceConfig)
         for i in range(len(self._sat)):
             ap = AccCaliPar(sat=self._sat[i], arcNo=self._arcNo, accConfig=self.accConfig[i])
             ac = Accelerometer(rd=rd, ap=ap)

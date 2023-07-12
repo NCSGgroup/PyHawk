@@ -14,7 +14,6 @@ import h5py
 import multiprocessing
 from src.Solver.DesignMatrix import GravityDesignMat
 from src.Solver.NEQ import GravityNEQperArc
-import src.Preference.backups.Pre_Interface as Pre_Interface
 from src.Auxilary.SortCS import SortCS
 from src.Auxilary.GeoMathKit import GeoMathKit
 from src.Interface.LoadSH import LoadGif48
@@ -152,10 +151,10 @@ class CalibrateOrbit:
             AdjustOrbit(accConfig=[self.__acc_config_A, self.__acc_config_B], date_span=self.__date_span, sat=self.__sat).\
                 configure(SerDer=Orbit_var_2nd_diff, arcNo=i, ODEConfig=self.__ode_config,
                           FMConfig=self.__force_model_config, AdjustOrbitConfig=self.__adjust_config,
-                          ParameterConfig=self.__parameter_config).calibrate(iteration=2)
+                          ParameterConfig=self.__parameter_config, InterfaceConfig=self.__interface_config).calibrate(iteration=2)
 
             RR = RangeRate(arcNo=i, date_span=self.__date_span)
-            RR.configure(AdjustOrbitConfig=self.__adjust_config)
+            RR.configure(AdjustOrbitConfig=self.__adjust_config, InterfaceConfig=self.__interface_config)
             RR.calibrate()
 
             '''step 6: get DesignMatrix'''
@@ -163,7 +162,7 @@ class CalibrateOrbit:
                 configure(accConfig=[self.__acc_config_A, self.__acc_config_B],
                           ODEConfig=self.__ode_config, AdjustOrbitConfig=self.__adjust_config,
                           solverConfig=self.__solver_config, FMConfig=self.__force_model_config,
-                          parameterConfig=self.__design_parameter_config)
+                          parameterConfig=self.__design_parameter_config, InterfaceConfig=self.__interface_config)
             dm.orbit_integration()
             dm.get_orbit_design_matrix()
             dm.get_sst_design_matrix()
@@ -171,7 +170,7 @@ class CalibrateOrbit:
             '''setp 8: get NEQ'''
             neq = GravityNEQperArc(arcNo=i, date_span=self.__date_span, sat=self.__sat)
             neq.configure(solverConfig=self.__solver_config, NEQConfig=self.__neq_config,
-                          AdjustOrbitConfig=self.__adjust_config).get_neq()
+                          AdjustOrbitConfig=self.__adjust_config, InterfaceConfig=self.__interface_config).get_neq()
         pass
 
     def __calculate_cs(self):

@@ -1,5 +1,4 @@
 import h5py
-import src.Preference.backups.Pre_Interface as Pre_Interface
 from src.Interface.ArcOperation import ArcData
 import src.Preference.EnumType as EnumType
 import numpy as np
@@ -10,6 +9,7 @@ from src.Preference.Pre_Solver import SolverConfig
 from src.Preference.Pre_ForceModel import ForceModelConfig
 from src.Preference.Pre_ODE import ODEConfig
 from src.Preference.Pre_AdjustOrbit import AdjustOrbitConfig
+from src.Preference.Pre_Interface import InterfaceConfig
 
 
 class AdjustDM:
@@ -23,6 +23,7 @@ class AdjustDM:
         self._AdjustConfig = None
         self._AdjustPathConfig = None
         self._ParameterConfig = None
+        self._InterfaceConfig = None
         self._TransitionMatrixConfig = None
         self._AccelerometerConfig = None
         self._StokesCoefficientsConfig = None
@@ -42,12 +43,14 @@ class AdjustDM:
         pass
 
     def configure(self, SerDer, arcNo:int, ODEConfig:ODEConfig, AdjustConfig:AdjustOrbitConfig,
-                  FMConfig: ForceModelConfig, ParameterConfig: ParameterConfig, SolverConfig: SolverConfig):
+                  FMConfig: ForceModelConfig, ParameterConfig: ParameterConfig,
+                  SolverConfig: SolverConfig, InterfaceConfig: InterfaceConfig):
         self._SerDer = SerDer
         self._arcNo = arcNo
         self._FMConfig = FMConfig
         self._SolverConfig = SolverConfig
         self._AdjustConfig = AdjustConfig
+        self._InterfaceConfig = InterfaceConfig
         self._resPath = self._SolverConfig.DesignMatrixTemp
         '''config adjust path'''
         self._AdjustPathConfig = self._AdjustConfig.PathOfFiles()
@@ -66,7 +69,7 @@ class AdjustDM:
         self._StokesCoefficientsConfig.__dict__.update(self._ParameterConfig.StokesCoefficientsConfig.copy())
         '''config ODE'''
         self._fr = Frame(EOP().load())
-        self._ArcData = ArcData(date_span=self._date_span)
+        self._ArcData = ArcData(interfaceConfig=self._InterfaceConfig)
         self._SerDer = SerDer(self._fr, self._ArcData).\
             configures(arc=self._arcNo, FMConfig=self._FMConfig, ParConfig=self._ParameterConfig).\
             setInitData(kind=self._kind)

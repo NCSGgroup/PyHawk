@@ -1,4 +1,3 @@
-import src.Preference.backups.Pre_Interface as Pre_Interface
 from src.Preference.EnumType import SSTObserve
 from src.Solver.AdjustDM import AdjustDM
 from src.SecDerivative.Instance.DualOrbitAndVar import Orbit_var_2nd_diff
@@ -9,6 +8,7 @@ from src.Preference.Pre_Parameterization import ParameterConfig
 from src.Preference.Pre_ForceModel import ForceModelConfig
 from src.Preference.Pre_ODE import ODEConfig
 from src.Preference.Pre_AdjustOrbit import AdjustOrbitConfig
+from src.Preference.Pre_Interface import InterfaceConfig
 import numpy as np
 import h5py
 
@@ -34,14 +34,17 @@ class GravityDesignMat:
         self._FMConfig = None
         self._ODEConfig = None
         self._AdjustConfig = None
+        self._InterfaceConfig = None
         self.__data_span = date_span
         self.__sat = sat
         pass
 
     def configure(self, accConfig, solverConfig: SolverConfig, AdjustOrbitConfig: AdjustOrbitConfig,
-                  ODEConfig:ODEConfig, FMConfig: ForceModelConfig, parameterConfig: ParameterConfig):
+                  ODEConfig:ODEConfig, FMConfig: ForceModelConfig, parameterConfig: ParameterConfig,
+                  InterfaceConfig:InterfaceConfig):
         self._accConfig = accConfig
         self._AdjustConfig = AdjustOrbitConfig
+        self._InterfaceConfig = InterfaceConfig
         self._solverConfig = solverConfig
         self._parameterConfig = parameterConfig
         self._FMConfig = FMConfig
@@ -53,7 +56,8 @@ class GravityDesignMat:
         adjustDM = AdjustDM(date_span=self.__data_span, sat=self.__sat)
         adjustDM.configure(SerDer=Orbit_var_2nd_diff, arcNo=self._arcNo, ParameterConfig=self._parameterConfig,
                            AdjustConfig=self._AdjustConfig,
-                           FMConfig=self._FMConfig, SolverConfig=self._solverConfig, ODEConfig=self._ODEConfig)
+                           FMConfig=self._FMConfig, SolverConfig=self._solverConfig,
+                           ODEConfig=self._ODEConfig, InterfaceConfig=self._InterfaceConfig)
         # '''define the directory of res output'''
         # res_dir = self._res.joinpath(self._date_span[0] + '_' + self._date_span[1])
         # if not res_dir.is_dir():
