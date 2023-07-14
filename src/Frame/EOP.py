@@ -6,7 +6,7 @@
 @Description:
 """
 from src.Auxilary.GeoMathKit import GeoMathKit
-import src.Preference.backups.Pre_Frame as Pre_Frame
+from src.Preference.Pre_Frame import FrameConfig
 import numpy as np
 
 
@@ -26,20 +26,25 @@ class EOP:
     1. IERS2010 chapter 5, section 5.5.1 and 5.5.3 ,page 50
     """
 
-    def __init__(self, isCorrection:bool= Pre_Frame.isCorrection_EOP, isRadian:bool= Pre_Frame.isRadian_EOP):
+    def __init__(self):
         """
 
         :param isCorrection: To decide if the correction for EOP parameters due to oceanic effect and Lunisolar effect is carried out or not.
         :param isRadian: the unit will be switched from [Arcsecond] to [Radian]
         """
         self.__radian = GeoMathKit.as2rad()
-        self.__isCorrection = isCorrection
-        if not isRadian:
-            self.__radian = 1
-
+        self.__isCorrection = None
+        self.__frameConfig = None
+        self.__framePath = None
         self.__pre_save_data()
-
         pass
+
+    def configure(self, frameConfig: FrameConfig):
+        self.__frameConfig = frameConfig
+        self.__isCorrection = self.__frameConfig.isCorrection_EOP
+        if not self.__frameConfig.isRadian_EOP:
+            self.__radian = 1
+        return self
 
     def __pre_save_data(self):
         """
@@ -90,15 +95,16 @@ class EOP:
 
         pass
 
-    def load(self, EOP_path=Pre_Frame.PathOfFiles.EOP, **kwargs):
+    def load(self, **kwargs):
         """
         load relevant files for the EOP computation
         :param EOP_path:
         :return:
         """
-
+        self.__framePath = self.__frameConfig.PathOfFiles()
+        self.__framePath.__dict__.update(self.__frameConfig.PathOfFilesConfig.copy())
         '''load EOP file'''
-        with open(EOP_path) as f:
+        with open(self.__framePath.EOP) as f:
             content = f.readlines()
             pass
 
@@ -131,8 +137,8 @@ class EOP:
 
         '''load file of ocean correction'''
         if self.__isCorrection:
-            ocean_correction_path = kwargs.get('ocean_correction_path', Pre_Frame.PathOfFiles.EOPocean)
-            grav_correction_path = kwargs.get('grav_correction_path', Pre_Frame.PathOfFiles.EOPgrav)
+            ocean_correction_path = self.__framePath.EOPocean
+            grav_correction_path = self.__framePath.EOPgrav
             self.__loadEOPocean(ocean_correction_path)
             self.__loadEOPgrav(grav_correction_path)
 

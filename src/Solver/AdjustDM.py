@@ -10,12 +10,13 @@ from src.Preference.Pre_ForceModel import ForceModelConfig
 from src.Preference.Pre_ODE import ODEConfig
 from src.Preference.Pre_AdjustOrbit import AdjustOrbitConfig
 from src.Preference.Pre_Interface import InterfaceConfig
+from src.Preference.Pre_Frame import FrameConfig
 
 
 class AdjustDM:
     def __init__(self, date_span, sat, kind=EnumType.Payload.GNV):
         self._date_span = date_span
-        self._sat = [key for key, value in sat.items() if value]
+        self._sat = sat
         self._kind = kind
         self._SerDer = None
         self._arcNo = None
@@ -37,14 +38,15 @@ class AdjustDM:
         self._satName = None
         for sat in self._sat:
             if self._satName is None:
-                self._satName = sat.name
+                self._satName = sat
             else:
-                self._satName = self._satName + sat.name
+                self._satName = self._satName + sat
         pass
 
     def configure(self, SerDer, arcNo:int, ODEConfig:ODEConfig, AdjustConfig:AdjustOrbitConfig,
                   FMConfig: ForceModelConfig, ParameterConfig: ParameterConfig,
-                  SolverConfig: SolverConfig, InterfaceConfig: InterfaceConfig):
+                  SolverConfig: SolverConfig, InterfaceConfig: InterfaceConfig,
+                  FrameConfig: FrameConfig):
         self._SerDer = SerDer
         self._arcNo = arcNo
         self._FMConfig = FMConfig
@@ -68,10 +70,11 @@ class AdjustDM:
         self._StokesCoefficientsConfig = self._ParameterConfig.StokesCoefficients()
         self._StokesCoefficientsConfig.__dict__.update(self._ParameterConfig.StokesCoefficientsConfig.copy())
         '''config ODE'''
-        self._fr = Frame(EOP().load())
+        eop = EOP().configure(frameConfig=FrameConfig).load()
+        self._fr = Frame(eop).configure(frameConfig=FrameConfig)
         self._ArcData = ArcData(interfaceConfig=self._InterfaceConfig)
         self._SerDer = SerDer(self._fr, self._ArcData).\
-            configures(arc=self._arcNo, FMConfig=self._FMConfig, ParConfig=self._ParameterConfig).\
+            configures(arc=self._arcNo, FMConfig=self._FMConfig, ParConfig=self._ParameterConfig, FrameConfig=FrameConfig).\
             setInitData(kind=self._kind)
         init_r, init_v = self.__getInit()
         startTime, _, _ = self._SerDer.getInitData()

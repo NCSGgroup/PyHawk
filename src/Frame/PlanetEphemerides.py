@@ -2,8 +2,8 @@ import numpy as np
 import src.Preference.EnumType as EnumType
 from jplephem.spk import SPK
 from src.Frame.Frame import Frame
-import src.Preference.backups.Pre_Frame as Pre_Frame
 from src.Preference.Pre_ForceModel import ForceModelConfig
+from src.Preference.Pre_Frame import FrameConfig
 
 
 class PlanetEphemerides:
@@ -27,12 +27,21 @@ class PlanetEphemerides:
         self.__FMConfig = None
         self._PathConfig = None
         self._ThreeBodyConfig = None
+        self.__FrameConfig = None
+        self.__Ephemerides = None
+        pass
 
-    def configure(self, FMConfig: ForceModelConfig, emphericType=EnumType.JPLempheric.DE421,
-                  isMeter=Pre_Frame.EphemeridesConfig.isMeter):
+    def configure(self, FMConfig: ForceModelConfig, FrameConfig: FrameConfig, emphericType=EnumType.JPLempheric.DE421):
         self.__FMConfig = FMConfig
+        self.__FrameConfig = FrameConfig
+
+        self.__Ephemerides = self.__FrameConfig.Ephemerides()
+        self.__Ephemerides.__dict__.update(self.__FrameConfig.EphemeridesConfig.copy())
+
         self._PathConfig = self.__FMConfig.PathOfFiles()
         self._PathConfig.__dict__.update(self.__FMConfig.PathOfFilesConfig.copy())
+
+        isMeter = self.__Ephemerides.isMeter
         if emphericType == EnumType.JPLempheric.DE405:
             filename = 'de405.bsp'
         elif emphericType == EnumType.JPLempheric.DE421:
@@ -48,7 +57,7 @@ class PlanetEphemerides:
             self._ThreeBodyConfig.__dict__.update(self.__FMConfig.ThreeBodyConfig.copy())
             self.__include_plantes = self._ThreeBodyConfig.include_planets.copy()
         else:
-            self.__include_plantes = Pre_Frame.EphemeridesConfig.include_planets.copy()
+            self.__include_plantes = self.__Ephemerides.include_planets.copy()
         # self.__include_plantes['Sun'] = True
         # self.__include_plantes['Moon'] = True
         '''set empheric path'''

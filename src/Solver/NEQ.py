@@ -41,9 +41,9 @@ class GravityNEQperArc:
 
         for sat in self._sat:
             if self._satName is None:
-                self._satName = sat.name
+                self._satName = sat
             else:
-                self._satName = self._satName + sat.name
+                self._satName = self._satName + sat
         pass
 
     def configure(self, NEQConfig:NEQConfig, AdjustOrbitConfig: AdjustOrbitConfig,

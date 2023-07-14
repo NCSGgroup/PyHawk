@@ -1,7 +1,7 @@
 from src.Frame.EOP import EOP
 import src.Frame.SOFA as sf
-import src.Preference.backups.Pre_Frame as Pre_Frame
 import src.Preference.Pre_Constants as Pre_Constants
+from src.Preference.Pre_Frame import FrameConfig
 from src.Preference.EnumType import TimeFormat, CoordinateTransform
 import numpy as np
 
@@ -21,8 +21,7 @@ class Frame:
         coordinates. See IERS2010 page 66. But take care for the JPL planet empheric
     2. TT =  TDT
     """
-    def __init__(self, eop: EOP, CoorTrans_method = Pre_Frame.CoorTrans_method,
-                 OmegaOption = Pre_Frame.OmegaOption, tdbOption = Pre_Frame.tdbOption):
+    def __init__(self, eop: EOP):
         """
         :param eop: EOP class called by 'EOP' to provide earth rotation parameters
         :param CoorTrans_method: CIO wit xy series or CIO with classical angles
@@ -30,23 +29,29 @@ class Frame:
         :param tdbOption: =1: TDB =TT ; =2 : TDB in a complex form, see getTDB_complex
         """
         '''Define the method of coordinate transformation'''
-        self.__method = CoorTrans_method
-
+        self.__method = None
+        self.__OmegaOption = None
+        self.__tdbOption = None
         '''Reset all property'''
         self.__reset()
 
         '''introduce the EOP class'''
         # self.__eop = EOP().load(Setting.path.EOP).setCorrection(True)
         self.__eop = eop
+        pass
+
+    def configure(self, frameConfig:FrameConfig):
+        '''Define the method of coordinate transformation'''
+        self.__method = frameConfig.CoorTrans_method
 
         '''define the format of Earth rotation velocity'''
-        assert 1 <= OmegaOption <= 3
-        self.__OmegaOption = OmegaOption
+        assert 1 <= frameConfig.OmegaOption <= 3
+        self.__OmegaOption = frameConfig.OmegaOption
 
         '''define the format of TDB-MJD'''
-        assert 1 <= tdbOption <= 2
-        self.__tdbOption = tdbOption
-        pass
+        assert 1 <= frameConfig.tdbOption <= 2
+        self.__tdbOption = frameConfig.tdbOption
+        return self
 
     def __reset(self):
         self.__gps_mjd = None
@@ -164,10 +169,10 @@ class Frame:
 
         '''CIP and CIO, IAU 2006/2000A.'''
         X, Y, S = None, None, None
-        if self.__method == CoordinateTransform.CIOxy:
+        if CoordinateTransform[self.__method] == CoordinateTransform.CIOxy:
             X, Y = sf.xy06(DJMJD0, TT)
             S = sf.s06(DJMJD0, TT, X, Y)
-        elif self.__method == CoordinateTransform.CIOangle:
+        elif CoordinateTransform[self.__method] == CoordinateTransform.CIOangle:
             X, Y, S = sf.xys06a(DJMJD0, TT)
 
         '''* Add CIP corrections. '''

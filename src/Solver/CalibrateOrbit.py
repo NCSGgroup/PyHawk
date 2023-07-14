@@ -21,19 +21,20 @@ from src.Preference.Pre_Accelerometer import AccelerometerConfig
 from src.Preference.Pre_Solver import SolverConfig
 from src.Preference.Pre_Parameterization import ParameterConfig
 from src.Preference.Pre_ForceModel import ForceModelConfig
-from src.Frame.EOP import EOP
-from src.Interface.KinematicOrbit import KinematicOrbit
-from src.Interface.GapFix import GapFix
-from src.Interface.ArcOperation import ArcSelect
-from src.Solver.AdjustSST import RangeRate
-from src.Frame.Frame import Frame
-from src.Interface.L1b import GRACE_NEW_RL02, GRACE_OLD_RL02
-import json
 from src.Preference.Pre_ODE import ODEConfig
 from src.Preference.Pre_NEQ import NEQConfig
 from src.Preference.Pre_AdjustOrbit import AdjustOrbitConfig
 from src.Preference.Pre_Interface import InterfaceConfig
+from src.Preference.Pre_Frame import FrameConfig
+from src.Solver.AdjustSST import RangeRate
+from src.Frame.Frame import Frame
+from src.Frame.EOP import EOP
+from src.Interface.KinematicOrbit import KinematicOrbit
+from src.Interface.GapFix import GapFix
+from src.Interface.ArcOperation import ArcSelect
+from src.Interface.L1b import GRACE_NEW_RL02, GRACE_OLD_RL02
 import multiprocessing
+import json
 from datetime import datetime
 
 
@@ -46,6 +47,7 @@ class CalibrateOrbit:
         self.__force_model_config = None
         self.__parameter_config = None
         self.__design_parameter_config = None
+        self.__frame_config = None
         self.__solver_config = None
         self.__ode_config = None
         self.__neq_config = None
@@ -96,11 +98,16 @@ class CalibrateOrbit:
         self.__design_parameter_config = ParameterConfig()
         designParameter = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/DesignParameterConfig.json'), 'r'))
         self.__design_parameter_config.__dict__ = designParameter
+
+        self.__frame_config = FrameConfig()
+        frame = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/FrameConfig.json'), 'r'))
+        self.__frame_config.__dict__ = frame
         return self
 
     def run(self):
         """step 1: Read raw data"""
-        fr = Frame(EOP().load())
+        eop = EOP().configure(frameConfig=self.__frame_config).load()
+        fr = Frame(eop).configure(frameConfig=self.__frame_config)
         s = GRACE_OLD_RL02().configure(InterfaceConfig=self.__interface_config).setDate()
         s.read_double_sat()
         """step 2: Convert orbit from ITRS frame into GCRS frame"""
@@ -151,7 +158,8 @@ class CalibrateOrbit:
             AdjustOrbit(accConfig=[self.__acc_config_A, self.__acc_config_B], date_span=self.__date_span, sat=self.__sat).\
                 configure(SerDer=Orbit_var_2nd_diff, arcNo=i, ODEConfig=self.__ode_config,
                           FMConfig=self.__force_model_config, AdjustOrbitConfig=self.__adjust_config,
-                          ParameterConfig=self.__parameter_config, InterfaceConfig=self.__interface_config).calibrate(iteration=2)
+                          ParameterConfig=self.__parameter_config, InterfaceConfig=self.__interface_config,
+                          FrameConfig=self.__frame_config).calibrate(iteration=2)
 
             RR = RangeRate(arcNo=i, date_span=self.__date_span)
             RR.configure(AdjustOrbitConfig=self.__adjust_config, InterfaceConfig=self.__interface_config)
@@ -162,7 +170,8 @@ class CalibrateOrbit:
                 configure(accConfig=[self.__acc_config_A, self.__acc_config_B],
                           ODEConfig=self.__ode_config, AdjustOrbitConfig=self.__adjust_config,
                           solverConfig=self.__solver_config, FMConfig=self.__force_model_config,
-                          parameterConfig=self.__design_parameter_config, InterfaceConfig=self.__interface_config)
+                          parameterConfig=self.__design_parameter_config, InterfaceConfig=self.__interface_config,
+                          FrameConfig=self.__frame_config)
             dm.orbit_integration()
             dm.get_orbit_design_matrix()
             dm.get_sst_design_matrix()

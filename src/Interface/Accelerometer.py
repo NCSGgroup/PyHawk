@@ -232,7 +232,7 @@ class Accelerometer:
         date_span = self.__rd.date_span
 
         filename = pathlib.Path(self.__dataTemp).joinpath(
-            date_span[0] + '_' + date_span[1] + '_' + sat.name + '_' + str(self.__arcNo) + '.hdf5')
+            date_span[0] + '_' + date_span[1] + '_' + sat + '_' + str(self.__arcNo) + '.hdf5')
         wr = h5py.File(filename, "w")
 
         acc = self.get_acceleration()

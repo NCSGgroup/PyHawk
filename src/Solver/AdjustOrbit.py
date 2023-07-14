@@ -12,6 +12,7 @@ from src.Preference.Pre_ForceModel import ForceModelConfig
 from src.Preference.Pre_ODE import ODEConfig
 from src.Preference.Pre_AdjustOrbit import AdjustOrbitConfig
 from src.Preference.Pre_Interface import InterfaceConfig
+from src.Preference.Pre_Frame import FrameConfig
 import os
 
 
@@ -22,7 +23,7 @@ class AdjustOrbit:
         self.secondR = None
         self.thirdR = None
         # ======================
-        self._fr = Frame(EOP().load())
+        self._fr = None
         self._ode_res = None
         self._state_path = None
         self._state_dir = None
@@ -59,8 +60,11 @@ class AdjustOrbit:
 
     def configure(self, SerDer, arcNo, AdjustOrbitConfig:AdjustOrbitConfig,
                   ODEConfig:ODEConfig, FMConfig: ForceModelConfig,
-                  ParameterConfig: ParameterConfig, InterfaceConfig: InterfaceConfig, **kwargs):
+                  ParameterConfig: ParameterConfig, InterfaceConfig: InterfaceConfig,
+                  FrameConfig:FrameConfig, **kwargs):
         self._arcNo = arcNo
+        eop = EOP().configure(frameConfig=FrameConfig).load()
+        self._fr = Frame(eop).configure(frameConfig=FrameConfig)
         '''config Interface Config'''
         self._InterfaceConfig = InterfaceConfig
         '''config Adjust path'''
@@ -86,9 +90,9 @@ class AdjustOrbit:
         """define satName"""
         for sat in self._sat:
             if self._satName is None:
-                self._satName = sat.name
+                self._satName = sat
             else:
-                self._satName = self._satName + sat.name
+                self._satName = self._satName + sat
         """Define the directory to deposit the state vectors"""
         self._state_dir = self._state_path + '/' + self._date_span[0] + '_' + self._date_span[1]
         if not os.path.exists(self._state_dir):
@@ -110,7 +114,8 @@ class AdjustOrbit:
 
         """step 3: instance second Derivative"""
         self._secDer = SerDer(self._fr, rd).configures\
-            (arc=self._arcNo, FMConfig=self.FMConfig, ParConfig=self.ParameterConfig).setInitData(kind=self._kind)
+            (arc=self._arcNo, FMConfig=self.FMConfig, ParConfig=self.ParameterConfig, FrameConfig=FrameConfig).\
+            setInitData(kind=self._kind)
 
         """step 4: Propagator config"""
         self._startTime, self._startPos, self._startVel = self._secDer.getInitData()

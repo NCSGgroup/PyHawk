@@ -4,10 +4,10 @@ from src.SecDerivative.Common.ConfigForce_GravHar import ConfigGravHar
 from src.Frame.PlanetEphemerides import PlanetEphemerides
 import src.Preference.EnumType as EnumType
 from src.Auxilary.SortCS import SortCS
-# import src.Preference.backups.Pre_Parameterization as Pre_Parameterization
 import numpy as np
 from src.Preference.Pre_ForceModel import ForceModelConfig
 from src.Preference.Pre_Parameterization import ParameterConfig
+from src.Preference.Pre_Frame import FrameConfig
 
 
 class Assemble2ndDerivative:
@@ -38,8 +38,9 @@ class Assemble2ndDerivative:
         self._TransitionMatrixConfig = None
         self._AccelerometerConfig = None
         self._StokesCoefficientsConfig = None
+        pass
 
-    def configure(self, FMConfig: ForceModelConfig, ParameterConfig: ParameterConfig):
+    def configure(self, FMConfig: ForceModelConfig, ParameterConfig: ParameterConfig, FrameConfig: FrameConfig):
         self._ParameterConfig = ParameterConfig
         '''config TransitionMatrix'''
         self._TransitionMatrixConfig = self._ParameterConfig.TransitionMatrix()
@@ -54,7 +55,7 @@ class Assemble2ndDerivative:
         self.__sort = SortCS(method=self._StokesCoefficientsConfig.SortMethod,
                              degree_max=self._StokesCoefficientsConfig.MaxDegree,
                              degree_min=self._StokesCoefficientsConfig.MinDegree)
-        self.__ep = PlanetEphemerides().configure(FMConfig=FMConfig).setPlanets()
+        self.__ep = PlanetEphemerides().configure(FMConfig=FMConfig, FrameConfig=FrameConfig).setPlanets()
         self.configForce = ConfigForce(arc=self._arc, ep=self.__ep).configure(FMConfig=FMConfig)
         self.ForceType = self.configForce.getForceType()
         return self

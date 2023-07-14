@@ -5,6 +5,7 @@ from tqdm import tqdm
 from src.Preference.EnumType import SatID, Payload
 from src.Interface.GapFix import GapFix
 from src.Preference.Pre_Interface import InterfaceConfig
+import pathlib
 
 
 class ArcSelect:
@@ -261,13 +262,17 @@ class ArcData:
     def __init__(self, interfaceConfig: InterfaceConfig):
         self.date_span = interfaceConfig.date_span
         self.InterfaceConfig = interfaceConfig
+        self.dir = pathlib.Path()
         self.InterfacePathConfig = InterfaceConfig.PathOfFiles(self.InterfaceConfig)
         self.InterfacePathConfig.__dict__.update(self.InterfaceConfig.PathOfFilesConfig.copy())
         raw_data_path = self.InterfacePathConfig.temp_raw_data
-        filename = raw_data_path.joinpath(self.date_span[0] + '_' + self.date_span[1] + ".hdf5")
+        filename = self.dir.joinpath(raw_data_path, self.date_span[0] + '_' + self.date_span[1] + ".hdf5")
         self.__h5data = h5py.File(filename, "r")
         pass
 
     def getData(self, arc: int, kind: Payload, sat=SatID.A):
-        spec = kind.name + '_' + sat.name + '_arc' + str(arc)
+        if isinstance(sat, str):
+            spec = kind.name + '_' + sat + '_arc' + str(arc)
+        else:
+            spec = kind.name + '_' + sat.name + '_arc' + str(arc)
         return self.__h5data[spec][()]

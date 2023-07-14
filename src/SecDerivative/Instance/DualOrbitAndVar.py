@@ -7,6 +7,7 @@ from src.SecDerivative.MatrixVarEqn import MatrixVarEqn
 from src.Interface.ArcOperation import ArcData
 from src.Preference.Pre_ForceModel import ForceModelConfig
 from src.Preference.Pre_Parameterization import ParameterConfig
+from src.Preference.Pre_Frame import FrameConfig
 
 
 class Orbit_var_2nd_diff(Assemble2ndDerivative):
@@ -20,9 +21,9 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
         self.__initVel = None
         self.__PosAndVel = None
 
-    def configures(self, arc: int, FMConfig :ForceModelConfig, ParConfig :ParameterConfig):
+    def configures(self, arc: int, FMConfig:ForceModelConfig, ParConfig:ParameterConfig, FrameConfig:FrameConfig):
         self._arc = arc
-        self.configure(FMConfig=FMConfig, ParameterConfig=ParConfig)
+        self.configure(FMConfig=FMConfig, ParameterConfig=ParConfig, FrameConfig=FrameConfig)
         return self
 
     def setInitData(self, kind: Payload):

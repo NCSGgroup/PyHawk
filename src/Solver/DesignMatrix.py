@@ -9,6 +9,7 @@ from src.Preference.Pre_ForceModel import ForceModelConfig
 from src.Preference.Pre_ODE import ODEConfig
 from src.Preference.Pre_AdjustOrbit import AdjustOrbitConfig
 from src.Preference.Pre_Interface import InterfaceConfig
+from src.Preference.Pre_Frame import FrameConfig
 import numpy as np
 import h5py
 
@@ -19,14 +20,14 @@ class GravityDesignMat:
     """
     def __init__(self, arcNo: int, sat, date_span):
         self._arcNo = arcNo
-        self._date_span = date_span
+        self.__data_span = date_span
         self._satName = None
-        self._sat = [key for key, value in sat.items() if value]
-        for sat in self._sat:
+        self.__sat = [key for key, value in sat.items() if value]
+        for sat in self.__sat:
             if self._satName is None:
-                self._satName = sat.name
+                self._satName = sat
             else:
-                self._satName = self._satName + sat.name
+                self._satName = self._satName + sat
         self._res = None
         self._accConfig = None
         self._solverConfig = None
@@ -35,13 +36,12 @@ class GravityDesignMat:
         self._ODEConfig = None
         self._AdjustConfig = None
         self._InterfaceConfig = None
-        self.__data_span = date_span
-        self.__sat = sat
+        self._FrameConfig = None
         pass
 
     def configure(self, accConfig, solverConfig: SolverConfig, AdjustOrbitConfig: AdjustOrbitConfig,
                   ODEConfig:ODEConfig, FMConfig: ForceModelConfig, parameterConfig: ParameterConfig,
-                  InterfaceConfig:InterfaceConfig):
+                  InterfaceConfig:InterfaceConfig, FrameConfig:FrameConfig):
         self._accConfig = accConfig
         self._AdjustConfig = AdjustOrbitConfig
         self._InterfaceConfig = InterfaceConfig
@@ -49,6 +49,7 @@ class GravityDesignMat:
         self._parameterConfig = parameterConfig
         self._FMConfig = FMConfig
         self._ODEConfig = ODEConfig
+        self._FrameConfig = FrameConfig
         self._res = self._solverConfig.DesignMatrixTemp
         return self
 
@@ -57,7 +58,8 @@ class GravityDesignMat:
         adjustDM.configure(SerDer=Orbit_var_2nd_diff, arcNo=self._arcNo, ParameterConfig=self._parameterConfig,
                            AdjustConfig=self._AdjustConfig,
                            FMConfig=self._FMConfig, SolverConfig=self._solverConfig,
-                           ODEConfig=self._ODEConfig, InterfaceConfig=self._InterfaceConfig)
+                           ODEConfig=self._ODEConfig, InterfaceConfig=self._InterfaceConfig,
+                           FrameConfig=self._FrameConfig)
         # '''define the directory of res output'''
         # res_dir = self._res.joinpath(self._date_span[0] + '_' + self._date_span[1])
         # if not res_dir.is_dir():
@@ -79,7 +81,7 @@ class GravityDesignMat:
         r, local_r, global_r = pp.split_global_local(dm_r, isIncludeStateVec=True)
         v, local_v, global_v = pp.split_global_local(dm_v, isIncludeStateVec=True)
 
-        res_dir = self._res + '/' + self._date_span[0] + '_' + self._date_span[1]
+        res_dir = self._res + '/' + self.__data_span[0] + '_' + self.__data_span[1]
         res_filename = res_dir + '/Orbit_' + str(self._arcNo) + '_' + self._satName + '.hdf5'
 
         h5 = h5py.File(res_filename, 'w')
@@ -111,7 +113,7 @@ class GravityDesignMat:
         pass
 
     def __getRangeRateDM(self):
-        res_dir = self._res + '/' + self._date_span[0] + '_' + self._date_span[1]
+        res_dir = self._res + '/' + self.__data_span[0] + '_' + self.__data_span[1]
         res_filename = res_dir + '/Orbit_' + str(self._arcNo) + '_' + self._satName + '.hdf5'
         DM_orbit = h5py.File(res_filename, 'r')
 
@@ -130,7 +132,7 @@ class GravityDesignMat:
                  dd_v2[:, None, :] @ DM_orbit['global_v'][:, 3:6]
 
         '''make a record'''
-        res_dir = self._res + '/' + self._date_span[0] + '_' + self._date_span[1]
+        res_dir = self._res + '/' + self.__data_span[0] + '_' + self.__data_span[1]
         res_filename = res_dir + '/' + SSTObserve.RangeRate.name + '_' + str(self._arcNo) + '.hdf5'
         h5 = h5py.File(res_filename, 'w')
         h5.create_dataset('t', data=DM_orbit['t'][:])
@@ -148,7 +150,7 @@ class GravityDesignMat:
         :return:
         """
         orbit = {}
-        res_dir = self._res + '/' + self._date_span[0] + '_' + self._date_span[1]
+        res_dir = self._res + '/' + self.__data_span[0] + '_' + self.__data_span[1]
         res_filename = res_dir + '/' + str(self._arcNo) + '_' + self._satName + '.hdf5'
         h5 = h5py.File(res_filename, 'r')
         orbit['r'] = h5['r'][()]
