@@ -105,22 +105,22 @@ class CalibrateOrbit:
         return self
 
     def run(self):
-        """step 1: Read raw data"""
-        eop = EOP().configure(frameConfig=self.__frame_config).load()
-        fr = Frame(eop).configure(frameConfig=self.__frame_config)
-        s = GRACE_OLD_RL02().configure(InterfaceConfig=self.__interface_config).setDate()
-        s.read_double_sat()
-        """step 2: Convert orbit from ITRS frame into GCRS frame"""
-        kine = KinematicOrbit(L1b=s).configure()
-        # kine.read_double_sat()
-        kine.GNVandKiOrbitItrs2Gcrs(fr)
-        """step 3: Gap fix"""
-        gf = GapFix(L1b=s).configure()
-        gf.fix_all().makeReport()
-        arc = ArcSelect(gf=gf).configure()
-        arc.unpackArcs().makeReport()
-
-        self._parallel()
+        # """step 1: Read raw data"""
+        # eop = EOP().configure(frameConfig=self.__frame_config).load()
+        # fr = Frame(eop).configure(frameConfig=self.__frame_config)
+        # s = GRACE_OLD_RL02().configure(InterfaceConfig=self.__interface_config).setDate()
+        # s.read_double_sat()
+        # """step 2: Convert orbit from ITRS frame into GCRS frame"""
+        # kine = KinematicOrbit(L1b=s).configure()
+        # # kine.read_double_sat()
+        # kine.GNVandKiOrbitItrs2Gcrs(fr)
+        # """step 3: Gap fix"""
+        # gf = GapFix(L1b=s).configure()
+        # gf.fix_all().makeReport()
+        # arc = ArcSelect(gf=gf).configure()
+        # arc.unpackArcs().makeReport()
+        #
+        # self._parallel()
         self.__calculate_cs()
         pass
  
@@ -154,32 +154,33 @@ class CalibrateOrbit:
 
     def _unit(self, start, end):
         for i in range(start, end):
-            """step 5: init AdjustOrbit"""
-            AdjustOrbit(accConfig=[self.__acc_config_A, self.__acc_config_B], date_span=self.__date_span, sat=self.__sat).\
-                configure(SerDer=Orbit_var_2nd_diff, arcNo=i, ODEConfig=self.__ode_config,
-                          FMConfig=self.__force_model_config, AdjustOrbitConfig=self.__adjust_config,
-                          ParameterConfig=self.__parameter_config, InterfaceConfig=self.__interface_config,
-                          FrameConfig=self.__frame_config).calibrate(iteration=2)
+            print(i)
+            if i != 221:
+                """step 5: init AdjustOrbit"""
+                AdjustOrbit(accConfig=[self.__acc_config_A, self.__acc_config_B], date_span=self.__date_span, sat=self.__sat).\
+                    configure(SerDer=Orbit_var_2nd_diff, arcNo=i, ODEConfig=self.__ode_config,
+                              FMConfig=self.__force_model_config, AdjustOrbitConfig=self.__adjust_config,
+                              ParameterConfig=self.__parameter_config, InterfaceConfig=self.__interface_config,
+                              FrameConfig=self.__frame_config).calibrate(iteration=2)
+                RR = RangeRate(arcNo=i, date_span=self.__date_span)
+                RR.configure(AdjustOrbitConfig=self.__adjust_config, InterfaceConfig=self.__interface_config)
+                RR.calibrate()
 
-            RR = RangeRate(arcNo=i, date_span=self.__date_span)
-            RR.configure(AdjustOrbitConfig=self.__adjust_config, InterfaceConfig=self.__interface_config)
-            RR.calibrate()
+                '''step 6: get DesignMatrix'''
+                dm = GravityDesignMat(arcNo=i, date_span=self.__date_span, sat=self.__sat).\
+                    configure(accConfig=[self.__acc_config_A, self.__acc_config_B],
+                              ODEConfig=self.__ode_config, AdjustOrbitConfig=self.__adjust_config,
+                              solverConfig=self.__solver_config, FMConfig=self.__force_model_config,
+                              parameterConfig=self.__design_parameter_config, InterfaceConfig=self.__interface_config,
+                              FrameConfig=self.__frame_config)
+                dm.orbit_integration()
+                dm.get_orbit_design_matrix()
+                dm.get_sst_design_matrix()
 
-            '''step 6: get DesignMatrix'''
-            dm = GravityDesignMat(arcNo=i, date_span=self.__date_span, sat=self.__sat).\
-                configure(accConfig=[self.__acc_config_A, self.__acc_config_B],
-                          ODEConfig=self.__ode_config, AdjustOrbitConfig=self.__adjust_config,
-                          solverConfig=self.__solver_config, FMConfig=self.__force_model_config,
-                          parameterConfig=self.__design_parameter_config, InterfaceConfig=self.__interface_config,
-                          FrameConfig=self.__frame_config)
-            dm.orbit_integration()
-            dm.get_orbit_design_matrix()
-            dm.get_sst_design_matrix()
-
-            '''setp 8: get NEQ'''
-            neq = GravityNEQperArc(arcNo=i, date_span=self.__date_span, sat=self.__sat)
-            neq.configure(solverConfig=self.__solver_config, NEQConfig=self.__neq_config,
-                          AdjustOrbitConfig=self.__adjust_config, InterfaceConfig=self.__interface_config).get_neq()
+                '''setp 8: get NEQ'''
+                neq = GravityNEQperArc(arcNo=i, date_span=self.__date_span, sat=self.__sat)
+                neq.configure(solverConfig=self.__solver_config, NEQConfig=self.__neq_config,
+                              AdjustOrbitConfig=self.__adjust_config, InterfaceConfig=self.__interface_config).get_neq()
         pass
 
     def __calculate_cs(self):
@@ -206,11 +207,14 @@ class CalibrateOrbit:
         days = datetime.strptime(date_list[-1], '%Y-%m-%d') - datetime.strptime(date_list[0], '%Y-%m-%d')
         self.__arcLen = days.days * (24 / interface_config.arc_length)
         for i in tqdm(range(0, int(self.__arcLen)), desc='Solve normal equations: '):
-            res_filename = res_dir + '/' + str(i) + '.hdf5'
-            h5 = h5py.File(res_filename, 'r')
-            NMatrix = NMatrix + h5['Orbit_N_A'][:] + h5['Orbit_N_B'][:] + h5['RangeRate_N'][:] * 2.5E11
-            LMatrix = LMatrix + h5['Orbit_l_A'][:] + h5['Orbit_l_B'][:] + h5['RangeRate_l'][:].reshape(
-                (parameter_number, 1)) * 2.5E11
+            print(i)
+            if i != 220 and i != 221:
+                res_filename = res_dir + '/' + str(i) + '.hdf5'
+                print(res_filename)
+                h5 = h5py.File(res_filename, 'r')
+                NMatrix = NMatrix + h5['Orbit_N_A'][:] + h5['Orbit_N_B'][:] + h5['RangeRate_N'][:] * 2.5E11
+                LMatrix = LMatrix + h5['Orbit_l_A'][:] + h5['Orbit_l_B'][:] + h5['RangeRate_l'][:].reshape(
+                    (parameter_number, 1)) * 2.5E11
 
         cs = np.linalg.lstsq(NMatrix, LMatrix[:, 0], rcond=None)[0]
 

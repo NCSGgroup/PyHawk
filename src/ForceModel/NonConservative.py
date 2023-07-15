@@ -8,30 +8,30 @@ from src.Preference.Pre_ForceModel import ForceModelConfig
 
 class AbsNonConservative(BaseSecondDerivative):
 
-    def __init__(self,  sat: EnumType.SatID, range, arcNo):
+    def __init__(self,  sat: EnumType.SatID, arcNo):
         super(AbsNonConservative, self).__init__()
         self._GPStime = None
 
 
 class NonConByAcc(AbsNonConservative):
 
-    def __init__(self, sat: EnumType.SatID, range=ForceModelConfig().NonConservative().date_span,
-                 arcNo=ForceModelConfig().NonConservative().arcNo):
+    def __init__(self, sat: EnumType.SatID, arcNo):
         """
         Load the saved-already acc and dadp, and output the acc/dadp for the given time epoch.
         :param fileDir: acc and dadp have been computed beforehand and saved in given directory.
         :param range: a two-element tuple recording the range of the Acc timeseries, in GPS second since J2000.
                         for example, (254546668,254567889)
         """
-        super().__init__(range=range, sat=sat, arcNo=arcNo)
+        super().__init__(sat=sat, arcNo=arcNo)
         self.__dataTemp = None
         self.__GPStime = None
         self.sat = sat
-        self._range = range
+        self._range = None
         self._arcNo = arcNo
         self._FMConfig = None
         self._NonConservative = None
         self._pathConfig = None
+        pass
 
     def configure(self, FMConfig: ForceModelConfig):
         self._FMConfig = FMConfig
