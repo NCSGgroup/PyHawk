@@ -5,9 +5,13 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from src.Preference.Pre_Parameterization import ParameterConfig
+from src.Preference.Pre_ForceModel import ForceModelConfig
 from src.Interface.LoadSH import LoadCSR
 from src.Auxilary.SortCS import SortCS
 from src.Auxilary.GeoMathKit import GeoMathKit
+from src.Auxilary.LoveNumber import LoveNumber
+from src.ConvertFieldType.ConvertSHC import ConvertSHC
+from src.Preference.EnumType import FieldType
 plt.rcParams['font.sans-serif']=['Microsoft YaHei']         #指定默认字体（因为matplotlib默认为英文字体，汉字会使其乱码）
 plt.rcParams['axes.unicode_minus']=False    #可显示‘-’负号
 
@@ -87,11 +91,31 @@ def drawPotentialError():
     my_s[1, :] = 0
     my_c = np.fliplr(my_c)
     Potential = np.matrix(np.hstack((my_c, my_s)))
-    Potential[Potential == 0.0] = np.nan
+    # Potential[Potential == 0.0] = np.nan
     print(np.shape(Potential))
-    plt.matshow(Potential)
+    print(Potential.max())
+    print(Potential.min())
+    plt.matshow(Potential, vmin=0, vmax=2.439348474467162e-06)
     plt.colorbar()
     plt.show()
+    pass
+
+
+def drawEWH():
+    force_model_config = ForceModelConfig()
+    fmDict = json.load(open('..//setting/Calibrate/ForceModelConfig.json', 'r'))
+    force_model_config.__dict__ = fmDict
+    h5 = h5py.File('../compare/2008-01-01_2008-01-31.hdf5', 'r')
+    my_c = h5['c'][:]
+    my_s = h5['s'][:]
+
+    cqlm = my_c[np.newaxis, :]
+    sqlm = my_s[np.newaxis, :]
+    ln = LoveNumber().configure(FMConfig=force_model_config).getNumber()
+    convert = ConvertSHC(cqlm, sqlm, FieldType.EWH, ln)
+    convert.convert_to(FieldType.EWH)
+    cqlm, sqlm = convert.cqlm, convert.sqlm
+    print(1)
     pass
 
 
@@ -122,4 +146,5 @@ def get_geoid_drgee_error(diff_c, diff_s):
 
 if __name__ == '__main__':
     # drawTime()
-    drawPotentialError()
+    # drawPotentialError()
+    drawEWH()

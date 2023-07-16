@@ -33,8 +33,8 @@
         }
     },
     "LoveNumberConfig": {
-        "Nmax": 30,
-        "method": "IERS"
+        "Nmax": 60,
+        "method": "AOD04"
     },
     "PoleTideConfig": {
         "Kind": {
