@@ -207,3 +207,9 @@ class SSTObserve(Enum):
     RangeRate = 2
     RangeAcc = 3
 
+
+class FieldType(Enum):
+    pressure = 0
+    EWH = 1
+    geoid = 2
+    density = 3
