@@ -18,7 +18,7 @@ def drawTime():
     my_c, my_s = GeoMathKit.CS_2dTo1d(my_c), GeoMathKit.CS_2dTo1d(my_s)
 
     diff_c = my_c - ref_c
-    ref_s = my_s - ref_s
+    diff_s = my_s - ref_s
 
     print(my_c)
     print(ref_c)
