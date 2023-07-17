@@ -33,6 +33,7 @@ from src.Interface.KinematicOrbit import KinematicOrbit
 from src.Interface.GapFix import GapFix
 from src.Interface.ArcOperation import ArcSelect
 from src.Interface.L1b import GRACE_NEW_RL02, GRACE_OLD_RL02
+from src.Auxilary.Format import FormatWrite
 import multiprocessing
 import json
 from datetime import datetime
@@ -226,13 +227,17 @@ class CalibrateOrbit:
         static_c, static_s = LoadGif48().load(force_model_path_config.Gif48).getCS(stokes_coefficients_config.MaxDegree)
 
         C, S = c + static_c, s + static_s
+        sigmaC , sigmaS = np.zeros(len(C)), np.zeros(len(S))
+        format = FormatWrite().configure(filedir=neq_path_config.ResultCS,
+                                         data=date_span, degree=60, c=C, s=S, sigmaC=sigmaC, sigmaS=sigmaS)
+        format.unfiltered()
 
-        C, S = GeoMathKit.CS_1dTo2d(C), GeoMathKit.CS_1dTo2d(S)
-
-        h5 = h5py.File(result_name, 'w')
-        h5.create_dataset('c', data=C)
-        h5.create_dataset('s', data=S)
-        h5.close()
+        # C, S = GeoMathKit.CS_1dTo2d(C), GeoMathKit.CS_1dTo2d(S)
+        #
+        # h5 = h5py.File(result_name, 'w')
+        # h5.create_dataset('c', data=C)
+        # h5.create_dataset('s', data=S)
+        # h5.close()
         pass
 
     def drawSH(self):

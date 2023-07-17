@@ -1,0 +1,15 @@
+begin_of_head ==================================================================
+product_type                   gravity_field                   
+modelname                      GSM-2_2008-01-01-2008-01-31_GRAC_UTCSR_BA01_0600 
+radius                         6.3781363000E+06                
+earth_gravity_constant         3.9860044150E+14                
+max_degree                     60                              
+norm                           fully_normalized                
+tide_system                    zero_tide                       
+errors                         formal                          
+
+key       L      M         C                   S              sigma C        sigma S                         
+end_of_head ==========================================================================
+gfc       0      0  +1.0000000000E+00  +1.0000000000E+00    +1.0000E+00    +1.0000E+00
+gfc       1      0  +2.0000000000E+00  +2.0000000000E+00    +2.0000E+00    +2.0000E+00
+gfc       2      0  +4.0000000000E+00  +4.0000000000E+00    +4.0000E+00    +4.0000E+00
