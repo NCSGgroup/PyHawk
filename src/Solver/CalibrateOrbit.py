@@ -121,7 +121,7 @@ class CalibrateOrbit:
         # arc = ArcSelect(gf=gf).configure()
         # arc.unpackArcs().makeReport()
         #
-        # self._parallel()
+        self._parallel()
         self.__calculate_cs()
         pass
  
@@ -155,7 +155,6 @@ class CalibrateOrbit:
 
     def _unit(self, start, end):
         for i in range(start, end):
-            print(i)
             if i != 221:
                 """step 5: init AdjustOrbit"""
                 AdjustOrbit(accConfig=[self.__acc_config_A, self.__acc_config_B], date_span=self.__date_span, sat=self.__sat).\

@@ -63,15 +63,15 @@ class ForceModelConfig:
 
     class LoveNumber:
         def __init__(self):
-            self.Nmax = 30
-            self.method = EnumType.LoveNumberType.IERS.name
+            self.Nmax = 180
+            self.method = EnumType.LoveNumberType.Wang.name
 
     class SolidTide:
         def __init__(self):
             self.GM_Earth = 0.3986004415E+15
             self.GM_Sun = 1.32712442076e20
             self.GM_Moon = 0.49028010560e13
-            self.Radius_Earth = 0.6378136460E+07
+            self.Radius_Earth = 6378136.3
             self.isZeroTide = True
 
     class AtmosTide:
@@ -99,7 +99,7 @@ class ForceModelConfig:
     class OceanTide:
         def __init__(self):
             self.gainFactor = 1e-3
-            self.maxDegree = 120
+            self.maxDegree = 180
 
     class ThreeBody:
         def __init__(self):
@@ -127,7 +127,7 @@ class ForceModelConfig:
                 EnumType.Planets.Uranus.name: False,
                 EnumType.Planets.Neptune.name: False,
                 EnumType.Planets.Pluto.name: False}
-            self.isJ2 = False
+            self.isJ2 = True
 
     class GravHar:
         def __init__(self):
@@ -135,34 +135,34 @@ class ForceModelConfig:
             self.degree_max = 60
             self.degree_min = 2
             self.GravHar_GM = 0.3986004415E+15
-            self.GravHar_Radius = 0.6378136300E+07
+            self.GravHar_Radius = 6378136.3
             self.PosCoordinate = EnumType.Coordinate.GCRS.name
             self.ACCCoordinate = EnumType.Coordinate.GCRS.name
 
     class NonTide:
         def __init__(self):
             self.kind = EnumType.AODtype.GLO.name
-            self.MaxDeg = 100
+            self.MaxDeg = 180
             self.TS = 3
 
     class RefGravModel:
         def __init__(self):
             self.kind = 0
-            self.Nmax = 160
+            self.Nmax = 360
             self.StaticModel = EnumType.StaticGravModel.Gif48.name
 
     class Relativity:
         def __init__(self):
             self.GM_Sun = 1.32712442076e20
-            self.GM_Earth = 398600441800000.0
+            self.GM_Earth = 3.986004415E+14
             self.C_Light = 299792458
             self.J = [0, 0, 9.8e8]
             self.Gamma = 1
             self.Beta = 1
             self.kind = {
                 EnumType.RelativityType.SchwarzChild.name: True,
-                EnumType.RelativityType.LenseThirring.name: False,
-                EnumType.RelativityType.Desitter.name: False
+                EnumType.RelativityType.LenseThirring.name: True,
+                EnumType.RelativityType.Desitter.name: True
             }
 
     class PoleTide:
@@ -173,8 +173,8 @@ class ForceModelConfig:
             }
             self.SimpleOcean = False
             self.Polar2wobble = 2
-            self.MaxDegreeOfOcean = 30
-            self.LoveNumberType = EnumType.LoveNumberType.IERS.name
+            self.MaxDegreeOfOcean = 180
+            self.LoveNumberType = EnumType.LoveNumberType.Wang.name
 
     class PathOfFiles:
         def __init__(self):
