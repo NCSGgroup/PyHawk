@@ -106,20 +106,20 @@ class CalibrateOrbit:
         return self
 
     def run(self):
-        """step 1: Read raw data"""
-        eop = EOP().configure(frameConfig=self.__frame_config).load()
-        fr = Frame(eop).configure(frameConfig=self.__frame_config)
-        s = GRACE_OLD_RL02().configure(InterfaceConfig=self.__interface_config).setDate()
-        s.read_double_sat()
-        """step 2: Convert orbit from ITRS frame into GCRS frame"""
-        kine = KinematicOrbit(L1b=s).configure()
-        # kine.read_double_sat()
-        kine.GNVandKiOrbitItrs2Gcrs(fr)
-        """step 3: Gap fix"""
-        gf = GapFix(L1b=s).configure()
-        gf.fix_all().makeReport()
-        arc = ArcSelect(gf=gf).configure()
-        arc.unpackArcs().makeReport()
+        # """step 1: Read raw data"""
+        # eop = EOP().configure(frameConfig=self.__frame_config).load()
+        # fr = Frame(eop).configure(frameConfig=self.__frame_config)
+        # s = GRACE_OLD_RL02().configure(InterfaceConfig=self.__interface_config).setDate()
+        # s.read_double_sat()
+        # """step 2: Convert orbit from ITRS frame into GCRS frame"""
+        # kine = KinematicOrbit(L1b=s).configure()
+        # # kine.read_double_sat()
+        # kine.GNVandKiOrbitItrs2Gcrs(fr)
+        # """step 3: Gap fix"""
+        # gf = GapFix(L1b=s).configure()
+        # gf.fix_all().makeReport()
+        # arc = ArcSelect(gf=gf).configure()
+        # arc.unpackArcs().makeReport()
 
         self._parallel()
         self.__calculate_cs()
@@ -134,11 +134,11 @@ class CalibrateOrbit:
         self.__arcLen = days.days * (24 / interface_config.arc_length)
         step = int(self.__arcLen / 6)
         p1 = multiprocessing.Process(target=self._unit, args=(0, step))
-        p2 = multiprocessing.Process(target=self._unit, args=(step, step*2))
-        p3 = multiprocessing.Process(target=self._unit, args=(step*2, step*3))
-        p4 = multiprocessing.Process(target=self._unit, args=(step*3, step*4))
-        p5 = multiprocessing.Process(target=self._unit, args=(step*4, step*5))
-        p6 = multiprocessing.Process(target=self._unit, args=(step*5, step*6))
+        # p2 = multiprocessing.Process(target=self._unit, args=(step, step*2))
+        # p3 = multiprocessing.Process(target=self._unit, args=(step*2, step*3))
+        # p4 = multiprocessing.Process(target=self._unit, args=(step*3, step*4))
+        # p5 = multiprocessing.Process(target=self._unit, args=(step*4, step*5))
+        # p6 = multiprocessing.Process(target=self._unit, args=(step*5, step*6))
         p1.start()
         # p2.start()
         # p3.start()
