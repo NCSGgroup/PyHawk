@@ -129,7 +129,7 @@
     },
     "RefGravModelConfig": {
         "kind": 0,
-        "Nmax": 360,
+        "Nmax": 180,
         "StaticModel": "Gif48"
     },
     "RelativityConfig": {

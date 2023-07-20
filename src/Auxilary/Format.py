@@ -4,6 +4,7 @@
 # @File    : Format.py
 # @Software: PyCharm
 import os
+import time
 from src.Auxilary.GeoMathKit import GeoMathKit
 
 
@@ -52,6 +53,11 @@ class FormatWrite:
 
     def unfiltered(self):
         with open(self.__fileFullPath, 'w') as file:
+
+            file.write('********************************************************************************\n')
+            file.write('model converted into ICGEM-format at: %s\n' % (time.strftime('%a %b %d %H:%M:%S %Y', time.localtime())))
+            file.write('********************************************************************************\n')
+            file.write('\n')
             file.write('begin_of_head ==================================================================\n')
             file.write('%-31s%-31s \n' % ('product_type', self.product_type))
             file.write('%-31s%-31s \n' % ('modelname', self.modelname))

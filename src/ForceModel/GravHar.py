@@ -551,7 +551,7 @@ class ClibGravHar(AbsGravHar):
 
     def __preprocess(self, Nmax):
         Nlimit = self.__gravlib.getNlimit()
-        assert Nlimit >= Nmax
+        assert Nlimit > Nmax
 
         self.__gravlib.preprocess(Nmax)
         pass
