@@ -35,8 +35,8 @@
     "gapfix_quadra_mis_max": 21,
     "gapfix_cubic_mis_max": 80,
     "gapfix_cubic_int": 150,
-    "arc_length": 3,
-    "min_arcLen": 2,
+    "arc_length": 6,
+    "min_arcLen": 3,
     "PathOfFilesConfig": {
         "payload_ACC": "D:\\py-hawk-v2\\data\\GRACE_RL02",
         "payload_SCA": "D:\\py-hawk-v2\\data\\GRACE_RL02",
