@@ -56,18 +56,18 @@
     "AtmosTideConfig": {
         "SR": 0.001,
         "AODtide": {
-            "P1": true,
-            "S1": true,
-            "K1": true,
-            "N2": true,
-            "M2": true,
-            "L2": true,
-            "T2": true,
+            "P1": false,
+            "S1": false,
+            "K1": false,
+            "N2": false,
+            "M2": false,
+            "L2": false,
+            "T2": false,
             "S2": true,
-            "R2": true,
-            "T3": true,
-            "S3": true,
-            "R3": true
+            "R2": false,
+            "T3": false,
+            "S3": false,
+            "R3": false
         },
         "kind": "ATM",
         "Nmax": 180,
@@ -129,7 +129,7 @@
     },
     "RefGravModelConfig": {
         "kind": 0,
-        "Nmax": 180,
+        "Nmax": 360,
         "StaticModel": "Gif48"
     },
     "RelativityConfig": {

@@ -78,18 +78,18 @@ class ForceModelConfig:
         def __init__(self):
             self.SR = 1E-3
             self.AODtide = {
-                EnumType.TidesType.P1.name: True,
-                EnumType.TidesType.S1.name: True,
-                EnumType.TidesType.K1.name: True,
-                EnumType.TidesType.N2.name: True,
-                EnumType.TidesType.M2.name: True,
-                EnumType.TidesType.L2.name: True,
-                EnumType.TidesType.T2.name: True,
+                EnumType.TidesType.P1.name: False,
+                EnumType.TidesType.S1.name: False,
+                EnumType.TidesType.K1.name: False,
+                EnumType.TidesType.N2.name: False,
+                EnumType.TidesType.M2.name: False,
+                EnumType.TidesType.L2.name: False,
+                EnumType.TidesType.T2.name: False,
                 EnumType.TidesType.S2.name: True,
-                EnumType.TidesType.R2.name: True,
-                EnumType.TidesType.T3.name: True,
-                EnumType.TidesType.S3.name: True,
-                EnumType.TidesType.R3.name: True,
+                EnumType.TidesType.R2.name: False,
+                EnumType.TidesType.T3.name: False,
+                EnumType.TidesType.S3.name: False,
+                EnumType.TidesType.R3.name: False,
             }
             self.kind = EnumType.AODtype.ATM.name
             self.Nmax = 180
