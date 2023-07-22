@@ -29,7 +29,7 @@ from src.Preference.Pre_Frame import FrameConfig
 from src.Solver.AdjustSST import RangeRate
 from src.Frame.Frame import Frame
 from src.Frame.EOP import EOP
-from src.Interface.KinematicOrbit import KinematicOrbit
+from src.Interface.KinematicOrbit import KinematicOrbitV3, KinematicOrbitV2
 from src.Interface.GapFix import GapFix
 from src.Interface.ArcOperation import ArcSelect
 from src.Interface.L1b import GRACE_NEW_RL02, GRACE_OLD_RL02
@@ -107,14 +107,14 @@ class CalibrateOrbit:
 
     def run(self):
         # """step 1: Read raw data"""
-        # eop = EOP().configure(frameConfig=self.__frame_config).load()
-        # fr = Frame(eop).configure(frameConfig=self.__frame_config)
-        # s = GRACE_OLD_RL02().configure(InterfaceConfig=self.__interface_config).setDate()
-        # s.read_double_sat()
+        eop = EOP().configure(frameConfig=self.__frame_config).load()
+        fr = Frame(eop).configure(frameConfig=self.__frame_config)
+        s = GRACE_OLD_RL02().configure(InterfaceConfig=self.__interface_config).setDate()
+        s.read_double_sat()
         # """step 2: Convert orbit from ITRS frame into GCRS frame"""
-        # kine = KinematicOrbit(L1b=s).configure()
-        # # kine.read_double_sat()
-        # kine.GNVandKiOrbitItrs2Gcrs(fr)
+        kine = KinematicOrbitV2(L1b=s).configure()
+        kine.read_double_sat()
+        kine.GNVandKiOrbitItrs2Gcrs(fr)
         # """step 3: Gap fix"""
         # gf = GapFix(L1b=s).configure()
         # gf.fix_all().makeReport()
