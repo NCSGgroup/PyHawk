@@ -375,7 +375,7 @@ class GRACE_NEW_RL02(L1b):
 
     def _readACC(self, date: str, sat: SatID):
         path = str(self.dir.joinpath(self._path_ACC, date.split('-')[0] + '-' + date.split('-')[1],
-                              'grace_1B_' + date + '_02.tar.gz_files', 'ACC1B_' + date + '_' + sat.name + '_02.dat'))
+                              'grace_1B_' + date + '_02', 'ACC1B_' + date + '_' + sat.name + '_02.dat'))
         try:
             f = open(path, 'rb')
         except FileNotFoundError as e:
@@ -412,7 +412,7 @@ class GRACE_NEW_RL02(L1b):
 
     def _readSCA(self, date: str, sat: SatID):
         path = str(self.dir.joinpath(self._path_SCA, date.split('-')[0] + '-' + date.split('-')[1],
-                              'grace_1B_' + date + '_02.tar.gz_files', 'SCA1B_' + date + '_' + sat.name + '_02.dat'))
+                              'grace_1B_' + date + '_02', 'SCA1B_' + date + '_' + sat.name + '_02.dat'))
 
         try:
             f = open(path, 'rb')
@@ -453,7 +453,7 @@ class GRACE_NEW_RL02(L1b):
 
     def _readKBR(self, date: str):
         path = str(self.dir.joinpath(self._path_KBR, date.split('-')[0] + '-' + date.split('-')[1],
-                              'grace_1B_' + date + '_02.tar.gz_files', 'KBR1B_' + date + '_X_02.dat'))
+                              'grace_1B_' + date + '_02', 'KBR1B_' + date + '_X_02.dat'))
 
         try:
             f = open(path, 'rb')
@@ -504,7 +504,207 @@ class GRACE_NEW_RL02(L1b):
                       round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 23, 59, 60 - self.sr_payload[Payload.GNV.name]))))
 
         path = str(self.dir.joinpath(self._path_GNV, date.split('-')[0] + '-' + date.split('-')[1],
-                              'grace_1B_' + date + '_02.tar.gz_files', 'GNV1B_' + date + '_' + sat.name + '_02.dat'))
+                              'grace_1B_' + date + '_02', 'GNV1B_' + date + '_' + sat.name + '_02.dat'))
+
+        try:
+            f = open(path, 'rb')
+        except FileNotFoundError as e:
+            # lg.error(e)
+            # print(path)
+            return None
+
+        NumOfGNV = None
+        while True:
+            r = f.readline()
+            content = r.decode()
+            # print(r.decode())
+            if content.split(':')[0].strip() == 'NUMBER OF DATA RECORDS':
+                NumOfGNV = int(content.split(':')[1])
+            if content.strip() == 'END OF HEADER':
+                break
+
+        # GNV = np.zeros((NumOfGNV, 7))
+        GNV = []
+
+        for i in range(NumOfGNV):
+            """delete the data out of the range of given date"""
+
+            r = f.read(4 + 1 + 1 + 8 * 12 + 1)
+            s = struct.unpack('>icc12dB', r)
+
+            if date_range[0] <= round(s[0]) <= date_range[1]:
+                GNVd = np.zeros(7)
+                pass
+            else:
+                continue
+
+            '''time'''
+            GNVd[0] = s[0]
+            GNVd[1:4] = s[3:6]
+            GNVd[4:7] = s[9:12]
+
+            # if setGCRS:
+            #     '''ITRS2GCRS'''
+            #     rm = self.__fr.setTime(s[0]).getRotationMatrix
+            #     '''pos'''
+            #     GNVd[1:4] = Frame.PosITRS2GCRS(np.array(s[3:6]), rm)
+            #     # GNVd[1:4] = s[3:6]
+            #     '''vel'''
+            #     GNVd[4:7] = Frame.VelITRS2GCRS(np.array(s[3:6]), np.array(s[9:12]), rm)
+            #     # GNVd[4:7] = s[9:12]
+            # else:
+            #     GNVd[1:4] = s[3:6]
+            #     GNVd[4:7] = s[9:12]
+
+            GNV.append(GNVd)
+            pass
+
+        f.close()
+
+        return np.array(GNV)
+
+
+class GRACE_RL03(L1b):
+    def __init__(self):
+        super(GRACE_RL03, self).__init__()
+        # assert self._InterfaceConfig.mission == Mission.GRACE_RL02.name
+        pass
+
+    def _readACC(self, date: str, sat: SatID):
+        path = str(self.dir.joinpath(self._path_ACC, date.split('-')[0] + '-' + date.split('-')[1],
+                              'grace_1B_' + date + '_02', 'ACC1B_' + date + '_' + sat.name + '_02.dat'))
+        try:
+            f = open(path, 'rb')
+        except FileNotFoundError as e:
+            # print(path)
+            return None
+
+        NumOfAcc = None
+        while True:
+            r = f.readline()
+            content = r.decode()
+            # print(r.decode())
+            if content.split(':')[0].strip() == 'NUMBER OF DATA RECORDS':
+                NumOfAcc = int(content.split(':')[1])
+            if content.strip() == 'END OF HEADER':
+                break
+
+        ACC = np.zeros((NumOfAcc, 4))
+
+        for i in range(NumOfAcc):
+            r = f.read(4 + 1 + 8 * 9 + 1)
+            s = struct.unpack('>ic9dB', r)
+            '''time'''
+            ACC[i, 0] = s[0]
+            '''X'''
+            ACC[i, 1] = s[2]
+            '''Y'''
+            ACC[i, 2] = s[3]
+            '''Z'''
+            ACC[i, 3] = s[4]
+
+        f.close()
+
+        return ACC
+
+    def _readSCA(self, date: str, sat: SatID):
+        path = str(self.dir.joinpath(self._path_SCA, date.split('-')[0] + '-' + date.split('-')[1],
+                              'SCA1B_' + date + '_' + sat.name + '_03.dat'))
+        try:
+            f = open(path, 'rb')
+        except FileNotFoundError as e:
+            # lg.error(e)
+            # print(path)
+            return None
+
+        NumOfSCA = None
+        while True:
+            r = f.readline()
+            content = r.decode()
+            # print(r.decode())
+            if content.split(':')[0].strip() == 'NUMBER OF DATA RECORDS':
+                NumOfSCA = int(content.split(':')[1])
+            if content.strip() == 'END OF HEADER':
+                break
+
+        SCA = np.zeros((NumOfSCA, 5))
+
+        for i in range(NumOfSCA):
+            r = f.read(4 + 1 + 1 + 8 * 5 + 1)
+            if len(r) != 47:
+                '''time'''
+                print(i)
+                break
+            s = struct.unpack('>icb5dB', r)
+            '''time'''
+            SCA[i, 0] = s[0]
+            '''cos(mu/2)'''
+            SCA[i, 1] = s[3]
+            '''I'''
+            SCA[i, 2] = s[4]
+            '''J'''
+            SCA[i, 3] = s[5]
+            '''K'''
+            SCA[i, 4] = s[6]
+
+        f.close()
+
+        return SCA
+
+    def _readKBR(self, date: str):
+        path = str(self.dir.joinpath(self._path_KBR, date.split('-')[0] + '-' + date.split('-')[1],
+                              'KBR1B_' + date + '_X_03.dat'))
+
+        try:
+            f = open(path, 'rb')
+        except FileNotFoundError as e:
+            # lg.error(e)
+            # print(path)
+            return None
+
+        NumOfKBR = None
+        while True:
+            r = f.readline()
+            content = r.decode()
+            # print(r.decode())
+            if content.split(':')[0].strip() == 'NUMBER OF DATA RECORDS':
+                NumOfKBR = int(content.split(':')[1])
+            if content.strip() == 'END OF HEADER':
+                break
+
+        KBR = np.zeros((NumOfKBR, 4))
+
+        for i in range(NumOfKBR):
+            r = f.read(4 + 8 * 10 + 2 * 4 + 1)
+            s = struct.unpack('>i10d4HB', r)
+            '''time'''
+            KBR[i, 0] = s[0]
+            '''bias range + light_corr + ant_corr '''
+            KBR[i, 1] = s[1] + s[5] + s[8]
+            '''bias range-rate + light_corr + ant_corr '''
+            KBR[i, 2] = s[2] + s[6] + s[9]
+            '''bias range-acc + light_corr + ant_corr '''
+            KBR[i, 3] = s[3] + s[7] + s[10]
+
+        f.close()
+
+        return KBR
+
+    def _readGNV(self, date: str, sat: SatID):
+        """
+        Input is in ITRS frame, which has to be transferred to GCRS inertial frame; But probably the input orbit is gievn
+        in GCRS. Take care !!!
+        :param date:
+        :param sat:
+        :return: Orbit
+        """
+        st = date.split('-')
+        IY, IM, ID = int(st[0]), int(st[1]), int(st[2])
+        date_range = (round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 0, 0, 0))),
+                      round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 23, 59, 60 - self.sr_payload[Payload.GNV.name]))))
+
+        path = str(self.dir.joinpath(self._path_GNV, date.split('-')[0] + '-' + date.split('-')[1],
+                              'grace_1B_' + date + '_02', 'GNV1B_' + date + '_' + sat.name + '_02.dat'))
 
         try:
             f = open(path, 'rb')

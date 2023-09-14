@@ -240,6 +240,7 @@ class Accelerometer:
 
         wr.create_dataset('time', data=time)
         wr.create_dataset('acc', data=acc)
+        wr.create_dataset('bias', data=self.__bias)
         wr.create_dataset('dadp', data=dadp)
         wr.close()
         pass

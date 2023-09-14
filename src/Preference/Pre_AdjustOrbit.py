@@ -9,10 +9,10 @@ class AdjustOrbitConfig:
 
     class RangeRate:
         def __init__(self):
-            self.ParameterFitting = EnumType.SSTFitOption.twice_biasC0C1_OneCPR.name
+            self.ParameterFitting = EnumType.SSTFitOption.biasC0C1C2_OneCPR.name
             self.OutlierTimes = 3  # how
             self.OutlierLimit = 1e-07
-            self.ArcLength = 1.5
+            self.ArcLength = 0.75
             self.Iterations = 2  # times
 
     class PathOfFiles:
