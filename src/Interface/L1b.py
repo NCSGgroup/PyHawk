@@ -111,6 +111,7 @@ class L1b:
             if res4 is not None:
                 KBR = np.vstack((KBR, res4))
 
+        SCA = self._unique(SCA)
         if sat == SatID.A:
             self._ACC_A = ACC
             self._SCA_A = SCA
@@ -170,6 +171,11 @@ class L1b:
                 return self.KiOrb_A
             else:
                 return self.KiOrb_B
+
+    def _unique(self, data):
+        time = data[:, 0]
+        index = np.unique(time, return_index=True)[1]
+        return data[index, :]
 
 
 class GRACE_OLD_RL02(L1b):
@@ -610,6 +616,10 @@ class GRACE_RL03(L1b):
     def _readSCA(self, date: str, sat: SatID):
         path = str(self.dir.joinpath(self._path_SCA, date.split('-')[0] + '-' + date.split('-')[1],
                               'SCA1B_' + date + '_' + sat.name + '_03.dat'))
+        st = date.split('-')
+        IY, IM, ID = int(st[0]), int(st[1]), int(st[2])
+        date_range = (round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 0, 0, 0))),
+                      round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 23, 59, 60 - self.sr_payload[Payload.GNV.name]))))
         try:
             f = open(path, 'rb')
         except FileNotFoundError as e:
@@ -627,26 +637,30 @@ class GRACE_RL03(L1b):
             if content.strip() == 'END OF HEADER':
                 break
 
-        SCA = np.zeros((NumOfSCA, 5))
+        # SCA = np.zeros((NumOfSCA, 5))
 
+        SCA = []
         for i in range(NumOfSCA):
             r = f.read(4 + 1 + 1 + 8 * 5 + 1)
             if len(r) != 47:
-                '''time'''
-                print(i)
-                break
-            s = struct.unpack('>icb5dB', r)
-            '''time'''
-            SCA[i, 0] = s[0]
-            '''cos(mu/2)'''
-            SCA[i, 1] = s[3]
-            '''I'''
-            SCA[i, 2] = s[4]
-            '''J'''
-            SCA[i, 3] = s[5]
-            '''K'''
-            SCA[i, 4] = s[6]
-
+                continue
+            else:
+                s = struct.unpack('>icb5dB', r)
+                if date_range[0] <= round(s[0]) <= date_range[1]:
+                    SCAd = np.zeros(5)
+                    '''time'''
+                    SCAd[0] = s[0]
+                    '''cos(mu/2)'''
+                    SCAd[1] = s[3]
+                    '''I'''
+                    SCAd[2] = s[4]
+                    '''J'''
+                    SCAd[3] = s[5]
+                    '''K'''
+                    SCAd[4] = s[6]
+                    SCA.append(SCAd)
+                else:
+                    continue
         f.close()
 
         return SCA

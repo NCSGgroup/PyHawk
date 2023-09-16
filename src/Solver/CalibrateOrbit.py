@@ -109,7 +109,7 @@ class CalibrateOrbit:
         """step 1: Read raw data"""
         eop = EOP().configure(frameConfig=self.__frame_config).load()
         fr = Frame(eop).configure(frameConfig=self.__frame_config)
-        s = GRACE_OLD_RL02().configure(InterfaceConfig=self.__interface_config).setDate()
+        s = GRACE_RL03().configure(InterfaceConfig=self.__interface_config).setDate()
         s.read_double_sat()
         """step 2: Convert orbit from ITRS frame into GCRS frame"""
         kine = KinematicOrbitV2(L1b=s).configure()
@@ -166,21 +166,21 @@ class CalibrateOrbit:
                 RR.configure(AdjustOrbitConfig=self.__adjust_config, InterfaceConfig=self.__interface_config)
                 RR.calibrate()
 
-                # '''step 6: get DesignMatrix'''
-                # dm = GravityDesignMat(arcNo=i, date_span=self.__date_span, sat=self.__sat).\
-                #     configure(accConfig=[self.__acc_config_A, self.__acc_config_B],
-                #               ODEConfig=self.__ode_config, AdjustOrbitConfig=self.__adjust_config,
-                #               solverConfig=self.__solver_config, FMConfig=self.__force_model_config,
-                #               parameterConfig=self.__design_parameter_config, InterfaceConfig=self.__interface_config,
-                #               FrameConfig=self.__frame_config)
-                # dm.orbit_integration()
-                # dm.get_orbit_design_matrix()
-                # dm.get_sst_design_matrix()
-                #
-                # '''setp 8: get NEQ'''
-                # neq = GravityNEQperArc(arcNo=i, date_span=self.__date_span, sat=self.__sat)
-                # neq.configure(solverConfig=self.__solver_config, NEQConfig=self.__neq_config,
-                #               AdjustOrbitConfig=self.__adjust_config, InterfaceConfig=self.__interface_config).get_neq()
+                '''step 6: get DesignMatrix'''
+                dm = GravityDesignMat(arcNo=i, date_span=self.__date_span, sat=self.__sat).\
+                    configure(accConfig=[self.__acc_config_A, self.__acc_config_B],
+                              ODEConfig=self.__ode_config, AdjustOrbitConfig=self.__adjust_config,
+                              solverConfig=self.__solver_config, FMConfig=self.__force_model_config,
+                              parameterConfig=self.__design_parameter_config, InterfaceConfig=self.__interface_config,
+                              FrameConfig=self.__frame_config)
+                dm.orbit_integration()
+                dm.get_orbit_design_matrix()
+                dm.get_sst_design_matrix()
+
+                '''setp 8: get NEQ'''
+                neq = GravityNEQperArc(arcNo=i, date_span=self.__date_span, sat=self.__sat)
+                neq.configure(solverConfig=self.__solver_config, NEQConfig=self.__neq_config,
+                              AdjustOrbitConfig=self.__adjust_config, InterfaceConfig=self.__interface_config).get_neq()
         pass
 
     def __calculate_cs(self):

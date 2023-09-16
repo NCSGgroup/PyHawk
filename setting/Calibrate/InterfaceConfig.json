@@ -1,5 +1,5 @@
 {
-    "mission": "GRACE_RL02",
+    "mission": "GRACE_RL03",
     "date_span": [
         "2008-01-01",
         "2008-01-31"
@@ -24,7 +24,7 @@
     },
     "sr_payload": {
         "ACC": 1,
-        "SCA": 5,
+        "SCA": 1,
         "KBR": 5,
         "GNV": 5,
         "KinematicOrbit": 1,
@@ -39,14 +39,13 @@
     "min_arcLen": 2,
     "PathOfFilesConfig": {
         "payload_ACC": "D:\\py-hawk-v2\\data\\GRACE_RL02",
-        "payload_SCA": "D:\\py-hawk-v2\\data\\GRACE_RL02",
-        "payload_KBR": "D:\\py-hawk-v2\\data\\GRACE_RL02",
+        "payload_SCA": "D:\\py-hawk-v2\\data\\GRACE_RL03",
+        "payload_KBR": "D:\\py-hawk-v2\\data\\GRACE_RL03",
         "payload_GNV": "D:\\py-hawk-v2\\data\\GRACE_RL02",
         "payload_Kinematic": "D:\\py-hawk-v2\\data\\KinematicOrbit",
         "payload_LRI": "D:\\py-hawk-v2\\data\\GRACE_RL02",
         "report_gap": "D:\\py-hawk-v2\\report\\gap",
         "report_arc": "D:\\py-hawk-v2\\report\\arc",
         "temp_raw_data": "D:\\py-hawk-v2\\temp\\RawData"
-
     }
 }
