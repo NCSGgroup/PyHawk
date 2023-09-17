@@ -72,13 +72,13 @@ class ComplexODE:
         self.__SingleStepOde = config.SingleStepOde.configure(ODEConfig=config.ODEConfig).setRecord()
         self.__MultiStepOde = config.MultiStepOde.configure(ODEConfig=config.ODEConfig)
         self.__stepSize = config.stepSize
-        self.__Npoints = config.Npoints
+        self.__Npoints = None
         self.__order = config.order
         self.__secDer = None
 
         pass
 
-    def setSecondDerivative(self, secDer):
+    def setSecondDerivative(self, secDer, ArcLen):
         """
         set the force function for orbit integration.
         This function is exposed to the user, while it should be consistent with the config.
@@ -87,6 +87,7 @@ class ComplexODE:
         :return:
         """
         '''set force model'''
+        self.__Npoints = ArcLen
         self.__secDer = secDer
         self.__SingleStepOde.setForce(secDer)
         self.__MultiStepOde.setForce(secDer)

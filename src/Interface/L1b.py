@@ -579,6 +579,10 @@ class GRACE_RL03(L1b):
     def _readACC(self, date: str, sat: SatID):
         path = str(self.dir.joinpath(self._path_ACC, date.split('-')[0] + '-' + date.split('-')[1],
                               'grace_1B_' + date + '_02', 'ACC1B_' + date + '_' + sat.name + '_02.dat'))
+        st = date.split('-')
+        IY, IM, ID = int(st[0]), int(st[1]), int(st[2])
+        date_range = (round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 0, 0, 0))),
+                      round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 23, 59, 60 - self.sr_payload[Payload.GNV.name]))))
         try:
             f = open(path, 'rb')
         except FileNotFoundError as e:
@@ -595,20 +599,22 @@ class GRACE_RL03(L1b):
             if content.strip() == 'END OF HEADER':
                 break
 
-        ACC = np.zeros((NumOfAcc, 4))
-
+        # ACC = np.zeros((NumOfAcc, 4))
+        ACC = []
         for i in range(NumOfAcc):
             r = f.read(4 + 1 + 8 * 9 + 1)
             s = struct.unpack('>ic9dB', r)
-            '''time'''
-            ACC[i, 0] = s[0]
-            '''X'''
-            ACC[i, 1] = s[2]
-            '''Y'''
-            ACC[i, 2] = s[3]
-            '''Z'''
-            ACC[i, 3] = s[4]
-
+            if date_range[0] <= round(s[0]) <= date_range[1]:
+                ACCd = np.zeros(4)
+                '''time'''
+                ACCd[0] = s[0]
+                '''X'''
+                ACCd[1] = s[2]
+                '''Y'''
+                ACCd[2] = s[3]
+                '''Z'''
+                ACCd[3] = s[4]
+                ACC.append(ACCd)
         f.close()
 
         return ACC

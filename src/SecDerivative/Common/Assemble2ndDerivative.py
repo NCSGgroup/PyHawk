@@ -24,6 +24,7 @@ class Assemble2ndDerivative:
         self.__isExistDaDx = False
         self.__isExistDaDp = False
         self.__externalEOP = None
+        self.__ArcLen = None
         '''force model cofig'''
         self.configForce = None
         self.ForceType = None
@@ -213,3 +214,6 @@ class Assemble2ndDerivative:
     def setEOP(self, xp, yp):
         self.__externalEOP = [xp, yp]
         return self
+
+    def getArcLen(self):
+        return self.__ArcLen
