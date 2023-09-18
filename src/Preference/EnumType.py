@@ -154,6 +154,7 @@ class StaticGravModel(Enum):
     Gif48 = 0
     EIGEN6_C4 = 1
     GOCO02s = 2
+    GGM05 = 3
 
 
 class CSseq(Enum):

@@ -46,7 +46,7 @@ class KinematicOrbit:
     def read_double_sat(self):
         self._KiOr_A = self.read_single_sat(SatID.A)
         self._KiOr_B = self.read_single_sat(SatID.B)
-
+        print(self._KiOr_A)
         '''pass to the L1b dataset'''
         self._L1b.KiOrb_A = self._KiOr_A
         self._L1b.KiOrb_B = self._KiOr_B

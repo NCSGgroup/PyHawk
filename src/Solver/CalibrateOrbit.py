@@ -115,11 +115,11 @@ class CalibrateOrbit:
         kine = KinematicOrbitV2(L1b=s).configure()
         kine.read_double_sat()
         kine.GNVandKiOrbitItrs2Gcrs(fr)
-        # """step 3: Gap fix"""
-        # gf = GapFix(L1b=s).configure()
-        # gf.fix_all().makeReport()
-        # arc = ArcSelect(gf=gf).configure()
-        # arc.unpackArcs().makeReport()
+        """step 3: Gap fix"""
+        gf = GapFix(L1b=s).configure()
+        gf.fix_all().makeReport()
+        arc = ArcSelect(gf=gf).configure()
+        arc.unpackArcs().makeReport()
 
         self._parallel()
         self.__calculate_cs()

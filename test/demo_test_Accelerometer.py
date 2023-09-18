@@ -17,5 +17,12 @@ def demo1():
     pass
 
 
+def analysis():
+
+    path = './temp/NonConservativeForce/'
+    pass
+
+
 if __name__ == '__main__':
-    demo1()
+    # demo1()
+    analysis()
