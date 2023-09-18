@@ -71,7 +71,7 @@ def drawRMS():
     #             RMS.append(rms(postfit))
 
     RMS = []
-    RMS01.extend(RMS02)
+    # RMS01.extend(RMS02)
     plt.style.use(['grid'])
     # np.save('2008-02.npy', RMS)
     plt.title('RangeRateRMS(2008-1-1~2008-2-28)', fontsize=24)
