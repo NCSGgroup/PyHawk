@@ -21,10 +21,15 @@ def drawTime():
     '''static model'''
     static_c, static_s = LoadGif48().load('../data/StaticGravityField/gif48.gfc').getCS(60)
     '''read hust'''
-    hust_filename = '../compare/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_2008-01-01-2008-01-31_GRAC_HUST_BA01_0600.gfc'
+    hust_filename = '../compare/1HUST_HUST-Release-06_60x60_unfiltered_GSM-2_2008-01-01-2008-01-31_GRAC_HUST_BA01_0600.gfc'
     hust_c, hust_s = LoadCSR().load(fileIn=hust_filename).getCS(Nmax=60)
     hust_c, hust_s = hust_c - static_c, hust_s - static_s
     hust_c, hust_s = GeoMathKit.CS_1dTo2d(hust_c), GeoMathKit.CS_1dTo2d(hust_s)
+    '''read CSR 05'''
+    csr_05_name = '../compare/CSR_CSR-Release-05_unfiltered_GSM-2_2008001-2008031_0031_UTCSR_0096_0005.gfc'
+    csr_05_c, csr_05_s = LoadCSR().load(fileIn=csr_05_name).getCS(Nmax=60)
+    csr_05_c, csr_05_s = csr_05_c - static_c, csr_05_s - static_s
+    csr_05_c, csr_05_s = GeoMathKit.CS_1dTo2d(csr_05_c), GeoMathKit.CS_1dTo2d(csr_05_s)
     '''read CSR'''
     csr_filename = '../compare/CSR_CSR-Release-06_60x60_unfiltered_GSM-2_2008001-2008031_GRAC_UTCSR_BA01_0600.gfc'
     csr_c, csr_s = LoadCSR().load(fileIn=csr_filename).getCS(Nmax=60)
@@ -39,14 +44,20 @@ def drawTime():
     gfz_c, gfz_s = LoadCSR().load(fileIn=gfz_filename).getCS(Nmax=60)
     gfz_c, gfz_s = gfz_c - static_c, gfz_s - static_s
     gfz_c, gfz_s = GeoMathKit.CS_1dTo2d(gfz_c), GeoMathKit.CS_1dTo2d(gfz_s)
+    '''read GFZ 05'''
+    gfz_05_name = '../compare/GFZ_GFZ-Release-05_monthly_unfiltered_GSM-2_2008001-2008031_0031_EIGEN_G---_005a.gfc'
+    gfz_05_c, gfz_05_s = LoadCSR().load(fileIn=gfz_05_name).getCS(Nmax=60)
+    gfz_05_c, gfz_05_s = gfz_05_c - static_c, gfz_05_s - static_s
+    gfz_05_c, gfz_05_s = GeoMathKit.CS_1dTo2d(gfz_05_c), GeoMathKit.CS_1dTo2d(gfz_05_s)
     # gfz_diff_c = hust_c - gfz_c
     # gfz_diff_s = hust_s - gfz_s
     # gfz_e_l = get_drgee_rms(diff_c=gfz_diff_c, diff_s=gfz_diff_s)
     # gfz_n_l = get_geoid_drgee_error(diff_c=gfz_diff_c, diff_s=gfz_diff_s)
-    # '''read JPL'''
-    # jpl_filename = '../compare/JPL_JPL-Release-05_unfiltered_GSM-2_2008001-2008031_0031_JPLEM_0001_0005.gfc'
-    # jpl_c, jpl_s = LoadCSR().load(fileIn=jpl_filename).getCS(Nmax=60)
-    # jpl_c, jpl_s = GeoMathKit.CS_1dTo2d(jpl_c), GeoMathKit.CS_1dTo2d(jpl_s)
+    '''read JPL'''
+    jpl_filename = '../compare/JPL_JPL-Release-05_unfiltered_GSM-2_2008001-2008031_0031_JPLEM_0001_0005.gfc'
+    jpl_c, jpl_s = LoadCSR().load(fileIn=jpl_filename).getCS(Nmax=60)
+    jpl_c, jpl_s = jpl_c - static_c, jpl_s - static_s
+    jpl_c, jpl_s = GeoMathKit.CS_1dTo2d(jpl_c), GeoMathKit.CS_1dTo2d(jpl_s)
     # jpl_diff_c = hust_c - jpl_c
     # jpl_diff_s = hust_s - jpl_s
     # jpl_e_l = get_drgee_rms(diff_c=jpl_diff_c, diff_s=jpl_diff_s)
@@ -69,12 +80,21 @@ def drawTime():
     static = get_geoid_drgee_error(diff_c=hust_c, diff_s=hust_s)
     '''csr'''
     csr = get_geoid_drgee_error(diff_c=csr_c, diff_s=csr_s)
+    '''csr 05'''
+    csr_05 = get_geoid_drgee_error(diff_c=csr_05_c, diff_s=csr_05_s)
     '''gfz'''
     gfz = get_geoid_drgee_error(diff_c=gfz_c, diff_s=gfz_s)
-    plt.title('CSR GFZ JPL with HUST Degree Error RMS', fontsize=24)
-    plt.plot(np.arange(2, 61, 1), hust[2:], color='peru', marker='^', label='HUST')
-    plt.plot(np.arange(2, 61, 1), csr[2:], color='olive', marker='.', label='CSR')
-    plt.plot(np.arange(2, 61, 1), gfz[2:], color='red', marker='s', label='GFZ')
+    '''gfz 05'''
+    gfz_05 = get_geoid_drgee_error(diff_c=gfz_05_c, diff_s=gfz_05_s)
+    '''jpl 05'''
+    jpl_05 = get_geoid_drgee_error(diff_c=jpl_c, diff_s=jpl_s)
+    plt.title('Geoid Degree Error RMS(2008-1)', fontsize=24)
+    plt.plot(np.arange(2, 61, 1), hust[2:], color='peru', marker='^', label='HUST 05')
+    plt.plot(np.arange(2, 61, 1), csr[2:], color='olive', marker='.', label='CSR 06')
+    plt.plot(np.arange(2, 61, 1), gfz[2:], color='red', marker='s', label='GFZ 06')
+    plt.plot(np.arange(2, 61, 1), csr_05[2:], color='indigo', marker='h', label='CSR 05')
+    plt.plot(np.arange(2, 61, 1), gfz_05[2:], color='blue', marker='H', label='GFZ 05')
+    plt.plot(np.arange(2, 61, 1), jpl_05[2:], color='green', marker='p', label='JPL 05')
     # plt.plot(np.arange(2, 61, 1), csr_e_l[2:], color='red', marker='s', label='CSR - HUST')
     # plt.plot(np.arange(2, 61, 1), gfz_e_l[2:], color='blue', marker='p', label='GFZ - HUST')
     # plt.plot(np.arange(2, 61, 1), jpl_e_l[2:], color='green', marker='P', label='JPL - HUST')
@@ -88,7 +108,7 @@ def drawTime():
     plt.xlabel('Degree', fontsize=24)
     plt.ylabel('Degree Error RMS', fontsize=24)
     plt.yscale("log")
-    plt.legend(fontsize=20, loc=10)
+    plt.legend(fontsize=20, loc=3)
     plt.grid(True, which='both', linestyle='-.')
     plt.show()
 
@@ -203,8 +223,38 @@ def drawMat():
     gfz_jpl_e_l = get_drgee_rms(diff_c=gfz_jpl_diff_c, diff_s=gfz_jpl_diff_s)
 
 
+def drawKBRR():
+    C0C1h5 = h5py.File('C0C1RangeRate_0.hdf5', 'r')
+    C0C1C2h5 = h5py.File('C0C1C2_RangeRate_0.hdf5', 'r')
+    Testh5 = h5py.File('Test_RangeRate_0.hdf5', 'r')
+    C0C1_45_h5 = h5py.File('45min_RangeRate_0.hdf5', 'r')
+    print(rms(C0C1_45_h5['post_residual'][:]))
+    print(rms(C0C1h5['post_residual'][:]))
+    print(rms(C0C1C2h5['post_residual'][:]))
+    print(rms(Testh5['post_residual'][:]))
+    plt.title('diff adjust method(2008-1-Arc0)', fontsize=24)
+    plt.plot(C0C1_45_h5['post_t'][:], C0C1_45_h5['post_residual'][:], color='red', marker='p', label='a+bt + ct^2 + (E+Ft)cosnt+(G+Ht)sinnt(t=45)')
+    plt.plot(C0C1h5['post_t'][:], C0C1h5['post_residual'][:], color='peru', marker='^', label='a + bt + (E+Ft)cosnt+(G+Ht)sinnt')
+    plt.plot(C0C1C2h5['post_t'][:], C0C1C2h5['post_residual'][:], color='indigo', marker='h', label='a+bt + ct^2 + (E+Ft)cosnt+(G+Ht)sinnt')
+    plt.plot(Testh5['post_t'][:], Testh5['post_residual'][:], color='olive', marker='.', label='a+bt + ct^2 + dt^3 + (E+Ft+Qt^2)cosnt+(G+Ht+F^2)sinnt')
+    plt.xlabel('GPS Time', fontsize=24)
+    plt.ylabel('m/s', fontsize=24)
+    plt.legend(fontsize=20, loc=3)
+    plt.grid(True, which='both', linestyle='-.')
+    plt.show()
+
+
+def rms(x: np.ndarray):
+    """
+    :param x: 1-dim
+    :return:
+    """
+    return np.linalg.norm(x) / np.sqrt(np.shape(x)[0])
+
+
 if __name__ == '__main__':
     drawTime()
     # drawPotentialError()
     # drawEWH()
     # drawMat()
+    # drawKBRR()

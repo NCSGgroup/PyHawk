@@ -3,7 +3,6 @@ import src.Preference.EnumType as EnumType
 from src.Interface.ArcOperation import ArcData
 import h5py
 import pathlib
-import src.Preference.backups.Pre_AdjustOrbit as Pre_AdjustOrbit
 import pygmt
 from src.Frame.Frame import Frame
 from src.Frame.EOP import EOP

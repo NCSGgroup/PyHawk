@@ -18,6 +18,7 @@ class GravimetryODE:
         self.__isSingle = True
         self.ParameterConfig = None
         self.ODEConfig = None
+        self._ArcLen = None
         self.TransitionMatrixConfig = None
         self.AccelerometerConfig = None
         self.StokesCoefficientsConfig = None
@@ -71,6 +72,7 @@ class GravimetryODE:
         return self
 
     def set2ndDerivative(self, secDer: Assemble2ndDerivative):
+        self._ArcLen = secDer.getArcLen()
         self.__secDer = secDer.secDerivative
         return self
 
@@ -92,6 +94,7 @@ class GravimetryODE:
 
     def propagate(self):
         config = ConfigComplexODE().configure(ODEConfig=self.ODEConfig).setOdePar()
-        propagator = ComplexODE(config).setSecondDerivative(self.__secDer).setInitial(self.__t0, self.__r0, self.__v0)
+        propagator = ComplexODE(config).setSecondDerivative(self.__secDer, ArcLen=self._ArcLen - 4).\
+            setInitial(self.__t0, self.__r0, self.__v0)
         return propagator.propagate()
 

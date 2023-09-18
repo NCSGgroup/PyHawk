@@ -5,6 +5,7 @@ import h5py
 import pathlib
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 
 
 def demo1():
@@ -54,21 +55,30 @@ def draw1():
 def drawRMS():
     # R = np.load("RangeRateRMS.npz")
     # RMS = R['RMS']
-    date_begin = '2008-01-01'
-    date_end = '2008-01-31'
-    res_dir = pathlib.Path(Pre_AdjustOrbit.PathOfFiles.RangeRateTemp).joinpath(date_begin + '_' + date_end)
-    RMS = []
-    for i in range(0, 243):
-        res_filename = res_dir.joinpath('RangeRate_' + str(i) + '.hdf5')
-        h5 = h5py.File(res_filename, 'r')
-        postfit = h5['post_residual'][()]
-        RMS.append(rms(postfit))
+    RMS01 = list(np.load('2008-01.npy'))
+    RMS02 = np.load('2008-02.npy')
+    # date_begin = '2008-02-01'
+    # date_end = '2008-02-28'
+    # res_dir = pathlib.Path('../temp/RangeRate').joinpath(date_begin + '_' + date_end)
+    # RMS = []
+    # for i in range(0, 220):
+    #     res_filename = res_dir.joinpath('RangeRate_' + str(i) + '.hdf5')
+    #     if os.path.exists(res_filename):
+    #         h5 = h5py.File(res_filename, 'r')
+    #         print(h5.keys())
+    #         if len(h5.keys()) != 0:
+    #             postfit = h5['post_residual'][()]
+    #             RMS.append(rms(postfit))
 
-    # plt.style.use(['grid'])
-    plt.title('RangeRateRMS(2008-1-1~2008-1-31)', fontsize=24)
-    plt.plot(np.arange(len(RMS)), RMS, label="PostResidualsRMS")
-    plt.xlabel('arcNo', fontsize=20)
-    plt.ylabel(r'$m$', fontsize=20)
+    RMS = []
+    # RMS01.extend(RMS02)
+    plt.style.use(['grid'])
+    # np.save('2008-02.npy', RMS)
+    plt.title('RangeRateRMS(2008-1-1~2008-2-28)', fontsize=24)
+
+    plt.plot(np.arange(len(RMS01)), RMS01, marker='o',label="RMS")
+    plt.xlabel('Arc number', fontsize=20)
+    plt.ylabel(r'Residual($m/s$)', fontsize=20)
     plt.yticks(fontsize=18)
     plt.legend(loc='upper left', fontsize=20)
     # plt.savefig('../result/img/{}-{}.png'.format(length[0], length[-1]), dpi=300)
@@ -88,5 +98,5 @@ def rms(x: np.ndarray):
 
 if __name__ == '__main__':
     # demo2()
-    # drawRMS()
-    draw1()
+    drawRMS()
+    # draw1()

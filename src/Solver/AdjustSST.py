@@ -10,6 +10,9 @@ import numpy as np
 import scipy.linalg
 from src.Preference.Pre_AdjustOrbit import AdjustOrbitConfig
 from src.Preference.Pre_Interface import InterfaceConfig
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif']=['Microsoft YaHei']         #指定默认字体（因为matplotlib默认为英文字体，汉字会使其乱码）
+plt.rcParams['axes.unicode_minus']=False    #可显示‘-’负号
 
 import os
 
@@ -170,7 +173,8 @@ class FitSST:
             EnumType.SSTFitOption.biasC0C1_OneCPR.name: self.__func5,
             EnumType.SSTFitOption.biasC0C1C2_OneCPR.name: self.__func6,
             EnumType.SSTFitOption.twice_biasC0C1_OneCPR.name: self.__func7,
-            EnumType.SSTFitOption.twice_biasC0C1C2_OneCPR.name: self.__func8
+            EnumType.SSTFitOption.twice_biasC0C1C2_OneCPR.name: self.__func8,
+            EnumType.SSTFitOption.test.name: self.__functest
         }
 
         self.__DesignMatrix = method[option](t, n)
@@ -295,6 +299,33 @@ class FitSST:
         term7 = t * np.sin(nt)
 
         DesignMatrix = np.array([term1, term2, term3, term4, term5, term6, term7]).transpose()
+
+        return DesignMatrix
+
+    def __functest(self, t: np.ndarray, n: np.ndarray):
+        """
+        a+bt + ct^2 + dt^3 + (E+Ft+Qt^2)cosnt+(G+Ht+F^2)sinnt
+        :param t: one-dimension
+        :param n: one-dimension
+        :return:
+        """
+        t = t - t[0]
+        nt = n * t
+        leng = np.shape(t)[0]
+
+        term1 = np.ones(leng, dtype=np.float64)
+        term2 = t
+        term3 = t ** 2
+        term4 = t * t * t
+
+        term5 = np.cos(nt)
+        term6 = t * np.cos(nt)
+        term7 = t * t * np.cos(nt)
+        term8 = np.sin(nt)
+        term9 = t * np.sin(nt)
+        term10 = t * t * np.sin(nt)
+
+        DesignMatrix = np.array([term1, term2, term3, term4, term5, term6, term7, term8, term9, term10]).transpose()
 
         return DesignMatrix
 

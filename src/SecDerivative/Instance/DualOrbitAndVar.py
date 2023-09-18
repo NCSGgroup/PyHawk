@@ -16,6 +16,7 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
         super(Orbit_var_2nd_diff, self).__init__()
         self.__fr = fr
         self.__rd = rd
+        self.__ArcLen = None
         self.__initTime = None
         self.__initPos = None
         self.__initVel = None
@@ -29,6 +30,7 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
     def setInitData(self, kind: Payload):
         GNVA = self.__rd.getData(arc=self._arc, kind=kind, sat=SatID.A)
         GNVB = self.__rd.getData(arc=self._arc, kind=kind, sat=SatID.B)
+        self.__ArcLen = len(GNVB)
         startPosA, startPosB = GNVA[4, 1:4], GNVB[4, 1:4]
         startVelA, startVelB = GNVA[4, 4:7], GNVB[4, 4:7]
         self.__initTime = GNVA[4, 0]
@@ -111,3 +113,5 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
 
         return np.vstack((diff2ndA, diff2ndB))
 
+    def getArcLen(self):
+        return self.__ArcLen
