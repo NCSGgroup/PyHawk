@@ -15,7 +15,7 @@ def demo():
     pos_GCRS = np.array([100000., 200000., 300000.])
     vel_GCRS = np.array([100., 200., 300.])
 
-    pos_ITRS = fr.PosGCRS2ITRS(pos_GCRS, tf.getRotationMatrix)
+    pos_ITRS = fr.PosGCRS2ITRS(pos_GCRS, tf.getRoationMatrix)
     # pos_GCRS = fr.PosITRS2GCRS(pos_ITRS, tf.getRotationMatrix)
 
     vel_ITRS = fr.VelGCRS2ITRS(pos_GCRS, vel_GCRS, tf.getRotationMatrix)

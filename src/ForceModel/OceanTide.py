@@ -293,4 +293,3 @@ class FES2014(AbsOceanTide):
         self._c, self._s = Cnm.sum(0), Snm.sum(0)
 
         return self._c.copy(), self._s.copy()
-

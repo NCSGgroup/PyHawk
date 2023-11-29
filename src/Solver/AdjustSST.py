@@ -118,10 +118,10 @@ class RangeRate:
                 index = Outlier(rms_times=self.__rms_times, upper_RMS=self.__upper_RMS).remove(t, residual)
 
                 if any(index) == False:
-                    t = t[index]
-                    dm = dm[index, :]
-                    obs = residual[index]
                     break
+                t = t[index]
+                dm = dm[index, :]
+                obs = residual[index]
 
             post_t = np.append(post_t, t)
             post_residual = np.append(post_residual, obs)

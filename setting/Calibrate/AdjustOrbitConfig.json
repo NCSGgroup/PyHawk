@@ -2,7 +2,7 @@
     "RangeRateConfig": {
         "ParameterFitting": "biasC0C1C2_OneCPR",
         "OutlierTimes": 3,
-        "OutlierLimit": 1.5e-07,
+        "OutlierLimit": 4e-07,
         "ArcLength": 1.5,
         "Iterations": 2
     },
