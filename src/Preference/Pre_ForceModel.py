@@ -18,7 +18,7 @@ class ForceModelConfig:
 
         self.instance_GravHar = {EnumType.GravHarType.NonTide.name: EnumType.InstanceNonTide.AODRL06.name,
                                  EnumType.GravHarType.PoleTide.name: EnumType.InstancePoleTide.PoleTideIERS2010.name,
-                                 EnumType.GravHarType.OceanTide.name: EnumType.InstanceOceanTide.FES2014.name,
+                                 EnumType.GravHarType.OceanTide.name: EnumType.InstanceOceanTide.EOT11a.name,
                                  EnumType.GravHarType.AtmosphereTide.name: EnumType.InstanceAtmosTide.AtmosAOD.name,
                                  EnumType.GravHarType.SolidEarthTide.name: EnumType.InstanceSolidTide.SolidTideIERS2010.name,
                                  EnumType.GravHarType.ReferenceModel.name: EnumType.InstanceReferenceModel.RefGravModel.name}
@@ -78,18 +78,18 @@ class ForceModelConfig:
         def __init__(self):
             self.SR = 1E-3
             self.AODtide = {
-                EnumType.TidesType.P1.name: False,
-                EnumType.TidesType.S1.name: False,
-                EnumType.TidesType.K1.name: False,
-                EnumType.TidesType.N2.name: False,
-                EnumType.TidesType.M2.name: False,
-                EnumType.TidesType.L2.name: False,
-                EnumType.TidesType.T2.name: False,
+                EnumType.TidesType.P1.name: True,
+                EnumType.TidesType.S1.name: True,
+                EnumType.TidesType.K1.name: True,
+                EnumType.TidesType.N2.name: True,
+                EnumType.TidesType.M2.name: True,
+                EnumType.TidesType.L2.name: True,
+                EnumType.TidesType.T2.name: True,
                 EnumType.TidesType.S2.name: True,
-                EnumType.TidesType.R2.name: False,
-                EnumType.TidesType.T3.name: False,
-                EnumType.TidesType.S3.name: False,
-                EnumType.TidesType.R3.name: False,
+                EnumType.TidesType.R2.name: True,
+                EnumType.TidesType.T3.name: True,
+                EnumType.TidesType.S3.name: True,
+                EnumType.TidesType.R3.name: True,
             }
             self.kind = EnumType.AODtype.ATM.name
             self.Nmax = 180
@@ -99,7 +99,7 @@ class ForceModelConfig:
     class OceanTide:
         def __init__(self):
             self.gainFactor = 1e-3
-            self.maxDegree = 180
+            self.maxDegree = 120
 
     class ThreeBody:
         def __init__(self):
@@ -148,7 +148,7 @@ class ForceModelConfig:
     class RefGravModel:
         def __init__(self):
             self.kind = 0
-            self.Nmax = 360
+            self.Nmax = 180
             self.StaticModel = EnumType.StaticGravModel.Gif48.name
 
     class Relativity:

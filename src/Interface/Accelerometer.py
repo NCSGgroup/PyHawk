@@ -80,10 +80,10 @@ class Accelerometer:
         commonTime = commonTime & set(self.__sca[:, 0].astype(np.int64))
         commonTime = np.array(list(commonTime))
         commonTime.sort()
-        index = list(np.where(self.__acc[:, 0] == commonTime))
-        self.__acc = self.__acc[index, :][0]
-        self.__sca = self.__sca[index, :][0]
-
+        index1 = [list(self.__acc[:, 0]).index(x) for x in commonTime]
+        index2 = [list(self.__sca[:, 0]).index(x) for x in commonTime]
+        self.__acc = self.__acc[index1, :]
+        self.__sca = self.__sca[index2, :]
         assert np.max(np.abs(self.__acc[:, 0] - self.__sca[:, 0])) < Pre_Constants.num_tolerance
         self.__dataTemp = kwargs.get('dataTemp', ap.accConfig.temp_non_conservative_data)
         '''Above defines a fully populated scale matrix (span to 1-d)'''

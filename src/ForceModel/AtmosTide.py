@@ -52,6 +52,7 @@ class AtmosBB2003(AbsAtmosTide):
 
     def configure(self, FMConfig:ForceModelConfig):
         '''config Atmos'''
+        self._FMConfig = FMConfig
         self._AtmosTideConfig = self._FMConfig.AtmosTide()
         self._AtmosTideConfig.__dict__.update(self._FMConfig.AtmosTideConfig.copy())
         BB2003tide = self._AtmosTideConfig.BB2003tide

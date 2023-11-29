@@ -59,11 +59,12 @@ class RangeRate:
 
         kbr_time = KBR[:, 0]
         self.__kbr_r = KBR[:, 2]
+
         state_time = list(h5AB['t'][:])
 
         '''find the common time of orbit and kbr data'''
         new_index = [state_time.index(x) for x in kbr_time]
-        self.__Time = h5AB['t'][:][new_index]
+        self.Time = h5AB['t'][:][new_index]
         self.__PosA = h5AB['r'][:][new_index, 0:3, 0]
         self.__PosB = h5AB['r'][:][new_index, 3:6, 0]
         self.__VelA = h5AB['v'][:][new_index, 0:3, 0]
@@ -82,17 +83,18 @@ class RangeRate:
         n = self.mean_motion_of_the_mid_point()
 
         '''divide arcs to Calibrate kbr individually'''
-        node = [self.__Time[0]]
-        t1 = self.__Time[0]
+        node = [self.Time[0]]
+        t1 = self.Time[0]
         while True:
             t2 = t1 + self.__kbr_arc
-            if np.fabs(t2 - self.__Time[-1]) <= 0.5 * 3600:
+            if np.fabs(t2 - self.Time[-1]) <= 0.5 * 3600:
                 '''difference less than 0.5 hour, end'''
                 node.append(t2)
                 break
-            elif len(self.__Time[self.__Time >= t2]) <= 100:
+            elif len(self.Time[self.Time >= t2]) <= 100:
                 '''the rest points are too short, e.g., less than 100: include the rest into the last arc'''
-                node[-1] = self.__Time[-1] + 10  # +10, a little bigger than the last point to ensure all is included
+                node[-1] = self.Time[-1] + 10  # +10, a little bigger than the last point to ensure all is included
+                break
             else:
                 node.append(t2)
                 t1 = t2
@@ -100,8 +102,8 @@ class RangeRate:
         '''attribute data into each kbr arc'''
         arclist_t, arclist_n, arclist_obs = [], [], []
         for i in range(len(node) - 1):
-            index = (self.__Time < node[i + 1]) * (self.__Time >= node[i])
-            arclist_t.append(self.__Time[index])
+            index = (self.Time < node[i + 1]) * (self.Time >= node[i])
+            arclist_t.append(self.Time[index])
             arclist_n.append(n[index])
             arclist_obs.append(obs[index])
 
@@ -116,12 +118,11 @@ class RangeRate:
             for iter in range(self.__iterations):
                 residual = kf.get_residual(dm.copy(), obs)
                 index = Outlier(rms_times=self.__rms_times, upper_RMS=self.__upper_RMS).remove(t, residual)
-
-                if any(index) == False:
-                    break
                 t = t[index]
                 dm = dm[index, :]
                 obs = residual[index]
+                # if any(index) == False:
+                #     break
 
             post_t = np.append(post_t, t)
             post_residual = np.append(post_residual, obs)
@@ -133,7 +134,7 @@ class RangeRate:
         h5 = self.__resh5
         h5.create_dataset('post_t', data=post_t)
         h5.create_dataset('post_residual', data=post_residual)
-        h5.create_dataset('pre_t', data=self.__Time)
+        h5.create_dataset('pre_t', data=self.Time)
         h5.create_dataset('pre_residual', data=self.pre_residual())
         h5.create_dataset('design_matrix', data=design_matrix)
         pass
@@ -176,7 +177,8 @@ class FitSST:
             EnumType.SSTFitOption.biasC0C1C2_OneCPR.name: self.__func6,
             EnumType.SSTFitOption.twice_biasC0C1_OneCPR.name: self.__func7,
             EnumType.SSTFitOption.twice_biasC0C1C2_OneCPR.name: self.__func8,
-            EnumType.SSTFitOption.test.name: self.__functest
+            EnumType.SSTFitOption.test.name: self.__functest,
+            EnumType.SSTFitOption.biasC0C1C2C3_OneCPR.name: self.__func10,
         }
 
         self.__DesignMatrix = method[option](t, n)
@@ -306,7 +308,7 @@ class FitSST:
 
     def __functest(self, t: np.ndarray, n: np.ndarray):
         """
-        a+bt + ct^2 + dt^3 + (E+Ft+Qt^2)cosnt+(G+Ht+F^2)sinnt
+        a+bt + ct^2 + (E+Ft+Qt^2)cosnt+(G+Ht+F^2)sinnt
         :param t: one-dimension
         :param n: one-dimension
         :return:
@@ -396,6 +398,33 @@ class FitSST:
         term8 = t * np.cos(nt)
         term9 = np.sin(nt)
         term10 = t * np.sin(nt)
+
+        DesignMatrix = np.array([term1, term2, term3, term4, term5, term6, term7, term8, term9, term10]).transpose()
+
+        return DesignMatrix
+
+    def __func10(self, t: np.ndarray, n: np.ndarray):
+        """
+        a+bt + ct^2 + (E+Ft+Qt^2)cosnt+(G+Ht+F^2)sinnt
+        :param t: one-dimension
+        :param n: one-dimension
+        :return:
+        """
+        t = t - t[0]
+        nt = n * t
+        leng = np.shape(t)[0]
+
+        term1 = np.ones(leng, dtype=np.float64)
+        term2 = t
+        term3 = t ** 2
+        term4 = t * t * t
+
+        term5 = np.cos(nt)
+        term6 = t * np.cos(nt)
+        term7 = t * t * np.cos(nt)
+        term8 = np.sin(nt)
+        term9 = t * np.sin(nt)
+        term10 = t * t * np.sin(nt)
 
         DesignMatrix = np.array([term1, term2, term3, term4, term5, term6, term7, term8, term9, term10]).transpose()
 

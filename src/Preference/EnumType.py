@@ -202,6 +202,7 @@ class SSTFitOption(Enum):
     twice_biasC0C1_OneCPR = 7
     twice_biasC0C1C2_OneCPR = 8
     test = 9
+    biasC0C1C2C3_OneCPR = 10
 
 
 class SSTObserve(Enum):
