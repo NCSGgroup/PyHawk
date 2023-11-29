@@ -141,7 +141,7 @@ class ArcSelect:
 
         commonTime = np.array(list(commonTime))
         commonTime.sort()
-
+        commonTime = commonTime[commonTime % stepsize == 0]
         '''hour to sec, then to the index'''
         al = int(self.__arc_length * 3600 / stepsize)
         amin = int(self.__min_arcLen * 3600 / stepsize)
@@ -151,6 +151,7 @@ class ArcSelect:
         '''create a virtual time arr that has no discontinuity but marks the commonTime '''
         VirtualTime = np.arange(begin, end + 1, stepsize)
         indexOfCommon = np.zeros(len(VirtualTime), dtype=bool)
+
         indexOfCommon[((commonTime - commonTime[0]) / stepsize).astype(np.int64)] = True
 
         '''Gaps will first divide the data into several arcs'''

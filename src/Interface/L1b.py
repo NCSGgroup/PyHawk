@@ -123,7 +123,6 @@ class L1b:
 
         if readKBR:
             self._KBR = KBR
-
         pass
 
     def read_double_sat(self):
@@ -582,7 +581,7 @@ class GRACE_RL03(L1b):
         st = date.split('-')
         IY, IM, ID = int(st[0]), int(st[1]), int(st[2])
         date_range = (round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 0, 0, 0))),
-                      round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 23, 59, 60 - self.sr_payload[Payload.GNV.name]))))
+                      round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 23, 59, 60 - self.sr_payload[Payload.ACC.name]))))
         try:
             f = open(path, 'rb')
         except FileNotFoundError as e:
@@ -620,12 +619,12 @@ class GRACE_RL03(L1b):
         return ACC
 
     def _readSCA(self, date: str, sat: SatID):
-        path = str(self.dir.joinpath(self._path_SCA, date.split('-')[0] + '-' + date.split('-')[1],
+        path = str(self.dir.joinpath(self._path_SCA, 'grace_1B_' + date.split('-')[0] + '-' + date.split('-')[1] + '_03',
                               'SCA1B_' + date + '_' + sat.name + '_03.dat'))
         st = date.split('-')
         IY, IM, ID = int(st[0]), int(st[1]), int(st[2])
         date_range = (round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 0, 0, 0))),
-                      round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 23, 59, 60 - self.sr_payload[Payload.GNV.name]))))
+                      round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 23, 59, 60 - self.sr_payload[Payload.SCA.name]))))
         try:
             f = open(path, 'rb')
         except FileNotFoundError as e:
@@ -672,7 +671,7 @@ class GRACE_RL03(L1b):
         return SCA
 
     def _readKBR(self, date: str):
-        path = str(self.dir.joinpath(self._path_KBR, date.split('-')[0] + '-' + date.split('-')[1],
+        path = str(self.dir.joinpath(self._path_KBR, 'grace_1B_' + date.split('-')[0] + '-' + date.split('-')[1] + '_03',
                               'KBR1B_' + date + '_X_03.dat'))
 
         try:

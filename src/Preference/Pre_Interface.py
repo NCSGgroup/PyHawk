@@ -42,17 +42,17 @@ class InterfaceConfig:
     class PathOfFiles:
         def __init__(self, interface):
             # ======================= For the data interface===============================
-            self.payload_ACC = "D:\\py-hawk-v2\\data\\" + interface.mission
-            self.payload_SCA = "D:\\py-hawk-v2\\data\\" + interface.mission
-            self.payload_KBR = "D:\\py-hawk-v2\\data\\" + interface.mission
-            self.payload_GNV = "D:\\py-hawk-v2\\data\\" + interface.mission
-            self.payload_Kinematic = "D:\\py-hawk-v2\\data\\KinematicOrbit"
-            self.payload_LRI = "D:\\py-hawk-v2\\data\\" + interface.mission
+            self.payload_ACC = "../data/" + interface.mission
+            self.payload_SCA = "../data/" + interface.mission
+            self.payload_KBR = "../data/" + interface.mission
+            self.payload_GNV = "../data/" + interface.mission
+            self.payload_Kinematic = "../data/KinematicOrbit"
+            self.payload_LRI = "../data/" + interface.mission
 
             # ======================== For the data preprocess===============================
-            self.report_gap = "D:\\py-hawk-v2\\report\\gap"
-            self.report_arc = "D:\\py-hawk-v2\\report\\arc"
-            self.temp_raw_data = "D:\\py-hawk-v2\\temp\\RawData"
+            self.report_gap = "../report/gap"
+            self.report_arc = "../report/arc"
+            self.temp_raw_data = "../temp/RawData"
 
 
 def class_to_json():

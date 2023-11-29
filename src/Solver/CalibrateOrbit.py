@@ -106,57 +106,67 @@ class CalibrateOrbit:
         return self
 
     def run(self):
-        # """step 1: Read raw data"""
-        # eop = EOP().configure(frameConfig=self.__frame_config).load()
-        # fr = Frame(eop).configure(frameConfig=self.__frame_config)
-        # s = GRACE_OLD_RL02().configure(InterfaceConfig=self.__interface_config).setDate()
-        # s.read_double_sat()
-        # """step 2: Convert orbit from ITRS frame into GCRS frame"""
-        # kine = KinematicOrbitV2(L1b=s).configure()
-        # # kine.read_double_sat()
-        # kine.GNVandKiOrbitItrs2Gcrs(fr)
-        # """step 3: Gap fix"""
-        # gf = GapFix(L1b=s).configure()
-        # gf.fix_all().makeReport()
-        # arc = ArcSelect(gf=gf).configure()
-        # arc.unpackArcs().makeReport()
+        """step 1: Read raw data"""
+        eop = EOP().configure(frameConfig=self.__frame_config).load()
+        fr = Frame(eop).configure(frameConfig=self.__frame_config)
+        s = GRACE_RL03().configure(InterfaceConfig=self.__interface_config).setDate()
+        s.read_double_sat()
+        """step 2: Convert orbit from ITRS frame into GCRS frame"""
+        kine = KinematicOrbitV2(L1b=s).configure()
+        kine.read_double_sat()
+        kine.GNVandKiOrbitItrs2Gcrs(fr)
+        """step 3: Gap fix"""
+        gf = GapFix(L1b=s).configure()
+        gf.fix_all().makeReport()
+        arc = ArcSelect(gf=gf).configure()
+        arc.unpackArcs().makeReport()
 
         self._parallel()
-        # self.__calculate_cs()
+        self.__calculate_cs()
+        self.getSpaceKBRR()
         pass
- 
+
     def _parallel(self):
         interface_config = self.__interface_config
+        self.InterfacePathConfig = InterfaceConfig.PathOfFiles(interface_config)
+        self.InterfacePathConfig.__dict__.update(interface_config.PathOfFilesConfig.copy())
+
         self.__date_span = interface_config.date_span
         self.__sat = interface_config.sat
-        date_list = GeoMathKit.getEveryDay(*self.__date_span)
-        days = datetime.strptime(date_list[-1], '%Y-%m-%d') - datetime.strptime(date_list[0], '%Y-%m-%d')
-        self.__arcLen = days.days * (24 / interface_config.arc_length)
-        # self.__arcLen = 218
+        arc_path = pathlib.Path().joinpath(self.InterfacePathConfig.report_arc, self.__date_span[0]+'_'+self.__date_span[1]+'.txt')
+        self.__arcLen = None
+        with open(arc_path, "r", encoding='utf-8') as f:
+            while True:
+                data = f.readline().split(' ')
+                if data[0] == 'Number':
+                    self.__arcLen = int(data[3])
+                    break
+
         step = int(self.__arcLen / 6)
-        p1 = multiprocessing.Process(target=self._unit, args=(0, 1))
-        # p2 = multiprocessing.Process(target=self._unit, args=(step, step*2))
-        # p3 = multiprocessing.Process(target=self._unit, args=(step*2, step*3))
-        # p4 = multiprocessing.Process(target=self._unit, args=(step*3, step*4))
-        # p5 = multiprocessing.Process(target=self._unit, args=(step*4, step*5))
-        # p6 = multiprocessing.Process(target=self._unit, args=(step*5, step*6))
+        p1 = multiprocessing.Process(target=self._unit, args=(0, step))
+        p2 = multiprocessing.Process(target=self._unit, args=(step, step*2))
+        p3 = multiprocessing.Process(target=self._unit, args=(step*2, step*3))
+        p4 = multiprocessing.Process(target=self._unit, args=(step*3, step*4))
+        p5 = multiprocessing.Process(target=self._unit, args=(step*4, step*5))
+        p6 = multiprocessing.Process(target=self._unit, args=(step*5, self.__arcLen))
         p1.start()
-        # p2.start()
-        # p3.start()
-        # p4.start()
-        # p5.start()
-        # p6.start()
+        p2.start()
+        p3.start()
+        p4.start()
+        p5.start()
+        p6.start()
         p1.join()
-        # p2.join()
-        # p3.join()
-        # p4.join()
-        # p5.join()
-        # p6.join()
+        p2.join()
+        p3.join()
+        p4.join()
+        p5.join()
+        p6.join()
         pass
 
     def _unit(self, start, end):
         for i in range(start, end):
             """step 5: init AdjustOrbit"""
+            print(i)
             AdjustOrbit(accConfig=[self.__acc_config_A, self.__acc_config_B], date_span=self.__date_span, sat=self.__sat).\
                 configure(SerDer=Orbit_var_2nd_diff, arcNo=i, ODEConfig=self.__ode_config,
                           FMConfig=self.__force_model_config, AdjustOrbitConfig=self.__adjust_config,
@@ -202,20 +212,16 @@ class CalibrateOrbit:
         parameter_number = stokes_coefficients_config.Parameter_Number
         NMatrix = np.zeros((parameter_number, parameter_number))
         LMatrix = np.zeros((parameter_number, 1))
-
         date_span = interface_config.date_span
-        date_list = GeoMathKit.getEveryDay(*date_span)
-        days = datetime.strptime(date_list[-1], '%Y-%m-%d') - datetime.strptime(date_list[0], '%Y-%m-%d')
-        self.__arcLen = days.days * (24 / interface_config.arc_length)
-        for i in tqdm(range(0, int(self.__arcLen)), desc='Solve normal equations: '):
-            print(i)
-            if i != 220 and i != 221:
-                res_filename = res_dir + '/' + str(i) + '.hdf5'
-                print(res_filename)
-                h5 = h5py.File(res_filename, 'r')
-                NMatrix = NMatrix + h5['Orbit_N_A'][:] + h5['Orbit_N_B'][:] + h5['RangeRate_N'][:] * 2.5E11
-                LMatrix = LMatrix + h5['Orbit_l_A'][:] + h5['Orbit_l_B'][:] + h5['RangeRate_l'][:].reshape(
-                    (parameter_number, 1)) * 2.5E11
+
+        for i in tqdm(range(0, self.__arcLen), desc='Solve normal equations: '):
+            res_filename = res_dir + '/' + str(i) + '.hdf5'
+            print(res_filename)
+            h5 = h5py.File(res_filename, 'r')
+            NMatrix = NMatrix + (h5['Orbit_N_A'][:] + h5['Orbit_N_B'][:]) + h5['RangeRate_N'][:] * 5E11
+            LMatrix = LMatrix + (h5['Orbit_l_A'][:] + h5['Orbit_l_B'][:]) + h5['RangeRate_l'][:].reshape(
+                (parameter_number, 1)) * 5E11
+            h5.close()
 
         cs = np.linalg.lstsq(NMatrix, LMatrix[:, 0], rcond=None)[0]
 
@@ -227,19 +233,77 @@ class CalibrateOrbit:
         static_c, static_s = LoadGif48().load(force_model_path_config.Gif48).getCS(stokes_coefficients_config.MaxDegree)
 
         C, S = c + static_c, s + static_s
+
         sigmaC , sigmaS = np.zeros(len(C)), np.zeros(len(S))
+
         format = FormatWrite().configure(filedir=neq_path_config.ResultCS,
-                                         data=date_span, degree=60, c=C, s=S, sigmaC=sigmaC, sigmaS=sigmaS)
+                                         data=date_span, degree=stokes_coefficients_config.MaxDegree,
+                                         c=C, s=S, sigmaC=sigmaC, sigmaS=sigmaS)
+        print(len(C))
         format.unfiltered()
 
-        # C, S = GeoMathKit.CS_1dTo2d(C), GeoMathKit.CS_1dTo2d(S)
-        #
-        # h5 = h5py.File(result_name, 'w')
-        # h5.create_dataset('c', data=C)
-        # h5.create_dataset('s', data=S)
-        # h5.close()
         pass
 
     def drawSH(self):
 
         pass
+
+    def getSpaceKBRR(self):
+
+        frame_config = FrameConfig()
+        frame = json.load(open(('../setting/Calibrate/FrameConfig.json'), 'r'))
+        frame_config.__dict__ = frame
+        eop = EOP().configure(frameConfig=frame_config).load()
+        fr = Frame(eop).configure(frameConfig=frame_config)
+        interface_config = InterfaceConfig()
+        interfaceDict = json.load(open('../setting/Calibrate/InterfaceConfig.json', 'r'))
+        interface_config.__dict__ = interfaceDict
+        rd = ArcData(interfaceConfig=interface_config)
+        Lon = []
+        Lat = []
+        Postfit = []
+        RMS = []
+
+        date_span = interface_config.date_span
+        sat = interface_config.sat
+        date_list = GeoMathKit.getEveryDay(*date_span)
+        days = datetime.strptime(date_list[-1], '%Y-%m-%d') - datetime.strptime(date_list[0], '%Y-%m-%d')
+        arcLen = days.days * (24 / interface_config.arc_length)
+
+        for i in range(0, int(arcLen)):
+            if i != 110:
+                GNV = rd.getData(arc=i, kind=EnumType.Payload.GNV, sat=EnumType.SatID.A)
+                GNVTime = GNV[:, 0]
+                GNVR = GNV[:, 1:4]
+                res_dir = pathlib.Path('../temp/RangeRate').joinpath(date_span[0] + '_' + date_span[1])
+                res_filename = res_dir.joinpath('RangeRate_' + str(i) + '.hdf5')
+                h5 = h5py.File(res_filename, 'r')
+                t2 = h5['post_t'][()]
+                Postfit.extend(h5['post_residual'][()])
+                postfit = h5['post_residual'][()]
+
+                RMS.append(self.rms(postfit))
+
+                new_index = [list(GNVTime).index(x) for x in t2]
+                new_Time = GNVTime[new_index]
+                new_GNVR = GNVR[new_index]
+                for i in range(len(new_Time)):
+                    time = new_Time[i]
+                    pos = new_GNVR[i]
+                    fr = fr.setTime(float(time))
+                    itrs = fr.PosGCRS2ITRS(np.array(pos).astype(float), fr.getRotationMatrix)
+                    lon, lat, r = GeoMathKit.CalcPolarAngles(itrs)
+                    Lon.append(lon)
+                    Lat.append(lat)
+
+        np.savez('ResKBRR.npz', data=RMS)
+        np.savez('SpaceKBRR.npz', x=Lon, y=Lat, z=Postfit)
+
+    def rms(self, x: np.ndarray):
+        """
+        :param x: 1-dim
+        :return:
+        """
+        # 确认公式
+        return np.linalg.norm(x) / np.sqrt(np.shape(x)[0])
+

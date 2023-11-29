@@ -21,17 +21,32 @@ def drawTime():
     '''static model'''
     static_c, static_s = LoadGif48().load('../data/StaticGravityField/gif48.gfc').getCS(60)
     '''read hust'''
-    hust_filename = '../compare/1HUST_HUST-Release-06_60x60_unfiltered_GSM-2_2008-01-01-2008-01-31_GRAC_HUST_BA01_0600.gfc'
+    hust_filename = '../result/SH/2023.11.23-3h-onecpr.gfc'
     hust_c, hust_s = LoadCSR().load(fileIn=hust_filename).getCS(Nmax=60)
     hust_c, hust_s = hust_c - static_c, hust_s - static_s
     hust_c, hust_s = GeoMathKit.CS_1dTo2d(hust_c), GeoMathKit.CS_1dTo2d(hust_s)
+    '''read hust'''
+    hust_filename2 = '../result/SH/2023.11.23-3h-onecpr-5e12.gfc'
+    hust_c2, hust_s2 = LoadCSR().load(fileIn=hust_filename2).getCS(Nmax=60)
+    hust_c2, hust_s2 = hust_c2 - static_c, hust_s2 - static_s
+    hust_c2, hust_s2 = GeoMathKit.CS_1dTo2d(hust_c2), GeoMathKit.CS_1dTo2d(hust_s2)
+    '''read hust'''
+    hust_filename3 = '../result/SH/2023.11.23-1.5h-onecpr-5e11.gfc'
+    hust_c3, hust_s3 = LoadCSR().load(fileIn=hust_filename3).getCS(Nmax=60)
+    hust_c3, hust_s3 = hust_c3 - static_c, hust_s3 - static_s
+    hust_c3, hust_s3 = GeoMathKit.CS_1dTo2d(hust_c3), GeoMathKit.CS_1dTo2d(hust_s3)
+    '''read hust'''
+    hust_filename4 = '../result/SH/kin-3h-2e11.gfc'
+    hust_c4, hust_s4 = LoadCSR().load(fileIn=hust_filename4).getCS(Nmax=60)
+    hust_c4, hust_s4 = hust_c4 - static_c, hust_s4 - static_s
+    hust_c4, hust_s4 = GeoMathKit.CS_1dTo2d(hust_c4), GeoMathKit.CS_1dTo2d(hust_s4)
     '''read CSR 05'''
     csr_05_name = '../compare/CSR_CSR-Release-05_unfiltered_GSM-2_2008001-2008031_0031_UTCSR_0096_0005.gfc'
     csr_05_c, csr_05_s = LoadCSR().load(fileIn=csr_05_name).getCS(Nmax=60)
     csr_05_c, csr_05_s = csr_05_c - static_c, csr_05_s - static_s
     csr_05_c, csr_05_s = GeoMathKit.CS_1dTo2d(csr_05_c), GeoMathKit.CS_1dTo2d(csr_05_s)
     '''read CSR'''
-    csr_filename = '../compare/CSR_CSR-Release-06_60x60_unfiltered_GSM-2_2008001-2008031_GRAC_UTCSR_BA01_0600.gfc'
+    csr_filename = '../compare/CSR_CSR-Release-06_60x60_unfiltered_GSM-2_2009121-2009151_GRAC_UTCSR_BA01_0600.gfc'
     csr_c, csr_s = LoadCSR().load(fileIn=csr_filename).getCS(Nmax=60)
     csr_c, csr_s = csr_c - static_c, csr_s - static_s
     csr_c, csr_s = GeoMathKit.CS_1dTo2d(csr_c), GeoMathKit.CS_1dTo2d(csr_s)
@@ -40,7 +55,7 @@ def drawTime():
     # csr_e_l = get_drgee_rms(diff_c=csr_diff_c, diff_s=csr_diff_s)
     # csr_n_l = get_geoid_drgee_error(diff_c=csr_diff_c, diff_s=csr_diff_s)
     '''read GFZ'''
-    gfz_filename = '../compare/GFZ_GFZ-Release-06_60x60_unfiltered_GSM-2_2008001-2008031_GRAC_GFZOP_BA01_0600.gfc'
+    gfz_filename = '../compare/GFZ_GFZ-Release-06_60x60_unfiltered_GSM-2_2009121-2009151_GRAC_GFZOP_BA01_0600.gfc'
     gfz_c, gfz_s = LoadCSR().load(fileIn=gfz_filename).getCS(Nmax=60)
     gfz_c, gfz_s = gfz_c - static_c, gfz_s - static_s
     gfz_c, gfz_s = GeoMathKit.CS_1dTo2d(gfz_c), GeoMathKit.CS_1dTo2d(gfz_s)
@@ -54,7 +69,7 @@ def drawTime():
     # gfz_e_l = get_drgee_rms(diff_c=gfz_diff_c, diff_s=gfz_diff_s)
     # gfz_n_l = get_geoid_drgee_error(diff_c=gfz_diff_c, diff_s=gfz_diff_s)
     '''read JPL'''
-    jpl_filename = '../compare/JPL_JPL-Release-05_unfiltered_GSM-2_2008001-2008031_0031_JPLEM_0001_0005.gfc'
+    jpl_filename = '../compare/JPL_JPL-Release-06_60x60_unfiltered_GSM-2_2009121-2009151_GRAC_JPLEM_BA01_0600.gfc'
     jpl_c, jpl_s = LoadCSR().load(fileIn=jpl_filename).getCS(Nmax=60)
     jpl_c, jpl_s = jpl_c - static_c, jpl_s - static_s
     jpl_c, jpl_s = GeoMathKit.CS_1dTo2d(jpl_c), GeoMathKit.CS_1dTo2d(jpl_s)
@@ -77,6 +92,9 @@ def drawTime():
     '''hust'''
     # hust = get_geoid_drgee_error(diff_c=hust_c, diff_s=hust_s)
     hust = get_geoid_drgee_error(diff_c=hust_c, diff_s=hust_s)
+    hust2 = get_geoid_drgee_error(diff_c=hust_c2, diff_s=hust_s2)
+    hust3 = get_geoid_drgee_error(diff_c=hust_c3, diff_s=hust_s3)
+    hust4 = get_geoid_drgee_error(diff_c=hust_c4, diff_s=hust_s4)
     static = get_geoid_drgee_error(diff_c=hust_c, diff_s=hust_s)
     '''csr'''
     csr = get_geoid_drgee_error(diff_c=csr_c, diff_s=csr_s)
@@ -88,13 +106,16 @@ def drawTime():
     gfz_05 = get_geoid_drgee_error(diff_c=gfz_05_c, diff_s=gfz_05_s)
     '''jpl 05'''
     jpl_05 = get_geoid_drgee_error(diff_c=jpl_c, diff_s=jpl_s)
-    plt.title('Geoid Degree Error RMS(2008-1)', fontsize=24)
-    plt.plot(np.arange(2, 61, 1), hust[2:], color='peru', marker='^', label='HUST 05')
-    plt.plot(np.arange(2, 61, 1), csr[2:], color='olive', marker='.', label='CSR 06')
-    plt.plot(np.arange(2, 61, 1), gfz[2:], color='red', marker='s', label='GFZ 06')
-    plt.plot(np.arange(2, 61, 1), csr_05[2:], color='indigo', marker='h', label='CSR 05')
-    plt.plot(np.arange(2, 61, 1), gfz_05[2:], color='blue', marker='H', label='GFZ 05')
-    plt.plot(np.arange(2, 61, 1), jpl_05[2:], color='green', marker='p', label='JPL 05')
+    plt.title('Geoid Degree Error RMS(2009-05)', fontsize=24)
+    plt.plot(np.arange(2, 61, 1), hust[2:], color='green', marker='^', label='HUST 3h')
+    # plt.plot(np.arange(2, 61, 1), hust2[2:], color='black', marker='^', label='HUST 5e12')
+    # plt.plot(np.arange(2, 61, 1), hust3[2:], color='olive', marker='^', label='HUST 1.5h')
+    # plt.plot(np.arange(2, 61, 1), hust4[2:], color='olive', marker='^', label='HUST kin-3h-2e11')
+    plt.plot(np.arange(2, 61, 1), csr[2:], color='red', marker='.', label='CSR 06')
+    plt.plot(np.arange(2, 61, 1), gfz[2:], color='black', marker='s', label='GFZ 06')
+    # plt.plot(np.arange(2, 61, 1), csr_05[2:], color='indigo', marker='h', label='CSR 05')
+    # plt.plot(np.arange(2, 61, 1), gfz_05[2:], color='blue', marker='H', label='GFZ 05')
+    plt.plot(np.arange(2, 61, 1), jpl_05[2:], color='blue', marker='p', label='JPL 06')
     # plt.plot(np.arange(2, 61, 1), csr_e_l[2:], color='red', marker='s', label='CSR - HUST')
     # plt.plot(np.arange(2, 61, 1), gfz_e_l[2:], color='blue', marker='p', label='GFZ - HUST')
     # plt.plot(np.arange(2, 61, 1), jpl_e_l[2:], color='green', marker='P', label='JPL - HUST')

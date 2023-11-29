@@ -11,6 +11,7 @@ from src.Preference.Pre_AdjustOrbit import AdjustOrbitConfig
 from src.Preference.Pre_Interface import InterfaceConfig
 from src.Preference.Pre_Frame import FrameConfig
 import numpy as np
+import pathlib
 import h5py
 
 
@@ -60,10 +61,10 @@ class GravityDesignMat:
                            FMConfig=self._FMConfig, SolverConfig=self._solverConfig,
                            ODEConfig=self._ODEConfig, InterfaceConfig=self._InterfaceConfig,
                            FrameConfig=self._FrameConfig)
-        # '''define the directory of res output'''
-        # res_dir = self._res.joinpath(self._date_span[0] + '_' + self._date_span[1])
-        # if not res_dir.is_dir():
-        #     res_dir.mkdir(exist_ok=True)
+        '''define the directory of res output'''
+        res_dir = pathlib.Path(self._res).joinpath(self.__data_span[0] + '_' + self.__data_span[1])
+        if not res_dir.is_dir():
+            res_dir.mkdir(exist_ok=True)
         # kwargs = {'ChangeTempPath': res_dir}
         adjustDM.calibrate()
 
