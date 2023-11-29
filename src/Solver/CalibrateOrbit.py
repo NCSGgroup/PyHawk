@@ -106,20 +106,20 @@ class CalibrateOrbit:
         return self
 
     def run(self):
-        """step 1: Read raw data"""
-        eop = EOP().configure(frameConfig=self.__frame_config).load()
-        fr = Frame(eop).configure(frameConfig=self.__frame_config)
-        s = GRACE_RL03().configure(InterfaceConfig=self.__interface_config).setDate()
-        s.read_double_sat()
-        """step 2: Convert orbit from ITRS frame into GCRS frame"""
-        kine = KinematicOrbitV2(L1b=s).configure()
-        kine.read_double_sat()
-        kine.GNVandKiOrbitItrs2Gcrs(fr)
-        """step 3: Gap fix"""
-        gf = GapFix(L1b=s).configure()
-        gf.fix_all().makeReport()
-        arc = ArcSelect(gf=gf).configure()
-        arc.unpackArcs().makeReport()
+        # """step 1: Read raw data"""
+        # eop = EOP().configure(frameConfig=self.__frame_config).load()
+        # fr = Frame(eop).configure(frameConfig=self.__frame_config)
+        # s = GRACE_RL03().configure(InterfaceConfig=self.__interface_config).setDate()
+        # s.read_double_sat()
+        # """step 2: Convert orbit from ITRS frame into GCRS frame"""
+        # kine = KinematicOrbitV2(L1b=s).configure()
+        # kine.read_double_sat()
+        # kine.GNVandKiOrbitItrs2Gcrs(fr)
+        # """step 3: Gap fix"""
+        # gf = GapFix(L1b=s).configure()
+        # gf.fix_all().makeReport()
+        # arc = ArcSelect(gf=gf).configure()
+        # arc.unpackArcs().makeReport()
 
         self._parallel()
         self.__calculate_cs()
@@ -142,25 +142,21 @@ class CalibrateOrbit:
                     self.__arcLen = int(data[3])
                     break
 
-        step = int(self.__arcLen / 6)
-        p1 = multiprocessing.Process(target=self._unit, args=(0, step))
-        p2 = multiprocessing.Process(target=self._unit, args=(step, step*2))
-        p3 = multiprocessing.Process(target=self._unit, args=(step*2, step*3))
-        p4 = multiprocessing.Process(target=self._unit, args=(step*3, step*4))
-        p5 = multiprocessing.Process(target=self._unit, args=(step*4, step*5))
-        p6 = multiprocessing.Process(target=self._unit, args=(step*5, self.__arcLen))
-        p1.start()
-        p2.start()
-        p3.start()
-        p4.start()
-        p5.start()
-        p6.start()
-        p1.join()
-        p2.join()
-        p3.join()
-        p4.join()
-        p5.join()
-        p6.join()
+        node = 56
+        step = int(self.__arcLen / node)
+
+        p = []
+        for i in range(1, node + 1):
+            print(i)
+            if i == node:
+                p.append(multiprocessing.Process(target=self._unit, args=(step * (i - 1), self.__arcLen)))
+            else:
+                p.append(multiprocessing.Process(target=self._unit, args=(step * (i - 1), step * i)))
+
+        for process in p:
+            process.start()
+        for process in p:
+            process.join()
         pass
 
     def _unit(self, start, end):
