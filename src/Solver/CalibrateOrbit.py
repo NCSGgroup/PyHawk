@@ -123,7 +123,7 @@ class CalibrateOrbit:
 
         self._parallel()
         self.__calculate_cs()
-        self.getSpaceKBRR()
+        # self.getSpaceKBRR()
         pass
 
     def _parallel(self):
@@ -142,17 +142,25 @@ class CalibrateOrbit:
                     self.__arcLen = int(data[3])
                     break
 
-        node = 56
+        node = 30
         step = int(self.__arcLen / node)
+        remainder = self.__arcLen % node
 
         p = []
         for i in range(1, node + 1):
-            print(i)
-            if i == node:
-                p.append(multiprocessing.Process(target=self._unit, args=(step * (i - 1), self.__arcLen)))
-            else:
-                p.append(multiprocessing.Process(target=self._unit, args=(step * (i - 1), step * i)))
+            p.append(multiprocessing.Process(target=self._unit, args=(step * (i - 1), step * i)))
 
+        index = step * node
+        while remainder > 0:
+            if remainder <= step:
+                p.append(multiprocessing.Process(target=self._unit, args=(index, index + remainder)))
+                break
+            elif remainder > step:
+                p.append(multiprocessing.Process(target=self._unit, args=(index, index + step)))
+                index += step
+                remainder -= step
+        # p.append(multiprocessing.Process(target=self._unit, args=(3, 7)))
+        print(len(p))
         for process in p:
             process.start()
         for process in p:
@@ -160,20 +168,22 @@ class CalibrateOrbit:
         pass
 
     def _unit(self, start, end):
-        for i in range(start, end):
-            """step 5: init AdjustOrbit"""
-            print(i)
-            AdjustOrbit(accConfig=[self.__acc_config_A, self.__acc_config_B], date_span=self.__date_span, sat=self.__sat).\
-                configure(SerDer=Orbit_var_2nd_diff, arcNo=i, ODEConfig=self.__ode_config,
-                          FMConfig=self.__force_model_config, AdjustOrbitConfig=self.__adjust_config,
-                          ParameterConfig=self.__parameter_config, InterfaceConfig=self.__interface_config,
-                          FrameConfig=self.__frame_config).calibrate(iteration=2)
-        for j in range(start, end):
-            RR = RangeRate(arcNo=j, date_span=self.__date_span)
-            RR.configure(AdjustOrbitConfig=self.__adjust_config, InterfaceConfig=self.__interface_config)
-            RR.calibrate()
+        print(start, end)
+        # for i in range(start, end):
+        #     """step 5: init AdjustOrbit"""
+        #     AdjustOrbit(accConfig=[self.__acc_config_A, self.__acc_config_B], date_span=self.__date_span, sat=self.__sat).\
+        #         configure(SerDer=Orbit_var_2nd_diff, arcNo=i, ODEConfig=self.__ode_config,
+        #                   FMConfig=self.__force_model_config, AdjustOrbitConfig=self.__adjust_config,
+        #                   ParameterConfig=self.__parameter_config, InterfaceConfig=self.__interface_config,
+        #                   FrameConfig=self.__frame_config).calibrate(iteration=2)
+        # for j in range(start, end):
+        #     RR = RangeRate(arcNo=j, date_span=self.__date_span)
+        #     RR.configure(AdjustOrbitConfig=self.__adjust_config, InterfaceConfig=self.__interface_config)
+        #     RR.calibrate()
+
         for k in range(start, end):
             '''step 6: get DesignMatrix'''
+            print(k)
             dm = GravityDesignMat(arcNo=k, date_span=self.__date_span, sat=self.__sat).\
                 configure(accConfig=[self.__acc_config_A, self.__acc_config_B],
                           ODEConfig=self.__ode_config, AdjustOrbitConfig=self.__adjust_config,
@@ -188,6 +198,7 @@ class CalibrateOrbit:
             neq = GravityNEQperArc(arcNo=q, date_span=self.__date_span, sat=self.__sat)
             neq.configure(solverConfig=self.__solver_config, NEQConfig=self.__neq_config,
                           AdjustOrbitConfig=self.__adjust_config, InterfaceConfig=self.__interface_config).get_neq()
+
         pass
 
     def __calculate_cs(self):

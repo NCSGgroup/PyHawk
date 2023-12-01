@@ -147,6 +147,7 @@ class ComplexODE:
         resV += list(dataOut[2])
 
         for i in tqdm(range(int(self.__Npoints - self.__order / 2 - 1)), desc=self.__desc):
+        # for i in range(int(self.__Npoints - self.__order / 2 - 1)):
             dataOut = self.__MultiStepOde.propagate_one_step(h, isFirstStep=False, dataIn=dataOut)
             epoch.append(dataOut[0][-1])
             resR.append(dataOut[1][-1])
