@@ -46,6 +46,7 @@
         "payload_LRI": "../data/GRACE_RL02",
         "report_gap": "../report/gap",
         "report_arc": "../report/arc",
-        "temp_raw_data": "../temp/RawData"
+        "temp_raw_data": "../temp/RawData",
+        "log": "../log/"
     }
 }

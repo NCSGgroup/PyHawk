@@ -1,0 +1,12 @@
+{
+    "isPreprocess": true,
+    "isAdjustOrbit": true,
+    "isAdjustKBRR": true,
+    "isGetGravityDesignMat": true,
+    "isGetNEQ": true,
+    "isGetSH": true,
+    "AdjustOrbitNodes": 50,
+    "AdjustKBRRNodes": 50,
+    "GetGravityDesignMatNodes": 15,
+    "GetNEQNodes": 50
+}

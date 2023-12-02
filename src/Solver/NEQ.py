@@ -102,6 +102,7 @@ class GravityNEQperArc:
                 self.get_neq_orbit(SatID.B)
             elif i == 2:
                 self.get_neq_range_rate()
+        self.__saveData.close()
         return self
 
     def get_neq_orbit(self, sat: SatID):
