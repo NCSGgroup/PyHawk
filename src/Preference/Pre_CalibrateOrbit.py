@@ -3,18 +3,25 @@ import json
 
 class CalibrateOrbitConfig:
     def __init__(self):
+        self.StepControlConfig = self.StepControl().__dict__
 
-        self.isPreprocess = True
-        self.isAdjustOrbit = True
-        self.isAdjustKBRR = True
-        self.isGetGravityDesignMat = True
-        self.isGetNEQ = True
-        self.isGetSH = True
+        self.ParallelControlConfig = self.ParallelControl().__dict__
 
-        self.AdjustOrbitNodes = 50
-        self.AdjustKBRRNodes = 50
-        self.GetGravityDesignMatNodes = 15
-        self.GetNEQNodes = 50
+    class StepControl:
+        def __init__(self):
+            self.isPreprocess = True
+            self.isAdjustOrbit = True
+            self.isAdjustKBRR = True
+            self.isGetGravityDesignMat = True
+            self.isGetNEQ = True
+            self.isGetSH = True
+
+    class ParallelControl:
+        def __init__(self):
+            self.AdjustOrbitProcess = 50
+            self.AdjustKBRRProcess = 50
+            self.GetGravityDesignMatProcess = 15
+            self.GetNEQProcess = 50
 
 
 def demo2():

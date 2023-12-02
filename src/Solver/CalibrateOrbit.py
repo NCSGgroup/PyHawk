@@ -128,43 +128,54 @@ class CalibrateOrbit:
                 if data[0] == 'Number':
                     self.__arcLen = int(data[3])
                     break
-        '''get node'''
+        '''get step and process control'''
         calibrateOrbit_config = self.__calibrateOrbit_config
-        isPreprocess = calibrateOrbit_config.isPreprocess
-        isAdjustOrbit = calibrateOrbit_config.isAdjustOrbit
-        isAdjustKBRR = calibrateOrbit_config.isAdjustKBRR
-        isGravityDesignMat = calibrateOrbit_config.isGetGravityDesignMat
-        isNEQ = calibrateOrbit_config.isGetNEQ
-        isSH = calibrateOrbit_config.isGetSH
+        StepControl = CalibrateOrbitConfig.StepControl()
+        StepControl.__dict__.update(calibrateOrbit_config.StepControlConfig.copy())
+        ParallelControl = CalibrateOrbitConfig.ParallelControl()
+        ParallelControl.__dict__.update(calibrateOrbit_config.ParallelControlConfig.copy())
 
-        AdjustOrbitNodes = calibrateOrbit_config.AdjustOrbitNodes
-        AdjustKBRRNodes = calibrateOrbit_config.AdjustKBRRNodes
-        GetGravityDesignMatNodes = calibrateOrbit_config.GetGravityDesignMatNodes
-        GetNEQNodes = calibrateOrbit_config.GetNEQNodes
+        isPreprocess = StepControl.isPreprocess
+        isAdjustOrbit = StepControl.isAdjustOrbit
+        isAdjustKBRR = StepControl.isAdjustKBRR
+        isGravityDesignMat = StepControl.isGetGravityDesignMat
+        isNEQ = StepControl.isGetNEQ
+        isSH = StepControl.isGetSH
+
+        AdjustOrbitProcess = ParallelControl.AdjustOrbitProcess
+        AdjustKBRRProcess = ParallelControl.AdjustKBRRProcess
+        GetGravityDesignMatProcess = ParallelControl.GetGravityDesignMatProcess
+        GetNEQProcess = ParallelControl.GetNEQProcess
 
         if isPreprocess:
+            self.makeLog(stepName='preprocess', process=1)
             self._preprocess()
         if isAdjustOrbit:
-            pool = multiprocessing.Pool(processes=AdjustOrbitNodes)
+            self.makeLog(stepName='adjustOrbit', process=AdjustOrbitProcess)
+            pool = multiprocessing.Pool(processes=AdjustOrbitProcess)
             pool.map(self._adjustOrbit, range(self.__arcLen))
             pool.close()
             pool.join()
         if isAdjustKBRR:
-            pool = multiprocessing.Pool(processes=AdjustKBRRNodes)
+            self.makeLog(stepName='adjustKBRR', process=AdjustKBRRProcess)
+            pool = multiprocessing.Pool(processes=AdjustKBRRProcess)
             pool.map(self._adjustKBRR, range(self.__arcLen))
             pool.close()
             pool.join()
         if isGravityDesignMat:
-            pool = multiprocessing.Pool(processes=GetGravityDesignMatNodes)
+            self.makeLog(stepName='gravityDesignMat', process=GetGravityDesignMatProcess)
+            pool = multiprocessing.Pool(processes=GetGravityDesignMatProcess)
             pool.map(self._gravityDesignMat, range(self.__arcLen))
             pool.close()
             pool.join()
         if isNEQ:
-            pool = multiprocessing.Pool(processes=GetNEQNodes)
+            self.makeLog(stepName='NEQ', process=GetNEQProcess)
+            pool = multiprocessing.Pool(processes=GetNEQProcess)
             pool.map(self._NEQ, range(self.__arcLen))
             pool.close()
             pool.join()
         if isSH:
+            self.makeLog(stepName='SH', process=1)
             self.__calculate_cs()
 
         # self.getSpaceKBRR()
@@ -187,22 +198,15 @@ class CalibrateOrbit:
         arc.unpackArcs().makeReport()
         pass
 
-    def makeReport(self):
-        date = self.__gf.getDate()
-        path = self.__arc_path + '/' + date[0] + '_' + date[-1] + '.txt'
+    def makeLog(self, stepName, process):
+        path = self.__log_path + '/' + stepName + '/' + self.__date_span[0] + '_' + self.__date_span[1] + '.txt'
+        if not os.path.exists(path):
+            os.makedirs(path)
         with open(path, 'w') as f:
-            f.write('This ia a summary of arc information.\n')
-            f.write('Created by Yang Fan (yfan_cge@hust.edu.cn)\n')
-            f.write('Record time: %s \n\n' % datetime.datetime.now())
-            f.write('Number of Arcs: %s \n' % len(self.__arcs))
-
-            f.write('-------------------Please see more details in below:---------------------- \n\n')
-
-            i = 0
-            for arc in self.__arcs:
-                f.write('Arc NO: %s;  %s ====> %s ; Length: %s \n' % (i, arc[0], arc[-1], len(arc)))
-                i += 1
-
+            f.write('This ia a summary of log information.\n')
+            f.write('Created by Wu Yi(wu_yi@hust.edu.cn)\n')
+            f.write('begain time: %s \n\n' % datetime.now())
+            f.write('process: %s \n\n' % process)
         pass
 
     def _adjustOrbit(self, i):
