@@ -26,6 +26,7 @@ from src.Preference.Pre_NEQ import NEQConfig
 from src.Preference.Pre_AdjustOrbit import AdjustOrbitConfig
 from src.Preference.Pre_Interface import InterfaceConfig
 from src.Preference.Pre_Frame import FrameConfig
+from src.Preference.Pre_CalibrateOrbit import CalibrateOrbitConfig
 from src.Solver.AdjustSST import RangeRate
 from src.Frame.Frame import Frame
 from src.Frame.EOP import EOP
@@ -54,9 +55,11 @@ class CalibrateOrbit:
         self.__neq_config = None
         self.__adjust_config = None
         self.__interface_config = None
+        self.__calibrateOrbit_config = None
         self.__arcLen = None
         self.__date_span = None
         self.__sat = None
+        self.__log_path = None
         pass
 
     def loadJson(self):
@@ -103,34 +106,18 @@ class CalibrateOrbit:
         self.__frame_config = FrameConfig()
         frame = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/FrameConfig.json'), 'r'))
         self.__frame_config.__dict__ = frame
+
+        self.__calibrateOrbit_config = CalibrateOrbitConfig()
+        calibrateOrbit = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/CalibrateOrbitConfig.json'), 'r'))
+        self.__calibrateOrbit_config.__dict__ = calibrateOrbit
         return self
 
     def run(self):
-        # """step 1: Read raw data"""
-        # eop = EOP().configure(frameConfig=self.__frame_config).load()
-        # fr = Frame(eop).configure(frameConfig=self.__frame_config)
-        # s = GRACE_RL03().configure(InterfaceConfig=self.__interface_config).setDate()
-        # s.read_double_sat()
-        # """step 2: Convert orbit from ITRS frame into GCRS frame"""
-        # kine = KinematicOrbitV2(L1b=s).configure()
-        # kine.read_double_sat()
-        # kine.GNVandKiOrbitItrs2Gcrs(fr)
-        # """step 3: Gap fix"""
-        # gf = GapFix(L1b=s).configure()
-        # gf.fix_all().makeReport()
-        # arc = ArcSelect(gf=gf).configure()
-        # arc.unpackArcs().makeReport()
-
-        self._parallel()
-        self.__calculate_cs()
-        # self.getSpaceKBRR()
-        pass
-
-    def _parallel(self):
+        '''get arc number'''
         interface_config = self.__interface_config
         self.InterfacePathConfig = InterfaceConfig.PathOfFiles(interface_config)
         self.InterfacePathConfig.__dict__.update(interface_config.PathOfFilesConfig.copy())
-
+        self.__log_path = self.InterfacePathConfig.log
         self.__date_span = interface_config.date_span
         self.__sat = interface_config.sat
         arc_path = pathlib.Path().joinpath(self.InterfacePathConfig.report_arc, self.__date_span[0]+'_'+self.__date_span[1]+'.txt')
@@ -141,64 +128,119 @@ class CalibrateOrbit:
                 if data[0] == 'Number':
                     self.__arcLen = int(data[3])
                     break
+        '''get step and process control'''
+        calibrateOrbit_config = self.__calibrateOrbit_config
+        StepControl = CalibrateOrbitConfig.StepControl()
+        StepControl.__dict__.update(calibrateOrbit_config.StepControlConfig.copy())
+        ParallelControl = CalibrateOrbitConfig.ParallelControl()
+        ParallelControl.__dict__.update(calibrateOrbit_config.ParallelControlConfig.copy())
 
-        node = 30
-        step = int(self.__arcLen / node)
-        remainder = self.__arcLen % node
+        isPreprocess = StepControl.isPreprocess
+        isAdjustOrbit = StepControl.isAdjustOrbit
+        isAdjustKBRR = StepControl.isAdjustKBRR
+        isGravityDesignMat = StepControl.isGetGravityDesignMat
+        isNEQ = StepControl.isGetNEQ
+        isSH = StepControl.isGetSH
 
-        p = []
-        for i in range(1, node + 1):
-            p.append(multiprocessing.Process(target=self._unit, args=(step * (i - 1), step * i)))
+        AdjustOrbitProcess = ParallelControl.AdjustOrbitProcess
+        AdjustKBRRProcess = ParallelControl.AdjustKBRRProcess
+        GetGravityDesignMatProcess = ParallelControl.GetGravityDesignMatProcess
+        GetNEQProcess = ParallelControl.GetNEQProcess
 
-        index = step * node
-        while remainder > 0:
-            if remainder <= step:
-                p.append(multiprocessing.Process(target=self._unit, args=(index, index + remainder)))
-                break
-            elif remainder > step:
-                p.append(multiprocessing.Process(target=self._unit, args=(index, index + step)))
-                index += step
-                remainder -= step
-        # p.append(multiprocessing.Process(target=self._unit, args=(3, 7)))
-        print(len(p))
-        for process in p:
-            process.start()
-        for process in p:
-            process.join()
+        if isPreprocess:
+            self.makeLog(stepName='preprocess', process=1)
+            self._preprocess()
+        if isAdjustOrbit:
+            self.makeLog(stepName='adjustOrbit', process=AdjustOrbitProcess)
+            pool = multiprocessing.Pool(processes=AdjustOrbitProcess)
+            pool.map(self._adjustOrbit, range(self.__arcLen))
+            pool.close()
+            pool.join()
+        if isAdjustKBRR:
+            self.makeLog(stepName='adjustKBRR', process=AdjustKBRRProcess)
+            pool = multiprocessing.Pool(processes=AdjustKBRRProcess)
+            pool.map(self._adjustKBRR, range(self.__arcLen))
+            pool.close()
+            pool.join()
+        if isGravityDesignMat:
+            self.makeLog(stepName='gravityDesignMat', process=GetGravityDesignMatProcess)
+            pool = multiprocessing.Pool(processes=GetGravityDesignMatProcess)
+            pool.map(self._gravityDesignMat, range(self.__arcLen))
+            pool.close()
+            pool.join()
+        if isNEQ:
+            self.makeLog(stepName='NEQ', process=GetNEQProcess)
+            pool = multiprocessing.Pool(processes=GetNEQProcess)
+            pool.map(self._NEQ, range(self.__arcLen))
+            pool.close()
+            pool.join()
+        if isSH:
+            self.makeLog(stepName='SH', process=1)
+            self.__calculate_cs()
+
+        # self.getSpaceKBRR()
         pass
 
-    def _unit(self, start, end):
-        print(start, end)
-        # for i in range(start, end):
-        #     """step 5: init AdjustOrbit"""
-        #     AdjustOrbit(accConfig=[self.__acc_config_A, self.__acc_config_B], date_span=self.__date_span, sat=self.__sat).\
-        #         configure(SerDer=Orbit_var_2nd_diff, arcNo=i, ODEConfig=self.__ode_config,
-        #                   FMConfig=self.__force_model_config, AdjustOrbitConfig=self.__adjust_config,
-        #                   ParameterConfig=self.__parameter_config, InterfaceConfig=self.__interface_config,
-        #                   FrameConfig=self.__frame_config).calibrate(iteration=2)
-        # for j in range(start, end):
-        #     RR = RangeRate(arcNo=j, date_span=self.__date_span)
-        #     RR.configure(AdjustOrbitConfig=self.__adjust_config, InterfaceConfig=self.__interface_config)
-        #     RR.calibrate()
+    def _preprocess(self):
+        """step 1: Read raw data"""
+        eop = EOP().configure(frameConfig=self.__frame_config).load()
+        fr = Frame(eop).configure(frameConfig=self.__frame_config)
+        s = GRACE_RL03().configure(InterfaceConfig=self.__interface_config).setDate()
+        s.read_double_sat()
+        """step 2: Convert orbit from ITRS frame into GCRS frame"""
+        kine = KinematicOrbitV2(L1b=s).configure()
+        kine.read_double_sat()
+        kine.GNVandKiOrbitItrs2Gcrs(fr)
+        """step 3: Gap fix"""
+        gf = GapFix(L1b=s).configure()
+        gf.fix_all().makeReport()
+        arc = ArcSelect(gf=gf).configure()
+        arc.unpackArcs().makeReport()
+        pass
 
-        for k in range(start, end):
-            '''step 6: get DesignMatrix'''
-            print(k)
-            dm = GravityDesignMat(arcNo=k, date_span=self.__date_span, sat=self.__sat).\
-                configure(accConfig=[self.__acc_config_A, self.__acc_config_B],
-                          ODEConfig=self.__ode_config, AdjustOrbitConfig=self.__adjust_config,
-                          solverConfig=self.__solver_config, FMConfig=self.__force_model_config,
-                          parameterConfig=self.__design_parameter_config, InterfaceConfig=self.__interface_config,
-                          FrameConfig=self.__frame_config)
-            dm.orbit_integration()
-            dm.get_orbit_design_matrix()
-            dm.get_sst_design_matrix()
-        for q in range(start, end):
-            '''setp 8: get NEQ'''
-            neq = GravityNEQperArc(arcNo=q, date_span=self.__date_span, sat=self.__sat)
-            neq.configure(solverConfig=self.__solver_config, NEQConfig=self.__neq_config,
-                          AdjustOrbitConfig=self.__adjust_config, InterfaceConfig=self.__interface_config).get_neq()
+    def makeLog(self, stepName, process):
+        path = self.__log_path + '/' + stepName + '/' + self.__date_span[0] + '_' + self.__date_span[1] + '.txt'
+        if not os.path.exists(path):
+            os.makedirs(path)
+        with open(path, 'w') as f:
+            f.write('This ia a summary of log information.\n')
+            f.write('Created by Wu Yi(wu_yi@hust.edu.cn)\n')
+            f.write('begain time: %s \n\n' % datetime.now())
+            f.write('process: %s \n\n' % process)
+        pass
 
+    def _adjustOrbit(self, i):
+        """step 5: init AdjustOrbit"""
+        AdjustOrbit(accConfig=[self.__acc_config_A, self.__acc_config_B], date_span=self.__date_span, sat=self.__sat).\
+            configure(SerDer=Orbit_var_2nd_diff, arcNo=i, ODEConfig=self.__ode_config,
+                      FMConfig=self.__force_model_config, AdjustOrbitConfig=self.__adjust_config,
+                      ParameterConfig=self.__parameter_config, InterfaceConfig=self.__interface_config,
+                      FrameConfig=self.__frame_config).calibrate(iteration=2)
+        pass
+
+    def _adjustKBRR(self, j):
+        RR = RangeRate(arcNo=j, date_span=self.__date_span)
+        RR.configure(AdjustOrbitConfig=self.__adjust_config, InterfaceConfig=self.__interface_config)
+        RR.calibrate()
+        pass
+
+    def _gravityDesignMat(self, k):
+        dm = GravityDesignMat(arcNo=k, date_span=self.__date_span, sat=self.__sat).\
+            configure(accConfig=[self.__acc_config_A, self.__acc_config_B],
+                      ODEConfig=self.__ode_config, AdjustOrbitConfig=self.__adjust_config,
+                      solverConfig=self.__solver_config, FMConfig=self.__force_model_config,
+                      parameterConfig=self.__design_parameter_config, InterfaceConfig=self.__interface_config,
+                      FrameConfig=self.__frame_config)
+        dm.orbit_integration()
+        dm.get_orbit_design_matrix()
+        dm.get_sst_design_matrix()
+        pass
+
+    def _NEQ(self, q):
+        '''setp 8: get NEQ'''
+        neq = GravityNEQperArc(arcNo=q, date_span=self.__date_span, sat=self.__sat)
+        neq.configure(solverConfig=self.__solver_config, NEQConfig=self.__neq_config,
+                      AdjustOrbitConfig=self.__adjust_config, InterfaceConfig=self.__interface_config).get_neq()
         pass
 
     def __calculate_cs(self):
@@ -248,10 +290,6 @@ class CalibrateOrbit:
                                          c=C, s=S, sigmaC=sigmaC, sigmaS=sigmaS)
         print(len(C))
         format.unfiltered()
-
-        pass
-
-    def drawSH(self):
 
         pass
 

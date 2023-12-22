@@ -137,6 +137,7 @@ class RangeRate:
         h5.create_dataset('pre_t', data=self.Time)
         h5.create_dataset('pre_residual', data=self.pre_residual())
         h5.create_dataset('design_matrix', data=design_matrix)
+        h5.close()
         pass
 
     def pre_residual(self):
