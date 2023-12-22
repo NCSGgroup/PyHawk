@@ -314,3 +314,34 @@ class CalibrateOrbit:
         # 确认公式
         return np.linalg.norm(x) / np.sqrt(np.shape(x)[0])
 
+    def __saveOrbitRMS(self):
+        res_dir = pathlib.Path('../temp/DesignMatrixSH').joinpath(self.__date_span[0] + '_' + self.__date_span[1])
+
+        interface_config = InterfaceConfig()
+        interfaceDict = json.load(open('../setting/Calibrate/InterfaceConfig.json', 'r'))
+        interface_config.__dict__ = interfaceDict
+        rd = ArcData(interfaceConfig=interface_config)
+
+        RMSX = []
+        RMSY = []
+        RMSZ = []
+        for i in range(0, 240):
+            res_filename = res_dir.joinpath(str(i) + '_AB.hdf5')
+            h5 = h5py.File(res_filename, 'r')
+            rAB = h5['r'][:]
+            rA = rAB[:, 3:6, 0]
+            gnv = rd.getData(arc=i, kind=Payload.GNV, sat='B')[:, 1:4]
+
+            if np.shape(gnv) == np.shape(rA):
+                diff = gnv - rA
+                RMSX.append(rms(diff[:, 0]))
+                RMSY.append(rms(diff[:, 1]))
+                RMSZ.append(rms(diff[:, 2]))
+
+        np.save('OrbitRMSX.npy', RMSX)
+        np.save('OrbitRMSY.npy', RMSY)
+        np.save('OrbitRMSZ.npy', RMSZ)
+        pass
+
+    def __saveKBRRRMS(self):
+        pass
