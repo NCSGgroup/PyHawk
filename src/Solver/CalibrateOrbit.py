@@ -120,14 +120,7 @@ class CalibrateOrbit:
         self.__log_path = self.InterfacePathConfig.log
         self.__date_span = interface_config.date_span
         self.__sat = interface_config.sat
-        arc_path = pathlib.Path().joinpath(self.InterfacePathConfig.report_arc, self.__date_span[0]+'_'+self.__date_span[1]+'.txt')
-        self.__arcLen = None
-        with open(arc_path, "r", encoding='utf-8') as f:
-            while True:
-                data = f.readline().split(' ')
-                if data[0] == 'Number':
-                    self.__arcLen = int(data[3])
-                    break
+
         '''get step and process control'''
         calibrateOrbit_config = self.__calibrateOrbit_config
         StepControl = CalibrateOrbitConfig.StepControl()
@@ -150,6 +143,16 @@ class CalibrateOrbit:
         if isPreprocess:
             self.makeLog(stepName='preprocess', process=1)
             self._preprocess()
+
+        arc_path = pathlib.Path().joinpath(self.InterfacePathConfig.report_arc,
+                                           self.__date_span[0] + '_' + self.__date_span[1] + '.txt')
+        self.__arcLen = None
+        with open(arc_path, "r", encoding='utf-8') as f:
+            while True:
+                data = f.readline().split(' ')
+                if data[0] == 'Number':
+                    self.__arcLen = int(data[3])
+                    break
         if isAdjustOrbit:
             self.makeLog(stepName='adjustOrbit', process=AdjustOrbitProcess)
             pool = multiprocessing.Pool(processes=AdjustOrbitProcess)
@@ -199,10 +202,10 @@ class CalibrateOrbit:
         pass
 
     def makeLog(self, stepName, process):
-        path = self.__log_path + '/' + stepName + '/' + self.__date_span[0] + '_' + self.__date_span[1] + '.txt'
+        path = self.__log_path + stepName
         if not os.path.exists(path):
             os.makedirs(path)
-        with open(path, 'w') as f:
+        with open(path + '/' + self.__date_span[0] + '_' + self.__date_span[1] + '.txt', 'w') as f:
             f.write('This ia a summary of log information.\n')
             f.write('Created by Wu Yi(wu_yi@hust.edu.cn)\n')
             f.write('begain time: %s \n\n' % datetime.now())
