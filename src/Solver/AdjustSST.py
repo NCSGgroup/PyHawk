@@ -121,8 +121,8 @@ class RangeRate:
                 t = t[index]
                 dm = dm[index, :]
                 obs = residual[index]
-                # if any(index) == False:
-                #     break
+                if any(index) == False:
+                    break
 
             post_t = np.append(post_t, t)
             post_residual = np.append(post_residual, obs)

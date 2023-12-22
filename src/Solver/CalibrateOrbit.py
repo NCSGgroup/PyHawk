@@ -113,73 +113,71 @@ class CalibrateOrbit:
         return self
 
     def run(self):
-        '''get arc number'''
-        interface_config = self.__interface_config
-        self.InterfacePathConfig = InterfaceConfig.PathOfFiles(interface_config)
-        self.InterfacePathConfig.__dict__.update(interface_config.PathOfFilesConfig.copy())
-        self.__log_path = self.InterfacePathConfig.log
-        self.__date_span = interface_config.date_span
-        self.__sat = interface_config.sat
-
-        '''get step and process control'''
-        calibrateOrbit_config = self.__calibrateOrbit_config
-        StepControl = CalibrateOrbitConfig.StepControl()
-        StepControl.__dict__.update(calibrateOrbit_config.StepControlConfig.copy())
-        ParallelControl = CalibrateOrbitConfig.ParallelControl()
-        ParallelControl.__dict__.update(calibrateOrbit_config.ParallelControlConfig.copy())
-
-        isPreprocess = StepControl.isPreprocess
-        isAdjustOrbit = StepControl.isAdjustOrbit
-        isAdjustKBRR = StepControl.isAdjustKBRR
-        isGravityDesignMat = StepControl.isGetGravityDesignMat
-        isNEQ = StepControl.isGetNEQ
-        isSH = StepControl.isGetSH
-
-        AdjustOrbitProcess = ParallelControl.AdjustOrbitProcess
-        AdjustKBRRProcess = ParallelControl.AdjustKBRRProcess
-        GetGravityDesignMatProcess = ParallelControl.GetGravityDesignMatProcess
-        GetNEQProcess = ParallelControl.GetNEQProcess
-
-        if isPreprocess:
-            self.makeLog(stepName='preprocess', process=1)
-            self._preprocess()
-
-        arc_path = pathlib.Path().joinpath(self.InterfacePathConfig.report_arc,
-                                           self.__date_span[0] + '_' + self.__date_span[1] + '.txt')
-        self.__arcLen = None
-        with open(arc_path, "r", encoding='utf-8') as f:
-            while True:
-                data = f.readline().split(' ')
-                if data[0] == 'Number':
-                    self.__arcLen = int(data[3])
-                    break
-        if isAdjustOrbit:
-            self.makeLog(stepName='adjustOrbit', process=AdjustOrbitProcess)
-            pool = multiprocessing.Pool(processes=AdjustOrbitProcess)
-            pool.map(self._adjustOrbit, range(self.__arcLen))
-            pool.close()
-            pool.join()
-        if isAdjustKBRR:
-            self.makeLog(stepName='adjustKBRR', process=AdjustKBRRProcess)
-            pool = multiprocessing.Pool(processes=AdjustKBRRProcess)
-            pool.map(self._adjustKBRR, range(self.__arcLen))
-            pool.close()
-            pool.join()
-        if isGravityDesignMat:
-            self.makeLog(stepName='gravityDesignMat', process=GetGravityDesignMatProcess)
-            pool = multiprocessing.Pool(processes=GetGravityDesignMatProcess)
-            pool.map(self._gravityDesignMat, range(self.__arcLen))
-            pool.close()
-            pool.join()
-        if isNEQ:
-            self.makeLog(stepName='NEQ', process=GetNEQProcess)
-            pool = multiprocessing.Pool(processes=GetNEQProcess)
-            pool.map(self._NEQ, range(self.__arcLen))
-            pool.close()
-            pool.join()
-        if isSH:
-            self.makeLog(stepName='SH', process=1)
-            self.__calculate_cs()
+        self.__saveOrbitRMS()
+        # '''get arc number'''
+        # interface_config = self.__interface_config
+        # self.InterfacePathConfig = InterfaceConfig.PathOfFiles(interface_config)
+        # self.InterfacePathConfig.__dict__.update(interface_config.PathOfFilesConfig.copy())
+        # self.__log_path = self.InterfacePathConfig.log
+        # self.__date_span = interface_config.date_span
+        # self.__sat = interface_config.sat
+        # arc_path = pathlib.Path().joinpath(self.InterfacePathConfig.report_arc, self.__date_span[0]+'_'+self.__date_span[1]+'.txt')
+        # self.__arcLen = None
+        # with open(arc_path, "r", encoding='utf-8') as f:
+        #     while True:
+        #         data = f.readline().split(' ')
+        #         if data[0] == 'Number':
+        #             self.__arcLen = int(data[3])
+        #             break
+        # '''get step and process control'''
+        # calibrateOrbit_config = self.__calibrateOrbit_config
+        # StepControl = CalibrateOrbitConfig.StepControl()
+        # StepControl.__dict__.update(calibrateOrbit_config.StepControlConfig.copy())
+        # ParallelControl = CalibrateOrbitConfig.ParallelControl()
+        # ParallelControl.__dict__.update(calibrateOrbit_config.ParallelControlConfig.copy())
+        #
+        # isPreprocess = StepControl.isPreprocess
+        # isAdjustOrbit = StepControl.isAdjustOrbit
+        # isAdjustKBRR = StepControl.isAdjustKBRR
+        # isGravityDesignMat = StepControl.isGetGravityDesignMat
+        # isNEQ = StepControl.isGetNEQ
+        # isSH = StepControl.isGetSH
+        #
+        # AdjustOrbitProcess = ParallelControl.AdjustOrbitProcess
+        # AdjustKBRRProcess = ParallelControl.AdjustKBRRProcess
+        # GetGravityDesignMatProcess = ParallelControl.GetGravityDesignMatProcess
+        # GetNEQProcess = ParallelControl.GetNEQProcess
+        #
+        # if isPreprocess:
+        #     self.makeLog(stepName='preprocess', process=1)
+        #     self._preprocess()
+        # if isAdjustOrbit:
+        #     self.makeLog(stepName='adjustOrbit', process=AdjustOrbitProcess)
+        #     pool = multiprocessing.Pool(processes=AdjustOrbitProcess)
+        #     pool.map(self._adjustOrbit, range(self.__arcLen))
+        #     pool.close()
+        #     pool.join()
+        # if isAdjustKBRR:
+        #     self.makeLog(stepName='adjustKBRR', process=AdjustKBRRProcess)
+        #     pool = multiprocessing.Pool(processes=AdjustKBRRProcess)
+        #     pool.map(self._adjustKBRR, range(self.__arcLen))
+        #     pool.close()
+        #     pool.join()
+        # if isGravityDesignMat:
+        #     self.makeLog(stepName='gravityDesignMat', process=GetGravityDesignMatProcess)
+        #     pool = multiprocessing.Pool(processes=GetGravityDesignMatProcess)
+        #     pool.map(self._gravityDesignMat, range(self.__arcLen))
+        #     pool.close()
+        #     pool.join()
+        # if isNEQ:
+        #     self.makeLog(stepName='NEQ', process=GetNEQProcess)
+        #     pool = multiprocessing.Pool(processes=GetNEQProcess)
+        #     pool.map(self._NEQ, range(self.__arcLen))
+        #     pool.close()
+        #     pool.join()
+        # if isSH:
+        #     self.makeLog(stepName='SH', process=1)
+        #     self.__calculate_cs()
 
         # self.getSpaceKBRR()
         pass
@@ -202,10 +200,10 @@ class CalibrateOrbit:
         pass
 
     def makeLog(self, stepName, process):
-        path = self.__log_path + stepName
+        path = self.__log_path + '/' + stepName + '/' + self.__date_span[0] + '_' + self.__date_span[1] + '.txt'
         if not os.path.exists(path):
             os.makedirs(path)
-        with open(path + '/' + self.__date_span[0] + '_' + self.__date_span[1] + '.txt', 'w') as f:
+        with open(path, 'w') as f:
             f.write('This ia a summary of log information.\n')
             f.write('Created by Wu Yi(wu_yi@hust.edu.cn)\n')
             f.write('begain time: %s \n\n' % datetime.now())
@@ -355,3 +353,37 @@ class CalibrateOrbit:
         # 确认公式
         return np.linalg.norm(x) / np.sqrt(np.shape(x)[0])
 
+    def __saveOrbitRMS(self):
+        self.AdjustPath = AdjustOrbitConfig.PathOfFiles()
+        self.AdjustPath.__dict__.update(self.__adjust_config.PathOfFilesConfig.copy())
+        print(self.AdjustPath)
+        res_dir = pathlib.Path('../temp/DesignMatrixSH').joinpath(self.__date_span[0] + '_' + self.__date_span[1])
+
+        interface_config = InterfaceConfig()
+        interfaceDict = json.load(open('../setting/Calibrate/InterfaceConfig.json', 'r'))
+        interface_config.__dict__ = interfaceDict
+        rd = ArcData(interfaceConfig=interface_config)
+
+        RMSX = []
+        RMSY = []
+        RMSZ = []
+        for i in range(0, 240):
+            res_filename = res_dir.joinpath(str(i) + '_AB.hdf5')
+            h5 = h5py.File(res_filename, 'r')
+            rAB = h5['r'][:]
+            rA = rAB[:, 3:6, 0]
+            gnv = rd.getData(arc=i, kind=Payload.GNV, sat='B')[:, 1:4]
+
+            if np.shape(gnv) == np.shape(rA):
+                diff = gnv - rA
+                RMSX.append(rms(diff[:, 0]))
+                RMSY.append(rms(diff[:, 1]))
+                RMSZ.append(rms(diff[:, 2]))
+
+        np.save('OrbitRMSX.npy', RMSX)
+        np.save('OrbitRMSY.npy', RMSY)
+        np.save('OrbitRMSZ.npy', RMSZ)
+        pass
+
+    def __saveKBRRRMS(self):
+        pass
