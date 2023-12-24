@@ -8,9 +8,9 @@
         "isGetSH": true
     },
     "ParallelControlConfig": {
-        "AdjustOrbitProcess": 50,
-        "AdjustKBRRProcess": 50,
-        "GetGravityDesignMatProcess": 15,
-        "GetNEQProcess": 50
+        "AdjustOrbitProcess": 1,
+        "AdjustKBRRProcess": 1,
+        "GetGravityDesignMatProcess": 1,
+        "GetNEQProcess": 1
     }
 }

@@ -353,6 +353,11 @@ class GapFix:
         if len(gaplist) <= 1:
             return data
 
+        # if len(gaplist) % 2 == 0:
+        #     length = len(gaplist) - 1
+        # else:
+        #     length = len(gaplist)
+
         for i in range(0, len(gaplist) - 1, 2):
             gap = gaplist[i]
             gap_next = gaplist[i + 1]
@@ -379,6 +384,9 @@ class GapFix:
             except IndexError:
                 final = np.vstack((final, data[gap_next['rl']:, :]))
             else:
-                final = np.vstack((final, data[gap_next['rl']:gaplist[i + 2]['lr'] + 1, :]))
+                if (len(gaplist) - 1) == (i + 2):
+                    final = np.vstack((final, data[gap_next['rl']:, :]))
+                else:
+                    final = np.vstack((final, data[gap_next['rl']:gaplist[i + 2]['lr'] + 1, :]))
 
         return final
