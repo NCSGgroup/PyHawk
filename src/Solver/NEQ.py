@@ -69,7 +69,7 @@ class GravityNEQperArc:
 
         res_dir = self._PathOfFilesConfig.NormalEqTemp + '/' + self.__date_begin + '_' + self.__date_end
         if not os.path.exists(res_dir):
-            os.makedirs(res_dir)
+            os.makedirs(res_dir, exist_ok=True)
         res_filename = res_dir + '/' + str(self.__arcNo) + '.hdf5'
         self.__saveData = h5py.File(res_filename, 'w')
         return self

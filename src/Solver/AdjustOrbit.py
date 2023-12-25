@@ -96,12 +96,12 @@ class AdjustOrbit:
         """Define the directory to deposit the state vectors"""
         self._state_dir = self._state_path + '/' + self._date_span[0] + '_' + self._date_span[1]
         if not os.path.exists(self._state_dir):
-            os.makedirs(self._state_dir)
+            os.makedirs(self._state_dir, exist_ok=True)
 
         '''define the directory of res output'''
         self._res_dir = self._res_path + '/' + self._date_span[0] + '_' + self._date_span[1]
         if not os.path.exists(self._res_dir):
-            os.makedirs(self._res_dir)
+            os.makedirs(self._res_dir, exist_ok=True)
 
         """step 1: combine the SCA and ACC data to obtain the non-conservative force as well as dadp arc by arc"""
         rd = ArcData(interfaceConfig=self._InterfaceConfig)

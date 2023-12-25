@@ -73,7 +73,7 @@ class RangeRate:
         '''define the directory of range-rate output'''
         res_dir = self._PathfileConfig.RangeRateTemp + '/' + self.__date_span[0] + '_' + self.__date_span[1]
         if not os.path.exists(res_dir):
-            os.makedirs(res_dir)
+            os.makedirs(res_dir, exist_ok=True)
         res_filename = res_dir + '/RangeRate_' + str(self.__arcNo) + '.hdf5'
         self.__resh5 = h5py.File(res_filename, "w")
         return self
