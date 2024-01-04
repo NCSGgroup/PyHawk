@@ -67,10 +67,10 @@ class GravityNEQperArc:
         self.__config['satB'] = self._OrbitBConfig
         self.__config['SST'] = self._SSTConfig
 
-        res_dir = self._PathOfFilesConfig.NormalEqTemp + '/' + self.__date_begin + '_' + self.__date_end
+        res_dir = self._PathOfFilesConfig.NormalEqTemp + '/' + self.__date_begin + '_' + self.__date_end + '/'
         if not os.path.exists(res_dir):
             os.makedirs(res_dir, exist_ok=True)
-        res_filename = res_dir + '/' + str(self.__arcNo) + '.hdf5'
+        res_filename = res_dir + str(self.__arcNo) + '.hdf5'
         self.__saveData = h5py.File(res_filename, 'w')
         return self
 
@@ -124,13 +124,14 @@ class GravityNEQperArc:
         if not config.IsRequired:
             return None
 
-        rd = ArcData(interfaceConfig=self._InterfaceConfig)
+        # rd = ArcData(interfaceConfig=self._InterfaceConfig)
 
-        if config.UseKinematicOrbit:
-            orbit_obs = rd.getData(arc=self.__arcNo, kind=Payload.KinematicOrbit, sat=sat)[:, 0:4]
-        else:
-            orbit_obs = rd.getData(arc=self.__arcNo, kind=Payload.GNV, sat=sat)[:, 0:4]
+        # if config.UseKinematicOrbit:
+        #     orbit_obs = rd.getData(arc=self.__arcNo, kind=Payload.KinematicOrbit, sat=sat)[:, 0:4]
+        # else:
+        #     orbit_obs = rd.getData(arc=self.__arcNo, kind=Payload.GNV, sat=sat)[:, 0:4]
 
+        orbit_obs = self.get_orbit_obs(sat=sat)
         t_obs = orbit_obs[:, 0]
         '''for the orbit, only position (r) is needed for the inversion'''
         '''find the common'''
@@ -198,7 +199,6 @@ class GravityNEQperArc:
 
         '''Combination'''
         if config.CalibrateEmpiricalParameters:
-
             local_dm = np.concatenate((local_dm_empirical, local_dm), axis=1)
 
         N, l = GeoMathKit.keepGlobal(dm_global=global_dm, dm_local=local_dm, obs=obs)
@@ -207,4 +207,19 @@ class GravityNEQperArc:
         self.__saveData.create_dataset('%s_l' % SSTObserve.RangeRate.name, data=l)
         pass
 
+    def get_orbit_obs(self, sat):
+        rd = ArcData(interfaceConfig=self._InterfaceConfig)
+        Kin_obs = rd.getData(arc=self.__arcNo, kind=Payload.KinematicOrbit, sat=sat)[:, 0:4]
+        GNV_obs = rd.getData(arc=self.__arcNo, kind=Payload.GNV, sat=sat)[:, 0:4]
 
+        t_nominal = GNV_obs[:, 0]
+        t_obs = Kin_obs[:, 0]
+        '''for the orbit, only position (r) is needed for the inversion'''
+        '''find the common'''
+        int_t_obs = t_obs.astype(np.int64)
+        int_t_nominal = t_nominal.astype(np.int64)
+        new_index = [list(int_t_nominal).index(x) for x in int_t_obs]
+
+        GNV_obs[new_index, :] = Kin_obs
+
+        return GNV_obs

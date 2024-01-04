@@ -262,8 +262,8 @@ class KinematicOrbitV3(KinematicOrbit):
 
         st = date.split('-')
         IY, IM, ID = int(st[0]), int(st[1]), int(st[2])
-        date_range = (round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 0, 0, 0))),
-                      round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 23, 59, 60 - self.__L1b.sr_payload[Payload.GNV.name]))))
+        # date_range = (round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 0, 0, 0))),
+        #               round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 23, 59, 60 - self.__L1b.sr_payload[Payload.GNV.name]))))
 
         path = self.__path_kinematic.joinpath(*[str(IY), date.split('-')[0] + '-' + date.split('-')[1], 'grace' +
                                                 str(sat.value) + '-kinematicOrbit-' + date + '.txt'])
@@ -499,8 +499,8 @@ class KinematicOrbitV2(KinematicOrbit):
 
         st = date.split('-')
         IY, IM, ID = int(st[0]), int(st[1]), int(st[2])
-        date_range = (round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 0, 0, 0))),
-                      round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 23, 59, 60 - self._L1b.sr_payload[Payload.GNV.name]))))
+        # date_range = (round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 0, 0, 0))),
+        #               round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 23, 59, 60 - self._L1b.sr_payload[Payload.GNV.name]))))
 
         path = str(self.dir.joinpath(*[self._path_kinematic, str(IY), date.split('-')[0] + '-' + date.split('-')[1], 'Grace' +
                                                 str(sat.name) + '-kinematicOrbit-' + date, 'grace' +

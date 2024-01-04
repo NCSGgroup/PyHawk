@@ -161,13 +161,13 @@ class Accelerometer:
         """
         acc_old = self.__acc[:, 1:]
         time = self.__acc[:, 0]
-        dt = time - time[0]
+        dt = (time - time[0]) / 60
         '''x-axi'''
-        bias_x = self.__bias[0][0] + self.__bias[1][0] * dt + self.__bias[2][0] * dt ** 2
+        bias_x = self.__bias[0][0] + self.__bias[1][0] * dt + self.__bias[2][0] * (dt ** 2)
         '''y-axi'''
-        bias_y = self.__bias[0][1] + self.__bias[1][1] * dt + self.__bias[2][1] * dt ** 2
+        bias_y = self.__bias[0][1] + self.__bias[1][1] * dt + self.__bias[2][1] * (dt ** 2)
         '''z-axi'''
-        bias_z = self.__bias[0][2] + self.__bias[1][2] * dt + self.__bias[2][2] * dt ** 2
+        bias_z = self.__bias[0][2] + self.__bias[1][2] * dt + self.__bias[2][2] * (dt ** 2)
         bias = np.array([bias_x, bias_y, bias_z]).transpose()
 
         acc = self.__scale @ acc_old[:, :, None] + bias[:, :, None]
@@ -181,7 +181,7 @@ class Accelerometer:
         :return: result for all the time list
         """
         time = self.__acc[:, 0]
-        dt = time - time[0]
+        dt = (time - time[0]) / 60
         q = self.__sca
 
         acc_old = self.__acc[:, 1:]
