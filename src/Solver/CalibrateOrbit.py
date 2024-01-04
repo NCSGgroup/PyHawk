@@ -157,12 +157,14 @@ class CalibrateOrbit:
             pool.map(self._adjustOrbit, range(self.__arcLen))
             pool.close()
             pool.join()
+        self.__saveOrbitRMS()
         if isAdjustKBRR:
             self.makeLog(stepName='adjustKBRR', process=AdjustKBRRProcess)
             pool = multiprocessing.Pool(processes=AdjustKBRRProcess)
             pool.map(self._adjustKBRR, range(self.__arcLen))
             pool.close()
             pool.join()
+        self.__saveKBRRRMS()
         if isGravityDesignMat:
             self.makeLog(stepName='gravityDesignMat', process=GetGravityDesignMatProcess)
             pool = multiprocessing.Pool(processes=GetGravityDesignMatProcess)
@@ -178,8 +180,6 @@ class CalibrateOrbit:
         if isSH:
             self.makeLog(stepName='SH', process=1)
             self.__calculate_cs()
-        self.__saveOrbitRMS()
-        self.__saveKBRRRMS()
         # self.getSpaceKBRR()
         pass
 
@@ -187,7 +187,7 @@ class CalibrateOrbit:
         """step 1: Read raw data"""
         eop = EOP().configure(frameConfig=self.__frame_config).load()
         fr = Frame(eop).configure(frameConfig=self.__frame_config)
-        s = GRACE_RL03().configure(InterfaceConfig=self.__interface_config).setDate()
+        s = GRACE_NEW_RL02().configure(InterfaceConfig=self.__interface_config).setDate()
         s.read_double_sat()
         """step 2: Convert orbit from ITRS frame into GCRS frame"""
         kine = KinematicOrbitV2(L1b=s).configure()
@@ -266,13 +266,13 @@ class CalibrateOrbit:
         LMatrix = np.zeros((parameter_number, 1))
         date_span = interface_config.date_span
 
-        for i in tqdm(range(0, self.__arcLen), desc='Solve normal equations: '):
+        for i in tqdm(range(5, self.__arcLen), desc='Solve normal equations: '):
             res_filename = res_dir + '/' + str(i) + '.hdf5'
             print(res_filename)
             h5 = h5py.File(res_filename, 'r')
-            NMatrix = NMatrix + (h5['Orbit_N_A'][:] + h5['Orbit_N_B'][:]) + h5['RangeRate_N'][:] * 5E11
+            NMatrix = NMatrix + (h5['Orbit_N_A'][:] + h5['Orbit_N_B'][:]) + h5['RangeRate_N'][:] * 1E11
             LMatrix = LMatrix + (h5['Orbit_l_A'][:] + h5['Orbit_l_B'][:]) + h5['RangeRate_l'][:].reshape(
-                (parameter_number, 1)) * 5E11
+                (parameter_number, 1)) * 1E11
             h5.close()
 
         cs = np.linalg.lstsq(NMatrix, LMatrix[:, 0], rcond=None)[0]
@@ -295,6 +295,104 @@ class CalibrateOrbit:
         format.unfiltered()
 
         pass
+
+    def __saveOrbitRMS(self):
+        self.AdjustPath = AdjustOrbitConfig.PathOfFiles()
+        self.AdjustPath.__dict__.update(self.__adjust_config.PathOfFilesConfig.copy())
+        res_dir = pathlib.Path().joinpath(self.AdjustPath.StateVectorDataTemp, self.__date_span[0] + '_' + self.__date_span[1])
+        interface_config = self.__interface_config
+        rd = ArcData(interfaceConfig=interface_config)
+        RMSAX = []
+        RMSAY = []
+        RMSAZ = []
+        RMSBX = []
+        RMSBY = []
+        RMSBZ = []
+        for i in range(0, self.__arcLen):
+            res_filename = res_dir.joinpath(str(i) + '_AB.hdf5')
+            h5 = h5py.File(res_filename, 'r')
+            rAB = h5['r'][:]
+            rA = rAB[:, 0:3, 0]
+            rB = rAB[:, 3:6, 0]
+            gnva = rd.getData(arc=i, kind=EnumType.Payload.GNV, sat='A')[:, 1:4]
+            gnvb = rd.getData(arc=i, kind=EnumType.Payload.GNV, sat='B')[:, 1:4]
+
+            if np.shape(gnva) == np.shape(rA):
+                diff = gnva - rA
+                RMSAX.append(self.__rms(diff[:, 0]))
+                RMSAY.append(self.__rms(diff[:, 1]))
+                RMSAZ.append(self.__rms(diff[:, 2]))
+
+            if np.shape(gnvb) == np.shape(rB):
+                diff = gnvb - rB
+                RMSBX.append(self.__rms(diff[:, 0]))
+                RMSBY.append(self.__rms(diff[:, 1]))
+                RMSBZ.append(self.__rms(diff[:, 2]))
+
+        # np.save('OrbitRMSY.npy', RMSX)
+        # np.save('OrbitRMSY.npy', RMSY)
+        # np.save('OrbitRMSZ.npy', RMSZ)
+        # X = np.load('OrbitRMSX.npy')
+        # Y = np.load('OrbitRMSY.npy')
+        # Z = np.load('OrbitRMSZ.npy')
+        self.__plotOrbitRMS(RMSAX, RMSAY, RMSAZ, 'A')
+        self.__plotOrbitRMS(RMSBX, RMSBY, RMSBZ, 'B')
+
+        pass
+
+    def __plotOrbitRMS(self,RMSX, RMSY, RMSZ, sat):
+        plt.figure(dpi=300, figsize=(16, 8))
+        plt.subplot(311)
+        plt.title('Orbit-RMS-{}-{}-{}'.format(sat, self.__date_span[0], self.__date_span[-1]), fontsize=24)
+        plt.plot(np.arange(len(RMSX)), [i * 1000 for i in RMSX], marker='o')
+        plt.yticks(fontsize=18)
+        plt.ylabel(r'$X/mm$', fontsize=20)
+
+        plt.subplot(312)
+        plt.plot(np.arange(len(RMSY)), [i * 1000 for i in RMSY], marker='o')
+        plt.yticks(fontsize=18)
+        plt.ylabel(r'$Y/mm$', fontsize=20)
+
+        plt.subplot(313)
+        plt.plot(np.arange(len(RMSZ)), [i * 1000 for i in RMSZ], marker='o')
+        plt.xlabel('arcNo', fontsize=20)
+        plt.ylabel(r'$Z/mm$', fontsize=20)
+        plt.yticks(fontsize=18)
+
+        plt.savefig('../result/img/{}-{}-{}.png'.format(sat, self.__date_span[0], self.__date_span[-1]))
+        plt.grid(ls='--')
+        plt.clf()
+        pass
+
+    def __saveKBRRRMS(self):
+        self.AdjustPath = AdjustOrbitConfig.PathOfFiles()
+        self.AdjustPath.__dict__.update(self.__adjust_config.PathOfFilesConfig.copy())
+
+        res_dir = pathlib.Path().joinpath(self.AdjustPath.RangeRateTemp, self.__date_span[0] + '_' + self.__date_span[1])
+        post_RMS = []
+        for i in range(0, self.__arcLen):
+            res_filename = res_dir.joinpath('RangeRate_' + str(i) + '.hdf5')
+            if os.path.exists(res_filename):
+                h5 = h5py.File(res_filename, 'r')
+                if len(h5.keys()) != 0:
+                    postfit = h5['post_residual'][()]
+                    post_RMS.append(self.__rms(postfit))
+        plt.figure(dpi=300, figsize=(16, 8))
+        plt.title('KBRR-RMS-{}-{}'.format(self.__date_span[0], self.__date_span[-1]), fontsize=24)
+        plt.plot(np.arange(len(post_RMS)), [i * 1000000 for i in post_RMS], marker='o', label="arc RMS")
+        plt.yticks(fontsize=18)
+        plt.ylabel(r'$X/um$', fontsize=20)
+        plt.legend(loc='upper right', fontsize=20)
+        plt.savefig('../result/img/KBRR-{}-{}.png'.format(self.__date_span[0], self.__date_span[-1]))
+        pass
+
+    def __rms(self, x: np.ndarray):
+        """
+        :param x: 1-dim
+        :return:
+        """
+        # 确认公式
+        return np.linalg.norm(x) / np.sqrt(np.shape(x)[0])
 
     def getSpaceKBRR(self):
 
@@ -330,7 +428,7 @@ class CalibrateOrbit:
                 Postfit.extend(h5['post_residual'][()])
                 postfit = h5['post_residual'][()]
 
-                RMS.append(self.rms(postfit))
+                RMS.append(self.__rms(postfit))
 
                 new_index = [list(GNVTime).index(x) for x in t2]
                 new_Time = GNVTime[new_index]
@@ -346,128 +444,3 @@ class CalibrateOrbit:
 
         np.savez('ResKBRR.npz', data=RMS)
         np.savez('SpaceKBRR.npz', x=Lon, y=Lat, z=Postfit)
-
-    def rms(self, x: np.ndarray):
-        """
-        :param x: 1-dim
-        :return:
-        """
-        # 确认公式
-        return np.linalg.norm(x) / np.sqrt(np.shape(x)[0])
-
-    def __saveOrbitRMS(self):
-        self.AdjustPath = AdjustOrbitConfig.PathOfFiles()
-        self.AdjustPath.__dict__.update(self.__adjust_config.PathOfFilesConfig.copy())
-
-        res_dir = pathlib.Path().joinpath(self.AdjustPath.StateVectorDataTemp, self.__date_span[0] + '_' + self.__date_span[1])
-
-        interface_config = self.__interface_config
-        rd = ArcData(interfaceConfig=interface_config)
-
-        RMSAX = []
-        RMSAY = []
-        RMSAZ = []
-        RMSBX = []
-        RMSBY = []
-        RMSBZ = []
-        for i in range(0, self.__arcLen):
-            res_filename = res_dir.joinpath(str(i) + '_AB.hdf5')
-            h5 = h5py.File(res_filename, 'r')
-            rAB = h5['r'][:]
-            rA = rAB[:, 0:3, 0]
-            rB = rAB[:, 3:6, 0]
-            gnva = rd.getData(arc=i, kind=EnumType.Payload.GNV, sat='A')[:, 1:4]
-            gnvb = rd.getData(arc=i, kind=EnumType.Payload.GNV, sat='B')[:, 1:4]
-
-            if np.shape(gnva) == np.shape(rA):
-                diff = gnva - rA
-                RMSAX.append(self.__rms(diff[:, 0]))
-                RMSAY.append(self.__rms(diff[:, 1]))
-                RMSAZ.append(self.__rms(diff[:, 2]))
-
-            if np.shape(gnvb) == np.shape(rB):
-                diff = gnvb - rB
-                RMSBX.append(self.__rms(diff[:, 0]))
-                RMSBY.append(self.__rms(diff[:, 1]))
-                RMSBZ.append(self.__rms(diff[:, 2]))
-
-        # np.save('OrbitRMSY.npy', RMSX)
-        # np.save('OrbitRMSY.npy', RMSY)
-        # np.save('OrbitRMSZ.npy', RMSZ)
-        # X = np.load('OrbitRMSX.npy')
-        # Y = np.load('OrbitRMSY.npy')
-        # Z = np.load('OrbitRMSZ.npy')
-        plt.figure(dpi=300, figsize=(16, 8))
-        plt.subplot(311)
-        plt.title('GRACE-Orbit-A-{}-{}'.format(self.__date_span[0], self.__date_span[-1]), fontsize=24)
-        plt.plot(np.arange(len(RMSAX)), [i * 1000 for i in RMSAX], marker='o', label="Direction X")
-        plt.yticks(fontsize=18)
-        plt.ylabel(r'$X/mm$', fontsize=20)
-        plt.legend(loc='best', fontsize=14)
-        plt.subplot(312)
-        plt.plot(np.arange(len(RMSAY)), [i * 1000 for i in RMSAY], marker='o', label="Direction Y")
-        plt.yticks(fontsize=18)
-        plt.ylabel(r'$Y/mm$', fontsize=20)
-        plt.legend(loc='best', fontsize=14)
-        plt.subplot(313)
-        plt.plot(np.arange(len(RMSAZ)), [i * 1000 for i in RMSAZ], marker='o', label="Direction Z")
-        plt.xlabel('arcNo', fontsize=20)
-        plt.ylabel(r'$Z/mm$', fontsize=20)
-        plt.yticks(fontsize=18)
-        plt.legend(loc='best', fontsize=14)
-        plt.savefig('../result/img/A-{}-{}.png'.format(self.__date_span[0], self.__date_span[-1]))
-        plt.clf()
-
-        plt.figure(dpi=300, figsize=(16, 8))
-        plt.subplot(311)
-        plt.title('GRACE-Orbit-B-{}-{}'.format(self.__date_span[0], self.__date_span[-1]), fontsize=24)
-        plt.plot(np.arange(len(RMSBX)), [i * 1000 for i in RMSBX], marker='o', label="Direction X")
-        plt.yticks(fontsize=18)
-        plt.ylabel(r'$X/mm$', fontsize=20)
-        plt.legend(loc='best', fontsize=14)
-        plt.subplot(312)
-        plt.plot(np.arange(len(RMSBY)), [i * 1000 for i in RMSBY], marker='o', label="Direction Y")
-        plt.yticks(fontsize=18)
-        plt.ylabel(r'$Y/mm$', fontsize=20)
-        plt.legend(loc='best', fontsize=14)
-        plt.subplot(313)
-        plt.plot(np.arange(len(RMSBZ)), [i * 1000 for i in RMSBZ], marker='o', label="Direction Z")
-        plt.xlabel('arcNo', fontsize=20)
-        plt.ylabel(r'$Z/mm$', fontsize=20)
-        plt.yticks(fontsize=18)
-        plt.legend(loc='best', fontsize=14)
-        plt.savefig('../result/img/B-{}-{}.png'.format(self.__date_span[0], self.__date_span[-1]))
-        plt.clf()
-        # plt.grid(ls='--')
-        # plt.show()
-        pass
-
-    def __saveKBRRRMS(self):
-        self.AdjustPath = AdjustOrbitConfig.PathOfFiles()
-        self.AdjustPath.__dict__.update(self.__adjust_config.PathOfFilesConfig.copy())
-
-        res_dir = pathlib.Path().joinpath(self.AdjustPath.RangeRateTemp, self.__date_span[0] + '_' + self.__date_span[1])
-        post_RMS = []
-        for i in range(0, self.__arcLen):
-            res_filename = res_dir.joinpath('RangeRate_' + str(i) + '.hdf5')
-            if os.path.exists(res_filename):
-                h5 = h5py.File(res_filename, 'r')
-                if len(h5.keys()) != 0:
-                    postfit = h5['post_residual'][()]
-                    post_RMS.append(self.__rms(postfit))
-        plt.figure(dpi=300, figsize=(16, 8))
-        plt.title('GRACE-KBRR-A-{}-{}'.format(self.__date_span[0], self.__date_span[-1]), fontsize=24)
-        plt.plot(np.arange(len(post_RMS)), [i * 1000000 for i in post_RMS], marker='o', label="arc RMS")
-        plt.yticks(fontsize=18)
-        plt.ylabel(r'$X/um$', fontsize=20)
-        plt.legend(loc='upper right', fontsize=20)
-        plt.savefig('../result/img/KBRR-{}-{}.png'.format(self.__date_span[0], self.__date_span[-1]))
-        pass
-
-    def __rms(self, x: np.ndarray):
-        """
-        :param x: 1-dim
-        :return:
-        """
-        # 确认公式
-        return np.linalg.norm(x) / np.sqrt(np.shape(x)[0])
