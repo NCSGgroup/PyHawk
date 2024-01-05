@@ -3,6 +3,7 @@ from scipy import interpolate
 from src.Interface.L1b import L1b as Level_1B
 from src.Preference.EnumType import Payload, SatID
 import datetime
+from Quaternion import Quat, Quaternion
 
 
 class GapFix:
@@ -121,7 +122,7 @@ class GapFix:
                                                                        , data[gapinfo[i]['rl'], 0], gapinfo[i]['ng']))
                     f.write('\n')
 
-        pass
+        return self
 
     def __fix(self, type: Payload, sat: SatID):
 

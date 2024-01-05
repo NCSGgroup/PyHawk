@@ -15,7 +15,7 @@
         "SCA": true,
         "KBR": true,
         "GNV": true,
-        "KinematicOrbit": true,
+        "KinematicOrbit": false,
         "LRI": false
     },
     "is_orbit_GCRS": {
