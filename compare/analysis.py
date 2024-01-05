@@ -1,7 +1,6 @@
 import h5py
 import json
 import os
-
 import numpy as np
 import matplotlib.pyplot as plt
 from src.Preference.Pre_Parameterization import ParameterConfig
@@ -55,7 +54,7 @@ def drawTime():
     # csr_e_l = get_drgee_rms(diff_c=csr_diff_c, diff_s=csr_diff_s)
     # csr_n_l = get_geoid_drgee_error(diff_c=csr_diff_c, diff_s=csr_diff_s)
     '''read GFZ'''
-    gfz_filename = '../result/SH/GFZ/GSM-2_2009121-2009151_GRAC_GFZOP_BA01_0600.gfc'
+    gfz_filename = '../result/SH/GFZ/GSM-2_2009060-2009090_GRAC_GFZOP_BA01_0600.gfc'
     gfz_c, gfz_s = LoadCSR().load(fileIn=gfz_filename).getCS(Nmax=60)
     gfz_c, gfz_s = gfz_c - static_c, gfz_s - static_s
     gfz_c, gfz_s = GeoMathKit.CS_1dTo2d(gfz_c), GeoMathKit.CS_1dTo2d(gfz_s)
@@ -69,7 +68,7 @@ def drawTime():
     # gfz_e_l = get_drgee_rms(diff_c=gfz_diff_c, diff_s=gfz_diff_s)
     # gfz_n_l = get_geoid_drgee_error(diff_c=gfz_diff_c, diff_s=gfz_diff_s)
     '''read JPL'''
-    jpl_filename = '../result/SH/JPL/GSM-2_2009121-2009151_GRAC_JPLEM_BA01_0600.gfc'
+    jpl_filename = '../result/SH/JPL/GSM-2_2009060-2009090_GRAC_JPLEM_BA01_0600.gfc'
     jpl_c, jpl_s = LoadCSR().load(fileIn=jpl_filename).getCS(Nmax=60)
     jpl_c, jpl_s = jpl_c - static_c, jpl_s - static_s
     jpl_c, jpl_s = GeoMathKit.CS_1dTo2d(jpl_c), GeoMathKit.CS_1dTo2d(jpl_s)
@@ -106,17 +105,17 @@ def drawTime():
     gfz_05 = get_geoid_drgee_error(diff_c=gfz_05_c, diff_s=gfz_05_s)
     '''jpl 05'''
     jpl_05 = get_geoid_drgee_error(diff_c=jpl_c, diff_s=jpl_s)
-    plt.title('Geoid Degree Error RMS(2009-05)', fontsize=24)
+    plt.title('Geoid Degree Error RMS(2009-03)', fontsize=24)
     plt.plot(np.arange(2, 61, 1), hust[2:], color='green', marker='^', label='HUST 06')
     # plt.plot(np.arange(2, 61, 1), hust2[2:], color='black', marker='^', label='HUST 5e12')
     # plt.plot(np.arange(2, 61, 1), hust3[2:], color='olive', marker='^', label='HUST 1.5h')
 
     # plt.plot(np.arange(2, 61, 1), hust4[2:], color='olive', marker='^', label='HUST kin-3h-2e11')
     plt.plot(np.arange(2, 61, 1), csr[2:], color='red', marker='.', label='CSR 06')
-    # plt.plot(np.arange(2, 61, 1), gfz[2:], color='black', marker='s', label='GFZ 06')
-    plt.plot(np.arange(2, 61, 1), csr_05[2:], color='indigo', marker='h', label='CSR 05')
+    plt.plot(np.arange(2, 61, 1), gfz[2:], color='black', marker='s', label='GFZ 06')
+    # plt.plot(np.arange(2, 61, 1), csr_05[2:], color='indigo', marker='h', label='CSR 05')
     # plt.plot(np.arange(2, 61, 1), gfz_05[2:], color='blue', marker='H', label='GFZ 05')
-    # plt.plot(np.arange(2, 61, 1), jpl_05[2:], color='blue', marker='p', label='JPL 06')
+    plt.plot(np.arange(2, 61, 1), jpl_05[2:], color='blue', marker='p', label='JPL 06')
     # plt.plot(np.arange(2, 61, 1), csr_e_l[2:], color='red', marker='s', label='CSR - HUST')
     # plt.plot(np.arange(2, 61, 1), gfz_e_l[2:], color='blue', marker='p', label='GFZ - HUST')
     # plt.plot(np.arange(2, 61, 1), jpl_e_l[2:], color='green', marker='P', label='JPL - HUST')
