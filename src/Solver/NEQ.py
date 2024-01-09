@@ -106,7 +106,7 @@ class GravityNEQperArc:
             if i == 0:
                 self.get_neq_orbit_V2(SatID.A)
             elif i == 1:
-                self.get_neq_orbit(SatID.B)
+                self.get_neq_orbit_V2(SatID.B)
             elif i == 2:
                 self.get_neq_range_rate()
         self.__saveData.close()
