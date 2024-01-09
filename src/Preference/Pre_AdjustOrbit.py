@@ -4,16 +4,22 @@ import json
 
 class AdjustOrbitConfig:
     def __init__(self):
+        self.OrbitConfig = self.Orbit().__dict__
         self.RangeRateConfig = self.RangeRate().__dict__
         self.PathOfFilesConfig = self.PathOfFiles().__dict__
+
+    class Orbit:
+        def __init__(self):
+            self.OutlierTimes = 3
+            self.OutlierLimit = 0.04
 
     class RangeRate:
         def __init__(self):
             self.ParameterFitting = EnumType.SSTFitOption.biasC0C1_OneCPR.name
-            self.OutlierTimes = 3  # how
-            self.OutlierLimit = 1e-07
-            self.ArcLength = 0.75
-            self.Iterations = 2  # times
+            self.OutlierTimes = 6  # how
+            self.OutlierLimit = 7e-07
+            self.ArcLength = 1.5
+            self.Iterations = 3  # times
 
     class PathOfFiles:
         def __init__(self):

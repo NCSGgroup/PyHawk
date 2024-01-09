@@ -157,14 +157,14 @@ class CalibrateOrbit:
             pool.map(self._adjustOrbit, range(self.__arcLen))
             pool.close()
             pool.join()
-        self.__saveOrbitRMS()
+        # self.__saveOrbitRMS()
         if isAdjustKBRR:
             self.makeLog(stepName='adjustKBRR', process=AdjustKBRRProcess)
             pool = multiprocessing.Pool(processes=AdjustKBRRProcess)
             pool.map(self._adjustKBRR, range(self.__arcLen))
             pool.close()
             pool.join()
-        self.__saveKBRRRMS()
+        # self.__saveKBRRRMS()
         if isGravityDesignMat:
             self.makeLog(stepName='gravityDesignMat', process=GetGravityDesignMatProcess)
             pool = multiprocessing.Pool(processes=GetGravityDesignMatProcess)
@@ -174,7 +174,8 @@ class CalibrateOrbit:
         if isNEQ:
             self.makeLog(stepName='NEQ', process=GetNEQProcess)
             pool = multiprocessing.Pool(processes=GetNEQProcess)
-            pool.map(self._NEQ, range(self.__arcLen))
+            # pool.map(self._NEQ, range(self.__arcLen))
+            pool.map(self._NEQ, range(71, 73))
             pool.close()
             pool.join()
         if isSH:
@@ -187,39 +188,15 @@ class CalibrateOrbit:
         """step 1: Read raw data"""
         eop = EOP().configure(frameConfig=self.__frame_config).load()
         fr = Frame(eop).configure(frameConfig=self.__frame_config)
-        s = GRACE_NEW_RL02().configure(InterfaceConfig=self.__interface_config).setDate()
+        s = GRACE_RL03().configure(InterfaceConfig=self.__interface_config).setDate()
         s.read_double_sat()
         """step 2: Convert orbit from ITRS frame into GCRS frame"""
         kine = KinematicOrbitV2(L1b=s).configure()
         kine.read_double_sat()
-        # kine.GNVandKiOrbitItrs2Gcrs(fr)
+        kine.GNVandKiOrbitItrs2Gcrs(fr)
         """step 3: Gap fix"""
         gf = GapFix(L1b=s).configure()
         gf.fix_all().makeReport()
-        sca, sca_gap = gf.getData('SCA', 'A')
-        plt.figure()
-        plt.subplot(411)
-        plt.title('GRACE-SCA-A-{}-{}'.format(self.__date_span[0], self.__date_span[-1]), fontsize=24)
-        plt.scatter(sca[50000:100000, 0], sca[50000:100000, 1], label="cos")
-        plt.yticks(fontsize=18)
-
-        plt.legend(loc='best', fontsize=14)
-        plt.subplot(412)
-        plt.scatter(sca[50000:100000, 0], sca[50000:100000, 2], label="i")
-        plt.yticks(fontsize=18)
-
-        plt.legend(loc='best', fontsize=14)
-        plt.subplot(413)
-        plt.scatter(sca[50000:100000, 0], sca[50000:100000, 3], label="j")
-        plt.yticks(fontsize=18)
-
-        plt.legend(loc='best', fontsize=14)
-        plt.subplot(414)
-        plt.scatter(sca[50000:100000, 0], sca[50000:100000, 4], label="k")
-        plt.xlabel('GPS time', fontsize=20)
-        plt.yticks(fontsize=18)
-        plt.legend(loc='best', fontsize=14)
-        plt.show()
 
         arc = ArcSelect(gf=gf).configure()
         arc.unpackArcs().makeReport()

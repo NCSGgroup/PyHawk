@@ -40,7 +40,7 @@ class ArcSelect:
         KiOrbB = self.__gf.L1b.getData(Payload.KinematicOrbit.name, SatID.B)
 
         # -------------------------arc divide--------------------------------------
-        timelist = [ACC_A[:, 0].copy(), ACC_B[:, 0].copy(), SCA_A[:, 0].copy(), SCA_B[:, 0].copy()]
+        timelist = [ACC_A[:, 0].copy(), ACC_B[:, 0].copy(), SCA_A[:, 0].copy(), SCA_B[:, 0].copy(), KBR[:, 0].copy()]
 
         self.__divide2(timelist)
         self.__discardArcs()
@@ -193,6 +193,7 @@ class ArcSelect:
         arcs = self.__arcs
         name = Gr.name + '_' + sat.name
 
+        rmsx = self.rms(data[:, 1])
         for i, arc in enumerate(tqdm(arcs, desc='Arc unpacking for ' + name), 0):
             time = data[:, 0].astype(np.int64)
             x1 = data[time >= arc[0], :]
@@ -226,6 +227,14 @@ class ArcSelect:
                 i += 1
 
         pass
+
+    def rms(self, x: np.ndarray):
+        """
+        :param x: 1-dim
+        :return:
+        """
+        # 确认公式
+        return np.linalg.norm(x) / np.sqrt(np.shape(x)[0])
 
     @staticmethod
     def divideArcByBool(arrayBool):
