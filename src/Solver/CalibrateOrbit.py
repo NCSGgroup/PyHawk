@@ -157,14 +157,14 @@ class CalibrateOrbit:
             pool.map(self._adjustOrbit, range(self.__arcLen))
             pool.close()
             pool.join()
-        self.__saveOrbitRMS()
+        # self.__saveOrbitRMS()
         if isAdjustKBRR:
             self.makeLog(stepName='adjustKBRR', process=AdjustKBRRProcess)
             pool = multiprocessing.Pool(processes=AdjustKBRRProcess)
             pool.map(self._adjustKBRR, range(self.__arcLen))
             pool.close()
             pool.join()
-        self.__saveKBRRRMS()
+        # self.__saveKBRRRMS()
         if isGravityDesignMat:
             self.makeLog(stepName='gravityDesignMat', process=GetGravityDesignMatProcess)
             pool = multiprocessing.Pool(processes=GetGravityDesignMatProcess)
@@ -174,7 +174,8 @@ class CalibrateOrbit:
         if isNEQ:
             self.makeLog(stepName='NEQ', process=GetNEQProcess)
             pool = multiprocessing.Pool(processes=GetNEQProcess)
-            pool.map(self._NEQ, range(self.__arcLen))
+            # pool.map(self._NEQ, range(self.__arcLen))
+            pool.map(self._NEQ, range(71, 73))
             pool.close()
             pool.join()
         if isSH:
@@ -196,6 +197,7 @@ class CalibrateOrbit:
         """step 3: Gap fix"""
         gf = GapFix(L1b=s).configure()
         gf.fix_all().makeReport()
+
         arc = ArcSelect(gf=gf).configure()
         arc.unpackArcs().makeReport()
         pass
