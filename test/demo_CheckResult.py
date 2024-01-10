@@ -19,7 +19,7 @@ import numpy as np
 def readDate():
     filename = "../temp/RawData/2009-03-01_2009-03-31.hdf5"
     h5 = h5py.File(filename, "r")
-    for i in range(69, 70):
+    for i in range(71, 72):
 
         gnv = h5['GNV_A_arc'+str(i)][:][:, :4]
         kin = h5['KinematicOrbit_A_arc'+str(i)][:]

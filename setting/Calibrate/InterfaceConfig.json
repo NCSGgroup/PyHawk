@@ -1,8 +1,8 @@
 {
     "mission": "GRACE_RL03",
     "date_span": [
-        "2009-05-01",
-        "2009-05-31"
+        "2009-03-01",
+        "2009-03-31"
     ],
     "arcNo": 0,
     "sat": {
@@ -15,7 +15,7 @@
         "SCA": true,
         "KBR": true,
         "GNV": true,
-        "KinematicOrbit": false,
+        "KinematicOrbit": true,
         "LRI": false
     },
     "is_orbit_GCRS": {
@@ -36,7 +36,7 @@
     "gapfix_cubic_mis_max": 80,
     "gapfix_cubic_int": 150,
     "arc_length": 6,
-    "min_arcLen": 4,
+    "min_arcLen": 2,
     "PathOfFilesConfig": {
         "payload_ACC": "../data/GRACE_RL02",
         "payload_SCA": "../data/GRACE_RL03",

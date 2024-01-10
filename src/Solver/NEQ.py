@@ -5,6 +5,7 @@ from src.Auxilary.GeoMathKit import GeoMathKit
 from src.Preference.Pre_Solver import SolverConfig
 from src.Preference.Pre_AdjustOrbit import AdjustOrbitConfig
 from src.Preference.Pre_Interface import InterfaceConfig
+from src.Auxilary.Outlier import Outlier
 import numpy as np
 import h5py
 from tqdm import tqdm
@@ -35,8 +36,11 @@ class GravityNEQperArc:
         self._OrbitBConfig = None
         self._SSTConfig = None
         self._PathOfFilesConfig = None
+        self._AdjustConfig = None
         self._AdjustPathConfig = None
         self._InterfaceConfig = None
+        self._rd = None
+
         self._sat = [key for key, value in sat.items() if value]
 
         for sat in self._sat:
@@ -51,6 +55,9 @@ class GravityNEQperArc:
         self._NEQConfig = NEQConfig
         self._solverConfig = solverConfig
         self._InterfaceConfig = InterfaceConfig
+        '''config adjust config'''
+        self._AdjustConfig = AdjustOrbitConfig.Orbit()
+        self._AdjustConfig.__dict__.update(AdjustOrbitConfig.OrbitConfig.copy())
         '''config adjust path'''
         self._AdjustPathConfig = AdjustOrbitConfig.PathOfFiles()
         self._AdjustPathConfig.__dict__.update(AdjustOrbitConfig.PathOfFilesConfig.copy())
@@ -97,9 +104,9 @@ class GravityNEQperArc:
 
         for i in tqdm(range(3), desc='Build normal equations: '):
             if i == 0:
-                self.get_neq_orbit(SatID.A)
+                self.get_neq_orbit_V2(SatID.A)
             elif i == 1:
-                self.get_neq_orbit(SatID.B)
+                self.get_neq_orbit_V2(SatID.B)
             elif i == 2:
                 self.get_neq_range_rate()
         self.__saveData.close()
@@ -124,14 +131,14 @@ class GravityNEQperArc:
         if not config.IsRequired:
             return None
 
-        # rd = ArcData(interfaceConfig=self._InterfaceConfig)
+        self._rd = ArcData(interfaceConfig=self._InterfaceConfig)
 
-        # if config.UseKinematicOrbit:
-        #     orbit_obs = rd.getData(arc=self.__arcNo, kind=Payload.KinematicOrbit, sat=sat)[:, 0:4]
-        # else:
-        #     orbit_obs = rd.getData(arc=self.__arcNo, kind=Payload.GNV, sat=sat)[:, 0:4]
+        if config.UseKinematicOrbit:
+            orbit_obs = self._rd.getData(arc=self.__arcNo, kind=Payload.KinematicOrbit, sat=sat)[:, 0:4]
+        else:
+            orbit_obs = self._rd.getData(arc=self.__arcNo, kind=Payload.GNV, sat=sat)[:, 0:4]
 
-        orbit_obs = self.get_orbit_obs(sat=sat)
+        # orbit_obs = self.get_orbit_obs(sat=sat)
         t_obs = orbit_obs[:, 0]
         '''for the orbit, only position (r) is needed for the inversion'''
         '''find the common'''
@@ -145,9 +152,63 @@ class GravityNEQperArc:
         global_r = global_r[new_index, :, :]
         '''Expanding the observations'''
         obs = orbit_obs[:, 1:] - orbit_nominal
+
         obs = obs.reshape((-1, 1))
+
         # TODO: Fix the kinematic orbit
 
+        '''Expanding the design matrix'''
+        n_local = np.shape(local_r)[-1]
+        n_global = np.shape(global_r)[-1]
+        local_r = local_r.reshape((-1, n_local))
+        global_r = global_r.reshape((-1, n_global))
+
+        N, l = GeoMathKit.keepGlobal(dm_global=global_r, dm_local=local_r, obs=obs)
+
+        self.__saveData.create_dataset('Orbit_N_%1s' % sat.name, data=N)
+        self.__saveData.create_dataset('Orbit_l_%1s' % sat.name, data=l)
+        pass
+
+    def get_neq_orbit_V2(self, sat: SatID):
+        """
+        get Normal Equations for the orbit only
+        :return:
+        """
+        if sat == SatID.A:
+            config = self.__config['satA']
+            orbit_nominal = self.__orbit_nominal[:, 0:3]
+            local_r = self.__local_r[:, 0:3, :]
+            global_r = self.__global_r[:, 0:3, :]
+        else:
+            config = self.__config['satB']
+            orbit_nominal = self.__orbit_nominal[:, 3:6]
+            local_r = self.__local_r[:, 3:6, :]
+            global_r = self.__global_r[:, 3:6, :]
+        t_nominal = self.__t_nominal
+        if not config.IsRequired:
+            return None
+        self._rd = ArcData(interfaceConfig=self._InterfaceConfig)
+
+        kin_obs = self.get_kin_obs(sat, t_nominal, orbit_nominal)
+        orbit_obs = self.get_orbit_obs(sat=sat, Kin_obs=kin_obs)
+        t_obs = orbit_obs[:, 0]
+        '''for the orbit, only position (r) is needed for the inversion'''
+        '''find the common'''
+        int_t_obs = t_obs.astype(np.int64)
+        int_t_nominal = t_nominal.astype(np.int64)
+        new_index = [list(int_t_nominal).index(x) for x in int_t_obs]
+        '''Reassignment'''
+        t_nominal = t_nominal[new_index]
+        orbit_nominal = orbit_nominal[new_index, :]
+        local_r = local_r[new_index, :, :]
+        global_r = global_r[new_index, :, :]
+        '''Expanding the observations'''
+        obs = orbit_obs[:, 1:] - orbit_nominal
+        index = Outlier(rms_times=self._AdjustConfig.OutlierTimes, upper_RMS=self._AdjustConfig.OutlierLimit).remove_V2(
+            t_nominal, obs[:, 0])
+        obs = obs[index, :]
+        obs = obs.reshape((-1, 1))
+        # TODO: Fix the kinematic orbit
         '''Expanding the design matrix'''
         n_local = np.shape(local_r)[-1]
         n_global = np.shape(global_r)[-1]
@@ -207,10 +268,26 @@ class GravityNEQperArc:
         self.__saveData.create_dataset('%s_l' % SSTObserve.RangeRate.name, data=l)
         pass
 
-    def get_orbit_obs(self, sat):
-        rd = ArcData(interfaceConfig=self._InterfaceConfig)
-        Kin_obs = rd.getData(arc=self.__arcNo, kind=Payload.KinematicOrbit, sat=sat)[:, 0:4]
-        GNV_obs = rd.getData(arc=self.__arcNo, kind=Payload.GNV, sat=sat)[:, 0:4]
+    def get_kin_obs(self, sat, t_nominal, orbit_nominal):
+        kin_obs = self._rd.getData(arc=self.__arcNo, kind=Payload.KinematicOrbit, sat=sat)[:, 0:4]
+        t_obs = kin_obs[:, 0]
+        '''for the orbit, only position (r) is needed for the inversion'''
+        '''find the common'''
+        int_t_obs = t_obs.astype(np.int64)
+        int_t_nominal = t_nominal.astype(np.int64)
+        new_index = [list(int_t_nominal).index(x) for x in int_t_obs]
+        '''Reassignment'''
+        t_nominal = t_nominal[new_index]
+        orbit_nominal = orbit_nominal[new_index, :]
+        '''Outlier'''
+        before_obs = kin_obs[:, 1:] - orbit_nominal
+        index = Outlier(rms_times=self._AdjustConfig.OutlierTimes, upper_RMS=self._AdjustConfig.OutlierLimit).remove_V2(
+            t_nominal, before_obs[:, 0])
+        return kin_obs[index, :]
+
+    def get_orbit_obs(self, sat, Kin_obs):
+        # Kin_obs = rd.getData(arc=self.__arcNo, kind=Payload.KinematicOrbit, sat=sat)[:, 0:4]
+        GNV_obs = self._rd.getData(arc=self.__arcNo, kind=Payload.GNV, sat=sat)[:, 0:4]
 
         t_nominal = GNV_obs[:, 0]
         t_obs = Kin_obs[:, 0]
@@ -223,3 +300,11 @@ class GravityNEQperArc:
         GNV_obs[new_index, :] = Kin_obs
 
         return GNV_obs
+
+    def rms(self, x: np.ndarray):
+        """
+        :param x: 1-dim
+        :return:
+        """
+        # 确认公式
+        return np.linalg.norm(x) / np.sqrt(np.shape(x)[0])
