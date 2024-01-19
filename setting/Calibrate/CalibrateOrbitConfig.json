@@ -1,9 +1,9 @@
 {
     "StepControlConfig": {
         "isPreprocess": false,
-        "isAdjustOrbit": false,
-        "isAdjustKBRR": false,
-        "isGetGravityDesignMat": false,
+        "isAdjustOrbit": true,
+        "isAdjustKBRR": true,
+        "isGetGravityDesignMat": true,
         "isGetNEQ": true,
         "isGetSH": true
     },

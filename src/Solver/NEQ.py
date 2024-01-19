@@ -133,12 +133,11 @@ class GravityNEQperArc:
 
         self._rd = ArcData(interfaceConfig=self._InterfaceConfig)
 
-        if config.UseKinematicOrbit:
-            orbit_obs = self._rd.getData(arc=self.__arcNo, kind=Payload.KinematicOrbit, sat=sat)[:, 0:4]
-        else:
-            orbit_obs = self._rd.getData(arc=self.__arcNo, kind=Payload.GNV, sat=sat)[:, 0:4]
-
-        # orbit_obs = self.get_orbit_obs(sat=sat)
+        # if config.UseKinematicOrbit:
+        kin_obs = self._rd.getData(arc=self.__arcNo, kind=Payload.KinematicOrbit, sat=sat)[:, 0:4]
+        # else:
+        #     orbit_obs = self._rd.getData(arc=self.__arcNo, kind=Payload.GNV, sat=sat)[:, 0:4]
+        orbit_obs = self.get_orbit_obs(sat=sat, Kin_obs=kin_obs)
         t_obs = orbit_obs[:, 0]
         '''for the orbit, only position (r) is needed for the inversion'''
         '''find the common'''
@@ -187,8 +186,8 @@ class GravityNEQperArc:
         t_nominal = self.__t_nominal
         if not config.IsRequired:
             return None
-
         self._rd = ArcData(interfaceConfig=self._InterfaceConfig)
+
         kin_obs = self.get_kin_obs(sat, t_nominal, orbit_nominal)
         orbit_obs = self.get_orbit_obs(sat=sat, Kin_obs=kin_obs)
         t_obs = orbit_obs[:, 0]
@@ -204,12 +203,9 @@ class GravityNEQperArc:
         global_r = global_r[new_index, :, :]
         '''Expanding the observations'''
         obs = orbit_obs[:, 1:] - orbit_nominal
-        index = Outlier(rms_times=self._AdjustConfig.OutlierTimes, upper_RMS=self._AdjustConfig.OutlierLimit).remove_V2(
-            t_nominal, obs[:, 0])
-        '''Reassignment'''
-        local_r = local_r[index, :, :]
-        global_r = global_r[index, :, :]
-        obs = obs[index, :]
+        # index = Outlier(rms_times=self._AdjustConfig.OutlierTimes, upper_RMS=self._AdjustConfig.OutlierLimit).remove_V2(
+        #     t_nominal, obs[:, 0])
+        # obs = obs[index, :]
         obs = obs.reshape((-1, 1))
         # TODO: Fix the kinematic orbit
         '''Expanding the design matrix'''

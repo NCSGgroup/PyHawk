@@ -5,6 +5,7 @@ from tqdm import tqdm
 from src.Preference.EnumType import SatID, Payload
 from src.Interface.GapFix import GapFix
 from src.Preference.Pre_Interface import InterfaceConfig
+from src.Auxilary.Outlier import Outlier
 import pathlib
 
 
@@ -38,7 +39,9 @@ class ArcSelect:
         KBR = self.__gf.getData(Payload.KBR.name, SatID.A)[0]
         KiOrbA = self.__gf.L1b.getData(Payload.KinematicOrbit.name, SatID.A)
         KiOrbB = self.__gf.L1b.getData(Payload.KinematicOrbit.name, SatID.B)
-
+        # ------------------------outlier kinOrbit data----------------------------------
+        KiOrbA = self.__outlier(GNV_A, KiOrbA)
+        KiOrbB = self.__outlier(GNV_B, KiOrbB)
         # -------------------------arc divide--------------------------------------
         timelist = [ACC_A[:, 0].copy(), ACC_B[:, 0].copy(), SCA_A[:, 0].copy(), SCA_B[:, 0].copy(), KBR[:, 0].copy()]
 
@@ -265,6 +268,10 @@ class ArcSelect:
         arclist.append(trueIndex[np.arange(diffIndex[-1] + 1, len(trueIndex))])
 
         return arclist
+
+    def __outlier(self, GNV, KiOrb):
+
+        return KiOrb
 
 
 class ArcData:

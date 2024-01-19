@@ -5,6 +5,7 @@ import json
 class SolverConfig:
     def __init__(self):
         self.SSTOption = SSTObserve.RangeRate.name
+        self.OrbitKinFactor = 1e11
         self.DesignMatrixTemp = "../temp/DesignMatrixSH"
 
 
