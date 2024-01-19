@@ -52,6 +52,7 @@ class InterfaceConfig:
             # ======================== For the data preprocess===============================
             self.report_gap = "../report/gap"
             self.report_arc = "../report/arc"
+            self.report_arcft = "../report/arcft"
             self.temp_raw_data = "../temp/RawData"
             self.log = "../log/"
 

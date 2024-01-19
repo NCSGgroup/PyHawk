@@ -23,8 +23,8 @@
     },
     "NonConservativeConfig": {
         "date_span": [
-            "2009-03-01",
-            "2009-03-31"
+            "2009-01-01",
+            "2009-01-31"
         ],
         "arcNo": 0,
         "sat": {
@@ -123,9 +123,9 @@
         "ACCCoordinate": "GCRS"
     },
     "NonTideConfig": {
-        "kind": "GLO",
-        "MaxDeg": 180,
-        "TS": 3
+        "kind": "ATM",
+        "MaxDeg": 100,
+        "TS": 6
     },
     "RefGravModelConfig": {
         "kind": 0,
@@ -151,7 +151,7 @@
     },
     "PathOfFilesConfig": {
         "Ephemerides": "../data/ephemerides",
-        "AOD": "../data/AOD/RL06",
+        "AOD": "../data/AOD/2009-01",
         "EOT11a": "../data/eot11a",
         "FES2014": "../data/FES2014",
         "Atmos": "../data/atmos",
