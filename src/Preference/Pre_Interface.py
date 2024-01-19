@@ -5,7 +5,7 @@ import json
 class InterfaceConfig:
     def __init__(self):
         self.mission = Mission.GRACE_RL03.name
-        self.date_span = ['2009-05-01', '2009-05-31']
+        self.date_span = ['2009-01-01', '2009-01-31']
         self.arcNo = 0
         self.sat = {SatID.A.name: True,
                     SatID.B.name: True}
@@ -37,7 +37,14 @@ class InterfaceConfig:
         self.arc_length = 6
         self.min_arcLen = 4
 
+        self.OrbitConfig = self.Orbit().__dict__
+
         self.PathOfFilesConfig = self.PathOfFiles(self).__dict__
+
+    class Orbit:
+        def __init__(self):
+            self.OutlierTimes = 3
+            self.OutlierLimit = 0.04
 
     class PathOfFiles:
         def __init__(self, interface):

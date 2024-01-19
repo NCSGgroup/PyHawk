@@ -37,6 +37,10 @@
     "gapfix_cubic_int": 150,
     "arc_length": 6,
     "min_arcLen": 2,
+    "OrbitConfig": {
+        "OutlierTimes": 3,
+        "OutlierLimit": 0.04
+    },
     "PathOfFilesConfig": {
         "payload_ACC": "../data/GRACE_RL02",
         "payload_SCA": "../data/GRACE_RL03",
@@ -46,6 +50,7 @@
         "payload_LRI": "../data/GRACE_RL02",
         "report_gap": "../report/gap",
         "report_arc": "../report/arc",
+        "report_arcft": "../report/arcft",
         "temp_raw_data": "../temp/RawData",
         "log": "../log/"
     }
