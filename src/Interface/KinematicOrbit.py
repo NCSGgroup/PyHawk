@@ -509,6 +509,8 @@ class KinematicOrbitV2(KinematicOrbit):
 
         try:
             res = np.loadtxt(path, dtype=np.float64, comments='#', usecols=(0, 1, 2, 3))
+            if np.shape(res)[0] == 0:
+                return None
             res[:, 0] = np.round(Frame.mjd2sec(res[:, 0]))
         except FileNotFoundError as e:
             # lg.error(e)

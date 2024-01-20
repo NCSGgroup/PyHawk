@@ -133,11 +133,11 @@ class GravityNEQperArc:
 
         self._rd = ArcData(interfaceConfig=self._InterfaceConfig)
 
-        # if config.UseKinematicOrbit:
-        kin_obs = self._rd.getData(arc=self.__arcNo, kind=Payload.KinematicOrbit, sat=sat)[:, 0:4]
-        # else:
-        #     orbit_obs = self._rd.getData(arc=self.__arcNo, kind=Payload.GNV, sat=sat)[:, 0:4]
-        orbit_obs = self.get_orbit_obs(sat=sat, Kin_obs=kin_obs)
+        if config.UseKinematicOrbit:
+            orbit_obs = self._rd.getData(arc=self.__arcNo, kind=Payload.KinematicOrbit, sat=sat)[:, 0:4]
+        else:
+            orbit_obs = self._rd.getData(arc=self.__arcNo, kind=Payload.GNV, sat=sat)[:, 0:4]
+        # orbit_obs = self.get_orbit_obs(sat=sat, Kin_obs=kin_obs)
         t_obs = orbit_obs[:, 0]
         '''for the orbit, only position (r) is needed for the inversion'''
         '''find the common'''

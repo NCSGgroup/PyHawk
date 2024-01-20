@@ -30,7 +30,20 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
     def setInitData(self, kind: Payload):
         GNVA = self.__rd.getData(arc=self._arc, kind=kind, sat=SatID.A)
         GNVB = self.__rd.getData(arc=self._arc, kind=kind, sat=SatID.B)
-        self.__ArcLen = len(GNVB)
+        time_A = GNVA[:, 0]
+        time_B = GNVB[:, 0]
+
+        commonTime = set(time_A.astype(np.int64))
+        commonTime = commonTime & set(time_B.astype(np.int64))
+        commonTime = np.array(list(commonTime))
+        commonTime.sort()
+        self.__ArcLen = len(commonTime)
+
+        index1 = [list(time_A).index(x) for x in commonTime]
+        index2 = [list(time_B).index(x) for x in commonTime]
+        GNVA = GNVA[index1, :]
+        GNVB = GNVB[index2, :]
+
         startPosA, startPosB = GNVA[4, 1:4], GNVB[4, 1:4]
         startVelA, startVelB = GNVA[4, 4:7], GNVB[4, 4:7]
         self.__initTime = GNVA[4, 0]
