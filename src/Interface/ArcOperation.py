@@ -25,6 +25,7 @@ class ArcSelect:
         self.__arc_path = self.__gf.L1b.InterfacePathConfig.report_arc
         self.__raw_data_path = self.__gf.L1b.InterfacePathConfig.temp_raw_data
         self.__sr_target = self.__gf.L1b.InterfaceConfig.sr_target
+        self.__OrbitConfig = self.__gf.L1b.OrbitConfig
         return self
 
     def unpackArcs(self):
@@ -270,8 +271,18 @@ class ArcSelect:
         return arclist
 
     def __outlier(self, GNV, KiOrb):
-
-        return KiOrb
+        GNV_time = GNV[:, 0]
+        KiOrb_time = KiOrb[:, 0]
+        int_t_kin = KiOrb_time.astype(np.int64)
+        int_t_gnv = GNV_time.astype(np.int64)
+        new_index = [list(int_t_gnv).index(x) for x in int_t_kin]
+        GNV_time = GNV_time[new_index]
+        GNV = GNV[new_index, :]
+        '''Outlier'''
+        diff = KiOrb[:, 1:] - GNV[:, 1:4]
+        index = Outlier(rms_times=self.__OrbitConfig.OutlierTimes, upper_RMS=self.__OrbitConfig.OutlierLimit).remove_V2(
+            GNV_time, diff[:, 0])
+        return KiOrb[index, :]
 
 
 class ArcData:

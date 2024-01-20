@@ -32,6 +32,7 @@ class L1b:
 
         self.InterfaceConfig = None
         self.InterfacePathConfig = None
+        self.OrbitConfig = None
         pass
 
     def configure(self, InterfaceConfig:InterfaceConfig, **kwargs):
@@ -39,7 +40,8 @@ class L1b:
         self.InterfaceConfig = InterfaceConfig
         self.InterfacePathConfig = InterfaceConfig.PathOfFiles(self.InterfaceConfig)
         self.InterfacePathConfig.__dict__.update(self.InterfaceConfig.PathOfFilesConfig.copy())
-
+        self.OrbitConfig = InterfaceConfig.Orbit()
+        self.OrbitConfig.__dict__.update(InterfaceConfig.OrbitConfig.copy())
         self._path_ACC = self.InterfacePathConfig.payload_ACC
         self._path_KBR = self.InterfacePathConfig.payload_KBR
         self._path_SCA = self.InterfacePathConfig.payload_SCA
