@@ -193,14 +193,21 @@ class GravityNEQperArc:
         t_obs = orbit_obs[:, 0]
         '''for the orbit, only position (r) is needed for the inversion'''
         '''find the common'''
+        commonTime = set(t_obs.astype(np.int64))
+        commonTime = commonTime & set(t_nominal.astype(np.int64))
+        commonTime = np.array(list(commonTime))
+        commonTime.sort()
+
         int_t_obs = t_obs.astype(np.int64)
         int_t_nominal = t_nominal.astype(np.int64)
-        new_index = [list(int_t_nominal).index(x) for x in int_t_obs]
+        nominal_index = [list(int_t_nominal).index(x) for x in commonTime]
+        obs_index = [list(int_t_obs).index(x) for x in commonTime]
         '''Reassignment'''
-        t_nominal = t_nominal[new_index]
-        orbit_nominal = orbit_nominal[new_index, :]
-        local_r = local_r[new_index, :, :]
-        global_r = global_r[new_index, :, :]
+        t_nominal = t_nominal[nominal_index]
+        orbit_nominal = orbit_nominal[nominal_index, :]
+        local_r = local_r[nominal_index, :, :]
+        global_r = global_r[nominal_index, :, :]
+        orbit_obs = orbit_obs[obs_index, :]
         '''Expanding the observations'''
         obs = orbit_obs[:, 1:] - orbit_nominal
         # index = Outlier(rms_times=self._AdjustConfig.OutlierTimes, upper_RMS=self._AdjustConfig.OutlierLimit).remove_V2(

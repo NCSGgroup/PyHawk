@@ -21,6 +21,7 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
         self.__initPos = None
         self.__initVel = None
         self.__PosAndVel = None
+        self.__commonTime = None
 
     def configures(self, arc: int, FMConfig:ForceModelConfig, ParConfig:ParameterConfig, FrameConfig:FrameConfig):
         self._arc = arc
@@ -33,11 +34,12 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
         time_A = GNVA[:, 0]
         time_B = GNVB[:, 0]
 
+        self.__ArcLen = len(time_A) if len(time_A) > len(time_B) else len(time_B)
+
         commonTime = set(time_A.astype(np.int64))
         commonTime = commonTime & set(time_B.astype(np.int64))
         commonTime = np.array(list(commonTime))
         commonTime.sort()
-        self.__ArcLen = len(commonTime)
 
         index1 = [list(time_A).index(x) for x in commonTime]
         index2 = [list(time_B).index(x) for x in commonTime]
@@ -47,6 +49,7 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
         startPosA, startPosB = GNVA[4, 1:4], GNVB[4, 1:4]
         startVelA, startVelB = GNVA[4, 4:7], GNVB[4, 4:7]
         self.__initTime = GNVA[4, 0]
+        self.__commonTime = commonTime
         self.__PosAndVel = np.hstack((GNVA[:, 1:4], GNVB[:, 1:4]))
         self.__initPos = np.vstack((startPosA, startPosB))
         self.__initVel = np.vstack((startVelA, startVelB))
@@ -54,6 +57,9 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
 
     def getInitData(self):
         return self.__initTime, self.__initPos, self.__initVel
+
+    def getCommonTime(self):
+        return self.__commonTime
 
     def getInitState(self):
         return self.__PosAndVel
