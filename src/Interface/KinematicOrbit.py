@@ -506,7 +506,8 @@ class KinematicOrbitV2(KinematicOrbit):
                                                 str(sat.name) + '-kinematicOrbit-' + date, 'grace' +
                                                 str(sat.name) + '-kinOrb-' + date + '.txt']))
         res = None
-
+        if not os.path.exists(path):
+            return None
         try:
             res = np.loadtxt(path, dtype=np.float64, comments='#', usecols=(0, 1, 2, 3))
             if np.shape(res)[0] == 0:

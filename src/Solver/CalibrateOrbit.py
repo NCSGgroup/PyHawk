@@ -60,6 +60,7 @@ class CalibrateOrbit:
         self.__date_span = None
         self.__sat = None
         self.__log_path = None
+        self.__arclist = []
         pass
 
     def loadJson(self):
@@ -121,6 +122,7 @@ class CalibrateOrbit:
         self.__date_span = interface_config.date_span
         self.__sat = interface_config.sat
         arc_path = pathlib.Path().joinpath(self.InterfacePathConfig.report_arc, self.__date_span[0]+'_'+self.__date_span[1]+'.txt')
+        arcft_path = pathlib.Path().joinpath(self.InterfacePathConfig.report_arcft, self.__date_span[0]+'_'+self.__date_span[1]+'.txt')
         self.__arcLen = None
 
         '''get step and process control'''
@@ -151,31 +153,32 @@ class CalibrateOrbit:
                 if data[0] == 'Number':
                     self.__arcLen = int(data[3])
                     break
+        self.__arclist = self.getArcList(path=arcft_path)
         if isAdjustOrbit:
             self.makeLog(stepName='adjustOrbit', process=AdjustOrbitProcess)
             pool = multiprocessing.Pool(processes=AdjustOrbitProcess)
-            pool.map(self._adjustOrbit, range(self.__arcLen))
+            pool.map(self._adjustOrbit, self.__arclist)
             pool.close()
             pool.join()
-        # self.__saveOrbitRMS()
+        self.__saveOrbitRMS()
         if isAdjustKBRR:
             self.makeLog(stepName='adjustKBRR', process=AdjustKBRRProcess)
             pool = multiprocessing.Pool(processes=AdjustKBRRProcess)
-            pool.map(self._adjustKBRR, range(self.__arcLen))
+            pool.map(self._adjustKBRR, self.__arclist)
             pool.close()
             pool.join()
-        # self.__saveKBRRRMS()
+        self.__saveKBRRRMS()
         if isGravityDesignMat:
             self.makeLog(stepName='gravityDesignMat', process=GetGravityDesignMatProcess)
             pool = multiprocessing.Pool(processes=GetGravityDesignMatProcess)
-            pool.map(self._gravityDesignMat, range(self.__arcLen))
+            pool.map(self._gravityDesignMat, self.__arclist)
             pool.close()
             pool.join()
         if isNEQ:
             self.makeLog(stepName='NEQ', process=GetNEQProcess)
             pool = multiprocessing.Pool(processes=GetNEQProcess)
-            # pool.map(self._NEQ, range(self.__arcLen))
-            pool.map(self._NEQ, range(71, 73))
+            pool.map(self._NEQ, self.__arclist)
+            # pool.map(self._NEQ, range(71, 73))
             pool.close()
             pool.join()
         if isSH:
@@ -199,7 +202,8 @@ class CalibrateOrbit:
         gf.fix_all().makeReport()
 
         arc = ArcSelect(gf=gf).configure()
-        arc.unpackArcs().makeReport()
+        arc.unpackArcs().makeReport().makeArcTF()
+
         pass
 
     def makeLog(self, stepName, process):
@@ -268,7 +272,7 @@ class CalibrateOrbit:
         LMatrix = np.zeros((parameter_number, 1))
         date_span = interface_config.date_span
 
-        for i in tqdm(range(5, self.__arcLen), desc='Solve normal equations: '):
+        for i in tqdm(self.__arclist, desc='Solve normal equations: '):
             res_filename = res_dir + '/' + str(i) + '.hdf5'
             print(res_filename)
             h5 = h5py.File(res_filename, 'r')
@@ -446,3 +450,14 @@ class CalibrateOrbit:
 
         np.savez('ResKBRR.npz', data=RMS)
         np.savez('SpaceKBRR.npz', x=Lon, y=Lat, z=Postfit)
+
+    def getArcList(self, path):
+        arclist = []
+        with open(path, "r", encoding='utf-8') as f:
+            lines = f.readlines()
+            for line in lines:
+                data = line.split(' ')
+                if data[0] == 'Arc':
+                    if data[3] == 'True':
+                        arclist.append(int(data[2]))
+        return arclist

@@ -35,6 +35,7 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
         time_B = GNVB[:, 0]
 
         self.__ArcLen = len(time_A) if len(time_A) > len(time_B) else len(time_B)
+        self.__initTime = GNVA[4, 0] if len(time_A) > len(time_B) else GNVB[4, 0]
 
         commonTime = set(time_A.astype(np.int64))
         commonTime = commonTime & set(time_B.astype(np.int64))
@@ -48,7 +49,7 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
 
         startPosA, startPosB = GNVA[4, 1:4], GNVB[4, 1:4]
         startVelA, startVelB = GNVA[4, 4:7], GNVB[4, 4:7]
-        self.__initTime = GNVA[4, 0]
+
         self.__commonTime = commonTime
         self.__PosAndVel = np.hstack((GNVA[:, 1:4], GNVB[:, 1:4]))
         self.__initPos = np.vstack((startPosA, startPosB))

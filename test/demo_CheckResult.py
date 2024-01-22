@@ -30,8 +30,8 @@ def readDate():
     #
     RawData = "../temp/RawData/2010-11-01_2010-11-30.hdf5"
     RawDatah5 = h5py.File(RawData, "r")
-    for i in range(51, 52):
-        acc = RawDatah5['ACC_B_arc' + str(i)][:]
+    for i in range(52, 53):
+        acc = RawDatah5['ACC_A_arc' + str(i)][:]
         sca = RawDatah5['SCA_A_arc' + str(i)][:]
         gnv = RawDatah5['GNV_A_arc'+str(i)][:][:, :4]
         kin = RawDatah5['KinematicOrbit_A_arc'+str(i)][:]
