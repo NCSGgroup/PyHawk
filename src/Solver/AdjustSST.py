@@ -118,6 +118,8 @@ class RangeRate:
         dm_list = []
         for i in tqdm(range(len(arclist_t)), desc='SST rang-rate calibration: '):
             t, n, obs = arclist_t[i], arclist_n[i], arclist_obs[i]
+            if len(t) == 0:
+                continue
             kf = FitSST(t, n, option=self.__kbr_fit)
             dm = kf.get_design_matrix()
 

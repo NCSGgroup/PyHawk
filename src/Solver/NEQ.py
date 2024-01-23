@@ -10,6 +10,7 @@ import numpy as np
 import h5py
 from tqdm import tqdm
 import os
+os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
 
 
 class GravityNEQperArc:
@@ -277,6 +278,8 @@ class GravityNEQperArc:
     def get_kin_obs(self, sat, t_nominal, orbit_nominal):
         kin_obs = self._rd.getData(arc=self.__arcNo, kind=Payload.KinematicOrbit, sat=sat)[:, 0:4]
         t_obs = kin_obs[:, 0]
+        if len(t_obs) == 0:
+            return kin_obs
         '''for the orbit, only position (r) is needed for the inversion'''
         '''find the common'''
         int_t_obs = t_obs.astype(np.int64)
@@ -287,16 +290,17 @@ class GravityNEQperArc:
         orbit_nominal = orbit_nominal[new_index, :]
         '''Outlier'''
         before_obs = kin_obs[:, 1:] - orbit_nominal
+        print(self.__arcNo, np.shape(before_obs), len(t_nominal))
         index = Outlier(rms_times=self._AdjustConfig.OutlierTimes, upper_RMS=self._AdjustConfig.OutlierLimit).remove_V2(
             t_nominal, before_obs[:, 0])
         return kin_obs[index, :]
 
     def get_orbit_obs(self, sat, Kin_obs):
-        # Kin_obs = rd.getData(arc=self.__arcNo, kind=Payload.KinematicOrbit, sat=sat)[:, 0:4]
         GNV_obs = self._rd.getData(arc=self.__arcNo, kind=Payload.GNV, sat=sat)[:, 0:4]
-
         t_nominal = GNV_obs[:, 0]
         t_obs = Kin_obs[:, 0]
+        if len(t_obs) == 0:
+            return GNV_obs
         '''for the orbit, only position (r) is needed for the inversion'''
         '''find the common'''
         int_t_obs = t_obs.astype(np.int64)
