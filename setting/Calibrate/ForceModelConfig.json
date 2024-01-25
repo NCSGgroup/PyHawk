@@ -23,8 +23,8 @@
     },
     "NonConservativeConfig": {
         "date_span": [
-            "2009-01-01",
-            "2009-01-31"
+            "2006-12-01",
+            "2006-12-31"
         ],
         "arcNo": 0,
         "sat": {
@@ -151,7 +151,7 @@
     },
     "PathOfFilesConfig": {
         "Ephemerides": "../data/ephemerides",
-        "AOD": "../data/AOD/2009-01",
+        "AOD": "../data/AOD/RL06",
         "EOT11a": "../data/eot11a",
         "FES2014": "../data/FES2014",
         "Atmos": "../data/atmos",

@@ -23,6 +23,7 @@ class ArcSelect:
         self.__arc_length = self.__gf.L1b.InterfaceConfig.arc_length
         self.__min_arcLen = self.__gf.L1b.InterfaceConfig.min_arcLen
         self.__arc_path = self.__gf.L1b.InterfacePathConfig.report_arc
+        self.__arcft_path = self.__gf.L1b.InterfacePathConfig.report_arcft
         self.__raw_data_path = self.__gf.L1b.InterfacePathConfig.temp_raw_data
         self.__sr_target = self.__gf.L1b.InterfaceConfig.sr_target
         self.__OrbitConfig = self.__gf.L1b.OrbitConfig
@@ -41,10 +42,10 @@ class ArcSelect:
         KiOrbA = self.__gf.L1b.getData(Payload.KinematicOrbit.name, SatID.A)
         KiOrbB = self.__gf.L1b.getData(Payload.KinematicOrbit.name, SatID.B)
         # ------------------------outlier kinOrbit data----------------------------------
-        KiOrbA = self.__outlier(GNV_A, KiOrbA)
-        KiOrbB = self.__outlier(GNV_B, KiOrbB)
+        # KiOrbA = self.__outlier(GNV_A, KiOrbA)
+        # KiOrbB = self.__outlier(GNV_B, KiOrbB)
         # -------------------------arc divide--------------------------------------
-        timelist = [ACC_A[:, 0].copy(), ACC_B[:, 0].copy(), SCA_A[:, 0].copy(), SCA_B[:, 0].copy(), KBR[:, 0].copy()]
+        timelist = [ACC_A[:, 0].copy(), ACC_B[:, 0].copy(), SCA_A[:, 0].copy(), SCA_B[:, 0].copy()]
 
         self.__divide2(timelist)
         self.__discardArcs()
@@ -230,6 +231,36 @@ class ArcSelect:
                 f.write('Arc NO: %s;  %s ====> %s ; Length: %s \n' % (i, arc[0], arc[-1], len(arc)))
                 i += 1
 
+        return self
+
+    def makeArcTF(self):
+        rd = ArcData(interfaceConfig=self.__gf.L1b.InterfaceConfig)
+
+        date = self.__gf.getDate()
+        path = self.__arcft_path + '/' + date[0] + '_' + date[-1] + '.txt'
+        with open(path, 'w') as f:
+            f.write('This ia a summary of arc True or False information.\n')
+            f.write('Created by Yi Wu (wu_yi@hust.edu.cn)\n')
+            f.write('Record time: %s \n\n' % datetime.datetime.now())
+            f.write('Number of Arcs: %s \n' % len(self.__arcs))
+
+            f.write('-------------------Please see more details in below:---------------------- \n\n')
+
+            i = 0
+            for arc in self.__arcs:
+                state = True
+                info = ''
+                GNVA = rd.getData(arc=i, kind=Payload.GNV, sat=SatID.A)
+                GNVB = rd.getData(arc=i, kind=Payload.GNV, sat=SatID.B)
+                kbrr = rd.getData(arc=i, kind=Payload.KBR, sat=SatID.A)
+                if len(GNVB) != len(GNVA):
+                    state = False
+                    info = 'length GNVA != GNVB'
+                if len(kbrr) == 0:
+                    state = False
+                    info = 'kbrr is None'
+                f.write('Arc NO: %s %s ----- %s;\n' % (i, state, info))
+                i += 1
         pass
 
     def rms(self, x: np.ndarray):

@@ -600,6 +600,9 @@ class GRACE_RL03(L1b):
             if content.strip() == 'END OF HEADER':
                 break
 
+        if NumOfAcc == 0:
+            return None
+
         # ACC = np.zeros((NumOfAcc, 4))
         ACC = []
         for i in range(NumOfAcc):

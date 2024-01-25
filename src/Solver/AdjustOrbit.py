@@ -57,6 +57,7 @@ class AdjustOrbit:
         self.FMConfig = None
         self.ODEConfig = None
         self.AdjustPath = None
+        self._commonTime = None
 
     def configure(self, SerDer, arcNo, AdjustOrbitConfig:AdjustOrbitConfig,
                   ODEConfig:ODEConfig, FMConfig: ForceModelConfig,
@@ -120,6 +121,7 @@ class AdjustOrbit:
         """step 4: Propagator config"""
         self._startTime, self._startPos, self._startVel = self._secDer.getInitData()
         self._obsGNV = self._secDer.getInitState()
+        self._commonTime = self._secDer.getCommonTime()
         self._ode = GravimetryODE().configure(ODEConfig=self.ODEConfig, ParameterConfig=self.ParameterConfig).setParNum().\
             setInitial(self._startTime, self._startPos.copy(), self._startVel.copy()).\
             set2ndDerivative(self._secDer)
@@ -146,7 +148,7 @@ class AdjustOrbit:
         '''step 3: start iteration'''
         for i in range(iteration):
             '''make the adjustment'''
-            self.__adjust(StateVectors=self._ode_res[1], isGNV=True)
+            self.__adjust(Time=self._ode_res[0], StateVectors=self._ode_res[1], isGNV=True)
             orbit_ini, acc_ini = self.__updateIniValue(iniOrbit=orbit_init, iniAcc=acc_init)
             r_ini, v_ini = orbit_ini[:, 0:3], orbit_ini[:, 3:]
             '''step 4: update accelerometer'''
@@ -196,7 +198,7 @@ class AdjustOrbit:
                 h5.create_dataset(self.ParameterConfig.Accelerometer.__name__, data=iniAcc)
         return iniOrbit, iniAcc
 
-    def __adjust(self, StateVectors: np.ndarray, isGNV: bool, refOrbit: np.ndarray = None):
+    def __adjust(self,Time, StateVectors: np.ndarray, isGNV: bool, refOrbit: np.ndarray = None):
         """
         :param isGNV: is the reference orbit GNV ?
         :param StateVectors: orbit integration output
@@ -204,8 +206,10 @@ class AdjustOrbit:
         from outside; The first column must be the time stamp, and the followings are x,y,z, and optionally vx,vy,vz.
         :return:
         """
+        StateTime = Time
         xyz = StateVectors
-
+        index = [list(StateTime).index(x) for x in self._commonTime]
+        xyz = xyz[index, :, :]
         obs = None
         if isGNV:
             obs = self._obsGNV

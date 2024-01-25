@@ -60,16 +60,22 @@ class RangeRate:
         kbr_time = KBR[:, 0]
         self.__kbr_r = KBR[:, 2]
 
-        state_time = list(h5AB['t'][:])
+        state_time = h5AB['t'][:]
+
+        commonTime = set(KBR[:, 0].astype(np.int64))
+        commonTime = commonTime & set(h5AB['t'][:].astype(np.int64))
+        commonTime = np.array(list(commonTime))
+        commonTime.sort()
 
         '''find the common time of orbit and kbr data'''
-        new_index = [state_time.index(x) for x in kbr_time]
-        self.Time = h5AB['t'][:][new_index]
-        self.__PosA = h5AB['r'][:][new_index, 0:3, 0]
-        self.__PosB = h5AB['r'][:][new_index, 3:6, 0]
-        self.__VelA = h5AB['v'][:][new_index, 0:3, 0]
-        self.__VelB = h5AB['v'][:][new_index, 3:6, 0]
-
+        orbit_index = [list(state_time).index(x) for x in commonTime]
+        kbr_index = [list(kbr_time).index(x) for x in commonTime]
+        self.Time = h5AB['t'][:][orbit_index]
+        self.__PosA = h5AB['r'][:][orbit_index, 0:3, 0]
+        self.__PosB = h5AB['r'][:][orbit_index, 3:6, 0]
+        self.__VelA = h5AB['v'][:][orbit_index, 0:3, 0]
+        self.__VelB = h5AB['v'][:][orbit_index, 3:6, 0]
+        self.__kbr_r = KBR[kbr_index, 2]
         '''define the directory of range-rate output'''
         res_dir = self._PathfileConfig.RangeRateTemp + '/' + self.__date_span[0] + '_' + self.__date_span[1]
         if not os.path.exists(res_dir):
@@ -112,6 +118,8 @@ class RangeRate:
         dm_list = []
         for i in tqdm(range(len(arclist_t)), desc='SST rang-rate calibration: '):
             t, n, obs = arclist_t[i], arclist_n[i], arclist_obs[i]
+            if len(t) == 0:
+                continue
             kf = FitSST(t, n, option=self.__kbr_fit)
             dm = kf.get_design_matrix()
 
