@@ -124,6 +124,7 @@ class CalibrateOrbit:
         arcft_path = pathlib.Path().joinpath(self.InterfacePathConfig.report_arcft, self.__date_span[0]+'_'+self.__date_span[1]+'.txt')
         self.__arcLen = None
 
+
         '''get step and process control'''
         calibrateOrbit_config = self.__calibrateOrbit_config
         StepControl = CalibrateOrbitConfig.StepControl()
@@ -252,6 +253,8 @@ class CalibrateOrbit:
         pass
 
     def __calculate_cs(self):
+        '''orbit and kbrr factor'''
+        OrbitKinFactor = int(self.__solver_config.OrbitKinFactor)
         neq_path_config = self.__neq_config.PathOfFiles()
         neq_path_config.__dict__.update(self.__neq_config.PathOfFilesConfig.copy())
         interface_config = self.__interface_config
@@ -275,9 +278,9 @@ class CalibrateOrbit:
             res_filename = res_dir + '/' + str(i) + '.hdf5'
             print(res_filename)
             h5 = h5py.File(res_filename, 'r')
-            NMatrix = NMatrix + (h5['Orbit_N_A'][:] + h5['Orbit_N_B'][:]) + h5['RangeRate_N'][:] * 1E11
+            NMatrix = NMatrix + (h5['Orbit_N_A'][:] + h5['Orbit_N_B'][:]) + h5['RangeRate_N'][:] * OrbitKinFactor
             LMatrix = LMatrix + (h5['Orbit_l_A'][:] + h5['Orbit_l_B'][:]) + h5['RangeRate_l'][:].reshape(
-                (parameter_number, 1)) * 1E11
+                (parameter_number, 1)) * OrbitKinFactor
             h5.close()
 
         cs = np.linalg.lstsq(NMatrix, LMatrix[:, 0], rcond=None)[0]

@@ -40,7 +40,7 @@ def drawTime():
     hust_c4, hust_s4 = hust_c4 - static_c, hust_s4 - static_s
     hust_c4, hust_s4 = GeoMathKit.CS_1dTo2d(hust_c4), GeoMathKit.CS_1dTo2d(hust_s4)
     '''read CSR 05'''
-    csr_05_name = '../result/SH/CSR05/GSM-2_2009060-2009090_0031_UTCSR_0096_0005.gfc'
+    csr_05_name = '../result/SH/CSR/GSM-2_2009121-2009151_GRAC_UTCSR_BA01_0600.gfc'
     csr_05_c, csr_05_s = LoadCSR().load(fileIn=csr_05_name).getCS(Nmax=60)
     csr_05_c, csr_05_s = csr_05_c - static_c, csr_05_s - static_s
     csr_05_c, csr_05_s = GeoMathKit.CS_1dTo2d(csr_05_c), GeoMathKit.CS_1dTo2d(csr_05_s)
