@@ -10,7 +10,6 @@ import numpy as np
 import h5py
 from tqdm import tqdm
 import os
-os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
 
 
 class GravityNEQperArc:
@@ -75,6 +74,7 @@ class GravityNEQperArc:
         self.__config['satB'] = self._OrbitBConfig
         self.__config['SST'] = self._SSTConfig
 
+        self._rd = ArcData(interfaceConfig=self._InterfaceConfig)
         res_dir = self._PathOfFilesConfig.NormalEqTemp + '/' + self.__date_begin + '_' + self.__date_end + '/'
         if not os.path.exists(res_dir):
             os.makedirs(res_dir, exist_ok=True)
@@ -110,7 +110,7 @@ class GravityNEQperArc:
                 self.get_neq_orbit_V2(SatID.B)
             elif i == 2:
                 self.get_neq_range_rate()
-        self.__saveData.close()
+
         return self
 
     def get_neq_orbit(self, sat: SatID):
@@ -187,7 +187,7 @@ class GravityNEQperArc:
         t_nominal = self.__t_nominal
         if not config.IsRequired:
             return None
-        self._rd = ArcData(interfaceConfig=self._InterfaceConfig)
+
 
         kin_obs = self.get_kin_obs(sat, t_nominal, orbit_nominal)
         orbit_obs = self.get_orbit_obs(sat=sat, Kin_obs=kin_obs)
@@ -273,6 +273,7 @@ class GravityNEQperArc:
 
         self.__saveData.create_dataset('%s_N' % SSTObserve.RangeRate.name, data=N)
         self.__saveData.create_dataset('%s_l' % SSTObserve.RangeRate.name, data=l)
+        self.__saveData.close()
         pass
 
     def get_kin_obs(self, sat, t_nominal, orbit_nominal):

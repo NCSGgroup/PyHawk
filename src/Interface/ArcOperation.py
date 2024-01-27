@@ -7,6 +7,7 @@ from src.Interface.GapFix import GapFix
 from src.Preference.Pre_Interface import InterfaceConfig
 from src.Auxilary.Outlier import Outlier
 import pathlib
+import os
 
 
 class ArcSelect:
@@ -335,3 +336,8 @@ class ArcData:
         else:
             spec = kind.name + '_' + sat.name + '_arc' + str(arc)
         return self.__h5data[spec][()]
+
+    def closeH5py(self):
+        self.__h5data.close()
+        pass
+

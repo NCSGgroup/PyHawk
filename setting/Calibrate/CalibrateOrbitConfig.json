@@ -5,12 +5,12 @@
         "isAdjustKBRR": false,
         "isGetGravityDesignMat": false,
         "isGetNEQ": true,
-        "isGetSH": false
+        "isGetSH": true
     },
     "ParallelControlConfig": {
-        "AdjustOrbitProcess": 1,
-        "AdjustKBRRProcess": 1,
-        "GetGravityDesignMatProcess": 1,
-        "GetNEQProcess": 1
+        "AdjustOrbitProcess": 50,
+        "AdjustKBRRProcess": 50,
+        "GetGravityDesignMatProcess": 50,
+        "GetNEQProcess": 30
     }
 }
