@@ -33,7 +33,7 @@ from src.Frame.EOP import EOP
 from src.Interface.KinematicOrbit import KinematicOrbitV3, KinematicOrbitV2
 from src.Interface.GapFix import GapFix
 from src.Interface.ArcOperation import ArcSelect
-from src.Interface.L1b import GRACE_NEW_RL02, GRACE_OLD_RL02, GRACE_RL03
+from src.Interface.L1b import GRACE_NEW_RL02, GRACE_OLD_RL02, GRACE_RL03, GRACE_FO_RL04
 from src.Auxilary.Format import FormatWrite
 import multiprocessing
 import json
@@ -125,7 +125,6 @@ class CalibrateOrbit:
         arcft_path = pathlib.Path().joinpath(self.InterfacePathConfig.report_arcft, self.__date_span[0]+'_'+self.__date_span[1]+'.txt')
         self.__arcLen = None
 
-
         '''get step and process control'''
         calibrateOrbit_config = self.__calibrateOrbit_config
         StepControl = CalibrateOrbitConfig.StepControl()
@@ -192,7 +191,7 @@ class CalibrateOrbit:
         """step 1: Read raw data"""
         eop = EOP().configure(frameConfig=self.__frame_config).load()
         fr = Frame(eop).configure(frameConfig=self.__frame_config)
-        s = GRACE_RL03().configure(InterfaceConfig=self.__interface_config).setDate()
+        s = GRACE_FO_RL04().configure(InterfaceConfig=self.__interface_config).setDate()
         s.read_double_sat()
         """step 2: Convert orbit from ITRS frame into GCRS frame"""
         kine = KinematicOrbitV2(L1b=s).configure()

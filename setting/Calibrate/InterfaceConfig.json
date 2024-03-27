@@ -1,8 +1,8 @@
 {
     "mission": "GRACE_RL03",
     "date_span": [
-            "2006-12-01",
-            "2006-12-31"
+            "2010-05-01",
+            "2010-05-31"
     ],
     "arcNo": 0,
     "sat": {
@@ -36,7 +36,7 @@
     "gapfix_cubic_mis_max": 80,
     "gapfix_cubic_int": 150,
     "arc_length": 6,
-    "min_arcLen": 2,
+    "min_arcLen": 4,
     "OrbitConfig": {
         "OutlierTimes": 3,
         "OutlierLimit": 0.04

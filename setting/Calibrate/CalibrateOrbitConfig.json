@@ -2,15 +2,15 @@
     "StepControlConfig": {
         "isPreprocess": false,
         "isAdjustOrbit": false,
-        "isAdjustKBRR": true,
-        "isGetGravityDesignMat": true,
+        "isAdjustKBRR": false,
+        "isGetGravityDesignMat": false,
         "isGetNEQ": true,
         "isGetSH": true
     },
     "ParallelControlConfig": {
         "AdjustOrbitProcess": 50,
         "AdjustKBRRProcess": 50,
-        "GetGravityDesignMatProcess": 20,
-        "GetNEQProcess": 1
+        "GetGravityDesignMatProcess": 15,
+        "GetNEQProcess": 15
     }
 }
