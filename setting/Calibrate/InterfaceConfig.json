@@ -1,8 +1,8 @@
 {
-    "mission": "GRACE_FO_RL04",
+    "mission": "GRACE_RL03",
     "date_span": [
-        "2021-01-01",
-        "2021-01-31"
+            "2010-05-01",
+            "2010-05-31"
     ],
     "arcNo": 0,
     "sat": {
@@ -15,7 +15,7 @@
         "SCA": true,
         "KBR": true,
         "GNV": true,
-        "KinematicOrbit": false,
+        "KinematicOrbit": true,
         "LRI": false
     },
     "is_orbit_GCRS": {
@@ -42,12 +42,12 @@
         "OutlierLimit": 0.04
     },
     "PathOfFilesConfig": {
-        "payload_ACC": "../data/GRACE_FO_RL04",
-        "payload_SCA": "../data/GRACE_FO_RL04",
-        "payload_KBR": "../data/GRACE_FO_RL04",
-        "payload_GNV": "../data/GRACE_FO_RL04",
+        "payload_ACC": "../data/GRACE_RL02",
+        "payload_SCA": "../data/GRACE_RL03",
+        "payload_KBR": "../data/GRACE_RL03",
+        "payload_GNV": "../data/GRACE_RL02",
         "payload_Kinematic": "../data/KinematicOrbit",
-        "payload_LRI": "../data/GRACE_FO_RL04",
+        "payload_LRI": "../data/GRACE_RL02",
         "report_gap": "../report/gap",
         "report_arc": "../report/arc",
         "report_arcft": "../report/arcft",

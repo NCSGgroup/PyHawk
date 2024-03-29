@@ -47,10 +47,10 @@
         "LoveNumberType": "Wang"
     },
     "SolidTideConfig": {
-        "GM_Earth": 398600441500000.0,
-        "GM_Sun": 1.32712442076e+20,
+        "GM_Earth": 398600441800000.0,
+        "GM_Sun": 1.32712442099e+20,
         "GM_Moon": 4902801056000.0,
-        "Radius_Earth": 6378136.3,
+        "Radius_Earth": 6378136.6,
         "isZeroTide": true
     },
     "AtmosTideConfig": {
@@ -81,10 +81,10 @@
         "maxDegree": 120
     },
     "ThreeBodyConfig": {
-        "ThreeBody_GM_Sun": 1.32712442076e+20,
+        "ThreeBody_GM_Sun": 1.32712442099e+20,
         "ThreeBody_GM": {
-            "Earth": 398600441500000.0,
-            "Sun": 1.32712442076e+20,
+            "Earth": 398600441800000.0,
+            "Sun": 1.32712442099e+20,
             "Moon": 4902801056000.0,
             "Mercury": 22032080828076.234,
             "Venus": 324858603864142.9,
@@ -98,15 +98,15 @@
         "include_planets": {
             "Sun": true,
             "Moon": true,
-            "Earth": true,
             "Mercury": true,
             "Venus": true,
+            "Earth": true,
             "Mars": true,
             "Jupiter": true,
             "Saturn": true,
-            "Uranus": false,
-            "Neptune": false,
-            "Pluto": false
+            "Uranus": true,
+            "Neptune": true,
+            "Pluto": true
         },
         "isJ2": true
     },
@@ -117,8 +117,8 @@
         ],
         "degree_max": 60,
         "degree_min": 2,
-        "GravHar_GM": 398600441500000.0,
-        "GravHar_Radius": 6378136.3,
+        "GravHar_GM": 398600441800000.0,
+        "GravHar_Radius": 6378136.6,
         "PosCoordinate": "GCRS",
         "ACCCoordinate": "GCRS"
     },
@@ -129,12 +129,12 @@
     },
     "RefGravModelConfig": {
         "kind": 0,
-        "Nmax": 160,
+        "Nmax": 180,
         "StaticModel": "Gif48"
     },
     "RelativityConfig": {
-        "GM_Sun": 1.32712442076e+20,
-        "GM_Earth": 398600441500000.0,
+        "GM_Sun": 1.32712442099e+20,
+        "GM_Earth": 398600441800000.0,
         "C_Light": 299792458,
         "J": [
             0,
@@ -145,8 +145,8 @@
         "Beta": 1,
         "kind": {
             "SchwarzChild": true,
-            "LenseThirring": false,
-            "Desitter": false
+            "LenseThirring": true,
+            "Desitter": true
         }
     },
     "PathOfFilesConfig": {

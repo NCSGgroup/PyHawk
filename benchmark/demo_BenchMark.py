@@ -5,6 +5,9 @@
 # @Software: PyCharm
 from benchmark.BenchMarkForJson import BenchMark
 from src.Preference.Pre_ForceModel import ForceModelConfig
+import matplotlib.pyplot as plt
+from matplotlib import rcParams
+import numpy as np
 import json
 
 
@@ -54,5 +57,28 @@ def demo1():
     pass
 
 
+def demo2():
+    diff = np.load('../result/benchmarktest/sun.npy')
+    timeList = np.shape(diff)[0]
+    diff = np.array(diff)
+    ax = diff[:, 0]
+    ay = diff[:, 1]
+    az = diff[:, 2]
+    plt.style.use('grid')
+    rcParams['font.size'] = 24  # 设置字体大小为14
+    rcParams['font.family'] = 'serif'  # 设置字体为衬线字体
+
+    plt.title('Sun', fontsize=24)
+    plt.plot(ax, color='#dd2c00', label='x')
+    plt.plot(ay, color='#00695c', label='y')
+    plt.plot(az, color='#1a237e', label='z')
+    plt.legend()
+    plt.xlabel('MJD', fontsize=24)
+    plt.ylabel(r'$m/s^2$', fontsize=24)
+    # plt.savefig('../result/benchmarktest/AODRL06.png')
+    plt.show()
+
+
 if __name__ == '__main__':
-    demo1()
+    # demo1()
+    demo2()

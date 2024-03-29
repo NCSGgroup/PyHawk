@@ -795,9 +795,9 @@ class GRACE_FO_RL04(L1b):
         pass
 
     def _readACC(self, date: str, sat: SatID):
-        path = self._path_ACC.joinpath(*[date.split('-')[0] + '-' + date.split('-')[1],
-                                       'gracefo_1B_' + date + '_RL04.ascii.noLRI.tgz_files',
-               'ACT1B_'+ date + '_' + chr(ord(sat.name) + 2) + '_04.txt'])
+        path = str(self.dir.joinpath(self._path_ACC, date.split('-')[0] + '-' + date.split('-')[1], 'gracefo_1B_' + date + '_RL04.ascii.noLRI.tgz_files',
+                                     'ACT1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
+        print(path)
         try:
             f = open(path, 'r')
         except FileNotFoundError as e:
@@ -829,9 +829,9 @@ class GRACE_FO_RL04(L1b):
         return ACT
 
     def _readSCA(self, date: str, sat: SatID):
-        path = self._path_SCA.joinpath(*[date.split('-')[0] + '-' + date.split('-')[1],
-                                         'gracefo_1B_' + date + '_RL04.ascii.noLRI.tgz_files',
-                                         'SCA1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'])
+        path = str(self.dir.joinpath(self._path_SCA, date.split('-')[0] + '-' + date.split('-')[1],
+                                     'gracefo_1B_' + date + '_RL04.ascii.noLRI.tgz_files',
+                                     'SCA1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
         try:
             f = open(path, 'r')
         except FileNotFoundError as e:
@@ -866,9 +866,9 @@ class GRACE_FO_RL04(L1b):
         return SCA
 
     def _readKBR(self, date: str):
-        path = self._path_KBR.joinpath(*[date.split('-')[0] + '-' + date.split('-')[1],
-                                         'gracefo_1B_' + date + '_RL04.ascii.noLRI.tgz_files',
-                                         'KBR1B_' + date + '_Y_04.txt'])
+        path = str(self.dir.joinpath(self._path_KBR, date.split('-')[0] + '-' + date.split('-')[1],
+                                     'gracefo_1B_' + date + '_RL04.ascii.noLRI.tgz_files',
+                                     'KBR1B_' + date + '_Y_04.txt'))
 
         try:
             f = open(path, 'r')
@@ -912,10 +912,9 @@ class GRACE_FO_RL04(L1b):
         IY, IM, ID = int(st[0]), int(st[1]), int(st[2])
         date_range = (round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 0, 0, 0))),
                       round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 23, 59, 60 - self.sr_payload[Payload.GNV.name]))))
-
-        path = self._path_GNV.joinpath(*[date.split('-')[0] + '-' + date.split('-')[1],
-                                         'gracefo_1B_' + date + '_RL04.ascii.noLRI.tgz_files',
-                                         'GNV1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'])
+        path = str(self.dir.joinpath(self._path_GNV, date.split('-')[0] + '-' + date.split('-')[1],
+                                     'gracefo_1B_' + date + '_RL04.ascii.noLRI.tgz_files',
+                                     'GNV1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
         try:
             f = open(path, 'r')
         except FileNotFoundError as e:

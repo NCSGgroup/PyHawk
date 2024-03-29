@@ -214,9 +214,13 @@ class GravityNEQperArc:
         orbit_obs = orbit_obs[obs_index, :]
         '''Expanding the observations'''
         obs = orbit_obs[:, 1:] - orbit_nominal
-        # index = Outlier(rms_times=self._AdjustConfig.OutlierTimes, upper_RMS=self._AdjustConfig.OutlierLimit).remove_V2(
-        #     t_nominal, obs[:, 0])
-        # obs = obs[index, :]
+        '''orbit outlier'''
+        index = Outlier(rms_times=self._AdjustConfig.OutlierTimes, upper_RMS=self._AdjustConfig.OutlierLimit).remove_V2(
+            t_nominal, obs[:, 0])
+        '''Reassignment'''
+        obs = obs[index, :]
+        local_r = local_r[index, :, :]
+        global_r = global_r[index, :, :]
         obs = obs.reshape((-1, 1))
         # TODO: Fix the kinematic orbit
         '''Expanding the design matrix'''
