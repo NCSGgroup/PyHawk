@@ -1,12 +1,12 @@
 {
     "OrbitAConfig": {
         "IsRequired": true,
-        "UseKinematicOrbit": true,
+        "UseKinematicOrbit": false,
         "FixKinematicOrbit": false
     },
     "OrbitBConfig": {
         "IsRequired": true,
-        "UseKinematicOrbit": true,
+        "UseKinematicOrbit": false,
         "FixKinematicOrbit": false
     },
     "SSTConfig": {

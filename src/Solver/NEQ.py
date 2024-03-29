@@ -105,9 +105,9 @@ class GravityNEQperArc:
 
         for i in tqdm(range(3), desc='Build normal equations: '):
             if i == 0:
-                self.get_neq_orbit_V2(SatID.A)
+                self.get_neq_orbit(SatID.A)
             elif i == 1:
-                self.get_neq_orbit_V2(SatID.B)
+                self.get_neq_orbit(SatID.B)
             elif i == 2:
                 self.get_neq_range_rate()
 
@@ -136,6 +136,7 @@ class GravityNEQperArc:
 
         if config.UseKinematicOrbit:
             orbit_obs = self._rd.getData(arc=self.__arcNo, kind=Payload.KinematicOrbit, sat=sat)[:, 0:4]
+            orbit_obs = self.kin_obs_outlier(sat=sat, kin_orbit=orbit_obs)
         else:
             orbit_obs = self._rd.getData(arc=self.__arcNo, kind=Payload.GNV, sat=sat)[:, 0:4]
         # orbit_obs = self.get_orbit_obs(sat=sat, Kin_obs=kin_obs)
@@ -188,9 +189,11 @@ class GravityNEQperArc:
         if not config.IsRequired:
             return None
 
+        kin_obs = self._rd.getData(arc=self.__arcNo, kind=Payload.KinematicOrbit, sat=sat)[:, 0:4]
+        gnv_obs = self._rd.getData(arc=self.__arcNo, kind=Payload.GNV, sat=sat)[:, 0:4]
 
-        kin_obs = self.get_kin_obs(sat, t_nominal, orbit_nominal)
-        orbit_obs = self.get_orbit_obs(sat=sat, Kin_obs=kin_obs)
+        kin_outlier = self.get_kin_obs(kin_obs=kin_obs, orbit_nominal=gnv_obs)
+        orbit_obs = self.get_orbit_obs(gnv_obs=gnv_obs, Kin_obs=kin_outlier)
         t_obs = orbit_obs[:, 0]
         '''for the orbit, only position (r) is needed for the inversion'''
         '''find the common'''
@@ -276,8 +279,8 @@ class GravityNEQperArc:
         self.__saveData.close()
         pass
 
-    def get_kin_obs(self, sat, t_nominal, orbit_nominal):
-        kin_obs = self._rd.getData(arc=self.__arcNo, kind=Payload.KinematicOrbit, sat=sat)[:, 0:4]
+    def get_kin_obs(self,kin_obs, orbit_nominal):
+        t_nominal = orbit_nominal[:, 0]
         t_obs = kin_obs[:, 0]
         if len(t_obs) == 0:
             return kin_obs
@@ -290,14 +293,14 @@ class GravityNEQperArc:
         t_nominal = t_nominal[new_index]
         orbit_nominal = orbit_nominal[new_index, :]
         '''Outlier'''
-        before_obs = kin_obs[:, 1:] - orbit_nominal
-        print(self.__arcNo, np.shape(before_obs), len(t_nominal))
+        before_obs = kin_obs[:, 1:] - orbit_nominal[:, 1:]
+        before_obs = np.sum(before_obs, axis=1)
         index = Outlier(rms_times=self._AdjustConfig.OutlierTimes, upper_RMS=self._AdjustConfig.OutlierLimit).remove_V2(
-            t_nominal, before_obs[:, 0])
+            t_nominal, before_obs)
         return kin_obs[index, :]
 
-    def get_orbit_obs(self, sat, Kin_obs):
-        GNV_obs = self._rd.getData(arc=self.__arcNo, kind=Payload.GNV, sat=sat)[:, 0:4]
+    def get_orbit_obs(self, gnv_obs, Kin_obs):
+        GNV_obs = gnv_obs
         t_nominal = GNV_obs[:, 0]
         t_obs = Kin_obs[:, 0]
         if len(t_obs) == 0:
@@ -319,3 +322,25 @@ class GravityNEQperArc:
         """
         # 确认公式
         return np.linalg.norm(x) / np.sqrt(np.shape(x)[0])
+
+    def kin_obs_outlier(self, kin_orbit, sat):
+        gnv_orbit = self._rd.getData(arc=self.__arcNo, kind=Payload.GNV, sat=sat)[:, 0:4]
+        gnv_t = gnv_orbit[:, 0]
+        kin_t = kin_orbit[:, 0]
+        if len(kin_t) == 0:
+            return gnv_orbit
+        int_gnv_t = gnv_t.astype(np.int64)
+        int_kin_t = kin_t.astype(np.int64)
+
+        new_index = [list(int_gnv_t).index(x) for x in int_kin_t]
+        gnv_orbit = gnv_orbit[new_index, :]
+
+        '''Outlier'''
+        before_obs = kin_orbit[:, 1:] - gnv_orbit[:, 1:]
+        before_obs = np.sum(before_obs, axis=1)
+        index = Outlier(rms_times=self._AdjustConfig.OutlierTimes, upper_RMS=self._AdjustConfig.OutlierLimit).remove_V2(
+            kin_t, before_obs)
+
+        gnv_orbit[index, 1:] = kin_orbit[index, 1:]
+
+        return gnv_orbit

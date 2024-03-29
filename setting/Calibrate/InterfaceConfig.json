@@ -1,8 +1,8 @@
 {
-    "mission": "GRACE_RL03",
+    "mission": "GRACE_FO_RL04",
     "date_span": [
-            "2010-11-01",
-            "2010-11-30"
+        "2021-01-01",
+        "2021-01-31"
     ],
     "arcNo": 0,
     "sat": {
@@ -15,7 +15,7 @@
         "SCA": true,
         "KBR": true,
         "GNV": true,
-        "KinematicOrbit": true,
+        "KinematicOrbit": false,
         "LRI": false
     },
     "is_orbit_GCRS": {
@@ -36,18 +36,18 @@
     "gapfix_cubic_mis_max": 80,
     "gapfix_cubic_int": 150,
     "arc_length": 6,
-    "min_arcLen": 2,
+    "min_arcLen": 4,
     "OrbitConfig": {
         "OutlierTimes": 3,
         "OutlierLimit": 0.04
     },
     "PathOfFilesConfig": {
-        "payload_ACC": "../data/GRACE_RL02",
-        "payload_SCA": "../data/GRACE_RL03",
-        "payload_KBR": "../data/GRACE_RL03",
-        "payload_GNV": "../data/GRACE_RL02",
+        "payload_ACC": "../data/GRACE_FO_RL04",
+        "payload_SCA": "../data/GRACE_FO_RL04",
+        "payload_KBR": "../data/GRACE_FO_RL04",
+        "payload_GNV": "../data/GRACE_FO_RL04",
         "payload_Kinematic": "../data/KinematicOrbit",
-        "payload_LRI": "../data/GRACE_RL02",
+        "payload_LRI": "../data/GRACE_FO_RL04",
         "report_gap": "../report/gap",
         "report_arc": "../report/arc",
         "report_arcft": "../report/arcft",

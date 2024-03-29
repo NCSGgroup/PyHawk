@@ -23,8 +23,8 @@
     },
     "NonConservativeConfig": {
         "date_span": [
-            "2010-11-01",
-            "2010-11-30"
+            "2010-05-01",
+            "2010-05-31"
         ],
         "arcNo": 0,
         "sat": {
@@ -43,7 +43,7 @@
         },
         "SimpleOcean": false,
         "Polar2wobble": 2,
-        "MaxDegreeOfOcean": 180,
+        "MaxDegreeOfOcean": 30,
         "LoveNumberType": "Wang"
     },
     "SolidTideConfig": {
@@ -98,9 +98,9 @@
         "include_planets": {
             "Sun": true,
             "Moon": true,
+            "Earth": true,
             "Mercury": true,
             "Venus": true,
-            "Earth": true,
             "Mars": true,
             "Jupiter": true,
             "Saturn": true,
@@ -123,13 +123,13 @@
         "ACCCoordinate": "GCRS"
     },
     "NonTideConfig": {
-        "kind": "ATM",
-        "MaxDeg": 100,
-        "TS": 6
+        "kind": "GLO",
+        "MaxDeg": 180,
+        "TS": 3
     },
     "RefGravModelConfig": {
         "kind": 0,
-        "Nmax": 150,
+        "Nmax": 160,
         "StaticModel": "Gif48"
     },
     "RelativityConfig": {
@@ -145,8 +145,8 @@
         "Beta": 1,
         "kind": {
             "SchwarzChild": true,
-            "LenseThirring": true,
-            "Desitter": true
+            "LenseThirring": false,
+            "Desitter": false
         }
     },
     "PathOfFilesConfig": {

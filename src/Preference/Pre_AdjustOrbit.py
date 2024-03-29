@@ -11,7 +11,7 @@ class AdjustOrbitConfig:
     class Orbit:
         def __init__(self):
             self.OutlierTimes = 3
-            self.OutlierLimit = 0.04
+            self.OutlierLimit = 1
 
     class RangeRate:
         def __init__(self):

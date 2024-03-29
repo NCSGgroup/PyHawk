@@ -124,7 +124,6 @@ class CalibrateOrbit:
         arcft_path = pathlib.Path().joinpath(self.InterfacePathConfig.report_arcft, self.__date_span[0]+'_'+self.__date_span[1]+'.txt')
         self.__arcLen = None
 
-
         '''get step and process control'''
         calibrateOrbit_config = self.__calibrateOrbit_config
         StepControl = CalibrateOrbitConfig.StepControl()
@@ -155,32 +154,32 @@ class CalibrateOrbit:
                     break
         self.__arclist = self.getArcList(path=arcft_path)
         if isAdjustOrbit:
-            self.makeLog(stepName='adjustOrbit', process=AdjustOrbitProcess)
             pool = multiprocessing.Pool(processes=AdjustOrbitProcess)
-            pool.map(self._adjustOrbit, self.__arclist)
+            r = pool.map(self._adjustOrbit, self.__arclist)
             pool.close()
             pool.join()
+            self.makeLog(stepName='adjustOrbit', process=AdjustOrbitProcess)
         self.__saveOrbitRMS()
         if isAdjustKBRR:
-            self.makeLog(stepName='adjustKBRR', process=AdjustKBRRProcess)
             pool = multiprocessing.Pool(processes=AdjustKBRRProcess)
-            pool.map(self._adjustKBRR, self.__arclist)
+            r = pool.map(self._adjustKBRR, self.__arclist)
             pool.close()
             pool.join()
+            self.makeLog(stepName='adjustKBRR', process=AdjustKBRRProcess)
         self.__saveKBRRRMS()
         if isGravityDesignMat:
-            self.makeLog(stepName='gravityDesignMat', process=GetGravityDesignMatProcess)
             pool = multiprocessing.Pool(processes=GetGravityDesignMatProcess)
-            pool.map(self._gravityDesignMat, self.__arclist)
+            r = pool.map(self._gravityDesignMat, self.__arclist)
             pool.close()
             pool.join()
+            self.makeLog(stepName='gravityDesignMat', process=GetGravityDesignMatProcess)
         if isNEQ:
-            self.makeLog(stepName='NEQ', process=GetNEQProcess)
             pool = multiprocessing.Pool(processes=GetNEQProcess)
-            pool.map(self._NEQ, self.__arclist)
+            r = pool.map(self._NEQ, self.__arclist)
             # pool.map(self._NEQ, range(102, 103))
             pool.close()
             pool.join()
+            self.makeLog(stepName='NEQ', process=GetNEQProcess)
         if isSH:
             self.makeLog(stepName='SH', process=1)
             self.__calculate_cs()
@@ -224,7 +223,7 @@ class CalibrateOrbit:
             configure(SerDer=Orbit_var_2nd_diff, arcNo=i, ODEConfig=self.__ode_config,
                       FMConfig=self.__force_model_config, AdjustOrbitConfig=self.__adjust_config,
                       ParameterConfig=self.__parameter_config, InterfaceConfig=self.__interface_config,
-                      FrameConfig=self.__frame_config).calibrate(iteration=2)
+                      FrameConfig=self.__frame_config).calibrate(iteration=3)
         pass
 
     def _adjustKBRR(self, j):

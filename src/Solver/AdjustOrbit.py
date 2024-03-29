@@ -14,6 +14,7 @@ from src.Preference.Pre_AdjustOrbit import AdjustOrbitConfig
 from src.Preference.Pre_Interface import InterfaceConfig
 from src.Preference.Pre_Frame import FrameConfig
 import os
+os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
 
 
 class AdjustOrbit:
@@ -172,7 +173,7 @@ class AdjustOrbit:
         self._endTime = h5['t'][:]
         self._endR = h5['r'][:]
         h5.close()
-
+        self._res_h5.close()
         return self
 
     def __updateIniValue(self, iniOrbit: np.ndarray, iniAcc: np.ndarray):

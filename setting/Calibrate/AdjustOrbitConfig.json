@@ -4,9 +4,9 @@
         "OutlierLimit": 0.04
     },
     "RangeRateConfig": {
-        "ParameterFitting": "biasC0C1_OneCPR",
+        "ParameterFitting": "biasC0C1C2_OneCPR",
         "OutlierTimes": 3,
-        "OutlierLimit": 6e-07,
+        "OutlierLimit": 5e-07,
         "ArcLength": 1.5,
         "Iterations": 3
     },

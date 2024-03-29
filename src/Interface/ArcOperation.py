@@ -148,6 +148,7 @@ class ArcSelect:
         commonTime = np.array(list(commonTime))
         commonTime.sort()
         commonTime = commonTime[commonTime % stepsize == 0]
+
         '''hour to sec, then to the index'''
         al = int(self.__arc_length * 3600 / stepsize)
         amin = int(self.__min_arcLen * 3600 / stepsize)
