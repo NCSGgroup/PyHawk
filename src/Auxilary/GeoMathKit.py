@@ -439,8 +439,14 @@ class GeoMathKit:
         I = np.eye(np.shape(dm_global.T)[-1])
         w = linalg.cholesky(p)
         B = w @ dm_local
-        Q1, R = np.linalg.qr(B)
-        Q2 = I - Q1 @ Q1.T
+
+        n = np.shape(B)[1]
+        Q, R = np.linalg.qr(B, mode='complete')
+
+        Q2 = Q[:, n:]
+
+        # Q1, R = np.linalg.qr(B)
+        # Q2 = I - Q1 @ Q1.T
         Q2_T = Q2.T
 
         A = Q2_T @ w @ dm_global

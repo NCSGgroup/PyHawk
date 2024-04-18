@@ -521,4 +521,41 @@ class KinematicOrbitV2(KinematicOrbit):
         return res
 
 
+class KinematicOrbitFO(KinematicOrbit):
+    """
+    The class deals with the loading and the preprocessing of the kinematic orbit, where only ITSG option is offered.
+    """
+    def __init__(self, L1b: Level_1B):
+        super(KinematicOrbitFO, self).__init__(L1b)
+        pass
+
+    def _read_by_day(self, date: str, sat: SatID):
+        """
+        Input is in ITRS frame, which has to be transferred to GCRS inertial frame
+        :param date:
+        :param sat:
+        :return:
+        """
+
+        st = date.split('-')
+        IY, IM, ID = int(st[0]), int(st[1]), int(st[2])
+        # date_range = (round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 0, 0, 0))),
+        #               round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 23, 59, 60 - self._L1b.sr_payload[Payload.GNV.name]))))
+
+        path = str(self.dir.joinpath(*[self._path_kinematic, str(IY), date.split('-')[0] + '-' + date.split('-')[1],
+                   'GRACEFO-' + str(sat.value) + '_kinematicOrbit_' + date + '.txt']))
+        res = None
+        if not os.path.exists(path):
+            return None
+        try:
+            res = np.loadtxt(path, dtype=np.float64, comments='#', usecols=(0, 1, 2, 3))
+            if np.shape(res)[0] == 0:
+                return None
+            res[:, 0] = np.round(Frame.mjd2sec(res[:, 0]))
+        except FileNotFoundError as e:
+            # lg.error(e)
+            # print(path)
+            return None
+
+        return res
 

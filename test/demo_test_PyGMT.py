@@ -7,6 +7,9 @@ import pygmt
 from src.Frame.Frame import Frame
 from src.Frame.EOP import EOP
 import numpy as np
+import json
+from src.Preference.Pre_Interface import InterfaceConfig
+from src.Preference.Pre_Frame import FrameConfig
 
 # fig = pygmt.Figure()
 # fig.coast(region="g", frame=True, shorelines=1)
@@ -18,28 +21,38 @@ import numpy as np
 
 
 def getKBRRGMT():
-    fr = Frame(EOP().load())
-    date_span = ['2008-01-01', '2008-01-31']
-    rd = ArcData(date_span=date_span)
+    interface_config = InterfaceConfig()
+    interfaceDict = json.load(open('../setting/Calibrate/InterfaceConfig.json', 'r'))
+    interface_config.__dict__ = interfaceDict
+
+    frame_config = FrameConfig()
+    frame = json.load(open('../setting/Calibrate/FrameConfig.json', 'r'))
+    frame_config.__dict__ = frame
+
+    rd = ArcData(interfaceConfig=interface_config)
+    date_span = ['2009-05-01', '2009-05-31']
+
+    fr = Frame(EOP().configure(frameConfig=frame_config).load()).configure(frameConfig=frame_config)
+
     Lon = []
     Lat = []
     Prefit = []
     Postfit = []
-    for i in range(0, 243):
+    for i in range(0, 120):
         GNV = rd.getData(arc=i, kind=EnumType.Payload.GNV, sat=EnumType.SatID.A)
         GNVTime = GNV[:, 0]
         GNVR = GNV[:, 1:4]
 
-        res_dir = pathlib.Path(Pre_AdjustOrbit.PathOfFiles.RangeRateTemp).joinpath(date_span[0] + '_' + date_span[1])
+        res_dir = pathlib.Path('../temp/RangeRate').joinpath(date_span[0] + '_' + date_span[1])
         res_filename = res_dir.joinpath('RangeRate_' + str(i) + '.hdf5')
         h5 = h5py.File(res_filename, 'r')
         t1 = h5['pre_t'][()]
         t2 = h5['post_t'][()]
-        Prefit.extend(h5['pre_residual'][()])
-        # Postfit.extend(h5['post_residual'][()])
+        # Prefit.extend(h5['pre_residual'][()])
+        Postfit.extend(h5['post_residual'][()])
         # postfit = h5['post_residual'][()]
 
-        new_index = [list(GNVTime).index(x) for x in t1]
+        new_index = [list(GNVTime).index(x) for x in t2]
         new_Time = GNVTime[new_index]
         new_GNVR = GNVR[new_index]
         # new_KBRR = h5['pre_residual'][()][new_index]
@@ -52,7 +65,7 @@ def getKBRRGMT():
             Lon.append(lon)
             Lat.append(lat)
 
-    np.savez('PreKBRR.npz', x=Lon, y=Lat, z=Prefit)
+    np.savez('PostKBRR.npz', x=Lon, y=Lat, z=Postfit)
 
 
 def readDat():
@@ -72,18 +85,45 @@ def readDat():
 
 
 def draw():
-    res = np.load("SpaceKBRR.npz", allow_pickle=True)
+    res1 = np.load("BeforeRes.npz", allow_pickle=True)
+    x1 = np.degrees(np.array(res1['x']))
+    y1 = np.degrees(np.array(res1['y']))
+    z1 = res1['z'] * 1e7
+
+    res = np.load("AfterRes.npz", allow_pickle=True)
     x = np.degrees(np.array(res['x']))
     y = np.degrees(np.array(res['y']))
     z = res['z'] * 1e7
 
+    grid1 = pygmt.xyz2grd(x=x1, y=y1, z=z1, spacing=(1, 1), region="d", duplicate='r')
+    grid1 = pygmt.grdfill(grid=grid1, mode="n")
+
     grid = pygmt.xyz2grd(x=x, y=y, z=z, spacing=(1, 1), region="d", duplicate='r')
+    grid = pygmt.grdfill(grid=grid, mode="n")
+
     fig = pygmt.Figure()
-    pygmt.makecpt(series=[0, 6, 0.5])
-    # fig.basemap(frame="afg")
-    fig.grdimage(grid=grid, region="d", projection="Q12c", frame="afg")
-    fig.coast(shorelines="1/0.5p", projection="Q12c")
-    fig.colorbar()
+    pygmt.makecpt(series=[-2, 20, 2]) # color bar range
+    # pygmt.makecpt(cmap='jet', series=[-2, 20, 2]) # color bar range
+
+    with fig.subplot(
+            nrows=2, ncols=1, subsize=("12c", "6c"),
+            frame="afg",
+            sharey=True,
+            sharex=True,
+            autolabel="+JTL+o0.3/0.5",
+            # margins="0.5c",
+            margins=["0.5c", "0.5c"],
+    ):
+        with fig.set_panel(panel=0):
+            fig.basemap(projection="Q12c", frame=["+tKBRR residual"])
+            fig.grdimage(grid=grid1, frame="a")
+            fig.coast(shorelines="1/0.5p", projection="Q12c")
+
+        with fig.set_panel(panel=1):
+            fig.basemap(region="d", projection="Q12c")
+            fig.grdimage(grid=grid)
+            fig.coast(shorelines="1/0.5p", projection="Q12c")
+            fig.colorbar(frame=["y+lm/s"])
     fig.show()
 
 

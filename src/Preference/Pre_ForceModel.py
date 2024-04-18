@@ -148,7 +148,7 @@ class ForceModelConfig:
     class RefGravModel:
         def __init__(self):
             self.kind = 0
-            self.Nmax = 180
+            self.Nmax = 360
             self.StaticModel = EnumType.StaticGravModel.Gif48.name
 
     class Relativity:
@@ -186,6 +186,7 @@ class ForceModelConfig:
             self.Gif48 = "../data/StaticGravityField/gif48.gfc"
             self.EIGEN6_C4 = "../data/StaticGravityField/EIGEN6-C4.gfc"
             self.GOCO02s = "../data/StaticGravityField/GOCO02s.gfc"
+            self.GGM05C = "../data/StaticGravityField/GGM05C.gfc"
             self.PoleTide = "../data/poletide"
             self.LoverNumber = "../data/LoveNumber"
             self.poleTideModel = "desaiscopolecoef.txt"

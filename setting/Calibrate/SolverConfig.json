@@ -1,5 +1,5 @@
 {
     "SSTOption": "RangeRate",
-    "OrbitKinFactor": 1e11,
+    "OrbitKinFactor": 1e10,
     "DesignMatrixTemp": "../temp/DesignMatrixSH"
 }
