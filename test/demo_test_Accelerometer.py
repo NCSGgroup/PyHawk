@@ -6,6 +6,10 @@ from src.Preference.EnumType import SatID, Payload
 from src.Auxilary.GeoMathKit import GeoMathKit
 from pathlib import Path
 import numpy as np
+from src.Preference.Pre_Interface import InterfaceConfig
+import json
+import os
+import matplotlib.pyplot as plt
 
 
 def demo1():
@@ -33,7 +37,20 @@ def analysis():
         data = h5.keys()
 
 
+def checkACC():
+    interface_config = InterfaceConfig()
+    interfaceDict = json.load(open('../setting/Calibrate/InterfaceConfig.json', 'r'))
+    interface_config.__dict__ = interfaceDict
+    rd = ArcData(interfaceConfig=interface_config)
+    scaa = rd.getData(arc=43, kind=Payload.SCA, sat=SatID.A)
+    scab = rd.getData(arc=43, kind=Payload.SCA, sat=SatID.B)
+
+    plt.scatter(np.arange(len(scab[:, 0])), scab[:, 1])
+    plt.show()
+    print(scaa)
+
 
 if __name__ == '__main__':
     # demo1()
-    analysis()
+    # analysis()
+    checkACC()

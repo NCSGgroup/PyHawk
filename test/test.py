@@ -1,18 +1,13 @@
 import numpy as np
+import os
+import socket
+import h5py
+from scipy import linalg
 
 
-def rms(x: np.ndarray):
-    """
-    :param x: 1-dim
-    :return:
-    """
-    # 确认公式
-    return np.linalg.norm(x) / np.sqrt(np.shape(x)[0])
+a = np.array([[4, 12, -16],
+              [12, 37, -43],
+              [-16, -43, 98]])
+w = linalg.cholesky(a)
 
-
-matrix = np.array([[1,1,1],
-          [2,2,2]])
-
-index3 = list(np.ones(10).astype(bool))
-index4 = [True, True, False, True, False]
-print(index4)
+print(w.T.dot(w))

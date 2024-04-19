@@ -37,8 +37,6 @@ class Mission(Enum):
 class SatID(Enum):
     A = 1
     B = 2
-    C = 3
-    D = 4
 
 
 class Payload(Enum):
@@ -156,7 +154,7 @@ class StaticGravModel(Enum):
     Gif48 = 0
     EIGEN6_C4 = 1
     GOCO02s = 2
-    GGM05 = 3
+    GGM05C = 3
 
 
 class CSseq(Enum):

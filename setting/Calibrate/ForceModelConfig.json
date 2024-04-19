@@ -23,8 +23,8 @@
     },
     "NonConservativeConfig": {
         "date_span": [
-            "2009-01-01",
-            "2009-01-31"
+            "2019-01-01",
+            "2019-01-31"
         ],
         "arcNo": 0,
         "sat": {
@@ -43,14 +43,14 @@
         },
         "SimpleOcean": false,
         "Polar2wobble": 2,
-        "MaxDegreeOfOcean": 30,
+        "MaxDegreeOfOcean": 180,
         "LoveNumberType": "Wang"
     },
     "SolidTideConfig": {
-        "GM_Earth": 398600441800000.0,
-        "GM_Sun": 1.32712442099e+20,
+        "GM_Earth": 398600441500000.0,
+        "GM_Sun": 1.32712442076e+20,
         "GM_Moon": 4902801056000.0,
-        "Radius_Earth": 6378136.6,
+        "Radius_Earth": 6378136.3,
         "isZeroTide": true
     },
     "AtmosTideConfig": {
@@ -73,7 +73,7 @@
         "Nmax": 180,
         "BB2003tide": {
             "S1": true,
-            "S2": false
+            "S2": true
         }
     },
     "OceanTideConfig": {
@@ -81,10 +81,10 @@
         "maxDegree": 120
     },
     "ThreeBodyConfig": {
-        "ThreeBody_GM_Sun": 1.32712442099e+20,
+        "ThreeBody_GM_Sun": 1.32712442076e+20,
         "ThreeBody_GM": {
-            "Earth": 398600441800000.0,
-            "Sun": 1.32712442099e+20,
+            "Earth": 398600441500000.0,
+            "Sun": 1.32712442076e+20,
             "Moon": 4902801056000.0,
             "Mercury": 22032080828076.234,
             "Venus": 324858603864142.9,
@@ -104,9 +104,9 @@
             "Mars": true,
             "Jupiter": true,
             "Saturn": true,
-            "Uranus": true,
-            "Neptune": true,
-            "Pluto": true
+            "Uranus": false,
+            "Neptune": false,
+            "Pluto": false
         },
         "isJ2": true
     },
@@ -117,8 +117,8 @@
         ],
         "degree_max": 60,
         "degree_min": 2,
-        "GravHar_GM": 398600441800000.0,
-        "GravHar_Radius": 6378136.6,
+        "GravHar_GM": 398600441500000.0,
+        "GravHar_Radius": 6378136.3,
         "PosCoordinate": "GCRS",
         "ACCCoordinate": "GCRS"
     },
@@ -130,11 +130,11 @@
     "RefGravModelConfig": {
         "kind": 0,
         "Nmax": 180,
-        "StaticModel": "Gif48"
+        "StaticModel": "gif48"
     },
     "RelativityConfig": {
-        "GM_Sun": 1.32712442099e+20,
-        "GM_Earth": 398600441800000.0,
+        "GM_Sun": 1.32712442076e+20,
+        "GM_Earth": 398600441500000.0,
         "C_Light": 299792458,
         "J": [
             0,
@@ -158,6 +158,7 @@
         "Gif48": "../data/StaticGravityField/gif48.gfc",
         "EIGEN6_C4": "../data/StaticGravityField/EIGEN6-C4.gfc",
         "GOCO02s": "../data/StaticGravityField/GOCO02s.gfc",
+        "GGM05C": "../data/StaticGravityField/GGM05C.gfc",
         "PoleTide": "../data/poletide",
         "LoverNumber": "../data/LoveNumber",
         "poleTideModel": "desaiscopolecoef.txt",

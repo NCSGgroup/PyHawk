@@ -795,7 +795,7 @@ class GRACE_FO_RL04(L1b):
         pass
 
     def _readACC(self, date: str, sat: SatID):
-        path = str(self.dir.joinpath(self._path_ACC, date.split('-')[0] + '-' + date.split('-')[1], 'gracefo_1B_' + date + '_RL04.ascii.noLRI.tgz_files',
+        path = str(self.dir.joinpath(self._path_ACC, date.split('-')[0] + '-' + date.split('-')[1], 'gracefo_1B_' + date + '_RL04.ascii.noLRI',
                                      'ACT1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
         try:
             f = open(path, 'r')
@@ -829,7 +829,7 @@ class GRACE_FO_RL04(L1b):
 
     def _readSCA(self, date: str, sat: SatID):
         path = str(self.dir.joinpath(self._path_SCA, date.split('-')[0] + '-' + date.split('-')[1],
-                                     'gracefo_1B_' + date + '_RL04.ascii.noLRI.tgz_files',
+                                     'gracefo_1B_' + date + '_RL04.ascii.noLRI',
                                      'SCA1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
         try:
             f = open(path, 'r')
@@ -845,20 +845,25 @@ class GRACE_FO_RL04(L1b):
             if r.strip() == '# End of YAML header':
                 break
 
-        SCA = np.zeros((NumOfSCA, 5))
-
+        # SCA = np.zeros((NumOfSCA, 5))
+        SCA = []
         for i in range(NumOfSCA):
             s = f.readline().split()
-            '''time'''
-            SCA[i, 0] = s[0]
-            '''cos(mu/2)'''
-            SCA[i, 1] = s[3]
-            '''I'''
-            SCA[i, 2] = s[4]
-            '''J'''
-            SCA[i, 3] = s[5]
-            '''K'''
-            SCA[i, 4] = s[6]
+            if len(s) == 9:
+                SCAd = np.zeros(5)
+                '''time'''
+                SCAd[0] = s[0]
+                '''cos(mu/2)'''
+                SCAd[1] = s[3]
+                '''I'''
+                SCAd[2] = s[4]
+                '''J'''
+                SCAd[3] = s[5]
+                '''K'''
+                SCAd[4] = s[6]
+                SCA.append(SCAd)
+            else:
+                continue
 
         f.close()
 
@@ -866,7 +871,7 @@ class GRACE_FO_RL04(L1b):
 
     def _readKBR(self, date: str):
         path = str(self.dir.joinpath(self._path_KBR, date.split('-')[0] + '-' + date.split('-')[1],
-                                     'gracefo_1B_' + date + '_RL04.ascii.noLRI.tgz_files',
+                                     'gracefo_1B_' + date + '_RL04.ascii.noLRI',
                                      'KBR1B_' + date + '_Y_04.txt'))
 
         try:
@@ -883,18 +888,23 @@ class GRACE_FO_RL04(L1b):
             if r.strip() == '# End of YAML header':
                 break
 
-        KBR = np.zeros((NumOfKBR, 4))
-
+        # KBR = np.zeros((NumOfKBR, 4))
+        KBR = []
         for i in range(NumOfKBR):
             s = f.readline().split()
-            '''time'''
-            KBR[i, 0] = s[0]
-            '''bias range + light_corr + ant_corr '''
-            KBR[i, 1] = float(s[1]) + float(s[5]) + float(s[8])
-            '''bias range-rate + light_corr + ant_corr '''
-            KBR[i, 2] = float(s[2]) + float(s[6]) + float(s[9])
-            '''bias range-acc + light_corr + ant_corr '''
-            KBR[i, 3] = float(s[3]) + float(s[7]) + float(s[10])
+            if len(s) == 16:
+                KBRd = np.zeros(4)
+                '''time'''
+                KBRd[0] = s[0]
+                '''bias range + light_corr + ant_corr '''
+                KBRd[1] = float(s[1]) + float(s[5]) + float(s[8])
+                '''bias range-rate + light_corr + ant_corr '''
+                KBRd[2] = float(s[2]) + float(s[6]) + float(s[9])
+                '''bias range-acc + light_corr + ant_corr '''
+                KBRd[3] = float(s[3]) + float(s[7]) + float(s[10])
+                KBR.append(KBRd)
+            else:
+                continue
         f.close()
 
         return KBR
@@ -912,8 +922,8 @@ class GRACE_FO_RL04(L1b):
         date_range = (round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 0, 0, 0))),
                       round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 23, 59, 60 - self.sr_payload[Payload.GNV.name]))))
         path = str(self.dir.joinpath(self._path_GNV, date.split('-')[0] + '-' + date.split('-')[1],
-                                     'gracefo_1B_' + date + '_RL04.ascii.noLRI.tgz_files',
-                                     'GNV1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
+                                     'gracefo_1B_' + date + '_RL04.ascii.noLRI',
+                                     'GNI1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
         try:
             f = open(path, 'r')
         except FileNotFoundError as e:
@@ -934,35 +944,38 @@ class GRACE_FO_RL04(L1b):
         for i in range(NumOfGNV):
             """delete the data out of the range of given date"""
             s = f.readline().split()
-            if date_range[0] <= round(int(s[0])) <= date_range[1]:
-                GNVd = np.zeros(7)
-                pass
+            if len(s) == 16:
+                if date_range[0] <= round(int(s[0])) <= date_range[1]:
+                    GNVd = np.zeros(7)
+                    pass
+                else:
+                    continue
+
+                '''time'''
+                GNVd[0] = s[0]
+                GNVd[1:4] = s[3:6]
+                GNVd[4:7] = s[9:12]
+
+                # if setGCRS:
+                #     '''ITRS2GCRS''a'
+                # GNId[0] = s[0]
+                # fr = Frame(EOP().load(Setting.path.EOP).setPar(True))
+                # rm = fr.setTime(int(s[0])).getRotationMatrix
+                #     '''pos'''
+
+                # GNId[1:4] = Frame.PosITRS2GCRS(np.array(s[3:6]).astype(float), rm)
+                #     # GNVd[1:4] = s[3:6]
+                #     '''vel'''
+                # GNId[4:7] = Frame.VelITRS2GCRS(np.array(s[3:6]).astype(float), np.array(s[9:12]).astype(float), rm)
+                #     # GNVd[4:7] = s[9:12]
+                # else:
+                #     GNVd[1:4] = s[3:6]
+                #     GNVd[4:7] = s[9:12]
+
+                # GNI.append(GNId)
+                GNV.append(GNVd)
             else:
                 continue
-
-            '''time'''
-            GNVd[0] = s[0]
-            GNVd[1:4] = s[3:6]
-            GNVd[4:7] = s[9:12]
-
-            # if setGCRS:
-            #     '''ITRS2GCRS''a'
-            # GNId[0] = s[0]
-            # fr = Frame(EOP().load(Setting.path.EOP).setPar(True))
-            # rm = fr.setTime(int(s[0])).getRotationMatrix
-            #     '''pos'''
-
-            # GNId[1:4] = Frame.PosITRS2GCRS(np.array(s[3:6]).astype(float), rm)
-            #     # GNVd[1:4] = s[3:6]
-            #     '''vel'''
-            # GNId[4:7] = Frame.VelITRS2GCRS(np.array(s[3:6]).astype(float), np.array(s[9:12]).astype(float), rm)
-            #     # GNVd[4:7] = s[9:12]
-            # else:
-            #     GNVd[1:4] = s[3:6]
-            #     GNVd[4:7] = s[9:12]
-
-            # GNI.append(GNId)
-            GNV.append(GNVd)
 
         f.close()
         return np.array(GNV)

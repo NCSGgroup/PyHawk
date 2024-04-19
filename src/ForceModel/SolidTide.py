@@ -148,8 +148,11 @@ class SolidTideIERS2010(AbsSolidTide):
         Cpot[index(2, 2)] += np.sum(dC22, 0) * 1e-12
         Spot[index(2, 2)] += np.sum(dS22, 0) * 1e-12
 
+        # if self.__isZeroTide:
+        #     Cpot[index(2, 0)] += 4.4228e-8 * 0.31460 * K20
+
         if self.__isZeroTide:
-            Cpot[index(2, 0)] += 4.4228e-8 * 0.31460 * K20
+            Cpot[index(2, 0)] += 4.201e-9
 
         return Cpot, Spot
 

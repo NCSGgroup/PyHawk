@@ -4,8 +4,8 @@ import json
 
 class InterfaceConfig:
     def __init__(self):
-        self.mission = Mission.GRACE_RL03.name
-        self.date_span = ['2009-01-01', '2009-01-31']
+        self.mission = Mission.GRACE_FO_RL04.name
+        self.date_span = ['2021-01-01', '2021-01-31']
         self.arcNo = 0
         self.sat = {SatID.A.name: True,
                     SatID.B.name: True}
@@ -18,13 +18,13 @@ class InterfaceConfig:
                                  Payload.KinematicOrbit.name: False,
                                  Payload.LRI.name: False}
 
-        self.is_orbit_GCRS = {Payload.GNV.name: False,
-                              Payload.KinematicOrbit.name: False}
+        self.is_orbit_GCRS = {Payload.GNV.name: True,
+                              Payload.KinematicOrbit.name: True}
 
         self.sr_payload = {Payload.ACC.name: 1,
                            Payload.SCA.name: 1,
                            Payload.KBR.name: 5,
-                           Payload.GNV.name: 5,
+                           Payload.GNV.name: 1,
                            Payload.KinematicOrbit.name: 1,
                            Payload.LRI.name: 5}
         self.sr_target = 5

@@ -209,8 +209,8 @@ class AdjustOrbit:
         """
         StateTime = Time
         xyz = StateVectors
-        index = [list(StateTime).index(x) for x in self._commonTime]
-        xyz = xyz[index, :, :]
+        # index = [list(StateTime).index(x) for x in self._commonTime]
+        # xyz = xyz[index, :, :]
         obs = None
         if isGNV:
             obs = self._obsGNV
@@ -221,12 +221,19 @@ class AdjustOrbit:
 
         DesignMatrixA = xyz[:, 0:3, 1:].reshape((len(xyz) * 3, -1))
         bA = residual[:, 0:3].flatten()
-        xA = np.linalg.lstsq(DesignMatrixA, bA, rcond=None)[0]
+        QA, RA = np.linalg.qr(DesignMatrixA)
+        xA = np.linalg.inv(RA).dot(QA.T).dot(bA)
+
+        # xA = np.linalg.lstsq(DesignMatrixA, bA, rcond=None)[0]
 
         DesignMatrixB = xyz[:, 3:6, 1:].reshape((len(xyz) * 3, -1))
         bB = residual[:, 3:6].flatten()
-        xB = np.linalg.lstsq(DesignMatrixB, bB, rcond=None)[0]
+        QB, RB = np.linalg.qr(DesignMatrixB)
+        xB = np.linalg.inv(RB).dot(QB.T).dot(bB)
+        # xB = np.linalg.lstsq(DesignMatrixB, bB, rcond=None)[0]
+
         self._res = np.vstack((xA, xB))
+
         return self
 
     def _save_StateVectors(self, state):

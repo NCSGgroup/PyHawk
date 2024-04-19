@@ -38,6 +38,8 @@ class RefGravModel(AbsRefGravModel):
             self.__staticModel = LoadGif48().load(self._pathConfig.EIGEN6_C4)
         elif staticModel == StaticGravModel.GOCO02s.name:
             self.__staticModel = LoadGif48().load(self._pathConfig.GOCO02s)
+        elif staticModel == StaticGravModel.GGM05C.name:
+            self.__staticModel = LoadGif48().load(self._pathConfig.GGM05C)
         return self
 
     def getStaticModel(self):

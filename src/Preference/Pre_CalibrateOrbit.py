@@ -1,11 +1,17 @@
 import json
+from src.Preference.EnumType import Mission
 
 
 class CalibrateOrbitConfig:
     def __init__(self):
-        self.StepControlConfig = self.StepControl().__dict__
 
+        self.MissionConfig = self.Mission().__dict__
+        self.StepControlConfig = self.StepControl().__dict__
         self.ParallelControlConfig = self.ParallelControl().__dict__
+
+    class Mission:
+        def __init__(self):
+            self.mission = Mission.GRACE_FO_RL04.name
 
     class StepControl:
         def __init__(self):
