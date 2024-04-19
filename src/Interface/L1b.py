@@ -797,7 +797,6 @@ class GRACE_FO_RL04(L1b):
     def _readACC(self, date: str, sat: SatID):
         path = str(self.dir.joinpath(self._path_ACC, date.split('-')[0] + '-' + date.split('-')[1], 'gracefo_1B_' + date + '_RL04.ascii.noLRI.tgz_files',
                                      'ACT1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
-        print(path)
         try:
             f = open(path, 'r')
         except FileNotFoundError as e:

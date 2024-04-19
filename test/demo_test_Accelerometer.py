@@ -22,7 +22,7 @@ def demo1():
 
 
 def analysis():
-    data_span = ['2008-01-01', '2008-01-31']
+    data_span = ['2021-01-01', '2021-01-31']
     path = '../temp/NonConservativeForce'
 
     date_list = GeoMathKit.getEveryDay(*data_span)
@@ -30,6 +30,7 @@ def analysis():
     for i in range(223):
         filename = Path(path, (data_span[0]+'_'+data_span[1]+'_'+sat+'_'+str(i)+'.hdf5'))
         h5 = h5py.File(filename, 'r')
+        data = h5.keys()
 
 
 

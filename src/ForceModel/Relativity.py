@@ -108,7 +108,6 @@ class RelativityIERS2010(AbsRelativity):
               ((2 * (self._beta + self._gamma) * self.__GM_Earth / r_norm
                 - self._gamma * v_norm ** 2) * r +
                2 * (1 + self._gamma) * rdotv * v)
-        print(r_norm, acc)
         return acc
 
     def getLenseThirring(self):
