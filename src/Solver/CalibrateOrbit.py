@@ -155,21 +155,21 @@ class CalibrateOrbit:
                 if data[0] == 'Number':
                     self.__arcLen = int(data[3])
                     break
-        # self.__arclist = self.getArcList(path=arcft_path)
+        self.__arclist = self.getArcList(path=arcft_path)
         if isAdjustOrbit:
             self.makeLog(stepName='adjustOrbit', process=AdjustOrbitProcess)
             pool = multiprocessing.Pool(processes=AdjustOrbitProcess)
             pool.map(self._adjustOrbit, self.__arclist)
             pool.close()
             pool.join()
-        # self.__saveOrbitRMS()
+        self.__saveOrbitRMS()
         if isAdjustKBRR:
             self.makeLog(stepName='adjustKBRR', process=AdjustKBRRProcess)
             pool = multiprocessing.Pool(processes=AdjustKBRRProcess)
             pool.map(self._adjustKBRR, self.__arclist)
             pool.close()
             pool.join()
-        # self.__saveKBRRRMS()
+        self.__saveKBRRRMS()
         if isGravityDesignMat:
             self.makeLog(stepName='gravityDesignMat', process=GetGravityDesignMatProcess)
             pool = multiprocessing.Pool(processes=GetGravityDesignMatProcess)
@@ -179,8 +179,8 @@ class CalibrateOrbit:
         if isNEQ:
             self.makeLog(stepName='NEQ', process=GetNEQProcess)
             pool = multiprocessing.Pool(processes=GetNEQProcess)
-            # pool.map(self._NEQ, self.__arclist)
-            pool.map(self._NEQ, range(0, 1))
+            pool.map(self._NEQ, self.__arclist)
+            # pool.map(self._NEQ, range(0, 1))
             pool.close()
             pool.join()
         if isSH:
@@ -258,7 +258,7 @@ class CalibrateOrbit:
 
     def _NEQ(self, q):
         '''setp 8: get NEQ'''
-        neq = GravityNEQperArc(arcNo=0, date_span=self.__date_span, sat=self.__sat)
+        neq = GravityNEQperArc(arcNo=q, date_span=self.__date_span, sat=self.__sat)
         neq.configure(solverConfig=self.__solver_config, NEQConfig=self.__neq_config,
                       AdjustOrbitConfig=self.__adjust_config, InterfaceConfig=self.__interface_config).get_neq()
         pass

@@ -56,7 +56,7 @@ class ForceModelConfig:
 
     class NonConservative:
         def __init__(self):
-            self.date_span = ['2008-01-01', '2008-01-31']
+            self.date_span = ['2021-01-01', '2021-01-31']
             self.arcNo = 0
             self.sat = {EnumType.SatID.A.name: True,
                         EnumType.SatID.B.name: True}
@@ -148,8 +148,8 @@ class ForceModelConfig:
     class RefGravModel:
         def __init__(self):
             self.kind = 0
-            self.Nmax = 360
-            self.StaticModel = EnumType.StaticGravModel.Gif48.name
+            self.Nmax = 180
+            self.StaticModel = EnumType.StaticGravModel.GGM05C.name
 
     class Relativity:
         def __init__(self):

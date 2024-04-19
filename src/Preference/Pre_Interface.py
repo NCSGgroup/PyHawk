@@ -18,7 +18,7 @@ class InterfaceConfig:
                                  Payload.KinematicOrbit.name: False,
                                  Payload.LRI.name: False}
 
-        self.is_orbit_GCRS = {Payload.GNV.name: False,
+        self.is_orbit_GCRS = {Payload.GNV.name: True,
                               Payload.KinematicOrbit.name: True}
 
         self.sr_payload = {Payload.ACC.name: 1,

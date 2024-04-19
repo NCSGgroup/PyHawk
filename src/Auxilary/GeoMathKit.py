@@ -440,13 +440,12 @@ class GeoMathKit:
         w = linalg.cholesky(p)
         B = w @ dm_local
 
-        n = np.shape(B)[1]
-        Q, R = np.linalg.qr(B, mode='complete')
+        # n = np.shape(B)[1]
+        # Q, R = np.linalg.qr(B, mode='complete')
+        # Q2 = Q[:, n:]
 
-        Q2 = Q[:, n:]
-
-        # Q1, R = np.linalg.qr(B)
-        # Q2 = I - Q1 @ Q1.T
+        Q1, R = np.linalg.qr(B)
+        Q2 = I - Q1 @ Q1.T
         Q2_T = Q2.T
 
         A = Q2_T @ w @ dm_global

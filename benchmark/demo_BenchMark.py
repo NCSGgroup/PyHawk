@@ -219,7 +219,8 @@ def plot_benchmark2():
     plt.style.use(['grid'])
     # plt.style.use('fivethirtyeight')
     fig = plt.figure()
-
+    fig.subplots_adjust(left=0.085, right=0.817, top=0.932, bottom=0.191,
+                        wspace=0.42, hspace=0.365)
     ns = {}
     ds = {}
     for key in res.keys():
@@ -257,12 +258,11 @@ def plot_benchmark2():
     for key in ns.keys():
         if key == 'EOT11a': continue
         ax.plot(epoch, ns[key], label=key, color = colors[key])
-
+    ax.text(-0.1, 1.05, 'a)', fontsize=2, transform=ax.transAxes)
     ax.set(xlabel='MJD', ylabel=r'$m/s^2$', xlim=[epoch[0], epoch[-1]], ylim=[1e-26, 1e-10])
     ax.set_yscale('log')
-    ax.set_title('Norm of the difference between the benchmark data and force model')
     ax.set_yticks([1e-10, 1e-12, 1e-14, 1e-16, 1e-18,1e-20, 1e-22,1e-24,1e-26])
-    leg = ax.legend(bbox_to_anchor=(1, 1), loc=0, frameon=False)
+    leg = ax.legend(bbox_to_anchor=(1, 1.3), loc=0, frameon=False)
 
     for line in leg.get_lines():
         line.set_linewidth(4.0)
@@ -276,11 +276,11 @@ def plot_benchmark2():
 
     ax.scatter(np.arange(11), vv, marker = '*', s = 64, c = 'r', label = 'PyHawk')
     ax.scatter(np.arange(11), bernese, marker='v', c='darkblue', label='Bernese', s = 64)
-
+    ax.text(-0.1, 1.05, 'b)', fontsize=24, transform=ax.transAxes)
     ax.set(ylabel=r'$m/s^2$', ylim=[1e-24, 1e-10])
     ax.set_yscale('log')
     ax.axhline(y=1e-11, color='k', linestyle='--', label = r'$10^{-11} m/s^2$', linewidth = 4)
-    leg = ax.legend(bbox_to_anchor=(1.05, 1.0), loc=2, frameon=False)
+    leg = ax.legend(bbox_to_anchor=(1, 0.5), loc=0, frameon=False)
     ax.set_xticks(np.arange(11))
     ax.set_xticklabels(namelist, rotation = 45)
 
@@ -298,5 +298,5 @@ if __name__ == '__main__':
     # demo1()
     # demo2()
     # plot()
-    # plot_benchmark2()
-    pygmt()
+    plot_benchmark2()
+    # pygmt()
