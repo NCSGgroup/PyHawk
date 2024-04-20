@@ -28,7 +28,6 @@ def orbitseries():
     interfaceDict = json.load(open('../setting/Calibrate/InterfaceConfig.json', 'r'))
     interface_config.__dict__ = interfaceDict
 
-
     AdjustPath = AdjustOrbitConfig.PathOfFiles()
     AdjustPath.__dict__.update(adjust_config.PathOfFilesConfig.copy())
 
@@ -155,20 +154,30 @@ def draworbit():
 
     matplotlib.rcParams.update({'font.size': 24})
     plt.style.use(['grid'])
-    namelist = ['2006/01','2006/12','2007/06','2008/12','2009/06','2010/01','2010/06']
+    namelist = ['2006/01','2007/06','2008/12','2010/06']
     # plt.style.use('fivethirtyeight')
-    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True)
-    ax1.set_title('GRACE A')
-    ax1.plot(np.arange(len(rmsax)), rmsax * 1000)
-    ax2.plot(np.arange(len(rmsay)), rmsay * 1000)
-    ax3.plot(np.arange(len(rmsaz)), rmsaz * 1000)
-    ax1.set(xlim=[np.arange(len(rmsax))[0], np.arange(len(rmsax))[-1]], ylim=[0, 30], ylabel='X [mm]')
-    ax2.set(xlim=[np.arange(len(rmsax))[0], np.arange(len(rmsax))[-1]], ylim=[0, 30], ylabel='Y [mm]')
-    ax3.set(xlim=[np.arange(len(rmsax))[0], np.arange(len(rmsax))[-1]], ylim=[0, 30], ylabel='Z [mm]')
+    fig, ax = plt.subplots(3, 2, sharex=True, sharey=True)
+
+    fig.subplots_adjust(left=0.066, right=0.981, top=0.923, bottom=0.08, wspace=0.1, hspace=0.15)
+    ax[0, 0].set_title('GRACE A')
+    ax[0, 0].plot(np.arange(len(rmsax)), rmsax * 1000)
+    ax[1, 0].plot(np.arange(len(rmsay)), rmsay * 1000)
+    ax[2, 0].plot(np.arange(len(rmsaz)), rmsaz * 1000)
+    ax[0, 0].set(xlim=[np.arange(len(rmsax))[0], np.arange(len(rmsax))[-1]], ylim=[0, 30], ylabel='X [mm]')
+    ax[1, 0].set(xlim=[np.arange(len(rmsax))[0], np.arange(len(rmsax))[-1]], ylim=[0, 30], ylabel='Y [mm]')
+    ax[2, 0].set(xlim=[np.arange(len(rmsax))[0], np.arange(len(rmsax))[-1]], ylim=[0, 30], ylabel='Z [mm]')
+    ax[2, 0].set_xticks([0, 2000, 4000, 6000])
+    ax[2, 0].set_xticklabels(namelist)
+    ax[0, 1].set_title('GRACE B')
+    ax[0, 1].plot(np.arange(len(rmsbx)), rmsbx * 1000)
+    ax[1, 1].plot(np.arange(len(rmsby)), rmsby * 1000)
+    ax[2, 1].plot(np.arange(len(rmsbz)), rmsbz * 1000)
+    ax[0, 1].set(xlim=[np.arange(len(rmsbx))[0], np.arange(len(rmsbx))[-1]])
+    ax[1, 1].set(xlim=[np.arange(len(rmsbx))[0], np.arange(len(rmsbx))[-1]])
+    ax[2, 1].set(xlim=[np.arange(len(rmsbx))[0], np.arange(len(rmsbx))[-1]])
     # ax3.set_xticks(np.arange(11))
-    ax3.set_xticklabels(namelist)
+    ax[2, 1].set_xticklabels(namelist)
     plt.show()
-    print(rmsax)
 
 
 def outliner(data):
@@ -179,9 +188,64 @@ def outliner(data):
 
 
 def kbrrseries():
+    adjust_config = AdjustOrbitConfig()
+    adjustOrbitDict = json.load(open('../setting/Calibrate/AdjustOrbitConfig.json', 'r'))
+    adjust_config.__dict__ = adjustOrbitDict
+    interface_config = InterfaceConfig()
+    interfaceDict = json.load(open('../setting/Calibrate/InterfaceConfig.json', 'r'))
+    interface_config.__dict__ = interfaceDict
+    AdjustPath = AdjustOrbitConfig.PathOfFiles()
+    AdjustPath.__dict__.update(adjust_config.PathOfFilesConfig.copy())
+
+    resultpath = '../result/kbrr/'
+    date_span = get_month_start_and_end_by_date_interval('2006-01-01', '2010-12-31')
+
+    for i in range(len(date_span)):
+        post_RMS = []
+        res_dir = "../temp/RangeRate/" + str(date_span[i][0]) + '_' + str(date_span[i][1])
+
+        resulth5 = h5py.File(resultpath + str(date_span[i][0]) + '_' + str(date_span[i][1]) + '.hdf5', "w")
+        for j in range(0, 115):
+            res_filename = res_dir + '/RangeRate_' + str(j) + '.hdf5'
+            if not os.path.exists(res_filename):
+                continue
+            h5 = h5py.File(res_filename, 'r')
+            if len(h5.keys()) != 0:
+                postfit = h5['post_residual'][()]
+                post_RMS.append(__rms(postfit))
+                h5.close()
+                print(__rms(postfit))
+        print(date_span[i][0])
+        resulth5.create_dataset('rms', data=post_RMS)
+        resulth5.close()
+    pass
+
+
+def drawkbrr():
+    date_span = get_month_start_and_end_by_date_interval('2006-01-01', '2010-11-30')
+    filepath = '../result/kbrr/'
+    rms = []
+    for i in range(len(date_span)):
+        filename = filepath + str(date_span[i][0]) + '_' +str(date_span[i][1]) + '.hdf5'
+        h5data = h5py.File(filename, 'r')
+        rms = np.append(rms, h5data['rms'][:])
+
+    matplotlib.rcParams.update({'font.size': 24})
+    plt.style.use(['grid'])
+    namelist = ['2006/01','2007/06','2008/12','2010/06']
+    plt.plot(np.arange(len(rms)), rms * 1e6)
+    plt.xlim([np.arange(len(rms))[0], np.arange(len(rms))[-1]])
+    plt.ylim([0.1, 0.5])
+    plt.ylabel('Residual [um/s]')
+    plt.xticks([0, 2000, 4000, 6000], namelist)
+
+    # plt.set(xlim=, ylim=[0, 30], ylabel='X [mm]')
+    plt.show()
     pass
 
 
 if __name__ == '__main__':
     # orbitseries()
-    draworbit()
+    # draworbit()
+    # kbrrseries()
+    drawkbrr()
