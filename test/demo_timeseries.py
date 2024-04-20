@@ -3,7 +3,10 @@
 # @Time    : 2024/4/19 19:12
 # @File    : demo_timeseries.py
 # @Software: PyCharm
+import sys
+sys.path.append("../")
 import matplotlib.pyplot as plt
+import matplotlib
 import numpy as np
 import src.Preference.EnumType as EnumType
 from src.Interface.ArcOperation import ArcData
@@ -34,8 +37,10 @@ def orbitseries():
 
     for i in range(len(date_span)):
         filename = "../temp/RawData/" + str(date_span[i][0]) + '_' + str(date_span[i][1]) + ".hdf5"
+        if not os.path.exists(filename):
+            continue
         h5data = h5py.File(filename, "r")
-        resulth5 = h5py.File(resultpath + str(date_span[i][0]) + '_' + str(date_span[i][1]), "w")
+        resulth5 = h5py.File(resultpath + str(date_span[i][0]) + '_' + str(date_span[i][1]) + '.hdf5', "w")
         res_dir = "../temp/StateVector/" + str(date_span[i][0]) + '_' + str(date_span[i][1])
         RMSAX = []
         RMSAY = []
@@ -45,6 +50,8 @@ def orbitseries():
         RMSBZ = []
         for j in range(0, 115):
             res_filename = res_dir + '/' + str(j) + '_AB.hdf5'
+            if not os.path.exists(res_filename):
+                break
             h5 = h5py.File(res_filename, 'r')
             rAB = h5['r'][:]
             rA = rAB[:, 0:3, 0]
@@ -127,9 +134,54 @@ def __rms(x: np.ndarray):
     return np.linalg.norm(x) / np.sqrt(np.shape(x)[0])
 
 
+def draworbit():
+    date_span = get_month_start_and_end_by_date_interval('2006-01-01', '2010-11-30')
+    filepath = '../result/orbit/'
+    rmsax = []
+    rmsay = []
+    rmsaz = []
+    rmsbx = []
+    rmsby = []
+    rmsbz = []
+    for i in range(len(date_span)):
+        filename = filepath + str(date_span[i][0]) + '_' +str(date_span[i][1]) + '.hdf5'
+        h5data = h5py.File(filename, 'r')
+        rmsax = np.append(rmsax, outliner(h5data['AX'][:]))
+        rmsay = np.append(rmsay, outliner(h5data['AY'][:]))
+        rmsaz = np.append(rmsaz, outliner(h5data['AZ'][:]))
+        rmsbx = np.append(rmsbx, outliner(h5data['BX'][:]))
+        rmsby = np.append(rmsby, outliner(h5data['BY'][:]))
+        rmsbz = np.append(rmsbz, outliner(h5data['BZ'][:]))
+
+    matplotlib.rcParams.update({'font.size': 24})
+    plt.style.use(['grid'])
+    namelist = ['2006/01','2006/12','2007/06','2008/12','2009/06','2010/01','2010/06']
+    # plt.style.use('fivethirtyeight')
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True)
+    ax1.set_title('GRACE A')
+    ax1.plot(np.arange(len(rmsax)), rmsax * 1000)
+    ax2.plot(np.arange(len(rmsay)), rmsay * 1000)
+    ax3.plot(np.arange(len(rmsaz)), rmsaz * 1000)
+    ax1.set(xlim=[np.arange(len(rmsax))[0], np.arange(len(rmsax))[-1]], ylim=[0, 30], ylabel='X [mm]')
+    ax2.set(xlim=[np.arange(len(rmsax))[0], np.arange(len(rmsax))[-1]], ylim=[0, 30], ylabel='Y [mm]')
+    ax3.set(xlim=[np.arange(len(rmsax))[0], np.arange(len(rmsax))[-1]], ylim=[0, 30], ylabel='Z [mm]')
+    # ax3.set_xticks(np.arange(11))
+    ax3.set_xticklabels(namelist)
+    plt.show()
+    print(rmsax)
+
+
+def outliner(data):
+    temp = np.array(data)
+    index = [temp < 0.03]
+    data = temp[index]
+    return list(data)
+
+
 def kbrrseries():
     pass
 
 
 if __name__ == '__main__':
-    orbitseries()
+    # orbitseries()
+    draworbit()
