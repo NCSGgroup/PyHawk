@@ -175,6 +175,9 @@ class Accelerometer:
         acc = self.__sca @ acc
         return acc[:, :, 0]
 
+    def get_acceleration_test(self):
+        return self.__acc[:, 1:]
+
     def get_du2p(self):
         """
         Derivative of acc with respect to the parameters such as bias & scale.

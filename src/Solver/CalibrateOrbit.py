@@ -162,14 +162,14 @@ class CalibrateOrbit:
             pool.map(self._adjustOrbit, self.__arclist)
             pool.close()
             pool.join()
-        self.__saveOrbitRMS()
+        # self.__saveOrbitRMS()
         if isAdjustKBRR:
             self.makeLog(stepName='adjustKBRR', process=AdjustKBRRProcess)
             pool = multiprocessing.Pool(processes=AdjustKBRRProcess)
             pool.map(self._adjustKBRR, self.__arclist)
             pool.close()
             pool.join()
-        self.__saveKBRRRMS()
+        # self.__saveKBRRRMS()
         if isGravityDesignMat:
             self.makeLog(stepName='gravityDesignMat', process=GetGravityDesignMatProcess)
             pool = multiprocessing.Pool(processes=GetGravityDesignMatProcess)
@@ -205,8 +205,8 @@ class CalibrateOrbit:
             kine = KinematicOrbitFO(L1b=s).configure()
         if mission == EnumType.Mission.GRACE_RL03.name:
             kine = KinematicOrbitV2(L1b=s).configure()
-        kine.read_double_sat()
-        kine.GNVandKiOrbitItrs2Gcrs(fr)
+        # kine.read_double_sat()
+        # kine.GNVandKiOrbitItrs2Gcrs(fr)
         """step 3: Gap fix"""
         gf = GapFix(L1b=s).configure()
         gf.fix_all().makeReport()

@@ -368,6 +368,7 @@ class GapFix:
             if ngAll <= self.__cubic_mis_max and gap['nleft'] > 2 and gap_next['nright'] > 2:
                 x = data[gap['ll']:gap_next['rr'] + 1, 0]
                 y = data[gap['ll']:gap_next['rr'] + 1, 0:]
+
                 f = interpolate.interp1d(x, y.T, kind='cubic')
 
                 '''interpolation'''
