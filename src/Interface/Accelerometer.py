@@ -246,7 +246,7 @@ class Accelerometer:
             date_span[0] + '_' + date_span[1] + '_' + sat + '_' + str(self.__arcNo) + '.hdf5')
         wr = h5py.File(filename, "w")
 
-        acc = self.get_acceleration()
+        acc = self.get_acceleration_test()
         dadp = self.get_du2p()
 
         wr.create_dataset('time', data=time)
