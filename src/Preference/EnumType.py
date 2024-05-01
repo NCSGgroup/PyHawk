@@ -118,6 +118,8 @@ class RelativityType(Enum):
 class JPLempheric(Enum):
     DE405 = 1
     DE421 = 2
+    DE430 = 3
+    DE440 = 4
 
 
 class LoveNumberType(Enum):

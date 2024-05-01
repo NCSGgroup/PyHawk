@@ -1,9 +1,9 @@
 {
     "include_ForceType": {
-        "NonConserveForce": true,
+        "NonConserveForce": false,
         "GravHar": true,
-        "Relativity": true,
-        "PlanetaryPerturbation": true
+        "Relativity": false,
+        "PlanetaryPerturbation": false
     },
     "instance_GravHar": {
         "NonTide": "AODRL06",
@@ -14,11 +14,11 @@
         "ReferenceModel": "RefGravModel"
     },
     "include_GravHarType": {
-        "NonTide": true,
-        "PoleTide": true,
-        "OceanTide": true,
-        "AtmosphereTide": true,
-        "SolidEarthTide": true,
+        "NonTide": false,
+        "PoleTide": false,
+        "OceanTide": false,
+        "AtmosphereTide": false,
+        "SolidEarthTide": false,
         "ReferenceModel": true
     },
     "NonConservativeConfig": {
@@ -98,12 +98,12 @@
         "include_planets": {
             "Sun": true,
             "Moon": true,
-            "Mercury": true,
-            "Venus": true,
             "Earth": true,
-            "Mars": true,
-            "Jupiter": true,
-            "Saturn": true,
+            "Mercury": false,
+            "Venus": false,
+            "Mars": false,
+            "Jupiter": false,
+            "Saturn": false,
             "Uranus": false,
             "Neptune": false,
             "Pluto": false
@@ -130,7 +130,7 @@
     "RefGravModelConfig": {
         "kind": 0,
         "Nmax": 180,
-        "StaticModel": "Gif48"
+        "StaticModel": "GGM05C"
     },
     "RelativityConfig": {
         "GM_Sun": 1.32712442076e+20,

@@ -149,7 +149,7 @@ class ForceModelConfig:
         def __init__(self):
             self.kind = 0
             self.Nmax = 180
-            self.StaticModel = EnumType.StaticGravModel.Gif48.name
+            self.StaticModel = EnumType.StaticGravModel.GGM05C.name
 
     class Relativity:
         def __init__(self):

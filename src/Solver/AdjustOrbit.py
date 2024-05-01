@@ -13,6 +13,7 @@ from src.Preference.Pre_ODE import ODEConfig
 from src.Preference.Pre_AdjustOrbit import AdjustOrbitConfig
 from src.Preference.Pre_Interface import InterfaceConfig
 from src.Preference.Pre_Frame import FrameConfig
+import matplotlib.pyplot as plt
 import os
 os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
 
@@ -122,7 +123,7 @@ class AdjustOrbit:
         """step 4: Propagator config"""
         self._startTime, self._startPos, self._startVel = self._secDer.getInitData()
         self._obsGNV = self._secDer.getInitState()
-        self._commonTime = self._secDer.getCommonTime()
+        # self._commonTime = self._secDer.getCommonTime()
         self._ode = GravimetryODE().configure(ODEConfig=self.ODEConfig, ParameterConfig=self.ParameterConfig).setParNum().\
             setInitial(self._startTime, self._startPos.copy(), self._startVel.copy()).\
             set2ndDerivative(self._secDer)
@@ -137,6 +138,10 @@ class AdjustOrbit:
         self._ode_res = ode.propagate()
         self._save_StateVectors(self._ode_res)
 
+        accA, accB = self._secDer.getacc()
+        accA, accB = np.array(accA), np.array(accB)
+        self.plot(accA[:, 0], accA[:, 1], accA[:, 2], 'A')
+        self.plot(accB[:, 0], accB[:, 1], accB[:, 2], 'B')
         filename = self._state_dir + '/' + str(self._arcNo) + '_' + self._satName + '.hdf5'
         h5 = h5py.File(filename, 'r')
         self._initTime = h5['t'][:]
@@ -152,9 +157,9 @@ class AdjustOrbit:
             self.__adjust(Time=self._ode_res[0], StateVectors=self._ode_res[1], isGNV=True)
             orbit_ini, acc_ini = self.__updateIniValue(iniOrbit=orbit_init, iniAcc=acc_init)
             r_ini, v_ini = orbit_ini[:, 0:3], orbit_ini[:, 3:]
-            # '''step 4: update accelerometer'''
-            # for j in range(len(self._sat)):
-            #     self._ac[self._sat[j]].updatePar(paralist=acc_ini[j]).get_and_save()
+            '''step 4: update accelerometer'''
+            for j in range(len(self._sat)):
+                self._ac[self._sat[j]].updatePar(paralist=acc_ini[j]).get_and_save()
             '''step 5: update force model'''
             self._secDer.reConfigure()
             '''step 6: update initial state vector'''
@@ -252,3 +257,25 @@ class AdjustOrbit:
     def getR(self):
         return self.fisrtR, self.secondR, self.thirdR
 
+    def plot(self, x, y, z, sat):
+        t = np.arange(len(x))
+        plt.figure(figsize=(12, 6))
+        plt.subplot(311)
+        plt.title('{}-{}-{}-{}'.format('force', sat, '2021-01', 'arc1'), fontsize=24)
+        plt.scatter(t, x, marker='o')
+        plt.yticks(fontsize=18)
+        plt.ylabel(r'$X/m/s2$', fontsize=20)
+
+        plt.subplot(312)
+        plt.scatter(t, y, marker='o')
+        plt.yticks(fontsize=18)
+        plt.ylabel(r'$Y/m/s2$', fontsize=20)
+
+        plt.subplot(313)
+        plt.scatter(t, z, marker='o')
+        plt.xlabel('GPS Time', fontsize=20)
+        plt.ylabel(r'$Z/m/s2$', fontsize=20)
+        plt.yticks(fontsize=18)
+
+        # plt.grid(ls='--')
+        plt.show()

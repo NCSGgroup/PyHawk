@@ -31,7 +31,7 @@ class PlanetEphemerides:
         self.__Ephemerides = None
         pass
 
-    def configure(self, FMConfig: ForceModelConfig, FrameConfig: FrameConfig, emphericType=EnumType.JPLempheric.DE421):
+    def configure(self, FMConfig: ForceModelConfig, FrameConfig: FrameConfig, emphericType=EnumType.JPLempheric.DE440):
         self.__FMConfig = FMConfig
         self.__FrameConfig = FrameConfig
 
@@ -46,6 +46,10 @@ class PlanetEphemerides:
             filename = 'de405.bsp'
         elif emphericType == EnumType.JPLempheric.DE421:
             filename = 'de421.bsp'
+        elif emphericType == EnumType.JPLempheric.DE430:
+            filename = 'de430.bsp'
+        elif emphericType == EnumType.JPLempheric.DE440:
+            filename = 'de440.bsp'
         else:
             raise Exception
 

@@ -132,10 +132,10 @@ class LoadGif48(LoadSH):
         for item in content:
             value = item.split()
             if len(value) == 0: continue
-            stempC[int(value[1]), int(value[2])] = float(value[3])
-            stempS[int(value[1]), int(value[2])] = float(value[4])
-            stempsigmaC[int(value[1]), int(value[2])] = float(value[5])
-            stempsigmaS[int(value[1]), int(value[2])] = float(value[6])
+            stempC[int(value[1]), int(value[2])] = float(value[3].replace('D', 'E'))
+            stempS[int(value[1]), int(value[2])] = float(value[4].replace('D', 'E'))
+            stempsigmaC[int(value[1]), int(value[2])] = float(value[5].replace('D', 'E'))
+            stempsigmaS[int(value[1]), int(value[2])] = float(value[6].replace('D', 'E'))
 
         for i in range(int(self.maxDegree + 1)):
             for j in range(i + 1):

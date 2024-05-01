@@ -22,6 +22,8 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
         self.__initVel = None
         self.__PosAndVel = None
         self.__commonTime = None
+        self.accA = []
+        self.accB = []
 
     def configures(self, arc: int, FMConfig:ForceModelConfig, ParConfig:ParameterConfig, FrameConfig:FrameConfig):
         self._arc = arc
@@ -35,23 +37,26 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
         time_A = GNVA[:, 0]
         time_B = GNVB[:, 0]
 
-        self.__ArcLen = len(time_A) if len(time_A) > len(time_B) else len(time_B)
-        self.__initTime = GNVA[4, 0] if len(time_A) > len(time_B) else GNVB[4, 0]
+        # self.__ArcLen = len(time_A) if len(time_A) > len(time_B) else len(time_B)
+        # self.__initTime = GNVA[4, 0] if len(time_A) > len(time_B) else GNVB[4, 0]
 
-        commonTime = set(time_A.astype(np.int64))
-        commonTime = commonTime & set(time_B.astype(np.int64))
-        commonTime = np.array(list(commonTime))
-        commonTime.sort()
+        self.__ArcLen = len(time_A)
+        self.__initTime = GNVA[4, 0]
 
-        index1 = [list(time_A).index(x) for x in commonTime]
-        index2 = [list(time_B).index(x) for x in commonTime]
-        GNVA = GNVA[index1, :]
-        GNVB = GNVB[index2, :]
+        # commonTime = set(time_A.astype(np.int64))
+        # commonTime = commonTime & set(time_B.astype(np.int64))
+        # commonTime = np.array(list(commonTime))
+        # commonTime.sort()
+        #
+        # index1 = [list(time_A).index(x) for x in commonTime]
+        # index2 = [list(time_B).index(x) for x in commonTime]
+        # GNVA = GNVA[index1, :]
+        # GNVB = GNVB[index2, :]
 
         startPosA, startPosB = GNVA[4, 1:4], GNVB[4, 1:4]
         startVelA, startVelB = GNVA[4, 4:7], GNVB[4, 4:7]
 
-        self.__commonTime = commonTime
+        # self.__commonTime = commonTime
         self.__PosAndVel = np.hstack((GNVA[:, 1:4], GNVB[:, 1:4]))
         self.__initPos = np.vstack((startPosA, startPosB))
         self.__initVel = np.vstack((startVelA, startVelB))
@@ -96,6 +101,10 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
         arB = self.getDaDx()
         apB = self.getDaDp()
 
+        '''benchmark acc'''
+
+        self.accA.append(accA)
+        self.accB.append(accB)
         '''Computation efficiency test'''
         '''Test Result: MOST COST TIME:'''
         '''1. Ocean Tide, 2. EOP correction, 3. Planets, 4.  '''
@@ -137,3 +146,7 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
 
     def getArcLen(self):
         return self.__ArcLen
+
+    def getacc(self):
+
+        return self.accA, self.accB

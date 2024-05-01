@@ -794,42 +794,43 @@ class GRACE_FO_RL04(L1b):
         # assert self._InterfaceConfig.mission == Mission.GRACE_FO_RL04.name
         pass
 
-    # def _readACC(self, date: str, sat: SatID):
-    #     path = str(self.dir.joinpath(self._path_ACC, date.split('-')[0] + '-' + date.split('-')[1], 'gracefo_1B_' + date + '_RL04.ascii.noLRI',
-    #                                  'ACT1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
-    #     try:
-    #         f = open(path, 'r')
-    #     except FileNotFoundError as e:
-    #         # print(path)
-    #         return None
-    #
-    #     NumOfAct = None
-    #     while True:
-    #         r = f.readline()
-    #         if r.split(':')[0].strip() == 'num_records':
-    #             NumOfAct = int(r.split(':')[1])
-    #         if r.strip() == '# End of YAML header':
-    #             break
-    #
-    #     ACT = np.zeros((NumOfAct, 4))
-    #
-    #     for i in range(NumOfAct):
-    #         s = f.readline().split()
-    #         '''time'''
-    #         ACT[i, 0] = s[0]
-    #         '''X'''
-    #         ACT[i, 1] = s[2]
-    #         '''Y'''
-    #         ACT[i, 2] = s[3]
-    #         '''Z'''
-    #         ACT[i, 3] = s[4]
-    #
-    #     f.close()
-    #     return ACT
+    def _readACC(self, date: str, sat: SatID):
+        path = str(self.dir.joinpath(self._path_ACC, date.split('-')[0] + '-' + date.split('-')[1],
+                                     'gracefo_1B_' + date + '_RL04.ascii.noLRI',
+                                     'ACT1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
+        try:
+            f = open(path, 'r')
+        except FileNotFoundError as e:
+            # print(path)
+            return None
+
+        NumOfAct = None
+        while True:
+            r = f.readline()
+            if r.split(':')[0].strip() == 'num_records':
+                NumOfAct = int(r.split(':')[1])
+            if r.strip() == '# End of YAML header':
+                break
+
+        ACT = np.zeros((NumOfAct, 4))
+
+        for i in range(NumOfAct):
+            s = f.readline().split()
+            '''time'''
+            ACT[i, 0] = s[0]
+            '''X'''
+            ACT[i, 1] = s[2]
+            '''Y'''
+            ACT[i, 2] = s[3]
+            '''Z'''
+            ACT[i, 3] = s[4]
+
+        f.close()
+        return ACT
 
     def _readSCA(self, date: str, sat: SatID):
         path = str(self.dir.joinpath(self._path_SCA, date.split('-')[0] + '-' + date.split('-')[1],
-                                     'gracefo_1B_' + date + '_RL04.ascii.noLRI.tgz_files',
+                                     'gracefo_1B_' + date + '_RL04.ascii.noLRI',
                                      'SCA1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
         try:
             f = open(path, 'r')
@@ -846,32 +847,46 @@ class GRACE_FO_RL04(L1b):
                 break
 
         # SCA = np.zeros((NumOfSCA, 5))
-        SCA = []
+        # SCA = []
+        # for i in range(NumOfSCA):
+        #     s = f.readline().split()
+        #     if len(s) == 9:
+        #         SCAd = np.zeros(5)
+        #         '''time'''
+        #         SCAd[0] = s[0]
+        #         '''cos(mu/2)'''
+        #         SCAd[1] = s[3]
+        #         '''I'''
+        #         SCAd[2] = s[4]
+        #         '''J'''
+        #         SCAd[3] = s[5]
+        #         '''K'''
+        #         SCAd[4] = s[6]
+        #         SCA.append(SCAd)
+        #     else:
+        #         continue
+
+        SCA = np.zeros((NumOfSCA, 5))
+
         for i in range(NumOfSCA):
             s = f.readline().split()
-            if len(s) == 9:
-                SCAd = np.zeros(5)
-                '''time'''
-                SCAd[0] = s[0]
-                '''cos(mu/2)'''
-                SCAd[1] = s[3]
-                '''I'''
-                SCAd[2] = s[4]
-                '''J'''
-                SCAd[3] = s[5]
-                '''K'''
-                SCAd[4] = s[6]
-                SCA.append(SCAd)
-            else:
-                continue
-
+            '''time'''
+            SCA[i, 0] = float(s[0])
+            '''cos(mu/2)'''
+            SCA[i, 1] = s[3]
+            '''I'''
+            SCA[i, 2] = s[4]
+            '''J'''
+            SCA[i, 3] = s[5]
+            '''K'''
+            SCA[i, 4] = s[6]
         f.close()
 
         return SCA
 
     def _readKBR(self, date: str):
         path = str(self.dir.joinpath(self._path_KBR, date.split('-')[0] + '-' + date.split('-')[1],
-                                     'gracefo_1B_' + date + '_RL04.ascii.noLRI.tgz_files',
+                                     'gracefo_1B_' + date + '_RL04.ascii.noLRI',
                                      'KBR1B_' + date + '_Y_04.txt'))
 
         try:
@@ -922,8 +937,8 @@ class GRACE_FO_RL04(L1b):
         date_range = (round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 0, 0, 0))),
                       round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 23, 59, 60 - self.sr_payload[Payload.GNV.name]))))
         path = str(self.dir.joinpath(self._path_GNV, date.split('-')[0] + '-' + date.split('-')[1],
-                                     'gracefo_1B_' + date + '_RL04.ascii.noLRI.tgz_files',
-                                     'GNI1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
+                                     'gracefo_1B_' + date + '_RL04.ascii.noLRI',
+                                     'GNV1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
         try:
             f = open(path, 'r')
         except FileNotFoundError as e:
@@ -980,14 +995,14 @@ class GRACE_FO_RL04(L1b):
         f.close()
         return np.array(GNV)
 
-    def _readACC(self, date: str, sat: SatID):
-        path = str(self.dir.joinpath(self._path_ACC, 'ACC-' + date.split('-')[0] + '-' + date.split('-')[1],
-                                     'ACT1B_' + date + '-' + chr(ord(sat.name) + 2) + '-01.bin'))
-
-        data = np.fromfile(path, dtype=np.float64)
-
-        ACT = np.array(data).reshape((-1, 4))
-
-        return ACT
+    # def _readACC(self, date: str, sat: SatID):
+    #     path = str(self.dir.joinpath(self._path_ACC, 'ACC-' + date.split('-')[0] + '-' + date.split('-')[1],
+    #                                  'ACT1B_' + date + '-' + chr(ord(sat.name) + 2) + '-01.bin'))
+    #
+    #     data = np.fromfile(path, dtype=np.float64)
+    #
+    #     ACT = np.array(data).reshape((-1, 4))
+    #
+    #     return ACT
 
 
