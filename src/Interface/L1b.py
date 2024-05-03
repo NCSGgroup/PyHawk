@@ -795,14 +795,14 @@ class GRACE_FO_RL04(L1b):
         pass
 
     # def _readACC(self, date: str, sat: SatID):
-    #     path = str(self.dir.joinpath(self._path_ACC, date.split('-')[0] + '-' + date.split('-')[1], 'gracefo_1B_' + date + '_RL04.ascii.noLRI',
+    #     path = str(self.dir.joinpath(self._path_ACC, date.split('-')[0] + '-' + date.split('-')[1], 'gracefo_1B_' + date + '_RL04.ascii.noLRI.tgz_files',
     #                                  'ACT1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
     #     try:
     #         f = open(path, 'r')
     #     except FileNotFoundError as e:
     #         # print(path)
     #         return None
-    #
+    # 
     #     NumOfAct = None
     #     while True:
     #         r = f.readline()
@@ -810,9 +810,9 @@ class GRACE_FO_RL04(L1b):
     #             NumOfAct = int(r.split(':')[1])
     #         if r.strip() == '# End of YAML header':
     #             break
-    #
+    # 
     #     ACT = np.zeros((NumOfAct, 4))
-    #
+    # 
     #     for i in range(NumOfAct):
     #         s = f.readline().split()
     #         '''time'''
@@ -823,7 +823,7 @@ class GRACE_FO_RL04(L1b):
     #         ACT[i, 2] = s[3]
     #         '''Z'''
     #         ACT[i, 3] = s[4]
-    #
+    # 
     #     f.close()
     #     return ACT
 
