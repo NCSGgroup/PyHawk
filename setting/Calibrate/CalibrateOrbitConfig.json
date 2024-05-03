@@ -3,8 +3,8 @@
         "mission": "GRACE_FO_RL04"
     },
     "StepControlConfig": {
-        "isPreprocess": true,
-        "isAdjustOrbit": false,
+        "isPreprocess": false,
+        "isAdjustOrbit": true,
         "isAdjustKBRR": false,
         "isGetGravityDesignMat": false,
         "isGetNEQ": false,

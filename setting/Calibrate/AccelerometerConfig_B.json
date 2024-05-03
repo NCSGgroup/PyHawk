@@ -22,9 +22,9 @@
             true
         ],
         "Bias_quadratic": [
-            true,
-            true,
-            true
+            false,
+            false,
+            false
         ]
     },
     "cali_value": {

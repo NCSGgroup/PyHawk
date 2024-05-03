@@ -54,7 +54,7 @@ def GRACE_FO(data):
     plt.plot(np.arange(2, 61, 1), gfz[2:], color='black', marker='s', label='GFZ 06')
     plt.plot(np.arange(2, 61, 1), jpl[2:], color='blue', marker='p', label='JPL 06')
     plt.xlim(0, 60)
-    plt.ylim(1e-5, 1e-2)
+    plt.ylim(1e-4, 1e-2)
     plt.xticks(fontsize=20)
     plt.yticks(fontsize=20)
     plt.xlabel('Degree', fontsize=24)
@@ -330,8 +330,8 @@ def GeoidGMT():
 
 if __name__ == '__main__':
     span = '2021001-2021031'
-    # GRACE_FO(data=span)
-    drawTime()
+    GRACE_FO(data=span)
+    # drawTime()
     # GeoidGMT()
     # drawPotentialError()
     # drawEWH()

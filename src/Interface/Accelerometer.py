@@ -76,14 +76,14 @@ class Accelerometer:
         self.__accConfig = ap.accConfig
         self.__acc = self.__rd.getData(arc=self.__arcNo, kind=Payload.ACC, sat=self.__sat)
         self.__sca = self.__rd.getData(arc=self.__arcNo, kind=Payload.SCA, sat=self.__sat)
-        commonTime = set(self.__acc[:, 0].astype(np.int64))
-        commonTime = commonTime & set(self.__sca[:, 0].astype(np.int64))
-        commonTime = np.array(list(commonTime))
-        commonTime.sort()
-        index1 = [list(self.__acc[:, 0]).index(x) for x in commonTime]
-        index2 = [list(self.__sca[:, 0]).index(x) for x in commonTime]
-        self.__acc = self.__acc[index1, :]
-        self.__sca = self.__sca[index2, :]
+        # commonTime = set(self.__acc[:, 0].astype(np.int64))
+        # commonTime = commonTime & set(self.__sca[:, 0].astype(np.int64))
+        # commonTime = np.array(list(commonTime))
+        # commonTime.sort()
+        # index1 = [list(self.__acc[:, 0]).index(x) for x in commonTime]
+        # index2 = [list(self.__sca[:, 0]).index(x) for x in commonTime]
+        # self.__acc = self.__acc[index1, :]
+        # self.__sca = self.__sca[index2, :]
         assert np.max(np.abs(self.__acc[:, 0] - self.__sca[:, 0])) < Pre_Constants.num_tolerance
         self.__dataTemp = kwargs.get('dataTemp', ap.accConfig.temp_non_conservative_data)
         '''Above defines a fully populated scale matrix (span to 1-d)'''
@@ -171,8 +171,9 @@ class Accelerometer:
         bias = np.array([bias_x, bias_y, bias_z]).transpose()
 
         acc = self.__scale @ acc_old[:, :, None] + bias[:, :, None]
-
         acc = self.__sca @ acc
+
+        # acc = self.__sca @ acc_old[:, :, None]
         return acc[:, :, 0]
 
     def get_acceleration_test(self):
@@ -246,7 +247,7 @@ class Accelerometer:
             date_span[0] + '_' + date_span[1] + '_' + sat + '_' + str(self.__arcNo) + '.hdf5')
         wr = h5py.File(filename, "w")
 
-        acc = self.get_acceleration_test()
+        acc = self.get_acceleration()
         dadp = self.get_du2p()
 
         wr.create_dataset('time', data=time)

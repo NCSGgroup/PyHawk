@@ -206,7 +206,7 @@ class CalibrateOrbit:
         if mission == EnumType.Mission.GRACE_RL03.name:
             kine = KinematicOrbitV2(L1b=s).configure()
         # kine.read_double_sat()
-        # kine.GNVandKiOrbitItrs2Gcrs(fr)
+        kine.GNVandKiOrbitItrs2Gcrs(fr)
         """step 3: Gap fix"""
         gf = GapFix(L1b=s).configure()
         gf.fix_all().makeReport()
@@ -230,12 +230,11 @@ class CalibrateOrbit:
 
     def _adjustOrbit(self, i):
         """step 5: init AdjustOrbit"""
-        print(i)
         AdjustOrbit(accConfig=[self.__acc_config_A, self.__acc_config_B], date_span=self.__date_span, sat=self.__sat).\
-            configure(SerDer=Orbit_var_2nd_diff, arcNo=i, ODEConfig=self.__ode_config,
+            configure(SerDer=Orbit_var_2nd_diff, arcNo=1, ODEConfig=self.__ode_config,
                       FMConfig=self.__force_model_config, AdjustOrbitConfig=self.__adjust_config,
                       ParameterConfig=self.__parameter_config, InterfaceConfig=self.__interface_config,
-                      FrameConfig=self.__frame_config).calibrate(iteration=3)
+                      FrameConfig=self.__frame_config).calibrate(iteration=2)
         pass
 
     def _adjustKBRR(self, j):

@@ -21,12 +21,21 @@ def readDate():
     interfaceDict = json.load(open('../setting/Calibrate/InterfaceConfig.json', 'r'))
     interface_config.__dict__ = interfaceDict
     rd = ArcData(interfaceConfig=interface_config)
-    for i in range(0, 123):
-        gnvTime = rd.getData(arc=i, kind=Payload.GNV, sat='B')[:, 0]
-        accTime = rd.getData(arc=i, kind=Payload.ACC, sat='B')[:, 0]
-        scaTime = rd.getData(arc=i, kind=Payload.SCA, sat='B')[:, 0]
-        print(np.sum(gnvTime - accTime))
-        print(np.sum(gnvTime - scaTime))
+
+    date_span = ["2019-01-01", "2019-01-31"]
+    res_dir = "../temp/StateVector/" + str(date_span[0]) + '_' + str(date_span[1])
+
+    for i in range(0, 2):
+        gnv = rd.getData(arc=i, kind=Payload.GNV, sat='A')
+        StateName = res_dir + '/' + str(i) + '_AB.hdf5'
+        StateH5 = h5py.File(StateName, "r")
+        StateGNV = StateH5['r'][:]
+        diff = (StateGNV[:, 0:3, 0] - gnv[:, 1:4]) * 1000
+        plot(gnv[:, 0], diff[:, 0], diff[:, 1], diff[:, 2])
+
+        print(__rms(diff[:, 0]))
+        print(__rms(diff[:, 1]))
+        print(__rms(diff[:, 2]))
     # StateVector = "../temp/StateVector/2010-11-01_2010-11-30/51_AB.hdf5"
     # StateVectorh5 = h5py.File(StateVector, "r")
     # Stategnv = StateVectorh5['r'][:]
@@ -47,7 +56,7 @@ def plot(t, x, y, z):
     t = np.arange(len(x))
     plt.figure(figsize=(12, 6))
     plt.subplot(311)
-    plt.title('{}-{}-{}-{}'.format('GNV', 'A', '2010-11', 'arc51'), fontsize=24)
+    plt.title('{}-{}-{}-{}'.format('GNV', 'A', '2021-01', 'arc0'), fontsize=24)
     plt.scatter(t, x, marker='o')
     plt.yticks(fontsize=18)
     plt.ylabel(r'$X/mm$', fontsize=20)
@@ -59,12 +68,21 @@ def plot(t, x, y, z):
 
     plt.subplot(313)
     plt.scatter(t, z, marker='o')
-    plt.xlabel('arcNo', fontsize=20)
+    plt.xlabel('GPS Time', fontsize=20)
     plt.ylabel(r'$Z/mm$', fontsize=20)
     plt.yticks(fontsize=18)
 
-    plt.grid(ls='--')
+    # plt.grid(ls='--')
     plt.show()
+
+
+def __rms(x: np.ndarray):
+    """
+    :param x: 1-dim
+    :return:
+    """
+    # 确认公式
+    return np.linalg.norm(x) / np.sqrt(np.shape(x)[0])
 
 
 if __name__ == '__main__':
