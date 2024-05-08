@@ -102,8 +102,8 @@ def draw():
     grid = pygmt.grdfill(grid=grid, mode="n")
 
     fig = pygmt.Figure()
-    pygmt.makecpt(series=[-2, 20, 2]) # color bar range
-    # pygmt.makecpt(cmap='jet', series=[-2, 20, 2]) # color bar range
+    cpt = pygmt.makecpt(series=[0, 10, 2], truncate=[0, 10]) # color bar range
+    # pygmt.makecpt(cmap=cpt, series=[0, 10, 2]) # color bar range
 
     with fig.subplot(
             nrows=2, ncols=1, subsize=("12c", "6c"),
@@ -115,13 +115,14 @@ def draw():
             margins=["0.5c", "0.5c"],
     ):
         with fig.set_panel(panel=0):
-            fig.basemap(projection="Q12c", frame=["+tKBRR residual"])
-            fig.grdimage(grid=grid1, frame="a")
+            # fig.basemap(projection="Q12c", frame=["+tKBRR residual"])
+            fig.basemap(projection="Q12c")
+            fig.grdimage(grid=grid1, frame="a", cmap=cpt)
             fig.coast(shorelines="1/0.5p", projection="Q12c")
 
         with fig.set_panel(panel=1):
             fig.basemap(region="d", projection="Q12c")
-            fig.grdimage(grid=grid)
+            fig.grdimage(grid=grid, cmap=cpt)
             fig.coast(shorelines="1/0.5p", projection="Q12c")
             fig.colorbar(frame=["y+lm/s"])
     fig.show()

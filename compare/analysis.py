@@ -18,24 +18,24 @@ plt.rcParams['axes.unicode_minus']=False    #可显示‘-’负号
 
 def GRACE_FO(data):
     '''static model'''
-    static_c, static_s = LoadGif48().load('../data/StaticGravityField/gif48.gfc').getCS(60)
+    static_c, static_s = LoadGif48().load('../data/StaticGravityField/GGM05C.gfc').getCS(60)
     '''read hust'''
     hust_filename = '../result/SH/GFO/HAWK01/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + data + '_GRAC_HUST_BA01_0600.gfc'
     hust_c, hust_s = LoadCSR().load(fileIn=hust_filename).getCS(Nmax=60)
     hust_c, hust_s = hust_c - static_c, hust_s - static_s
     hust_c, hust_s = GeoMathKit.CS_1dTo2d(hust_c), GeoMathKit.CS_1dTo2d(hust_s)
     '''read CSR 06'''
-    csr_06_name = '../result/SH/GFO/CSR/CSR_CSR-Release-06-GFO_60x60_unfiltered_GSM-2_'+data+'_GRFO_UTCSR_BA01_0600.gfc'
+    csr_06_name = '../result/SH/GFO/CSR/GSM-2_'+data+'_GRFO_UTCSR_BA01_0600.gfc'
     csr_06_c, csr_06_s = LoadCSR().load(fileIn=csr_06_name).getCS(Nmax=60)
     csr_06_c, csr_06_s = csr_06_c - static_c, csr_06_s - static_s
     csr_c, csr_s = GeoMathKit.CS_1dTo2d(csr_06_c), GeoMathKit.CS_1dTo2d(csr_06_s)
     '''read JPL 06'''
-    jpl_filename = '../result/SH/GFO/JPL/JPL_JPL-Release-06-GFO_60x60_unfiltered_GSM-2_'+data+'_GRFO_JPLEM_BA01_0600.gfc'
+    jpl_filename = '../result/SH/GFO/JPL/GSM-2_'+data+'_GRFO_JPLEM_BA01_0600.gfc'
     jpl_c, jpl_s = LoadCSR().load(fileIn=jpl_filename).getCS(Nmax=60)
     jpl_c, jpl_s = jpl_c - static_c, jpl_s - static_s
     jpl_c, jpl_s = GeoMathKit.CS_1dTo2d(jpl_c), GeoMathKit.CS_1dTo2d(jpl_s)
     '''read GFZ 06'''
-    gfz_filename = '../result/SH/GFO/GFZ/GFZ_GFZ-Release-06-GFO_60x60_unfiltered_GSM-2_'+data+'_GRFO_GFZOP_BA01_0600.gfc'
+    gfz_filename = '../result/SH/GFO/GFZ/GSM-2_'+data+'_GRFO_GFZOP_BA01_0600.gfc'
     gfz_c, gfz_s = LoadCSR().load(fileIn=gfz_filename).getCS(Nmax=60)
     gfz_c, gfz_s = gfz_c - static_c, gfz_s - static_s
     gfz_c, gfz_s = GeoMathKit.CS_1dTo2d(gfz_c), GeoMathKit.CS_1dTo2d(gfz_s)
@@ -48,13 +48,13 @@ def GRACE_FO(data):
     gfz = get_geoid_drgee_error(diff_c=gfz_c, diff_s=gfz_s)
     '''jpl 06'''
     jpl = get_geoid_drgee_error(diff_c=jpl_c, diff_s=jpl_s)
-    plt.title('Geoid Degree Error RMS(2021-01)', fontsize=24)
+    plt.title('Geoid Degree Error RMS(2019-01)', fontsize=24)
     plt.plot(np.arange(2, 61, 1), hust[2:], color='green', marker='^', label='HAWK 06')
     plt.plot(np.arange(2, 61, 1), csr[2:], color='red', marker='.', label='CSR 06')
     plt.plot(np.arange(2, 61, 1), gfz[2:], color='black', marker='s', label='GFZ 06')
     plt.plot(np.arange(2, 61, 1), jpl[2:], color='blue', marker='p', label='JPL 06')
     plt.xlim(0, 60)
-    plt.ylim(1e-4, 1e-2)
+    plt.ylim(1e-5, 1e-2)
     plt.xticks(fontsize=20)
     plt.yticks(fontsize=20)
     plt.xlabel('Degree', fontsize=24)
@@ -329,7 +329,7 @@ def GeoidGMT():
 
 
 if __name__ == '__main__':
-    span = '2021001-2021031'
+    span = '2019001-2019031'
     GRACE_FO(data=span)
     # drawTime()
     # GeoidGMT()
