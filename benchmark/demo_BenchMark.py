@@ -517,7 +517,7 @@ def plot_benchmark4():
     vv = [ds[k] for k in namelist]
     bernese = [2e-15, 3e-16, 0.8e-16, 0.8e-17, 2e-13, 1.5e-13, 1e-20, 3e-14, 4e-15, 6e-19, 0.9e-15]
 
-    ax.scatter(np.arange(11), vv, marker='*', s=70, c='r', label='PyHawk')
+    ax.scatter(np.arange(11), vv, marker='*', s=70, c='r', label='HAWK')
     ax.scatter(np.arange(11), bernese, marker='v', c='darkblue', label='Bernese', s=70)
     # ax.text(-0.1, 1.05, 'b)', fontsize=24, transform=ax.transAxes)
     ax.set(ylabel=r'$m/s^2$', ylim=[1e-24, 1e-10])
@@ -536,5 +536,5 @@ if __name__ == '__main__':
     # demo1()
     # demo2()
     # plot()
-    plot_benchmark3()
+    plot_benchmark4()
     # pygmt_test()

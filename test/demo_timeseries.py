@@ -243,7 +243,11 @@ def drawkbrr():
     matplotlib.rcParams.update({'font.size': 30})
 
     plt.style.use(['science', 'grid'])
-
+    border = plt.gca()
+    border.spines['top'].set_linewidth(2)  # 设置顶部边框线宽度为2
+    border.spines['right'].set_linewidth(2)  # 设置右侧边框线宽度为2
+    border.spines['bottom'].set_linewidth(2)  # 设置底部边框线宽度为2
+    border.spines['left'].set_linewidth(2)  # 设置左侧边框线宽度为2
     plt.style.use(['grid'])
     namelist = ['2006/12','2007/12','2008/12', '2009/12', '2010/12']
     plt.scatter(np.arange(len(rms)), rms * 1e6, s=20, color='black')
