@@ -789,6 +789,7 @@ class GRACE_RL03(L1b):
 
 
 class GRACE_FO_RL04(L1b):
+
     def __init__(self):
         super(GRACE_FO_RL04, self).__init__()
         # assert self._InterfaceConfig.mission == Mission.GRACE_FO_RL04.name
