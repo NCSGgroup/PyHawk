@@ -102,32 +102,64 @@ def draw():
     grid = pygmt.grdfill(grid=grid, mode="n")
 
     fig = pygmt.Figure()
-    pygmt.makecpt(series=[-2, 20, 2]) # color bar range
-    # pygmt.makecpt(cmap='jet', series=[-2, 20, 2]) # color bar range
+    cpt2 = pygmt.makecpt(series=[0, 10, 1], background="red")# color bar range
+    # pygmt.makecpt(cmap=cpt, series=[0, 10, 2]) # color bar range
 
     with fig.subplot(
             nrows=2, ncols=1, subsize=("12c", "6c"),
             frame="afg",
             sharey=True,
             sharex=True,
-            autolabel="+JTL+o0.3/0.5",
+            autolabel="+JTL+o0.5/0.5",
             # margins="0.5c",
             margins=["0.5c", "0.5c"],
     ):
         with fig.set_panel(panel=0):
             fig.basemap(projection="Q12c", frame=["+tKBRR residual"])
-            fig.grdimage(grid=grid1, frame="a")
+            # fig.basemap(projection="Q12c")
+            fig.grdimage(grid=grid1, frame="a", cmap=cpt2)
             fig.coast(shorelines="1/0.5p", projection="Q12c")
 
         with fig.set_panel(panel=1):
-            fig.basemap(region="d", projection="Q12c")
-            fig.grdimage(grid=grid)
+            fig.basemap(region="d", projection="Q12c", frame=["+tKBRR residual"])
+            fig.grdimage(grid=grid, cmap=cpt2)
             fig.coast(shorelines="1/0.5p", projection="Q12c")
             fig.colorbar(frame=["y+lm/s"])
+    fig.show()
+
+
+def draw2():
+    res = np.load("AfterRes.npz", allow_pickle=True)
+    x = np.degrees(np.array(res['x']))
+    y = np.degrees(np.array(res['y']))
+    z = res['z'] * 1e7
+
+    grid = pygmt.xyz2grd(x=x, y=y, z=z, spacing=(1, 1), region="d", duplicate='r')
+    grid = pygmt.grdfill(grid=grid, mode="n")
+
+    fig = pygmt.Figure()
+    cpt = pygmt.makecpt(series=[0, 10, 2], background="red") # color bar range
+
+    # pygmt.makecpt(cmap=cpt, series=[0, 10, 2]) # color bar range
+    with fig.subplot(
+            nrows=1, ncols=1, subsize=("12c", "6c"),
+            frame="afg",
+            sharey=True,
+            sharex=True,
+            # autolabel="+JTL+o0.3/0.5",
+            # margins="0.5c",
+            margins=["0.5c", "0.5c"],
+    ):
+        with fig.set_panel(panel=0):
+            fig.basemap(region='d', projection="Q12c")
+            fig.grdimage(grid=grid, cmap=cpt, frame=True)
+            fig.coast(shorelines="1/0.5p", projection="Q12c")
+            fig.colorbar(cmap=cpt, frame=["y+lm/s"])
     fig.show()
 
 
 if __name__ == '__main__':
     # getKBRRGMT()
     draw()
+    # draw2()
     # readDat()

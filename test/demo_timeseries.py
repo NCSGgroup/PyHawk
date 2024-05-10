@@ -134,7 +134,7 @@ def __rms(x: np.ndarray):
 
 
 def draworbit():
-    date_span = get_month_start_and_end_by_date_interval('2006-01-01', '2010-11-30')
+    date_span = get_month_start_and_end_by_date_interval('2006-01-01', '2006-12-31')
     filepath = '../result/orbit/'
     rmsax = []
     rmsay = []
@@ -152,31 +152,42 @@ def draworbit():
         rmsby = np.append(rmsby, outliner(h5data['BY'][:]))
         rmsbz = np.append(rmsbz, outliner(h5data['BZ'][:]))
 
-    matplotlib.rcParams.update({'font.size': 24})
-    plt.style.use(['grid'])
-    namelist = ['2006/01','2007/06','2008/12','2010/06']
+    matplotlib.rcParams.update({'font.size': 30})
+
+    plt.style.use(['science', 'grid'])
+
+    namelist = ['2006/02','2006/05','2006/08','2006/11']
     # plt.style.use('fivethirtyeight')
-    fig, ax = plt.subplots(3, 2, sharex=True, sharey=True)
+    fig, ax = plt.subplots(3, 2, figsize=(15, 9), sharex=True, sharey=True)
 
     fig.subplots_adjust(left=0.066, right=0.981, top=0.923, bottom=0.08, wspace=0.1, hspace=0.15)
     ax[0, 0].set_title('GRACE A')
-    ax[0, 0].plot(np.arange(len(rmsax)), rmsax * 1000)
-    ax[1, 0].plot(np.arange(len(rmsay)), rmsay * 1000)
-    ax[2, 0].plot(np.arange(len(rmsaz)), rmsaz * 1000)
+    ax[0, 0].plot(np.arange(len(rmsax)), rmsax * 1000, color='black')
+    ax[0, 0].axhline(y=5.8, color='#ED4C67', linestyle='--', linewidth=3)
+    ax[0, 0].arrow(650, 20, 0, -9, linewidth=2, color='#ED4C67', linestyle='--', head_width=20, head_length=3, fc='blue', ec='blue')
+    ax[0, 0].text(550, 20, '5.8mm')
+    ax[1, 0].plot(np.arange(len(rmsay)), rmsay * 1000, color='black')
+    ax[1, 0].axhline(y=5.4, color='#ED4C67', linestyle='--', linewidth=3)
+    ax[2, 0].plot(np.arange(len(rmsaz)), rmsaz * 1000, color='black')
+    ax[2, 0].axhline(y=5.3, color='#ED4C67', linestyle='--', linewidth=3)
     ax[0, 0].set(xlim=[np.arange(len(rmsax))[0], np.arange(len(rmsax))[-1]], ylim=[0, 30], ylabel='X [mm]')
     ax[1, 0].set(xlim=[np.arange(len(rmsax))[0], np.arange(len(rmsax))[-1]], ylim=[0, 30], ylabel='Y [mm]')
     ax[2, 0].set(xlim=[np.arange(len(rmsax))[0], np.arange(len(rmsax))[-1]], ylim=[0, 30], ylabel='Z [mm]')
-    ax[2, 0].set_xticks([0, 2000, 4000, 6000])
+    ax[2, 0].set_xticks([150, 500, 850, 1200])
     ax[2, 0].set_xticklabels(namelist)
     ax[0, 1].set_title('GRACE B')
-    ax[0, 1].plot(np.arange(len(rmsbx)), rmsbx * 1000)
-    ax[1, 1].plot(np.arange(len(rmsby)), rmsby * 1000)
-    ax[2, 1].plot(np.arange(len(rmsbz)), rmsbz * 1000)
+    ax[0, 1].plot(np.arange(len(rmsbx)), rmsbx * 1000, color='black')
+    ax[0, 1].axhline(y=5.7, color='#ED4C67', linestyle='--', linewidth=3)
+    ax[1, 1].plot(np.arange(len(rmsby)), rmsby * 1000, color='black')
+    ax[1, 1].axhline(y=5.6, color='#ED4C67', linestyle='--', linewidth=3)
+    ax[2, 1].plot(np.arange(len(rmsbz)), rmsbz * 1000, color='black')
+    ax[2, 1].axhline(y=5.5, color='#ED4C67', linestyle='--', linewidth=3)
     ax[0, 1].set(xlim=[np.arange(len(rmsbx))[0], np.arange(len(rmsbx))[-1]])
     ax[1, 1].set(xlim=[np.arange(len(rmsbx))[0], np.arange(len(rmsbx))[-1]])
     ax[2, 1].set(xlim=[np.arange(len(rmsbx))[0], np.arange(len(rmsbx))[-1]])
     # ax3.set_xticks(np.arange(11))
     ax[2, 1].set_xticklabels(namelist)
+
     plt.show()
 
 
@@ -229,15 +240,21 @@ def drawkbrr():
         filename = filepath + str(date_span[i][0]) + '_' +str(date_span[i][1]) + '.hdf5'
         h5data = h5py.File(filename, 'r')
         rms = np.append(rms, h5data['rms'][:])
+    matplotlib.rcParams.update({'font.size': 30})
 
-    matplotlib.rcParams.update({'font.size': 24})
+    plt.style.use(['science', 'grid'])
+    border = plt.gca()
+    border.spines['top'].set_linewidth(2)  # 设置顶部边框线宽度为2
+    border.spines['right'].set_linewidth(2)  # 设置右侧边框线宽度为2
+    border.spines['bottom'].set_linewidth(2)  # 设置底部边框线宽度为2
+    border.spines['left'].set_linewidth(2)  # 设置左侧边框线宽度为2
     plt.style.use(['grid'])
-    namelist = ['2006/01','2007/06','2008/12','2010/06']
-    plt.plot(np.arange(len(rms)), rms * 1e6)
+    namelist = ['2006/12','2007/12','2008/12', '2009/12', '2010/12']
+    plt.scatter(np.arange(len(rms)), rms * 1e6, s=20, color='black')
     plt.xlim([np.arange(len(rms))[0], np.arange(len(rms))[-1]])
     plt.ylim([0.1, 0.5])
     plt.ylabel('Residual [um/s]')
-    plt.xticks([0, 2000, 4000, 6000], namelist)
+    plt.xticks([1354, 2708, 4062, 5416, 6770], namelist)
 
     # plt.set(xlim=, ylim=[0, 30], ylabel='X [mm]')
     plt.show()
