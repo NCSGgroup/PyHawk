@@ -335,47 +335,88 @@ def drawMean():
     '''static model'''
     static_c, static_s = LoadGif48().load('../data/StaticGravityField/gif48.gfc').getCS(60)
     '''read hust'''
-
-    hust_filename = '../result/SH/RL06/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_2009-05-01-2009-05-31_GRAC_HUST_BA01_0600.gfc'
-    hust_c, hust_s = LoadCSR().load(fileIn=hust_filename).getCS(Nmax=60)
+    filenamelist = os.listdir(r'../result/SH/mean/RL06')
+    hust_c, hust_s = 0, 0
+    for filename in filenamelist:
+        hust_filename = '../result/SH/mean/RL06/' + filename
+        c, s = LoadCSR().load(fileIn=hust_filename).getCS(Nmax=60)
+        hust_c += c
+        hust_s += s
+    hust_c = hust_c / 60
+    hust_s = hust_s / 60
     hust_c, hust_s = hust_c - static_c, hust_s - static_s
     hust_c, hust_s = GeoMathKit.CS_1dTo2d(hust_c), GeoMathKit.CS_1dTo2d(hust_s)
     '''read CSR'''
-    csr_filename = '../result/SH/CSR/GSM-2_2009121-2009151_GRAC_UTCSR_BA01_0600.gfc'
-    csr_c, csr_s = LoadCSR().load(fileIn=csr_filename).getCS(Nmax=60)
+    filenamelist = os.listdir(r'../result/SH/mean/CSR')
+    csr_c, csr_s = 0, 0
+    for filename in filenamelist:
+        csr_filename = '../result/SH/mean/CSR/' + filename
+        c, s = LoadCSR().load(fileIn=csr_filename).getCS(Nmax=60)
+        csr_c += c
+        csr_s += s
+    csr_c = csr_c / 60
+    csr_s = csr_s / 60
     csr_c, csr_s = csr_c - static_c, csr_s - static_s
     csr_c, csr_s = GeoMathKit.CS_1dTo2d(csr_c), GeoMathKit.CS_1dTo2d(csr_s)
+    # csr_diff_c = hust_c - csr_c
+    # csr_diff_s = hust_s - csr_s
+    # csr_e_l = get_drgee_rms(diff_c=csr_diff_c, diff_s=csr_diff_s)
+    # csr_n_l = get_geoid_drgee_error(diff_c=csr_diff_c, diff_s=csr_diff_s)
     '''read GFZ'''
-    gfz_filename = '../result/SH/GFZ/GSM-2_2009121-2009151_GRAC_GFZOP_BA01_0600.gfc'
-    gfz_c, gfz_s = LoadCSR().load(fileIn=gfz_filename).getCS(Nmax=60)
+    filenamelist = os.listdir(r'../result/SH/mean/GFZ')
+    gfz_c, gfz_s = 0, 0
+    for filename in filenamelist:
+        gfz_filename = '../result/SH/mean/GFZ/' + filename
+        c, s = LoadCSR().load(fileIn=gfz_filename).getCS(Nmax=60)
+        gfz_c += c
+        gfz_s += s
+    gfz_c = gfz_c / 60
+    gfz_s = gfz_s / 60
     gfz_c, gfz_s = gfz_c - static_c, gfz_s - static_s
     gfz_c, gfz_s = GeoMathKit.CS_1dTo2d(gfz_c), GeoMathKit.CS_1dTo2d(gfz_s)
     '''read JPL'''
-    jpl_filename = '../result/SH/JPL/GSM-2_2009121-2009151_GRAC_JPLEM_BA01_0600.gfc'
-    jpl_c, jpl_s = LoadCSR().load(fileIn=jpl_filename).getCS(Nmax=60)
+    filenamelist = os.listdir(r'../result/SH/mean/JPL')
+    jpl_c, jpl_s = 0, 0
+    for filename in filenamelist:
+        jpl_filename = '../result/SH/mean/JPL/' + filename
+        c, s = LoadCSR().load(fileIn=jpl_filename).getCS(Nmax=60)
+        jpl_c += c
+        jpl_s += s
+    jpl_c = jpl_c / 60
+    jpl_s = jpl_s / 60
     jpl_c, jpl_s = jpl_c - static_c, jpl_s - static_s
     jpl_c, jpl_s = GeoMathKit.CS_1dTo2d(jpl_c), GeoMathKit.CS_1dTo2d(jpl_s)
+    # jpl_diff_c = hust_c - jpl_c
+    # jpl_diff_s = hust_s - jpl_s
+    # jpl_e_l = get_drgee_rms(diff_c=jpl_diff_c, diff_s=jpl_diff_s)
+    # jpl_n_l = get_geoid_drgee_error(diff_c=jpl_diff_c, diff_s=jpl_diff_s)
+    # '''csr and gfz'''
+    # csr_gfz_diff_c = gfz_c - csr_c
+    # csr_gfz_diff_s = gfz_s - csr_s
+    # csr_gfz_e_l = get_drgee_rms(diff_c=csr_gfz_diff_c, diff_s=csr_gfz_diff_s)
+    # '''csr and jpl'''
+    # csr_jpl_diff_c = jpl_c - csr_c
+    # csr_jpl_diff_s = jpl_s - csr_s
+    # csr_jpl_e_l = get_drgee_rms(diff_c=csr_jpl_diff_c, diff_s=csr_jpl_diff_s)
+    # '''gfz and jpl'''
+    # gfz_jpl_diff_c = gfz_c - jpl_c
+    # gfz_jpl_diff_s = gfz_s - jpl_s
+    # gfz_jpl_e_l = get_drgee_rms(diff_c=gfz_jpl_diff_c, diff_s=gfz_jpl_diff_s)
     '''hust'''
     hust = get_geoid_drgee_error(diff_c=hust_c, diff_s=hust_s)
     '''csr'''
     csr = get_geoid_drgee_error(diff_c=csr_c, diff_s=csr_s)
     '''gfz'''
     gfz = get_geoid_drgee_error(diff_c=gfz_c, diff_s=gfz_s)
-    '''jpl 05'''
+    '''jpl'''
     jpl = get_geoid_drgee_error(diff_c=jpl_c, diff_s=jpl_s)
-
-    border = plt.gca()
-    border.spines['top'].set_linewidth(2)  # 设置顶部边框线宽度为2
-    border.spines['right'].set_linewidth(2)  # 设置右侧边框线宽度为2
-    border.spines['bottom'].set_linewidth(2)  # 设置底部边框线宽度为2
-    border.spines['left'].set_linewidth(2)  # 设置左侧边框线宽度为2
+    # plt.title('Geoid Degree', fontsize=30)
     matplotlib.rcParams.update({'font.size': 30})
-    plt.style.use(['science'])
-    plt.plot(np.arange(2, 61, 1), hust[2:], color='green', linewidth=2.0, marker='', label='HAWK RL06')
-    plt.plot(np.arange(2, 61, 1), csr[2:], color='red', marker='', linewidth=2.0, label='CSR RL06')
-    plt.plot(np.arange(2, 61, 1), gfz[2:], color='black', marker='', linewidth=2.0, label='GFZ RL06')
-    plt.plot(np.arange(2, 61, 1), jpl[2:], color='blue', marker='', linewidth=2.0, label='JPL RL06')
-
+    # plt.style.use(['science'])
+    plt.plot(np.arange(2, 61, 1), hust[2:], color='green', linewidth=2.0, marker='', label='HAWK')
+    plt.plot(np.arange(2, 61, 1), csr[2:], color='red', marker='', linewidth=2.0, label='CSR')
+    plt.plot(np.arange(2, 61, 1), gfz[2:], color='black', marker='', linewidth=2.0, label='GFZ')
+    plt.plot(np.arange(2, 61, 1), jpl[2:], color='blue', marker='', linewidth=2.0, label='JPL')
     plt.xlim(0, 60)
     plt.ylim(1e-5, 1e-2)
     plt.xticks(fontsize=28)
