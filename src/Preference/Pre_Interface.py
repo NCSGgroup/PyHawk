@@ -4,7 +4,7 @@ import json
 
 class InterfaceConfig:
     def __init__(self):
-        self.mission = Mission.GRACE_FO_RL04.name
+        self.mission = Mission.GRACE_RL03.name
         self.date_span = ['2021-01-01', '2021-01-31']
         self.arcNo = 0
         self.sat = {SatID.A.name: True,

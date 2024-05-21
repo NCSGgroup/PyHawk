@@ -21,6 +21,10 @@ from src.Interface.GapFix import GapFix
 from src.Interface.ArcOperation import ArcSelect
 from src.Solver.AdjustSST import RangeRate
 from datetime import datetime
+from src.Interface.ArcOperation import ArcData
+from src.Preference.Pre_Interface import InterfaceConfig
+from src.Preference.Pre_Frame import FrameConfig
+
 import pygmt
 
 
@@ -112,6 +116,70 @@ def drawKBRR(datespan, arcLen):
     fig.show()
 
 
-if __name__ == '__main__':
-    AODRL06()
+def xyz2lonlat():
+    datespan = ["2008-07-01", "2008-07-31"]
+    interface_config = InterfaceConfig()
+    interfaceDict = json.load(open('../setting/Calibrate/InterfaceConfig.json', 'r'))
+    interface_config.__dict__ = interfaceDict
 
+    frame_config = FrameConfig()
+    frame = json.load(open('../setting/Calibrate/FrameConfig.json', 'r'))
+    frame_config.__dict__ = frame
+
+    eop = EOP().configure(frameConfig=frame_config).load()
+    fr = Frame(eop).configure(frameConfig=frame_config)
+
+    rd = ArcData(interfaceConfig=interface_config)
+    Lon = []
+    Lat = []
+    Postfit = []
+    for i in range(0, 114):
+        GNV = rd.getData(arc=i, kind=EnumType.Payload.GNV, sat=EnumType.SatID.A)
+        GNVTime = GNV[:, 0]
+        GNVR = GNV[:, 1:4]
+
+        res_dir = pathlib.Path("../temp/RangeRate").joinpath(datespan[0] + '_' + datespan[1])
+        res_filename = res_dir.joinpath('RangeRate_' + str(i) + '.hdf5')
+        h5 = h5py.File(res_filename, 'r')
+        t2 = h5['post_t'][()]
+
+        commonTime = set(GNVTime.astype(np.int64))
+        commonTime = commonTime & set(t2.astype(np.int64))
+        commonTime = np.array(list(commonTime))
+        commonTime.sort()
+
+        new_index1 = [list(GNVTime).index(x) for x in commonTime]
+        new_index2 = [list(t2).index(x) for x in commonTime]
+        new_Time = GNVTime[new_index1]
+        new_GNVR = GNVR[new_index1]
+        Postfit.extend(h5['post_residual'][()][new_index2])
+
+        for i in range(len(new_Time)):
+            time = new_Time[i]
+            pos = new_GNVR[i]
+            fr = fr.setTime(float(time))
+            itrs = fr.PosGCRS2ITRS(np.array(pos).astype(float), fr.getRotationMatrix)
+            lon, lat, r = GeoMathKit.CalcPolarAngles(itrs)
+            Lon.append(lon)
+            Lat.append(lat)
+        h5.close()
+
+    Lon = np.degrees(np.array(Lon))
+    Lat = np.degrees(np.array(Lat))
+    Postfit = np.array(Postfit)
+
+    filename = '../result/2008-07-AOD.hdf5'
+    h5data = h5py.File(filename, "w")
+    h5data.create_dataset('lon', data=Lon)
+    h5data.create_dataset('lat', data=Lat)
+    h5data.create_dataset('postfit', data=Postfit)
+    h5data.close()
+    pass
+
+
+if __name__ == '__main__':
+    # AODRL06()
+    # xyz2lonlat()
+    filename = '../result/2008-07-AOD.hdf5'
+    data = h5py.File(filename, "r")
+    data.keys()

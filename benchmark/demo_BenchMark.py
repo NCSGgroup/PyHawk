@@ -14,7 +14,13 @@ import matplotlib
 # import scienceplots
 from matplotlib.ticker import MultipleLocator
 
-
+config = {
+    "font.family": 'serif',
+    "font.size": 26,
+    "mathtext.fontset": 'stix',
+    "font.serif": ['Times New Roman'],
+}
+matplotlib.rcParams.update(config)
 
 def demo1():
     FMConfig = ForceModelConfig()
@@ -338,7 +344,7 @@ def pygmt_test():
 
 
 def plot_benchmark3():
-    matplotlib.rcParams.update({'font.size': 27})
+    # matplotlib.rcParams.update({'font.size': 27})
     savedir = '../result/benchmarktest/'
     res = {
         'Moon': np.load(savedir + 'moon.npy'),
@@ -358,7 +364,7 @@ def plot_benchmark3():
     }
 
     epoch = np.linspace(54650, 54651, 2880)
-    plt.style.use(['science'])
+    # plt.style.use(['science'])
     fig = plt.figure(figsize=(15, 9))
     ax = fig.add_axes([0.11, 0.11, 0.8, 0.7])
 
@@ -402,31 +408,29 @@ def plot_benchmark3():
     #     'Earth gravity': 'black'
     # }
     colors = {
-        'Moon': '#FFC312',
-        'Sun': '#C4E538',
-        'Planets': '#12CBC4',
-        'Relativistic': '#273c75',
-
-        'FES2014b': '#ED4C67',
-        'Atmos tide': '#00a8ff',
-        'Dealiasing': '#9c88ff',
-
-        'Pole tide': '#fbc531',
-        'Ocean pole': '#4cd137',
-        'Solid tide': '#487eb0',
-        'Earth gravity': '#2f3640'
+        'Moon': '#2c2c54',
+        'Sun': '#474787',
+        'Planets': '#aaa69d',
+        'Relativistic': '#227093',
+        'FES2014b': '#218c74',
+        'Atmos tide': '#b33939',
+        'Dealiasing': '#cd6133',
+        'Pole tide': '#FC427B',
+        'Ocean pole': '#0097e6',
+        'Solid tide': '#BDC581',
+        'Earth gravity': '#322C2B'
     }
-    ax.axhline(y=1e-11, color='k', linestyle='--', label = r'$10^{-11} m/s^2$', linewidth = 4)
-
+    ax.axhline(y=1e-11, color='#e84118', linestyle='--', label = 'Baseline', linewidth = 5)
+    ax.text(54650.85, 5e-13, r'$10^{-11} \mathrm{m/s^2}$', c='k')
     for key in ns.keys():
         if key == 'EOT11a': continue
-        plt.plot(epoch, ns[key], label=key, color = colors[key], linewidth = 3)
+        plt.plot(epoch, ns[key], label=key, color = colors[key], linewidth=3)
     # ax.text(-0.1, 1.05, 'a)', fontsize=2, transform=ax.transAxes)
-    ax.set(xlabel='MJD', ylabel=r'$m/s^2$', xlim=[epoch[0], epoch[-1]], ylim=[1e-26, 1e-10])
+    ax.set(xlabel='MJD', ylabel=r'$\mathrm{m/s^2}$', xlim=[epoch[0], epoch[-1]], ylim=[1e-26, 1e-10])
     ax.set_yscale('log')
 
     ax.set_yticks([1e-10, 1e-14, 1e-18, 1e-22, 1e-26])
-    ax.set_xticks([54650, 54650.2, 54650.4, 54650.6, 54650.8, 54651], ['54650', '54650.2', '54650.4', '54650.6', '54650.8', '54651'])
+    ax.set_xticks([54650.0, 54650.2, 54650.4, 54650.6, 54650.8, 54651.0], ['54650.0', '54650.2', '54650.4', '54650.6', '54650.8', '54651.0'])
     leg = ax.legend(ncol=4, bbox_to_anchor=(0.5, 1.25), loc='upper center', borderpad=0, labelspacing=0.2, columnspacing=0.7,frameon=False)
     for line in leg.get_lines():
         line.set_linewidth(4.0)
@@ -439,7 +443,6 @@ def plot_benchmark3():
 
 
 def plot_benchmark4():
-    matplotlib.rcParams.update({'font.size': 30})
     savedir = '../result/benchmarktest/'
     res = {
         'Moon': np.load(savedir + 'moon.npy'),
@@ -459,7 +462,7 @@ def plot_benchmark4():
     }
 
     epoch = np.linspace(54650, 54651, 2880)
-    plt.style.use(['science'])
+    # plt.style.use(['science'])
     fig = plt.figure(figsize=(15, 9))
     ax = fig.add_axes([0.11, 0.21, 0.82, 0.72])
 
@@ -517,12 +520,14 @@ def plot_benchmark4():
     vv = [ds[k] for k in namelist]
     bernese = [2e-15, 3e-16, 0.8e-16, 0.8e-17, 2e-13, 1.5e-13, 1e-20, 3e-14, 4e-15, 6e-19, 0.9e-15]
 
-    ax.scatter(np.arange(11), vv, marker='*', s=70, c='r', label='HAWK')
-    ax.scatter(np.arange(11), bernese, marker='v', c='darkblue', label='Bernese', s=70)
+    ax.scatter(np.arange(11), vv, marker='*', s=300, c='r', label='HAWK')
+    ax.scatter(np.arange(11), bernese, marker='v', c='darkblue', label='Bernese', s=300)
     # ax.text(-0.1, 1.05, 'b)', fontsize=24, transform=ax.transAxes)
-    ax.set(ylabel=r'$m/s^2$', ylim=[1e-24, 1e-10])
+    ax.set(ylabel=r'$\mathrm{m/s^2}$', ylim=[1e-24, 1e-10])
     ax.set_yscale('log')
-    ax.axhline(y=1e-11, color='k', linestyle='--', label=r'$10^{-11} m/s^2$', linewidth=4)
+    ax.axhline(y=1e-11, color='k', linestyle='--', label='Baseline', linewidth=5)
+    ax.text(9, 5e-13, r'$10^{-11} \mathrm{m/s^2}$', c='k')
+
     leg = ax.legend(ncol=3, bbox_to_anchor=(0.5, 1.13), loc='upper center',  frameon=False)
     ax.set_xticks(np.arange(11))
     ax.set_xticklabels(namelist, rotation=45)

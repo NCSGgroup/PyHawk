@@ -590,3 +590,141 @@ class LoadCSR(LoadSH):
         self._S[(l * (l + 1) / 2 + m).astype(np.int64)] = S
         self._sigmaC[(l * (l + 1) / 2 + m).astype(np.int64)] = sigmaC
         self._sigmaS[(l * (l + 1) / 2 + m).astype(np.int64)] = sigmaS
+
+
+class LoadGLO(LoadSH):
+    """
+    This class is used to read stokes coefficients at given epoch from Bai jiahui.
+    """
+
+    def __init__(self):
+        LoadSH.__init__(self)
+        self.__kind = None
+        self.__AODdir = None
+        self.__box = {AODtype.ATM.name: 'atm',
+                      AODtype.OCN.name: 'ocn',
+                      AODtype.OBA.name: 'oba',
+                      AODtype.GLO.name: 'glo'}
+        self.__epoch = None
+
+    def load(self, fileIn):
+        """
+        set the directory of AOD products to be read
+        :param fileIn:
+        :return:
+        """
+        self.__AODdir = fileIn
+        return self
+
+    def setTime(self, date: str, epoch: str):
+        """
+        specify the epoch of AOD file to be read
+        :param date: eg., '2009-01-01'
+        :param epoch: eg., '06:00:00'
+        :return:
+        """
+        self.__epoch = epoch
+        '''search the directory by month information'''
+        root_path = self.__AODdir
+        target = None
+        class Break(Exception):
+            pass
+
+        try:
+            for root, dirs, files in os.walk(root_path):
+                for name in files:
+                    if date in name:
+                        target = os.path.join(root, name)
+                        raise Break
+        except Break as e:
+            pass
+
+        flag = 0
+
+        if target is None:
+            raise FileNotFoundError
+
+        with open(target) as f:
+            content = f.readlines()
+            pass
+
+        flag = self.__header(content)
+
+        self.__read(content[flag + 1:])
+
+        '''search the file by day information'''
+
+        return self
+
+    def setType(self, kind: str):
+        """
+        set the type to be read: ATM, OCN, GLO, OBA
+        :return:
+        """
+        self.__kind = kind
+        return self
+
+    def __header(self, content: list):
+        """
+        Read and identify the header of the gif48 gravity fields file
+        :param content: content of the file
+        :return: the line of "end_of_header"
+        """
+
+        flag = 0
+
+        for i in range(len(content)):
+            value = content[i].split(':')
+            if len(value) == 0:
+                continue
+            value[0] = value[0].strip()
+            try:
+                value[1] = value[1].replace('\n', '')
+            except Exception as e:
+                pass
+
+            self.maxDegree = int(180)
+
+            if (self.__box[self.__kind] in content[i]) and (self.__epoch in content[i]):
+                flag = i
+                break
+
+        return flag
+
+    def __read(self, content: list):
+        """
+        Start reading gif48 like line by line like below
+        key    L    M    C    S    sigma C    sigma S
+        :param content:
+        :return: all the C, S coefficients in order
+        """
+        l, m, C, S, sigmaC, sigmaS = [], [], [], [], [], []
+
+        for item in content:
+            value = item.split()
+            if len(value) == 0:
+                continue
+            if len(item.split(':')) > 1:
+                break
+
+            l.append(value[0])
+            m.append(value[1])
+            C.append(value[2])
+            S.append(value[3])
+
+        l = np.array(l).astype(np.int64)
+        m = np.array(m).astype(np.int64)
+        C = np.array(C).astype(np.float64)
+        S = np.array(S).astype(np.float64)
+
+        if self.maxDegree is not None:
+            assert len(l) == int((self.maxDegree + 1) * (self.maxDegree + 2) / 2)
+        else:
+            n = np.round(np.sqrt(len(l) * 2)) - 1
+            assert len(l) == int((n + 1) * (n + 2) / 2)
+
+        self._C = np.zeros(len(l))
+        self._S = np.zeros(len(l))
+
+        self._C[(l * (l + 1) / 2 + m).astype(np.int64)] = C
+        self._S[(l * (l + 1) / 2 + m).astype(np.int64)] = S

@@ -1,6 +1,6 @@
 from src.ForceModel.BaseGravCS import BaseGravCS
 import src.Preference.Pre_Constants as Pre_Constants
-from src.Interface.LoadSH import LoadNonTide
+from src.Interface.LoadSH import LoadNonTide, LoadGLO
 from src.Frame.Frame import Frame
 import datetime
 import numpy as np
@@ -53,7 +53,7 @@ class AODRL06(AbsNonTide):
         AOD_type = self._NonTideConfig.kind
         self.__MaxDeg = self._NonTideConfig.MaxDeg
         self.__TS = self._NonTideConfig.TS
-        self.__ld = LoadNonTide().load(FileDir).setType(kind=AOD_type)
+        self.__ld = LoadGLO().load(FileDir).setType(kind=AOD_type)
 
         return self
 

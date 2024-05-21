@@ -1,9 +1,9 @@
 {
     "include_ForceType": {
-        "NonConserveForce": false,
+        "NonConserveForce": true,
         "GravHar": true,
-        "Relativity": false,
-        "PlanetaryPerturbation": false
+        "Relativity": true,
+        "PlanetaryPerturbation": true
     },
     "instance_GravHar": {
         "NonTide": "AODRL06",
@@ -14,17 +14,17 @@
         "ReferenceModel": "RefGravModel"
     },
     "include_GravHarType": {
-        "NonTide": false,
-        "PoleTide": false,
-        "OceanTide": false,
-        "AtmosphereTide": false,
-        "SolidEarthTide": false,
+        "NonTide": true,
+        "PoleTide": true,
+        "OceanTide": true,
+        "AtmosphereTide": true,
+        "SolidEarthTide": true,
         "ReferenceModel": true
     },
     "NonConservativeConfig": {
         "date_span": [
-            "2021-01-01",
-            "2021-01-31"
+            "2009-01-01",
+            "2009-01-31"
         ],
         "arcNo": 0,
         "sat": {
@@ -70,7 +70,7 @@
             "R3": true
         },
         "kind": "ATM",
-        "Nmax": 180,
+        "Nmax": 100,
         "BB2003tide": {
             "S1": true,
             "S2": true
@@ -125,7 +125,7 @@
     "NonTideConfig": {
         "kind": "GLO",
         "MaxDeg": 180,
-        "TS": 3
+        "TS": 6
     },
     "RefGravModelConfig": {
         "kind": 0,
@@ -151,7 +151,7 @@
     },
     "PathOfFilesConfig": {
         "Ephemerides": "../data/ephemerides",
-        "AOD": "../data/AOD/RL06",
+        "AOD": "../data/AOD/GLO_0503",
         "EOT11a": "../data/eot11a",
         "FES2014": "../data/FES2014",
         "Atmos": "../data/atmos",

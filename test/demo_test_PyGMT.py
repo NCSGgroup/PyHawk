@@ -102,29 +102,32 @@ def draw():
     grid = pygmt.grdfill(grid=grid, mode="n")
 
     fig = pygmt.Figure()
-    cpt2 = pygmt.makecpt(series=[0, 10, 1], background="red")# color bar range
     # pygmt.makecpt(cmap=cpt, series=[0, 10, 2]) # color bar range
 
     with fig.subplot(
             nrows=2, ncols=1, subsize=("12c", "6c"),
             frame="afg",
-            sharey=True,
-            sharex=True,
+            # sharey=True,
+            # sharex=True,
             autolabel="+JTL+o0.5/0.5",
             # margins="0.5c",
-            margins=["0.5c", "0.5c"],
+            margins=["0.5c", "0.8c"],
     ):
         with fig.set_panel(panel=0):
-            fig.basemap(projection="Q12c", frame=["+tKBRR residual"])
-            # fig.basemap(projection="Q12c")
-            fig.grdimage(grid=grid1, frame="a", cmap=cpt2)
-            fig.coast(shorelines="1/0.5p", projection="Q12c")
+            pygmt.makecpt(series=[0, 70, 7], background="red")  # color bar range
+            # fig.basemap(projection="Q12c", frame=["+tKBRR residual"])
+
+            fig.grdimage(grid=grid1, frame="f")
+            fig.coast(region=[-180, 180, -90, 90], shorelines="1/0.5p", projection="Q12c")
+            fig.basemap(frame="f")
+            fig.colorbar(frame=["y+lum/s"])
 
         with fig.set_panel(panel=1):
-            fig.basemap(region="d", projection="Q12c", frame=["+tKBRR residual"])
-            fig.grdimage(grid=grid, cmap=cpt2)
+            pygmt.makecpt(series=[0, 10, 1], background="red")  # color bar range
+            fig.basemap(region="d", frame="f")
+            fig.grdimage(grid=grid)
             fig.coast(shorelines="1/0.5p", projection="Q12c")
-            fig.colorbar(frame=["y+lm/s"])
+            fig.colorbar(frame=["y+lum/s"])
     fig.show()
 
 

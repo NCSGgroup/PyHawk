@@ -162,14 +162,14 @@ class CalibrateOrbit:
             pool.map(self._adjustOrbit, self.__arclist)
             pool.close()
             pool.join()
-        # self.__saveOrbitRMS()
+        self.__saveOrbitRMS()
         if isAdjustKBRR:
             self.makeLog(stepName='adjustKBRR', process=AdjustKBRRProcess)
             pool = multiprocessing.Pool(processes=AdjustKBRRProcess)
             pool.map(self._adjustKBRR, self.__arclist)
             pool.close()
             pool.join()
-        # self.__saveKBRRRMS()
+        self.__saveKBRRRMS()
         if isGravityDesignMat:
             self.makeLog(stepName='gravityDesignMat', process=GetGravityDesignMatProcess)
             pool = multiprocessing.Pool(processes=GetGravityDesignMatProcess)

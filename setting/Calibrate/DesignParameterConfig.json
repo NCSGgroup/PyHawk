@@ -6,7 +6,7 @@
     },
     "AccelerometerConfig": {
         "isRequired": true,
-        "Parameter_Number": 0,
+        "Parameter_Number": 6,
         "AllisGlobal": false
     },
     "StokesCoefficientsConfig": {
