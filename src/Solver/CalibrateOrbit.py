@@ -205,7 +205,7 @@ class CalibrateOrbit:
             kine = KinematicOrbitFO(L1b=s).configure()
         if mission == EnumType.Mission.GRACE_RL03.name:
             kine = KinematicOrbitV2(L1b=s).configure()
-        # kine.read_double_sat()
+        kine.read_double_sat()
         kine.GNVandKiOrbitItrs2Gcrs(fr)
         """step 3: Gap fix"""
         gf = GapFix(L1b=s).configure()
@@ -231,7 +231,7 @@ class CalibrateOrbit:
     def _adjustOrbit(self, i):
         """step 5: init AdjustOrbit"""
         AdjustOrbit(accConfig=[self.__acc_config_A, self.__acc_config_B], date_span=self.__date_span, sat=self.__sat).\
-            configure(SerDer=Orbit_var_2nd_diff, arcNo=1, ODEConfig=self.__ode_config,
+            configure(SerDer=Orbit_var_2nd_diff, arcNo=i, ODEConfig=self.__ode_config,
                       FMConfig=self.__force_model_config, AdjustOrbitConfig=self.__adjust_config,
                       ParameterConfig=self.__parameter_config, InterfaceConfig=self.__interface_config,
                       FrameConfig=self.__frame_config).calibrate(iteration=2)
@@ -326,7 +326,7 @@ class CalibrateOrbit:
         RMSBX = []
         RMSBY = []
         RMSBZ = []
-        for i in range(0, self.__arcLen):
+        for i in self.__arclist:
             res_filename = res_dir.joinpath(str(i) + '_AB.hdf5')
             h5 = h5py.File(res_filename, 'r')
             rAB = h5['r'][:]
@@ -388,7 +388,7 @@ class CalibrateOrbit:
 
         res_dir = pathlib.Path().joinpath(self.AdjustPath.RangeRateTemp, self.__date_span[0] + '_' + self.__date_span[1])
         post_RMS = []
-        for i in range(0, self.__arcLen):
+        for i in self.__arclist:
             res_filename = res_dir.joinpath('RangeRate_' + str(i) + '.hdf5')
             if os.path.exists(res_filename):
                 h5 = h5py.File(res_filename, 'r')

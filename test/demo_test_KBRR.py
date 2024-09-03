@@ -117,7 +117,7 @@ def drawKBRR(datespan, arcLen):
 
 
 def xyz2lonlat():
-    datespan = ["2008-07-01", "2008-07-31"]
+    datespan = ["2020-04-01", "2020-04-30"]
     interface_config = InterfaceConfig()
     interfaceDict = json.load(open('../setting/Calibrate/InterfaceConfig.json', 'r'))
     interface_config.__dict__ = interfaceDict
@@ -133,12 +133,12 @@ def xyz2lonlat():
     Lon = []
     Lat = []
     Postfit = []
-    for i in range(0, 114):
+    for i in range(0, 116):
         GNV = rd.getData(arc=i, kind=EnumType.Payload.GNV, sat=EnumType.SatID.A)
         GNVTime = GNV[:, 0]
         GNVR = GNV[:, 1:4]
 
-        res_dir = pathlib.Path("../temp/RangeRate").joinpath(datespan[0] + '_' + datespan[1])
+        res_dir = pathlib.Path("../temp/RangeRate/2020-4/Normal").joinpath(datespan[0] + '_' + datespan[1])
         res_filename = res_dir.joinpath('RangeRate_' + str(i) + '.hdf5')
         h5 = h5py.File(res_filename, 'r')
         t2 = h5['post_t'][()]
@@ -168,7 +168,7 @@ def xyz2lonlat():
     Lat = np.degrees(np.array(Lat))
     Postfit = np.array(Postfit)
 
-    filename = '../result/2008-07-AOD.hdf5'
+    filename = '../result/2020-04-Normal.hdf5'
     h5data = h5py.File(filename, "w")
     h5data.create_dataset('lon', data=Lon)
     h5data.create_dataset('lat', data=Lat)
@@ -179,7 +179,7 @@ def xyz2lonlat():
 
 if __name__ == '__main__':
     # AODRL06()
-    # xyz2lonlat()
-    filename = '../result/2008-07-AOD.hdf5'
-    data = h5py.File(filename, "r")
-    data.keys()
+    xyz2lonlat()
+    # filename = '../result/2008-07-CRA.hdf5'
+    # data = h5py.File(filename, "r")
+    # data.keys()

@@ -138,10 +138,10 @@ class AdjustOrbit:
         self._ode_res = ode.propagate()
         self._save_StateVectors(self._ode_res)
 
-        accA, accB = self._secDer.getacc()
-        accA, accB = np.array(accA), np.array(accB)
-        self.plot(accA[:, 0], accA[:, 1], accA[:, 2], 'A')
-        self.plot(accB[:, 0], accB[:, 1], accB[:, 2], 'B')
+        # accA, accB = self._secDer.getacc()
+        # accA, accB = np.array(accA), np.array(accB)
+        # self.plot(accA[:, 0], accA[:, 1], accA[:, 2], 'A')
+        # self.plot(accB[:, 0], accB[:, 1], accB[:, 2], 'B')
         filename = self._state_dir + '/' + str(self._arcNo) + '_' + self._satName + '.hdf5'
         h5 = h5py.File(filename, 'r')
         self._initTime = h5['t'][:]
@@ -244,6 +244,7 @@ class AdjustOrbit:
     def _save_StateVectors(self, state):
         res_dir = self._state_dir
         res_filename = res_dir + '/' + str(self._arcNo) + '_' + self._satName + '.hdf5'
+        print(res_filename)
         h5 = h5py.File(res_filename, 'w')
         h5.create_dataset('t', data=state[0])
         h5.create_dataset('r', data=state[1])

@@ -797,7 +797,7 @@ class GRACE_FO_RL04(L1b):
 
     def _readACC(self, date: str, sat: SatID):
         path = str(self.dir.joinpath(self._path_ACC, date.split('-')[0] + '-' + date.split('-')[1],
-                                     'gracefo_1B_' + date + '_RL04.ascii.noLRI',
+                                     'gracefo_1B_' + date + '_RL04.ascii.noLRI.tgz_files',
                                      'ACT1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
         try:
             f = open(path, 'r')
@@ -829,9 +829,188 @@ class GRACE_FO_RL04(L1b):
         f.close()
         return ACT
 
+    # def _readSCA(self, date: str, sat: SatID):
+    #     path = str(self.dir.joinpath(self._path_SCA, date.split('-')[0] + '-' + date.split('-')[1],
+    #                                  'gracefo_1B_' + date + '_RL04.ascii.noLRI.tgz_files',
+    #                                  'SCA1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
+    #     try:
+    #         f = open(path, 'r')
+    #     except FileNotFoundError as e:
+    #         # print(path)
+    #         return None
+    #
+    #     NumOfSCA = None
+    #     while True:
+    #         r = f.readline()
+    #         if r.split(':')[0].strip() == 'num_records':
+    #             NumOfSCA = int(r.split(':')[1])
+    #         if r.strip() == '# End of YAML header':
+    #             break
+    #
+    #     # SCA = np.zeros((NumOfSCA, 5))
+    #     # SCA = []
+    #     # for i in range(NumOfSCA):
+    #     #     s = f.readline().split()
+    #     #     if len(s) == 9:
+    #     #         SCAd = np.zeros(5)
+    #     #         '''time'''
+    #     #         SCAd[0] = s[0]
+    #     #         '''cos(mu/2)'''
+    #     #         SCAd[1] = s[3]
+    #     #         '''I'''
+    #     #         SCAd[2] = s[4]
+    #     #         '''J'''
+    #     #         SCAd[3] = s[5]
+    #     #         '''K'''
+    #     #         SCAd[4] = s[6]
+    #     #         SCA.append(SCAd)
+    #     #     else:
+    #     #         continue
+    #
+    #     SCA = np.zeros((NumOfSCA, 5))
+    #
+    #     for i in range(NumOfSCA):
+    #         s = f.readline().split()
+    #         '''time'''
+    #         SCA[i, 0] = float(s[0])
+    #         '''cos(mu/2)'''
+    #         SCA[i, 1] = s[3]
+    #         '''I'''
+    #         SCA[i, 2] = s[4]
+    #         '''J'''
+    #         SCA[i, 3] = s[5]
+    #         '''K'''
+    #         SCA[i, 4] = s[6]
+    #     f.close()
+    #
+    #     return SCA
+
+    def _readKBR(self, date: str):
+        path = str(self.dir.joinpath(self._path_KBR, date.split('-')[0] + '-' + date.split('-')[1],
+                                     'gracefo_1B_' + date + '_RL04.ascii.noLRI.tgz_files',
+                                     'KBR1B_' + date + '_Y_04.txt'))
+
+        try:
+            f = open(path, 'r')
+        except FileNotFoundError as e:
+            lg.error(e)
+            return None
+
+        NumOfKBR = None
+        while True:
+            r = f.readline()
+            if r.split(':')[0].strip() == 'num_records':
+                NumOfKBR = int(r.split(':')[1])
+            if r.strip() == '# End of YAML header':
+                break
+        if NumOfKBR == 0:
+            return np.zeros((NumOfKBR, 4))
+        # KBR = np.zeros((NumOfKBR, 4))
+        KBR = []
+        for i in range(NumOfKBR):
+            s = f.readline().split()
+            if len(s) == 16:
+                KBRd = np.zeros(4)
+                '''time'''
+                KBRd[0] = s[0]
+                '''bias range + light_corr + ant_corr '''
+                KBRd[1] = float(s[1]) + float(s[5]) + float(s[8])
+                '''bias range-rate + light_corr + ant_corr '''
+                KBRd[2] = float(s[2]) + float(s[6]) + float(s[9])
+                '''bias range-acc + light_corr + ant_corr '''
+                KBRd[3] = float(s[3]) + float(s[7]) + float(s[10])
+                KBR.append(KBRd)
+            else:
+                continue
+        f.close()
+
+        return KBR
+
+    def _readGNV(self, date: str, sat: SatID):
+        """
+        Input is in ITRS frame, which has to be transferred to GCRS inertial frame; But probably the input orbit is gievn
+        in GCRS. Take care !!!
+        :param date:
+        :param sat:
+        :return: Orbit
+        """
+        st = date.split('-')
+        IY, IM, ID = int(st[0]), int(st[1]), int(st[2])
+        date_range = (round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 0, 0, 0))),
+                      round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 23, 59, 60 - self.sr_payload[Payload.GNV.name]))))
+        path = str(self.dir.joinpath(self._path_GNV, date.split('-')[0] + '-' + date.split('-')[1],
+                                     'gracefo_1B_' + date + '_RL04.ascii.noLRI.tgz_files',
+                                     'GNV1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
+        try:
+            f = open(path, 'r')
+        except FileNotFoundError as e:
+            lg.error(e)
+            return None
+
+        NumOfGNV = None
+        while True:
+            r = f.readline()
+            if r.split(':')[0].strip() == 'num_records':
+                NumOfGNV = int(r.split(':')[1])
+            if r.strip() == '# End of YAML header':
+                break
+        if NumOfGNV == 0:
+            return np.array(np.zeros((NumOfGNV, 7)))
+
+        GNV = []
+
+        for i in range(NumOfGNV):
+            """delete the data out of the range of given date"""
+            s = f.readline().split()
+            if len(s) == 16:
+                if date_range[0] <= round(int(s[0])) <= date_range[1]:
+                    GNVd = np.zeros(7)
+                    pass
+                else:
+                    continue
+
+                '''time'''
+                GNVd[0] = s[0]
+                GNVd[1:4] = s[3:6]
+                GNVd[4:7] = s[9:12]
+
+                # if setGCRS:
+                #     '''ITRS2GCRS''a'
+                # GNId[0] = s[0]
+                # fr = Frame(EOP().load(Setting.path.EOP).setPar(True))
+                # rm = fr.setTime(int(s[0])).getRotationMatrix
+                #     '''pos'''
+
+                # GNId[1:4] = Frame.PosITRS2GCRS(np.array(s[3:6]).astype(float), rm)
+                #     # GNVd[1:4] = s[3:6]
+                #     '''vel'''
+                # GNId[4:7] = Frame.VelITRS2GCRS(np.array(s[3:6]).astype(float), np.array(s[9:12]).astype(float), rm)
+                #     # GNVd[4:7] = s[9:12]
+                # else:
+                #     GNVd[1:4] = s[3:6]
+                #     GNVd[4:7] = s[9:12]
+
+                # GNI.append(GNId)
+                GNV.append(GNVd)
+            else:
+                continue
+
+        f.close()
+        return np.array(GNV)
+
+    # def _readACC(self, date: str, sat: SatID):
+    #     path = str(self.dir.joinpath(self._path_ACC, 'ACC-' + date.split('-')[0] + '-' + date.split('-')[1],
+    #                                  'ACT1B_' + date + '-' + chr(ord(sat.name) + 2) + '-01.bin'))
+    #
+    #     data = np.fromfile(path, dtype=np.float64)
+    #
+    #     ACT = np.array(data).reshape((-1, 4))
+    #
+    #     return ACT
+
     def _readSCA(self, date: str, sat: SatID):
         path = str(self.dir.joinpath(self._path_SCA, date.split('-')[0] + '-' + date.split('-')[1],
-                                     'gracefo_1B_' + date + '_RL04.ascii.noLRI',
+                                     date,
                                      'SCA1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
         try:
             f = open(path, 'r')
@@ -884,126 +1063,3 @@ class GRACE_FO_RL04(L1b):
         f.close()
 
         return SCA
-
-    def _readKBR(self, date: str):
-        path = str(self.dir.joinpath(self._path_KBR, date.split('-')[0] + '-' + date.split('-')[1],
-                                     'gracefo_1B_' + date + '_RL04.ascii.noLRI',
-                                     'KBR1B_' + date + '_Y_04.txt'))
-
-        try:
-            f = open(path, 'r')
-        except FileNotFoundError as e:
-            lg.error(e)
-            return None
-
-        NumOfKBR = None
-        while True:
-            r = f.readline()
-            if r.split(':')[0].strip() == 'num_records':
-                NumOfKBR = int(r.split(':')[1])
-            if r.strip() == '# End of YAML header':
-                break
-
-        # KBR = np.zeros((NumOfKBR, 4))
-        KBR = []
-        for i in range(NumOfKBR):
-            s = f.readline().split()
-            if len(s) == 16:
-                KBRd = np.zeros(4)
-                '''time'''
-                KBRd[0] = s[0]
-                '''bias range + light_corr + ant_corr '''
-                KBRd[1] = float(s[1]) + float(s[5]) + float(s[8])
-                '''bias range-rate + light_corr + ant_corr '''
-                KBRd[2] = float(s[2]) + float(s[6]) + float(s[9])
-                '''bias range-acc + light_corr + ant_corr '''
-                KBRd[3] = float(s[3]) + float(s[7]) + float(s[10])
-                KBR.append(KBRd)
-            else:
-                continue
-        f.close()
-
-        return KBR
-
-    def _readGNV(self, date: str, sat: SatID):
-        """
-        Input is in ITRS frame, which has to be transferred to GCRS inertial frame; But probably the input orbit is gievn
-        in GCRS. Take care !!!
-        :param date:
-        :param sat:
-        :return: Orbit
-        """
-        st = date.split('-')
-        IY, IM, ID = int(st[0]), int(st[1]), int(st[2])
-        date_range = (round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 0, 0, 0))),
-                      round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 23, 59, 60 - self.sr_payload[Payload.GNV.name]))))
-        path = str(self.dir.joinpath(self._path_GNV, date.split('-')[0] + '-' + date.split('-')[1],
-                                     'gracefo_1B_' + date + '_RL04.ascii.noLRI',
-                                     'GNV1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
-        try:
-            f = open(path, 'r')
-        except FileNotFoundError as e:
-            lg.error(e)
-            return None
-
-        NumOfGNV = None
-        while True:
-            r = f.readline()
-            if r.split(':')[0].strip() == 'num_records':
-                NumOfGNV = int(r.split(':')[1])
-            if r.strip() == '# End of YAML header':
-                break
-
-        # GNV = np.zeros((NumOfGNV, 7))
-        GNV = []
-
-        for i in range(NumOfGNV):
-            """delete the data out of the range of given date"""
-            s = f.readline().split()
-            if len(s) == 16:
-                if date_range[0] <= round(int(s[0])) <= date_range[1]:
-                    GNVd = np.zeros(7)
-                    pass
-                else:
-                    continue
-
-                '''time'''
-                GNVd[0] = s[0]
-                GNVd[1:4] = s[3:6]
-                GNVd[4:7] = s[9:12]
-
-                # if setGCRS:
-                #     '''ITRS2GCRS''a'
-                # GNId[0] = s[0]
-                # fr = Frame(EOP().load(Setting.path.EOP).setPar(True))
-                # rm = fr.setTime(int(s[0])).getRotationMatrix
-                #     '''pos'''
-
-                # GNId[1:4] = Frame.PosITRS2GCRS(np.array(s[3:6]).astype(float), rm)
-                #     # GNVd[1:4] = s[3:6]
-                #     '''vel'''
-                # GNId[4:7] = Frame.VelITRS2GCRS(np.array(s[3:6]).astype(float), np.array(s[9:12]).astype(float), rm)
-                #     # GNVd[4:7] = s[9:12]
-                # else:
-                #     GNVd[1:4] = s[3:6]
-                #     GNVd[4:7] = s[9:12]
-
-                # GNI.append(GNId)
-                GNV.append(GNVd)
-            else:
-                continue
-
-        f.close()
-        return np.array(GNV)
-
-    # def _readACC(self, date: str, sat: SatID):
-    #     path = str(self.dir.joinpath(self._path_ACC, 'ACC-' + date.split('-')[0] + '-' + date.split('-')[1],
-    #                                  'ACT1B_' + date + '-' + chr(ord(sat.name) + 2) + '-01.bin'))
-    #
-    #     data = np.fromfile(path, dtype=np.float64)
-    #
-    #     ACT = np.array(data).reshape((-1, 4))
-    #
-    #     return ACT
-
-

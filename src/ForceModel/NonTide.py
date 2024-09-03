@@ -53,7 +53,7 @@ class AODRL06(AbsNonTide):
         AOD_type = self._NonTideConfig.kind
         self.__MaxDeg = self._NonTideConfig.MaxDeg
         self.__TS = self._NonTideConfig.TS
-        self.__ld = LoadGLO().load(FileDir).setType(kind=AOD_type)
+        self.__ld = LoadNonTide().load(FileDir).setType(kind=AOD_type)
 
         return self
 

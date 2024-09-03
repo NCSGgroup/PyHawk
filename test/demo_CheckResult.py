@@ -86,4 +86,7 @@ def __rms(x: np.ndarray):
 
 
 if __name__ == '__main__':
-    readDate()
+    # readDate()
+    filename = '../temp/RawData/2006-03-01_2006-03-31.hdf5'
+    h5 = h5py.File(filename, 'r')
+    h5.keys()

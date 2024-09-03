@@ -37,22 +37,21 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
         time_A = GNVA[:, 0]
         time_B = GNVB[:, 0]
 
-        # self.__ArcLen = len(time_A) if len(time_A) > len(time_B) else len(time_B)
-        # self.__initTime = GNVA[4, 0] if len(time_A) > len(time_B) else GNVB[4, 0]
+        if len(time_A) != len(time_B):
+            self.__ArcLen = len(time_B) if len(time_A) > len(time_B) else len(time_A)
+        else:
+            self.__ArcLen = len(time_B)
+        # self.__ArcLen = len(time_A)
+            commonTime = set(time_A.astype(np.int64))
+            commonTime = commonTime & set(time_B.astype(np.int64))
+            commonTime = np.array(list(commonTime))
+            commonTime.sort()
+            index1 = [list(time_A).index(x) for x in commonTime]
+            index2 = [list(time_B).index(x) for x in commonTime]
+            GNVA = GNVA[index1, :]
+            GNVB = GNVB[index2, :]
 
-        self.__ArcLen = len(time_A)
         self.__initTime = GNVA[4, 0]
-
-        # commonTime = set(time_A.astype(np.int64))
-        # commonTime = commonTime & set(time_B.astype(np.int64))
-        # commonTime = np.array(list(commonTime))
-        # commonTime.sort()
-        #
-        # index1 = [list(time_A).index(x) for x in commonTime]
-        # index2 = [list(time_B).index(x) for x in commonTime]
-        # GNVA = GNVA[index1, :]
-        # GNVB = GNVB[index2, :]
-
         startPosA, startPosB = GNVA[4, 1:4], GNVB[4, 1:4]
         startVelA, startVelB = GNVA[4, 4:7], GNVB[4, 4:7]
 

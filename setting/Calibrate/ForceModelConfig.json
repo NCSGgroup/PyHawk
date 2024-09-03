@@ -23,8 +23,8 @@
     },
     "NonConservativeConfig": {
         "date_span": [
-            "2009-01-01",
-            "2009-01-31"
+            "2020-02-06",
+            "2020-02-28"
         ],
         "arcNo": 0,
         "sat": {
@@ -70,7 +70,7 @@
             "R3": true
         },
         "kind": "ATM",
-        "Nmax": 100,
+        "Nmax": 180,
         "BB2003tide": {
             "S1": true,
             "S2": true
@@ -125,7 +125,7 @@
     "NonTideConfig": {
         "kind": "GLO",
         "MaxDeg": 180,
-        "TS": 6
+        "TS": 3
     },
     "RefGravModelConfig": {
         "kind": 0,

@@ -1,6 +1,6 @@
 {
     "MissionConfig": {
-        "mission": "GRACE_RL03"
+        "mission": "GRACE_FO_RL04"
     },
     "StepControlConfig": {
         "isPreprocess": true,
@@ -13,7 +13,7 @@
     "ParallelControlConfig": {
         "AdjustOrbitProcess": 1,
         "AdjustKBRRProcess": 1,
-        "GetGravityDesignMatProcess": 15,
-        "GetNEQProcess": 15
+        "GetGravityDesignMatProcess": 1,
+        "GetNEQProcess": 1
     }
 }

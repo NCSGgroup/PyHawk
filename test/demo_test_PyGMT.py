@@ -85,15 +85,17 @@ def readDat():
 
 
 def draw():
-    res1 = np.load("BeforeRes.npz", allow_pickle=True)
-    x1 = np.degrees(np.array(res1['x']))
-    y1 = np.degrees(np.array(res1['y']))
-    z1 = res1['z'] * 1e7
+    # res1 = np.load("BeforeRes.npz", allow_pickle=True)
+    res1 = h5py.File("../result/2020-03-GSCF-2.hdf5", "r")
+    x1 = np.array(res1['lon'][:])
+    y1 = np.array(res1['lat'][:])
+    z1 = res1['postfit'][:] * 1e7
 
-    res = np.load("AfterRes.npz", allow_pickle=True)
-    x = np.degrees(np.array(res['x']))
-    y = np.degrees(np.array(res['y']))
-    z = res['z'] * 1e7
+    # res = np.load("AfterRes.npz", allow_pickle=True)
+    res = h5py.File("../result/2020-03-GSCF-3.hdf5", "r")
+    x = np.array(res['lon'][:])
+    y = np.array(res['lat'][:])
+    z = res['postfit'][:] * 1e7
 
     grid1 = pygmt.xyz2grd(x=x1, y=y1, z=z1, spacing=(1, 1), region="d", duplicate='r')
     grid1 = pygmt.grdfill(grid=grid1, mode="n")
@@ -114,17 +116,17 @@ def draw():
             margins=["0.5c", "0.8c"],
     ):
         with fig.set_panel(panel=0):
-            pygmt.makecpt(series=[0, 70, 7], background="red")  # color bar range
+            pygmt.makecpt(series=[0, 18, 2], background="red")  # color bar range
             # fig.basemap(projection="Q12c", frame=["+tKBRR residual"])
 
             fig.grdimage(grid=grid1, frame="f")
             fig.coast(region=[-180, 180, -90, 90], shorelines="1/0.5p", projection="Q12c")
-            fig.basemap(frame="f")
-            fig.colorbar(frame=["y+lum/s"])
+            fig.basemap(frame=["f", "+t2020-03-GSCF-2"])
+            # fig.colorbar(frame=["y+lum/s"])
 
         with fig.set_panel(panel=1):
-            pygmt.makecpt(series=[0, 10, 1], background="red")  # color bar range
-            fig.basemap(region="d", frame="f")
+            pygmt.makecpt(series=[0, 18, 2], background="red")  # color bar range
+            fig.basemap(region="d", frame=["f", "+t2020-03-GSCF-3"])
             fig.grdimage(grid=grid)
             fig.coast(shorelines="1/0.5p", projection="Q12c")
             fig.colorbar(frame=["y+lum/s"])
@@ -132,10 +134,17 @@ def draw():
 
 
 def draw2():
-    res = np.load("AfterRes.npz", allow_pickle=True)
-    x = np.degrees(np.array(res['x']))
-    y = np.degrees(np.array(res['y']))
-    z = res['z'] * 1e7
+    # res1 = np.load("BeforeRes.npz", allow_pickle=True)
+    res1 = h5py.File("../result/2009-05-AOD.hdf5", "r")
+    x1 = np.array(res1['lon'][:])
+    y1 = np.array(res1['lat'][:])
+    z1 = res1['postfit'][:] * 1e7
+
+    # res = np.load("AfterRes.npz", allow_pickle=True)
+    res = h5py.File("../result/2009-05-CRA.hdf5", "r")
+    x = np.array(res['lon'])
+    y = np.array(res['lat'])
+    z = res['postfit'][:] * 1e7 - z1
 
     grid = pygmt.xyz2grd(x=x, y=y, z=z, spacing=(1, 1), region="d", duplicate='r')
     grid = pygmt.grdfill(grid=grid, mode="n")
