@@ -1,6 +1,7 @@
 # PyHawk: An efficient solver for precise orbit calibration, inter-satellite ranging calibration and global gravity field recovery from GRACE and GRACE-FO
 
-#### 介绍
+#### Description
+Time-Variable Gravity field (TVG) represent the cumulative gravitational signals from all geophysical sources at any given moment. The global TVG signals observed from space contain information about mass redistribution occurring within the Earth's system, making them a new data type for monitoring climate and geophysical changes. For instance, the derived Total Water Storage (TWS) from TVG has been identified as an essential climate variable (ECV) for studying global climate change. In this study, we present a free, open-source, parallel and Python based PyHawk software for processing SST tasks, distinct from GROOPS. This not only offers users an alternative choice but also enhances the diversity of publicly available processing frameworks for cross-validation. More importantly, we chose to develop PyHawk in Python to help users better understand the processing chain and to provide future developers with more maintainable code.
 
 
 #### 软件架构
