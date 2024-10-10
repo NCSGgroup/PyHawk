@@ -1,4 +1,4 @@
-# py-hawk-v2
+# PyHawk: An efficient solver for precise orbit calibration, inter-satellite ranging calibration and global gravity field recovery from GRACE and GRACE-FO
 
 #### 介绍
 
