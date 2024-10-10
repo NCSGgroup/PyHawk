@@ -7,23 +7,32 @@ Time-Variable Gravity field (TVG) represent the cumulative gravitational signals
     <img src="module.png" width="450" >
 </div>
 
-#### 软件架构
-软件架构说明
+#### Contact
+
+Yi Wu (wu_yi@hust.edu.cn) , Fan Yang (fany@plan.aau.dk) , ShuHao Liu (liushuhao@hust.edu.cn)
+
+Huazhong University of Science and Technology
+Geodesy Group (see https://aaugeodesy.com/), Department of Sustainability and Planning, Aalborg University, Aalborg 9000, Denmark
+
+This work is supported by the Huazhong University of Science and Technology. Additional supports come from and Aalborg University.
 
 
-#### 安装教程
+#### Features
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+1.  Users can modify all parameters related to the data processing workflow in the JSON configuration file, such as the calculation start time, selection and parameter settings for background force models, and calibration strategies for orbits and KBRR;
+2.  Users can flexibly select the required modules based on their needs, such as performing only data reprocessing or conveniently generating benchmark comparisons;
+3.  We enhance computational efficiency at the code level by encapsulating it in a dynamic library and managing data with HDF5 files;
+4.  Building on existing dynamical integration methods, we propose a matrix-based dynamical integration method that can accommodate multiple satellites or even formations simultaneously;
+5.  Utilizing modern parallel computing technologies, we optimize the entire codebase, enabling both segment and CPU parallelism, thereby improving computational efficiency from both fronts
 
-#### 使用说明
+#### Software Architecture
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+1.  Flexibly divide functions, such as modifying JSON files through the interface and only dividing satellite observation data into arc segments, coordinate conversion, orbit calibration, etc;
+2.  Compatible with Linux, Windows, and MacOS operating systems, and supports parallel computing and supercomputer distributed computing to improve computing efficiency;
+3.  Adopting object-oriented programming language (Python), the system code is highly decoupled internally and has ease of use, readability, and scalability;
+4.  The unique advantage of using Python is that high-performance computing libraries (such as numpy, pandas, etc.) not only simplify system code, but also improve computational efficiency to achieve comparable computational efficiency to C++, Fortran, and Matlab.
 
-#### 参与贡献
+#### Installation
 
 1.  Fork 本仓库
 2.  新建 Feat_xxx 分支
@@ -31,7 +40,7 @@ Time-Variable Gravity field (TVG) represent the cumulative gravitational signals
 4.  新建 Pull Request
 
 
-#### 特技
+#### Instructions
 
 1.  使用 Readme\_XXX.md 来支持不同的语言，例如 Readme\_en.md, Readme\_zh.md
 2.  Gitee 官方博客 [blog.gitee.com](https://blog.gitee.com)
