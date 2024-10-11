@@ -34,6 +34,8 @@ This work is supported by the Huazhong University of Science and Technology. Add
 
 #### Installation
 
+Please follow below the step-by-step instruction to do the installation, given that the Conda environment has been established already. A simpler installation via .yml to copy the environment will also be released soon. While PyGLDA does not specify the version of Python, it is strongly recommended to use python > 3.9.
+
 1.  Fork 本仓库
 2.  新建 Feat_xxx 分支
 3.  提交代码
