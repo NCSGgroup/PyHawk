@@ -34,12 +34,14 @@ This work is supported by the Huazhong University of Science and Technology. Add
 
 #### Installation
 
-Please follow below the step-by-step instruction to do the installation, given that the Conda environment has been established already. A simpler installation via .yml to copy the environment will also be released soon. While PyHawk does not specify the version of Python, it is strongly recommended to use python > 3.8.
+Please follow below the step-by-step instruction to do the installation, given that the Conda environment has been established already. 
+Here we provide the requirements for quick installation. It is recommended that users create an additional virtual environment for installing and running PyHawk. The benefits of doing so include avoiding interference with existing dependencies and creating a clean environment to build the project, where only the necessary packages need to be installed. A simpler installation via .yml to copy the environment will also be released soon. While PyHawk does not specify the version of Python, it is strongly recommended to use python > 3.8.
 
-1.  Fork 本仓库
-2.  新建 Feat_xxx 分支
-3.  提交代码
-4.  新建 Pull Request
+1. conda create -n py-hawk python=3.8.10
+2. source activate py-hawk
+3. pip install -r requirments.txt
+
+
 
 
 #### Instructions
