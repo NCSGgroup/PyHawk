@@ -41,14 +41,11 @@ Here we provide the requirements for quick installation. It is recommended that 
 2. source activate py-hawk
 3. pip install -r requirments.txt
 
-
-
-
 #### Instructions
+Three demo (demo1, demo2, demo3) are present under /py-hawk-v2/demo to showcase the use of PyHawk. Each demo has its detailed comments in its script. To run the demo, a bunch of sample data are necessary to be installed. The sample data is distributed together with the code at the given data repository, named after External Data. To begin with the demo, we suggest to place the sample data at its default place, which is under /py-hawk-v2/data/. Nevertheless, as an advanced user, one can place data at any desired place as long as the setting files are well configured. Below we give a brief introduction of three demo.
 
-1.  使用 Readme\_XXX.md 来支持不同的语言，例如 Readme\_en.md, Readme\_zh.md
-2.  Gitee 官方博客 [blog.gitee.com](https://blog.gitee.com)
-3.  你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解 Gitee 上的优秀开源项目
-4.  [GVP](https://gitee.com/gvp) 全称是 Gitee 最有价值开源项目，是综合评定出的优秀开源项目
-5.  Gitee 官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
-6.  Gitee 封面人物是一档用来展示 Gitee 会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+1.  demo_1.py In this demo, we show how to orbit integration.
+2.  demo_1.py In this demo, we show how to benchmark validation of the force model. 
+3.  demo_1.py In this demo, we show how to temporal gravity recovery from GRACE.
+
+Please feel free to contact us for possible more examples.
