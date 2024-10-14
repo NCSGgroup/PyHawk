@@ -45,7 +45,7 @@ Here we provide the requirements for quick installation. It is recommended that 
 Three demo (demo1, demo2, demo3) are present under /py-hawk-v2/demo to showcase the use of PyHawk. Each demo has its detailed comments in its script. To run the demo, a bunch of sample data are necessary to be installed. The sample data is distributed together with the code at the given data repository, named after External Data. To begin with the demo, we suggest to place the sample data at its default place, which is under /py-hawk-v2/data/. Nevertheless, as an advanced user, one can place data at any desired place as long as the setting files are well configured. Below we give a brief introduction of three demo.
 
 1.  demo_1.py In this demo, we show how to orbit integration.
-2.  demo_1.py In this demo, we show how to benchmark validation of the force model. 
-3.  demo_1.py In this demo, we show how to temporal gravity recovery from GRACE.
+2.  demo_2.py In this demo, we show how to benchmark validation of the force model. 
+3.  demo_3.py In this demo, we show how to temporal gravity recovery from GRACE.
 
 Please feel free to contact us for possible more examples.
