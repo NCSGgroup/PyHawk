@@ -672,19 +672,18 @@ class LoadGLO(LoadSH):
         """
 
         flag = 0
+        self.maxDegree = int(180)
 
         for i in range(len(content)):
             value = content[i].split(':')
             if len(value) == 0:
                 continue
             value[0] = value[0].strip()
+
             try:
                 value[1] = value[1].replace('\n', '')
             except Exception as e:
                 pass
-
-            self.maxDegree = int(180)
-
             if (self.__box[self.__kind] in content[i]) and (self.__epoch in content[i]):
                 flag = i
                 break

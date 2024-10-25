@@ -12,9 +12,12 @@ from src.Auxilary.LoveNumber import LoveNumber
 from src.ConvertFieldType.ConvertSHC import ConvertSHC
 from src.Preference.EnumType import FieldType
 from src.Interface.LoadSH import LoadGif48
+import matplotlib
+from datetime import datetime
+import datetime
+import calendar
 plt.rcParams['font.sans-serif']=['Microsoft YaHei']         #指定默认字体（因为matplotlib默认为英文字体，汉字会使其乱码）
 plt.rcParams['axes.unicode_minus']=False    #可显示‘-’负号
-import matplotlib
 
 
 def GRACE_FO(data):
@@ -71,12 +74,13 @@ def drawTime(data1, data2):
     '''static model'''
     static_c, static_s = LoadGif48().load('../data/StaticGravityField/gif48.gfc').getCS(60)
     '''read hust'''
-    hust_filename = '../result/SH/RL06/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + data1 + '_GRAC_HUST_BA01_0600.gfc'
+    hust_filename = '../result/AOD_6h/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + data1 + '_GRAC_HUST_BA01_0600.gfc'
     hust_c, hust_s = LoadCSR().load(fileIn=hust_filename).getCS(Nmax=60)
     hust_c, hust_s = hust_c - static_c, hust_s - static_s
+    # hust_c, hust_s = hust_c - static_c, hust_s - static_s
     hust_c, hust_s = GeoMathKit.CS_1dTo2d(hust_c), GeoMathKit.CS_1dTo2d(hust_s)
     '''read hust'''
-    hust_filename2 = '../result/SH/RL06/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_2006-01-04-2006-02-03_GRAC_HUST_BA01_0600.gfc'
+    hust_filename2 = '../result/CRA_Licom_1007/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + data1 + '_GRAC_HUST_BA01_0600.gfc'
     hust_c2, hust_s2 = LoadCSR().load(fileIn=hust_filename2).getCS(Nmax=60)
     hust_c2, hust_s2 = hust_c2 - static_c, hust_s2 - static_s
     hust_c2, hust_s2 = GeoMathKit.CS_1dTo2d(hust_c2), GeoMathKit.CS_1dTo2d(hust_s2)
@@ -158,15 +162,16 @@ def drawTime(data1, data2):
     jpl = get_geoid_drgee_error(diff_c=jpl_c, diff_s=jpl_s)
     # plt.title('Geoid Degree', fontsize=30)
     matplotlib.rcParams.update({'font.size': 30})
+    fig = plt.figure(figsize=(10, 8))
     plt.style.use(['science'])
-    plt.plot(np.arange(2, 61, 1), hust[2:], color='green', linewidth=2.0, marker='', label='2006-01-02-2006-02-01')
-    plt.plot(np.arange(2, 61, 1), hust2[2:], color='black', linewidth=2.0, marker='', label='2006-01-03-2006-02-02')
-    plt.plot(np.arange(2, 61, 1), hust3[2:], color='olive', linewidth=2.0, marker='', label='2006-01-04-2006-02-03')
+    plt.plot(np.arange(2, 61, 1), hust[2:], color='green', linewidth=2.0, marker='', label='PyHawk-AOD')
+    plt.plot(np.arange(2, 61, 1), hust2[2:], color='black', linewidth=2.0, marker='', label='PyHawk-CRA')
+    # plt.plot(np.arange(2, 61, 1), hust3[2:], color='olive', linewidth=2.0, marker='', label='2006-01-04-2006-02-03')
 
     # plt.plot(np.arange(2, 61, 1), hust4[2:], color='olive', marker='^', label='HUST kin-3h-2e11')
-    plt.plot(np.arange(2, 61, 1), csr[2:], color='red', marker='', linewidth=2.0,label='CSR RL06')
-    plt.plot(np.arange(2, 61, 1), gfz[2:], color='indigo', marker='', linewidth=2.0,label='GFZ RL06')
-    plt.plot(np.arange(2, 61, 1), jpl[2:], color='blue', marker='',linewidth=2.0, label='JPL RL06')
+    plt.plot(np.arange(2, 61, 1), csr[2:], color='red', marker='', linewidth=2.0,label='CSR')
+    # plt.plot(np.arange(2, 61, 1), gfz[2:], color='indigo', marker='', linewidth=2.0,label='GFZ')
+    # plt.plot(np.arange(2, 61, 1), jpl[2:], color='blue', marker='',linewidth=2.0, label='JPL')
     # plt.plot(np.arange(2, 61, 1), csr_05[2:], color='indigo', marker='h', label='CSR 05')
     # plt.plot(np.arange(2, 61, 1), gfz_05[2:], color='blue', marker='H', label='GFZ 05')
     # plt.plot(np.arange(2, 61, 1), csr_e_l[2:], color='red', marker='s', label='CSR - HUST')
@@ -184,7 +189,8 @@ def drawTime(data1, data2):
     plt.yscale("log")
     plt.legend(fontsize=26, loc=1)
     plt.grid(True, which='both', linestyle='-.')
-    plt.show()
+    plt.savefig('../result/img/CRA_LICOM_v2/' + data1 + '.png')
+    # plt.show()
 
 
 def drawPotentialError():
@@ -458,14 +464,146 @@ def drawMean():
     plt.show()
 
 
+def get_month_start_and_end_by_date_interval(start_date, end_date):
+    """
+    获取指定时间段内每个月的起止时间参数列表
+    :param start_date: 起始时间 --> str
+    :param end_date: 结束时间 --> str
+    :return: date_range_list -->list [{'2019-10-01': ['2019-10-01', '2019-10-31']}, ...}]
+
+    """
+    date_range_list = []
+    start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d')
+    end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d')
+    # 计算开始日期的当月起止日期
+    start_month_first = datetime.datetime(year=start_date.year, month=start_date.month, day=1).date()
+    start_month_last = datetime.datetime(year=start_date.year, month=start_date.month,
+                                         day=calendar.monthrange(start_date.year, start_date.month)[1]).date()
+    date_range_list.append([start_month_first.strftime('%Y-%m-%d'),start_month_last.strftime('%Y-%m-%d')])
+
+    # 计算结束日期的当月起止日期
+    end_month_first = datetime.datetime(year=end_date.year, month=end_date.month, day=1).date()
+    end_month_last = datetime.datetime(year=end_date.year, month=end_date.month,
+                                       day=calendar.monthrange(end_date.year, end_date.month)[1]).date()
+
+    while True:
+        # 下个月开始日期
+        next_month_start = datetime.datetime(year=start_date.year, month=start_date.month,
+                                             day=calendar.monthrange(start_date.year, start_date.month)[
+                                                 1]).date() + datetime.timedelta(days=1)
+        next_month_end = datetime.datetime(year=next_month_start.year, month=next_month_start.month,
+                                           day=calendar.monthrange(next_month_start.year, next_month_start.month)[
+                                               1]).date()
+        if next_month_start < end_month_first:
+            date_range_list.append([next_month_start.strftime('%Y-%m-%d'),next_month_end.strftime('%Y-%m-%d')])
+            start_date = next_month_start
+        else:
+            break
+    # 避免传入的起止日期在同一月导致数据重复
+    temp_dict = [end_month_first.strftime('%Y-%m-%d'), end_month_last.strftime('%Y-%m-%d')]
+    if temp_dict not in date_range_list:
+        date_range_list.append(temp_dict)
+    return date_range_list
+
+
+def datetransfor(ymd):
+    y, m, d = map(int, ymd.split("-"))
+    date = datetime.datetime(y, m, d)
+    day_delta = date - datetime.datetime(y, 1, 1) + datetime.timedelta(1)
+    yday = str(y) + str(day_delta.days).rjust(3, "0")
+    return yday
+
+
+def subplotsGeoid():
+    matplotlib.rcParams.update({'font.size': 26})
+    plt.style.use(['science'])
+    fig, ax = plt.subplots(3, 4, figsize=(14, 9.6), sharex=True, sharey=True)
+    data_span = get_month_start_and_end_by_date_interval('2007-01-01', '2007-12-31')
+    '''static model'''
+    static_c, static_s = LoadGif48().load('../data/StaticGravityField/gif48.gfc').getCS(60)
+    for i in range(len(data_span)):
+        data1 = data_span[i][0] + '-' + data_span[i][1]
+        data2 = datetransfor(data_span[i][0]) + '-' + datetransfor(data_span[i][1])
+        month = data_span[i][0].split('-')[0] + '-' + data_span[i][0].split('-')[1]
+        plt.subplot(3, 4, i+1)
+        '''read hust'''
+        hust_filename = '../result/SH/RL06/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + data1 + '_GRAC_HUST_BA01_0600.gfc'
+        hust_c, hust_s = LoadCSR().load(fileIn=hust_filename).getCS(Nmax=60)
+        hust_c, hust_s = hust_c - static_c, hust_s - static_s
+        hust_c, hust_s = GeoMathKit.CS_1dTo2d(hust_c), GeoMathKit.CS_1dTo2d(hust_s)
+        '''read CSR'''
+        csr_filename = '../result/SH/CSR/GSM-2_' + data2 + '_GRAC_UTCSR_BA01_0600.gfc'
+        csr_c, csr_s = LoadCSR().load(fileIn=csr_filename).getCS(Nmax=60)
+        csr_c, csr_s = csr_c - static_c, csr_s - static_s
+        csr_c, csr_s = GeoMathKit.CS_1dTo2d(csr_c), GeoMathKit.CS_1dTo2d(csr_s)
+        '''read GFZ'''
+        gfz_filename = '../result/SH/GFZ/GSM-2_' + data2 + '_GRAC_GFZOP_BA01_0600.gfc'
+        gfz_c, gfz_s = LoadCSR().load(fileIn=gfz_filename).getCS(Nmax=60)
+        gfz_c, gfz_s = gfz_c - static_c, gfz_s - static_s
+        gfz_c, gfz_s = GeoMathKit.CS_1dTo2d(gfz_c), GeoMathKit.CS_1dTo2d(gfz_s)
+        '''read JPL'''
+        jpl_filename = '../result/SH/JPL/GSM-2_' + data2 + '_GRAC_JPLEM_BA01_0600.gfc'
+        jpl_c, jpl_s = LoadCSR().load(fileIn=jpl_filename).getCS(Nmax=60)
+        jpl_c, jpl_s = jpl_c - static_c, jpl_s - static_s
+        jpl_c, jpl_s = GeoMathKit.CS_1dTo2d(jpl_c), GeoMathKit.CS_1dTo2d(jpl_s)
+        hust = get_geoid_drgee_error(diff_c=hust_c, diff_s=hust_s)
+        csr = get_geoid_drgee_error(diff_c=csr_c, diff_s=csr_s)
+        gfz = get_geoid_drgee_error(diff_c=gfz_c, diff_s=gfz_s)
+        jpl = get_geoid_drgee_error(diff_c=jpl_c, diff_s=jpl_s)
+        plt.style.use(['science'])
+        plt.yscale("log")
+        plt.title(month, fontsize=22)
+        plt.plot(np.arange(2, 61, 1), hust[2:], color='green', linewidth=2.0, marker='', label='PyHawk')
+        plt.plot(np.arange(2, 61, 1), csr[2:], color='red', marker='', linewidth=2.0, label='CSR')
+        plt.plot(np.arange(2, 61, 1), gfz[2:], color='black', marker='', linewidth=2.0, label='GFZ')
+        plt.plot(np.arange(2, 61, 1), jpl[2:], color='blue', marker='', linewidth=2.0, label='JPL')
+        plt.xlim(0, 60)
+        plt.xticks([0, 10, 20, 30, 40, 50, 60], ['0', '10', '20', '30', '40', '50', '60'], fontsize=20)
+        plt.ylim(1e-5, 1e-2)
+        plt.yticks([1e-5, 1e-4, 1e-3, 1e-2], [r'$\mathrm{1e}^{-5}$', r'$\mathrm{1e}^{-4}$',
+                                              r'$\mathrm{1e}^{-3}$', r'$\mathrm{1e}^{-2}$'], fontsize=20)
+        border = plt.gca()
+        border.spines['top'].set_linewidth(1)  # 设置顶部边框线宽度为2
+        border.spines['right'].set_linewidth(1)  # 设置右侧边框线宽度为2
+        border.spines['bottom'].set_linewidth(1)  # 设置底部边框线宽度为2
+        border.spines['left'].set_linewidth(1)  # 设置左侧边框线宽度为2
+        if i == 9:
+
+            leg = plt.legend(ncol=5, bbox_to_anchor=(0.9, -0.27), loc='upper center', frameon=True)
+            for line in leg.get_lines():
+                line.set_linewidth(4.0)
+        if i == 4:
+            plt.ylabel('Degree geoid height [m]', fontsize=28)
+        # plt.legend(fontsize=26, loc=1)
+        plt.grid(True, which='both', linestyle='-.')
+    fig.text(0.508, 0.085, 'Degree', fontsize=24)
+    # plt.xlabel('Degree', fontsize=24, horizontalalignment='right')
+    plt.subplots_adjust(left=0.09, right=0.981, top=0.94, bottom=0.15, wspace=0.1, hspace=0.27)
+    plt.savefig('../result/img/2007/sh.pdf')
+    plt.show()
+
+
+    pass
+
+
 if __name__ == '__main__':
-    span1 = '2006-01-02-2006-02-01'
-    span2 = '2006001-2006031'
-    # GRACE_FO(data=span)
-    drawTime(data1=span1, data2=span2)
-    # GeoidGMT()
-    # drawPotentialError()
-    # drawEWH()
-    # drawMat()
-    # drawKBRR()
-    # drawMean()
+    span1 = '2010-12-01-2010-12-31'
+    span2 = '2010335-2010361'
+    data_span = get_month_start_and_end_by_date_interval('2009-01-01', '2010-12-31')
+
+    for i in range(len(data_span)):
+        span1 = data_span[i][0] + '-' + data_span[i][1]
+        span2 = datetransfor(data_span[i][0]) + '-' + datetransfor(data_span[i][1])
+        drawTime(data1=span1, data2=span2)
+        # GRACE_FO(data=span)
+        # GeoidGMT()
+        # drawPotentialError()
+        # drawEWH()
+        # drawMat()
+        # drawKBRR()
+        # drawMean()
+    # drawTime(data1=span1, data2=span2)
+    subplotsGeoid()
+    pass
+
+

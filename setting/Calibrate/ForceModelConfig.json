@@ -23,8 +23,8 @@
     },
     "NonConservativeConfig": {
         "date_span": [
-            "2020-02-06",
-            "2020-02-28"
+            "2007-10-01",
+            "2007-10-31"
         ],
         "arcNo": 0,
         "sat": {
@@ -63,11 +63,11 @@
             "M2": true,
             "L2": true,
             "T2": true,
-            "S2": true,
-            "R2": true,
-            "T3": true,
-            "S3": true,
-            "R3": true
+            "S2": false,
+            "R2": false,
+            "T3": false,
+            "S3": false,
+            "R3": false
         },
         "kind": "ATM",
         "Nmax": 180,
@@ -99,12 +99,12 @@
             "Sun": true,
             "Moon": true,
             "Earth": true,
-            "Mercury": false,
-            "Venus": false,
-            "Mars": false,
-            "Jupiter": false,
-            "Saturn": false,
-            "Uranus": false,
+            "Mercury": true,
+            "Venus": true,
+            "Mars": true,
+            "Jupiter": true,
+            "Saturn": true,
+            "Uranus": true,
             "Neptune": false,
             "Pluto": false
         },
@@ -125,12 +125,12 @@
     "NonTideConfig": {
         "kind": "GLO",
         "MaxDeg": 180,
-        "TS": 3
+        "TS": 6
     },
     "RefGravModelConfig": {
         "kind": 0,
         "Nmax": 180,
-        "StaticModel": "GGM05C"
+        "StaticModel": "Gif48"
     },
     "RelativityConfig": {
         "GM_Sun": 1.32712442076e+20,
@@ -151,7 +151,7 @@
     },
     "PathOfFilesConfig": {
         "Ephemerides": "../data/ephemerides",
-        "AOD": "../data/AOD/GLO_0503",
+        "AOD": "../data/AOD/GLO_1007",
         "EOT11a": "../data/eot11a",
         "FES2014": "../data/FES2014",
         "Atmos": "../data/atmos",

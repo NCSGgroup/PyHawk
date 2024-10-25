@@ -234,7 +234,7 @@ class CalibrateOrbit:
             configure(SerDer=Orbit_var_2nd_diff, arcNo=i, ODEConfig=self.__ode_config,
                       FMConfig=self.__force_model_config, AdjustOrbitConfig=self.__adjust_config,
                       ParameterConfig=self.__parameter_config, InterfaceConfig=self.__interface_config,
-                      FrameConfig=self.__frame_config).calibrate(iteration=2)
+                      FrameConfig=self.__frame_config).calibrate(iteration=1)
         pass
 
     def _adjustKBRR(self, j):

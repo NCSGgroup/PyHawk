@@ -20,11 +20,13 @@ from src.Interface.KinematicOrbit import KinematicOrbitV3
 from src.Interface.GapFix import GapFix
 from src.Interface.ArcOperation import ArcSelect
 from src.Solver.AdjustSST import RangeRate
-from datetime import datetime
 from src.Interface.ArcOperation import ArcData
 from src.Preference.Pre_Interface import InterfaceConfig
 from src.Preference.Pre_Frame import FrameConfig
-
+import os
+from datetime import datetime
+import datetime
+import calendar
 import pygmt
 
 
@@ -117,64 +119,123 @@ def drawKBRR(datespan, arcLen):
 
 
 def xyz2lonlat():
-    datespan = ["2020-04-01", "2020-04-30"]
-    interface_config = InterfaceConfig()
-    interfaceDict = json.load(open('../setting/Calibrate/InterfaceConfig.json', 'r'))
-    interface_config.__dict__ = interfaceDict
+    datespan = get_month_start_and_end_by_date_interval('2010-01-01', '2010-12-31')
 
-    frame_config = FrameConfig()
-    frame = json.load(open('../setting/Calibrate/FrameConfig.json', 'r'))
-    frame_config.__dict__ = frame
+    for i in range(len(datespan)):
+        frame_config = FrameConfig()
+        frame = json.load(open('../setting/Calibrate/FrameConfig.json', 'r'))
+        frame_config.__dict__ = frame
 
-    eop = EOP().configure(frameConfig=frame_config).load()
-    fr = Frame(eop).configure(frameConfig=frame_config)
+        eop = EOP().configure(frameConfig=frame_config).load()
+        fr = Frame(eop).configure(frameConfig=frame_config)
 
-    rd = ArcData(interfaceConfig=interface_config)
-    Lon = []
-    Lat = []
-    Postfit = []
-    for i in range(0, 116):
-        GNV = rd.getData(arc=i, kind=EnumType.Payload.GNV, sat=EnumType.SatID.A)
-        GNVTime = GNV[:, 0]
-        GNVR = GNV[:, 1:4]
+        raw_data_path = '../temp/RawData'
+        filename = pathlib.Path().joinpath(raw_data_path, datespan[i][0] + '_' + datespan[i][1] + ".hdf5")
+        h5data = h5py.File(filename, "r")
 
-        res_dir = pathlib.Path("../temp/RangeRate/2020-4/Normal").joinpath(datespan[0] + '_' + datespan[1])
-        res_filename = res_dir.joinpath('RangeRate_' + str(i) + '.hdf5')
-        h5 = h5py.File(res_filename, 'r')
-        t2 = h5['post_t'][()]
+        Lon = []
+        Lat = []
+        Postfit = []
+        path = pathlib.Path().joinpath('../report/arcft', datespan[i][0] + '_' + datespan[i][1]+'.txt')
+        arclen = getArcList(path=path)
+        for j in arclen:
+            GNV = h5data['GNV_A_arc' + str(j)][()]
+            GNVTime = GNV[:, 0]
+            GNVR = GNV[:, 1:4]
 
-        commonTime = set(GNVTime.astype(np.int64))
-        commonTime = commonTime & set(t2.astype(np.int64))
-        commonTime = np.array(list(commonTime))
-        commonTime.sort()
+            res_dir = pathlib.Path("D:/zwh/HAE/RangeRate/").joinpath(datespan[i][0] + '_' + datespan[i][1])
+            res_filename = res_dir.joinpath('RangeRate_' + str(j) + '.hdf5')
+            if not os.path.exists(res_filename):
+                continue
+            h5 = h5py.File(res_filename, 'r')
+            t2 = h5['post_t'][()]
 
-        new_index1 = [list(GNVTime).index(x) for x in commonTime]
-        new_index2 = [list(t2).index(x) for x in commonTime]
-        new_Time = GNVTime[new_index1]
-        new_GNVR = GNVR[new_index1]
-        Postfit.extend(h5['post_residual'][()][new_index2])
+            commonTime = set(GNVTime.astype(np.int64))
+            commonTime = commonTime & set(t2.astype(np.int64))
+            commonTime = np.array(list(commonTime))
+            commonTime.sort()
 
-        for i in range(len(new_Time)):
-            time = new_Time[i]
-            pos = new_GNVR[i]
-            fr = fr.setTime(float(time))
-            itrs = fr.PosGCRS2ITRS(np.array(pos).astype(float), fr.getRotationMatrix)
-            lon, lat, r = GeoMathKit.CalcPolarAngles(itrs)
-            Lon.append(lon)
-            Lat.append(lat)
-        h5.close()
+            new_index1 = [list(GNVTime).index(x) for x in commonTime]
+            new_index2 = [list(t2).index(x) for x in commonTime]
+            new_Time = GNVTime[new_index1]
+            new_GNVR = GNVR[new_index1]
+            Postfit.extend(h5['post_residual'][()][new_index2])
 
-    Lon = np.degrees(np.array(Lon))
-    Lat = np.degrees(np.array(Lat))
-    Postfit = np.array(Postfit)
+            for k in range(len(new_Time)):
+                time = new_Time[k]
+                pos = new_GNVR[k]
+                fr = fr.setTime(float(time))
+                itrs = fr.PosGCRS2ITRS(np.array(pos).astype(float), fr.getRotationMatrix)
+                lon, lat, r = GeoMathKit.CalcPolarAngles(itrs)
+                Lon.append(lon)
+                Lat.append(lat)
+            h5.close()
 
-    filename = '../result/2020-04-Normal.hdf5'
-    h5data = h5py.File(filename, "w")
-    h5data.create_dataset('lon', data=Lon)
-    h5data.create_dataset('lat', data=Lat)
-    h5data.create_dataset('postfit', data=Postfit)
-    h5data.close()
+        Lon = np.degrees(np.array(Lon))
+        Lat = np.degrees(np.array(Lat))
+        Postfit = np.array(Postfit)
+
+        filename = 'D:/zwh/HAE/Spatial/' + datespan[i][0] + '_' + datespan[i][1] + '.hdf5'
+        h5data = h5py.File(filename, "w")
+        h5data.create_dataset('lon', data=Lon)
+        h5data.create_dataset('lat', data=Lat)
+        h5data.create_dataset('postfit', data=Postfit)
+        h5data.close()
     pass
+
+
+def get_month_start_and_end_by_date_interval(start_date, end_date):
+    """
+    获取指定时间段内每个月的起止时间参数列表
+    :param start_date: 起始时间 --> str
+    :param end_date: 结束时间 --> str
+    :return: date_range_list -->list [{'2019-10-01': ['2019-10-01', '2019-10-31']}, ...}]
+
+    """
+    date_range_list = []
+    start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d')
+    end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d')
+    # 计算开始日期的当月起止日期
+    start_month_first = datetime.datetime(year=start_date.year, month=start_date.month, day=1).date()
+    start_month_last = datetime.datetime(year=start_date.year, month=start_date.month,
+                                         day=calendar.monthrange(start_date.year, start_date.month)[1]).date()
+    date_range_list.append([start_month_first.strftime('%Y-%m-%d'),start_month_last.strftime('%Y-%m-%d')])
+
+    # 计算结束日期的当月起止日期
+    end_month_first = datetime.datetime(year=end_date.year, month=end_date.month, day=1).date()
+    end_month_last = datetime.datetime(year=end_date.year, month=end_date.month,
+                                       day=calendar.monthrange(end_date.year, end_date.month)[1]).date()
+
+    while True:
+        # 下个月开始日期
+        next_month_start = datetime.datetime(year=start_date.year, month=start_date.month,
+                                             day=calendar.monthrange(start_date.year, start_date.month)[
+                                                 1]).date() + datetime.timedelta(days=1)
+        next_month_end = datetime.datetime(year=next_month_start.year, month=next_month_start.month,
+                                           day=calendar.monthrange(next_month_start.year, next_month_start.month)[
+                                               1]).date()
+        if next_month_start < end_month_first:
+            date_range_list.append([next_month_start.strftime('%Y-%m-%d'),next_month_end.strftime('%Y-%m-%d')])
+            start_date = next_month_start
+        else:
+            break
+    # 避免传入的起止日期在同一月导致数据重复
+    temp_dict = [end_month_first.strftime('%Y-%m-%d'), end_month_last.strftime('%Y-%m-%d')]
+    if temp_dict not in date_range_list:
+        date_range_list.append(temp_dict)
+    return date_range_list
+
+
+def getArcList(path):
+    arclist = []
+    with open(path, "r", encoding='utf-8') as f:
+        lines = f.readlines()
+        for line in lines:
+            data = line.split(' ')
+            if data[0] == 'Arc':
+                if data[3] == 'True':
+                    arclist.append(int(data[2]))
+    return arclist
 
 
 if __name__ == '__main__':
