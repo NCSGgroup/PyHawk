@@ -591,10 +591,10 @@ if __name__ == '__main__':
     span2 = '2010335-2010361'
     data_span = get_month_start_and_end_by_date_interval('2009-01-01', '2010-12-31')
 
-    for i in range(len(data_span)):
-        span1 = data_span[i][0] + '-' + data_span[i][1]
-        span2 = datetransfor(data_span[i][0]) + '-' + datetransfor(data_span[i][1])
-        drawTime(data1=span1, data2=span2)
+    # for i in range(len(data_span)):
+    #     span1 = data_span[i][0] + '-' + data_span[i][1]
+    #     span2 = datetransfor(data_span[i][0]) + '-' + datetransfor(data_span[i][1])
+    #     drawTime(data1=span1, data2=span2)
         # GRACE_FO(data=span)
         # GeoidGMT()
         # drawPotentialError()
