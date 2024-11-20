@@ -1,8 +1,0 @@
-numpy
-tqdm
-scipy
-h5py
-numba 
-Quaternion
-jplephem
-matplotlib
