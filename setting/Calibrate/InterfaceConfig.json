@@ -1,0 +1,57 @@
+{
+    "mission": "GRACE_RL03",
+    "date_span": [
+        "2010-10-01",
+        "2010-10-31"
+    ],
+    "arcNo": 0,
+    "sat": {
+        "A": true,
+        "B": true
+    },
+    "date_delete": [],
+    "include_payloads": {
+        "ACC": true,
+        "SCA": true,
+        "KBR": true,
+        "GNV": true,
+        "KinematicOrbit": false,
+        "LRI": false
+    },
+    "is_orbit_GCRS": {
+        "GNV": false,
+        "KinematicOrbit": true
+    },
+    "sr_payload": {
+        "ACC": 1,
+        "SCA": 1,
+        "KBR": 5,
+        "GNV": 1,
+        "KinematicOrbit": 1,
+        "LRI": 5
+    },
+    "sr_target": 5,
+    "gapfix_linear_mis_max": 5,
+    "gapfix_quadra_mis_max": 21,
+    "gapfix_cubic_mis_max": 80,
+    "gapfix_cubic_int": 150,
+    "arc_length": 6,
+    "min_arcLen": 3,
+    "OrbitConfig": {
+        "OutlierTimes": 3,
+        "OutlierLimit": 0.04
+    },
+    "PathOfFilesConfig": {
+        "payload_ACC": "../data/GRACE_RL02",
+        "payload_SCA": "../data/GRACE_RL03",
+        "payload_KBR": "../data/GRACE_RL03",
+        "payload_GNV": "../data/GRACE_RL02",
+        "payload_Kinematic": "../data/KinematicOrbit",
+        "payload_LRI": "../data/GRACE_RL02",
+        "report_gap": "../report/gap",
+        "report_arc": "../report/arc",
+        "report_arcft": "../report/arcft",
+        "temp_raw_data": "../temp/RawData",
+        "log": "../log/"
+    }
+}

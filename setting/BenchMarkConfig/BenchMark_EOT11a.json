@@ -1,0 +1,86 @@
+{
+    "include_ForceType": {
+        "GravHar": true,
+        "Relativity": false,
+        "NonConserveForce": false,
+        "PlanetaryPerturbation": false
+    },
+    "instance_GravHar": {
+        "NonTide": "AODRL06",
+        "PoleTide": "PoleTideIERS2010",
+        "OceanTide": "EOT11a",
+        "AtmosphereTide": "AtmosAOD",
+        "SolidEarthTide": "SolidTideIERS2010",
+        "ReferenceModel": "RefGravModel"
+    },
+    "include_GravHarType": {
+        "NonTide": false,
+        "PoleTide": false,
+        "OceanTide": true,
+        "AtmosphereTide": false,
+        "SolidEarthTide": false,
+        "ReferenceModel": false
+    },
+    "ThreeBodyConfig": {
+    "ThreeBody_GM_Sun": 1.32712442076e+20,
+    "ThreeBody_GM": {
+      "Earth": 398600441500000.0,
+      "Sun": 1.32712442076e20,
+      "Moon": 0.49028010560e13,
+      "Mercury": 22032080828076.234,
+      "Venus": 324858603864142.9,
+      "Mars": 42828314922219.195,
+      "Jupiter": 1.267127698227696e+17,
+      "Saturn": 3.794062664949063e+16,
+      "Uranus": 5794556465751793.0,
+      "Neptune": 6836527100580024.0,
+      "Pluto": 975501175876.7654
+    },
+    "include_planets": {
+      "Sun": false,
+      "Moon": false,
+      "Mercury": true,
+      "Venus": true,
+      "Earth": false,
+      "Mars": true,
+      "Jupiter": true,
+      "Saturn": true,
+      "Uranus": false,
+      "Neptune": false,
+      "Pluto": false
+    },
+    "isJ2": false
+  },
+    "NonConservativeConfig": {
+        "date_span": [
+            "2008-01-01",
+            "2008-01-31"
+        ],
+        "arcNo": 0,
+        "sat": {
+            "A": true,
+            "B": true
+        }
+    },
+    "OceanTideConfig": {
+        "gainFactor": 0.001,
+        "maxDegree": 120
+    },
+    "GravHarConfig": {
+        "setZero": [
+            0,
+            1
+        ],
+        "degree_max": 90,
+        "degree_min": 2,
+        "GravHar_GM": 3.9860044150e+14,
+        "GravHar_Radius": 6.3781363000e+06,
+        "PosCoordinate": "ITRS",
+        "ACCCoordinate": "GCRS"
+    },
+    "PathOfFilesConfig": {
+        "Ephemerides": "../data/ephemerides",
+        "AOD": "../data/AOD/RL06",
+        "EOT11a": "../data/eot11a"
+    }
+}

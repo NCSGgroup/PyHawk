@@ -1,0 +1,19 @@
+{
+    "MissionConfig": {
+        "mission": "GRACE_RL03"
+    },
+    "StepControlConfig": {
+        "isPreprocess": false,
+        "isAdjustOrbit": false,
+        "isAdjustKBRR": true,
+        "isGetGravityDesignMat": true,
+        "isGetNEQ": true,
+        "isGetSH": true
+    },
+    "ParallelControlConfig": {
+        "AdjustOrbitProcess": 1,
+        "AdjustKBRRProcess": 1,
+        "GetGravityDesignMatProcess": 1,
+        "GetNEQProcess": 1
+    }
+}

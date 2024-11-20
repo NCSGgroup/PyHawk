@@ -1,0 +1,21 @@
+{
+    "OrbitAConfig": {
+        "IsRequired": true,
+        "UseKinematicOrbit": false,
+        "FixKinematicOrbit": false
+    },
+    "OrbitBConfig": {
+        "IsRequired": true,
+        "UseKinematicOrbit": false,
+        "FixKinematicOrbit": false
+    },
+    "SSTConfig": {
+        "IsRequired": true,
+        "measurement": 2,
+        "CalibrateEmpiricalParameters": false
+    },
+    "PathOfFilesConfig": {
+        "NormalEqTemp": "../temp/NEQ",
+        "ResultCS": "../result/SH"
+    }
+}
