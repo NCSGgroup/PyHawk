@@ -3,16 +3,13 @@
 # @Time    : 2023/3/25 21:54
 # @File    : demo_BenchMark.py
 # @Software: PyCharm
-import pygmt
 from benchmark.BenchMarkForJson import BenchMark
 from src.Preference.Pre_ForceModel import ForceModelConfig
 import matplotlib.pyplot as plt
-from matplotlib import rcParams
 import numpy as np
 import json
 import matplotlib
-# import scienceplots
-from matplotlib.ticker import MultipleLocator
+
 
 config = {
     "font.family": 'serif',
