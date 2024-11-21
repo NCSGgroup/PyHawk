@@ -6,7 +6,7 @@
     "PlanetaryPerturbation": true
   },
   "instance_GravHar": {
-    "NonTide": 0,
+    "NonTide": "AODRL06",
     "PoleTide": "PoleTideIERS2010",
     "OceanTide": "EOT11a",
     "AtmosphereTide": "AtmosAOD",
@@ -48,14 +48,14 @@
       "Pluto": 975501175876.7654
     },
     "include_planets": {
-      "Sun": false,
+      "Sun": true,
       "Moon": false,
-      "Mercury": true,
-      "Venus": true,
+      "Mercury": false,
+      "Venus": false,
       "Earth": false,
-      "Mars": true,
-      "Jupiter": true,
-      "Saturn": true,
+      "Mars": false,
+      "Jupiter": false,
+      "Saturn": false,
       "Uranus": false,
       "Neptune": false,
       "Pluto": false

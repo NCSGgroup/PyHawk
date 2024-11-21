@@ -1,0 +1,28 @@
+{
+    "ComplexConfig": {
+        "SingleStepType": "RKN",
+        "MultiStepType": "MatrixGaussJackson"
+    },
+    "SingleStepConfig": {
+        "stepsize": 5,
+        "Npoints": 2156,
+        "isRecord": true,
+        "SingleStepOde": "RKN"
+    },
+    "MultiStepConfig": {
+        "stepsize": 5,
+        "Npoints": 2156,
+        "order": 8,
+        "isRecord": true,
+        "iterNum": 10,
+        "rltot": 1e-13,
+        "MultiStepOde": "GaussJackson"
+    },
+    "KOConfig": {
+        "stepsize": 30,
+        "Npoints": 1440,
+        "isRecord": true,
+        "GM": 398600.4415,
+        "rltot": 1e-09
+    }
+}

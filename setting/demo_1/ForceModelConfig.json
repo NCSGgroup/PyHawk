@@ -8,7 +8,7 @@
     "instance_GravHar": {
         "NonTide": "AODRL06",
         "PoleTide": "PoleTideIERS2010",
-        "OceanTide": "FES2014",
+        "OceanTide": "EOT11a",
         "AtmosphereTide": "AtmosAOD",
         "SolidEarthTide": "SolidTideIERS2010",
         "ReferenceModel": "RefGravModel"
@@ -23,8 +23,8 @@
     },
     "NonConservativeConfig": {
         "date_span": [
-            "2008-01-01",
-            "2008-01-31"
+            "2010-01-01",
+            "2010-01-31"
         ],
         "arcNo": 0,
         "sat": {
@@ -33,8 +33,8 @@
         }
     },
     "LoveNumberConfig": {
-        "Nmax": 30,
-        "method": "IERS"
+        "Nmax": 180,
+        "method": "Wang"
     },
     "PoleTideConfig": {
         "Kind": {
@@ -43,14 +43,14 @@
         },
         "SimpleOcean": false,
         "Polar2wobble": 2,
-        "MaxDegreeOfOcean": 30,
-        "LoveNumberType": "IERS"
+        "MaxDegreeOfOcean": 180,
+        "LoveNumberType": "Wang"
     },
     "SolidTideConfig": {
         "GM_Earth": 398600441500000.0,
         "GM_Sun": 1.32712442076e+20,
         "GM_Moon": 4902801056000.0,
-        "Radius_Earth": 6378136.46,
+        "Radius_Earth": 6378136.3,
         "isZeroTide": true
     },
     "AtmosTideConfig": {
@@ -63,11 +63,11 @@
             "M2": true,
             "L2": true,
             "T2": true,
-            "S2": true,
-            "R2": true,
-            "T3": true,
-            "S3": true,
-            "R3": true
+            "S2": false,
+            "R2": false,
+            "T3": false,
+            "S3": false,
+            "R3": false
         },
         "kind": "ATM",
         "Nmax": 180,
@@ -98,17 +98,17 @@
         "include_planets": {
             "Sun": true,
             "Moon": true,
+            "Earth": true,
             "Mercury": true,
             "Venus": true,
-            "Earth": true,
             "Mars": true,
             "Jupiter": true,
             "Saturn": true,
-            "Uranus": false,
+            "Uranus": true,
             "Neptune": false,
             "Pluto": false
         },
-        "isJ2": false
+        "isJ2": true
     },
     "GravHarConfig": {
         "setZero": [
@@ -124,17 +124,17 @@
     },
     "NonTideConfig": {
         "kind": "GLO",
-        "MaxDeg": 100,
-        "TS": 3
+        "MaxDeg": 180,
+        "TS": 6
     },
     "RefGravModelConfig": {
         "kind": 0,
-        "Nmax": 160,
+        "Nmax": 180,
         "StaticModel": "Gif48"
     },
     "RelativityConfig": {
         "GM_Sun": 1.32712442076e+20,
-        "GM_Earth": 398600441800000.0,
+        "GM_Earth": 398600441500000.0,
         "C_Light": 299792458,
         "J": [
             0,
@@ -145,8 +145,8 @@
         "Beta": 1,
         "kind": {
             "SchwarzChild": true,
-            "LenseThirring": false,
-            "Desitter": false
+            "LenseThirring": true,
+            "Desitter": true
         }
     },
     "PathOfFilesConfig": {
@@ -158,6 +158,7 @@
         "Gif48": "../data/StaticGravityField/gif48.gfc",
         "EIGEN6_C4": "../data/StaticGravityField/EIGEN6-C4.gfc",
         "GOCO02s": "../data/StaticGravityField/GOCO02s.gfc",
+        "GGM05C": "../data/StaticGravityField/GGM05C.gfc",
         "PoleTide": "../data/poletide",
         "LoverNumber": "../data/LoveNumber",
         "poleTideModel": "desaiscopolecoef.txt",

@@ -3,24 +3,132 @@
 # @Time    : 2023/3/25 21:48
 # @File    : BenchMarkForJson.py
 # @Software: PyCharm
-
-from src.Frame.Frame import Frame
+import os.path
+import sys
+sys.path.append("../")
 from src.Frame.EOP import EOP
 from src.Preference.Pre_ForceModel import ForceModelConfig
+from src.Preference.Pre_Parameterization import ParameterConfig
 from src.SecDerivative.Common.Assemble2ndDerivative import Assemble2ndDerivative
 import src.Preference.EnumType as EnumType
 import numpy as np
 import matplotlib.pyplot as plt
+from src.Preference.Pre_Frame import FrameConfig
+from src.Frame.Frame import Frame
+import json
 
 
 class BenchMark:
     def __init__(self):
-        self._fr = Frame(EOP().load())
+        self.__cur_path = os.path.abspath(__file__)
+        self.__parent_path = os.path.abspath(os.path.dirname(self.__cur_path) + os.path.sep + "..")
+        self.__frame_config = FrameConfig()
+        frame = json.load(open(os.path.abspath(self.__parent_path + '/setting/demo_2/FrameConfig.json'), 'r'))
+        self.__frame_config.__dict__ = frame
+        eop = EOP().configure(frameConfig=self.__frame_config).load()
+        self._fr = Frame(eop).configure(frameConfig=self.__frame_config)
+
+        self.__parameter_config = ParameterConfig()
+        Parameter = json.load(
+            open(os.path.abspath(self.__parent_path + '/setting/demo_2/ParameterConfig.json'), 'r'))
+        self.__parameter_config.__dict__ = Parameter
+
         self._savedir = "../result/benchmarktest/"
         pass
 
+    def three_body_sun(self, FMConfig = ForceModelConfig()):
+        assembleModel = Assemble2ndDerivative().configure(FMConfig=FMConfig,
+                                  ParameterConfig=self.__parameter_config, FrameConfig=self.__frame_config)
+        '''read orbit'''
+        with open('../data/Benchmark/satellite/00orbit_icrf.txt') as f:
+            contents1 = f.readlines()
+            pass
+        '''read benchmark'''
+        with open('../data/Benchmark/satellite/03directTideSun_icrf.txt') as f:
+            contents2 = f.readlines()
+            pass
+
+        diff = []
+        timeList = []
+        for i in range(5, len(contents1)):
+            res1 = np.array(contents1[i].split(), dtype='float')
+            time = res1[0] + 19 / 86400
+            pos, vel = res1[1:4], res1[4:7]
+            assem_model = assembleModel.setPosAndVel(pos, vel).setTime(self._fr.setTime(time, EnumType.TimeFormat.TAI_MJD))
+            acc = assem_model.calculation().getAcceleration()
+
+            ref1 = np.array(contents2[i].split(), dtype='float')
+            acc_ref = ref1[1:4]
+
+            diff.append(acc - acc_ref)
+            timeList.append(time)
+            pass
+
+        np.save(self._savedir + 'data/sun.npy', np.array(diff))
+        diff = np.array(diff)
+        ax = diff[:, 0]
+        ay = diff[:, 1]
+        az = diff[:, 2]
+        plt.style.use('grid')
+        plt.figure(figsize=(12, 8))
+        plt.title('TidePlanets (Sun)')
+        plt.plot(timeList, ax, color='#dd2c00', label='x')
+        plt.plot(timeList, ay, color='#00695c', label='y')
+        plt.plot(timeList, az, color='#1a237e', label='z')
+        plt.legend()
+        plt.xlabel('MJD')
+        plt.ylabel(r'$\mathrm{m/s^2}$')
+        plt.savefig(self._savedir + 'img/sun.png')
+        # plt.show()
+
+    def three_body_moon(self, FMConfig = ForceModelConfig()):
+        assembleModel = Assemble2ndDerivative().configure(FMConfig=FMConfig,
+                                  ParameterConfig=self.__parameter_config, FrameConfig=self.__frame_config)
+        '''read orbit'''
+        with open('../data/Benchmark/satellite/00orbit_icrf.txt') as f:
+            contents1 = f.readlines()
+            pass
+        '''read benchmark'''
+        with open('../data/Benchmark/satellite/03directTideMoon_icrf.txt') as f:
+            contents2 = f.readlines()
+            pass
+
+        diff = []
+        timeList = []
+        for i in range(5, len(contents1)):
+            res1 = np.array(contents1[i].split(), dtype='float')
+            time = res1[0] + 19 / 86400
+            pos, vel = res1[1:4], res1[4:7]
+            assem_model = assembleModel.setPosAndVel(pos, vel).setTime(self._fr.setTime(time, EnumType.TimeFormat.TAI_MJD))
+            acc = assem_model.calculation().getAcceleration()
+
+            ref1 = np.array(contents2[i].split(), dtype='float')
+            acc_ref = ref1[1:4]
+
+            diff.append(acc - acc_ref)
+            timeList.append(time)
+            pass
+
+        np.save(self._savedir + 'data/moon.npy', np.array(diff))
+        diff = np.array(diff)
+        ax = diff[:, 0]
+        ay = diff[:, 1]
+        az = diff[:, 2]
+        plt.figure(figsize=(12, 8))
+        plt.style.use('grid')
+        plt.title('TidePlanets (Moon)')
+        plt.plot(timeList, ax, color='#dd2c00', label='x')
+        plt.plot(timeList, ay, color='#00695c', label='y')
+        plt.plot(timeList, az, color='#1a237e', label='z')
+        plt.legend()
+        plt.xlabel('MJD')
+        plt.ylabel(r'$\mathrm{m/s^2}$')
+        plt.savefig(self._savedir + 'img/moon.png')
+        # plt.show()
+
     def three_body(self, FMConfig = ForceModelConfig()):
-        assembleModel = Assemble2ndDerivative().configure(FMConfig=FMConfig)
+        assembleModel = Assemble2ndDerivative().configure(FMConfig=FMConfig,
+                                  ParameterConfig=self.__parameter_config, FrameConfig=self.__frame_config)
         '''read orbit'''
         with open('../data/Benchmark/satellite/00orbit_icrf.txt') as f:
             contents1 = f.readlines()
@@ -46,23 +154,27 @@ class BenchMark:
             timeList.append(time)
             pass
 
-        np.save(self._savedir + 'planets.npy', np.array(diff))
+        np.save(self._savedir + 'data/planets.npy', np.array(diff))
         diff = np.array(diff)
         ax = diff[:, 0]
         ay = diff[:, 1]
         az = diff[:, 2]
+        plt.figure(figsize=(12, 8))
         plt.style.use('grid')
-        plt.title('TidePlanets(MERCURY, VENUS, MARS, JUPITER, SATURN)')
+        plt.title('TidePlanets (Mercury,Venus,Mars,Jupiter,Saturn)')
         plt.plot(timeList, ax, color='#dd2c00', label='x')
         plt.plot(timeList, ay, color='#00695c', label='y')
         plt.plot(timeList, az, color='#1a237e', label='z')
         plt.legend()
         plt.xlabel('MJD')
-        plt.ylabel('acc')
-        plt.show()
+        plt.ylabel(r'$\mathrm{m/s^2}$')
+        plt.savefig(self._savedir + 'img/planets.png')
+        # plt.show()
 
     def relativistic(self, FMConfig = ForceModelConfig()):
-        assembleModel = Assemble2ndDerivative().configure(FMConfig=FMConfig)
+        assembleModel = Assemble2ndDerivative().configure(FMConfig=FMConfig,
+                                                          ParameterConfig=self.__parameter_config,
+                                                          FrameConfig=self.__frame_config)
         '''read orbit'''
         with open('../data/Benchmark/satellite/00orbit_icrf.txt') as f:
             contents1 = f.readlines()
@@ -88,11 +200,12 @@ class BenchMark:
             timeList.append(time)
             pass
 
-        np.save(self._savedir + 'relativistic.npy', np.array(diff))
+        np.save(self._savedir + 'data/relativistic.npy', np.array(diff))
         diff = np.array(diff)
         ax = diff[:, 0]
         ay = diff[:, 1]
         az = diff[:, 2]
+        plt.figure(figsize=(12, 8))
         plt.style.use('grid')
         plt.title('Relativistic')
         plt.plot(timeList, ax, color='#dd2c00', label='x')
@@ -100,11 +213,14 @@ class BenchMark:
         plt.plot(timeList, az, color='#1a237e', label='z')
         plt.legend()
         plt.xlabel('MJD')
-        plt.ylabel('acc')
-        plt.show()
+        plt.ylabel(r'$\mathrm{m/s^2}$')
+        plt.savefig(self._savedir + 'img/relativistic.png')
+        # plt.show()
 
     def aod(self, FMConfig = ForceModelConfig()):
-        assembleModel = Assemble2ndDerivative().configure(FMConfig=FMConfig)
+        assembleModel = Assemble2ndDerivative().configure(FMConfig=FMConfig,
+                                          ParameterConfig=self.__parameter_config,
+                                          FrameConfig=self.__frame_config)
         '''read orbit'''
         with open('../data/Benchmark/satellite/00orbit_itrf.txt') as f:
             contents1 = f.readlines()
@@ -130,23 +246,27 @@ class BenchMark:
             timeList.append(time)
             pass
 
-        np.save(self._savedir + 'AODRL06.npy', np.array(diff))
+        np.save(self._savedir + 'data/AODRL06.npy', np.array(diff))
         diff = np.array(diff)
         ax = diff[:, 0]
         ay = diff[:, 1]
         az = diff[:, 2]
+        plt.figure(figsize=(12, 8))
         plt.style.use('grid')
-        plt.title('AOD1B RL06(2~180)')
+        plt.title('AOD1B RL06 (2~180)')
         plt.plot(timeList, ax, color='#dd2c00', label='x')
         plt.plot(timeList, ay, color='#00695c', label='y')
         plt.plot(timeList, az, color='#1a237e', label='z')
         plt.legend()
         plt.xlabel('MJD')
-        plt.ylabel('acc')
-        plt.show()
+        plt.ylabel(r'$\mathrm{m/s^2}$')
+        plt.savefig(self._savedir + 'img/AODRL06.png')
+        # plt.show()
 
     def eot11a(self, FMConfig = ForceModelConfig()):
-        assembleModel = Assemble2ndDerivative().configure(FMConfig=FMConfig)
+        assembleModel = Assemble2ndDerivative().configure(FMConfig=FMConfig,
+                                                          ParameterConfig=self.__parameter_config,
+                                                          FrameConfig=self.__frame_config)
         '''read orbit'''
         with open('../data/Benchmark/satellite/00orbit_itrf.txt') as f:
             contents1 = f.readlines()
@@ -173,7 +293,8 @@ class BenchMark:
             timeList.append(time)
             pass
 
-        np.save(self._savedir + 'eot11a.npy', np.array(diff))
+        np.save(self._savedir + 'data/eot11a.npy', np.array(diff))
+        plt.figure(figsize=(12, 8))
         diff = np.array(diff)
         ax = diff[:, 0]
         ay = diff[:, 1]
@@ -185,11 +306,14 @@ class BenchMark:
         plt.plot(timeList, az, color='#1a237e', label='z')
         plt.legend()
         plt.xlabel('MJD')
-        plt.ylabel('acc')
-        plt.show()
+        plt.ylabel(r'$\mathrm{m/s^2}$')
+        plt.savefig(self._savedir + 'img/eot11a.png')
+        # plt.show()
 
     def fes2014b(self, FMConfig = ForceModelConfig()):
-        assembleModel = Assemble2ndDerivative().configure(FMConfig=FMConfig)
+        assembleModel = Assemble2ndDerivative().configure(FMConfig=FMConfig,
+                                                          ParameterConfig=self.__parameter_config,
+                                                          FrameConfig=self.__frame_config)
         '''read orbit'''
         with open('../data/Benchmark/satellite/00orbit_itrf.txt') as f:
             contents1 = f.readlines()
@@ -216,7 +340,8 @@ class BenchMark:
             timeList.append(time)
             pass
 
-        np.save(self._savedir + 'fes2014.npy', np.array(diff))
+        np.save(self._savedir + 'data/fes2014.npy', np.array(diff))
+        plt.figure(figsize=(12, 8))
         diff = np.array(diff)
         ax = diff[:, 0]
         ay = diff[:, 1]
@@ -228,11 +353,14 @@ class BenchMark:
         plt.plot(timeList, az, color='#1a237e', label='z')
         plt.legend()
         plt.xlabel('MJD')
-        plt.ylabel('acc')
-        plt.show()
+        plt.ylabel(r'$\mathrm{m/s^2}$')
+        plt.savefig(self._savedir + 'img/fes2014.png')
+        # plt.show()
 
     def atmos_tide(self, FMConfig = ForceModelConfig()):
-        assembleModel = Assemble2ndDerivative().configure(FMConfig=FMConfig)
+        assembleModel = Assemble2ndDerivative().configure(FMConfig=FMConfig,
+                                                          ParameterConfig=self.__parameter_config,
+                                                          FrameConfig=self.__frame_config)
         '''read orbit'''
         with open('../data/Benchmark/satellite/00orbit_itrf.txt') as f:
             contents1 = f.readlines()
@@ -259,7 +387,8 @@ class BenchMark:
             timeList.append(time)
             pass
 
-        np.save(self._savedir + 'atmos.npy', np.array(diff))
+        np.save(self._savedir + 'data/atmos.npy', np.array(diff))
+        plt.figure(figsize=(12, 8))
         diff = np.array(diff)
         ax = diff[:, 0]
         ay = diff[:, 1]
@@ -271,11 +400,14 @@ class BenchMark:
         plt.plot(timeList, az, color='#1a237e', label='z')
         plt.legend()
         plt.xlabel('MJD')
-        plt.ylabel('acc')
-        plt.show()
+        plt.ylabel(r'$\mathrm{m/s^2}$')
+        plt.savefig(self._savedir + 'img/atmos.png')
+        # plt.show()
 
     def gravity_field(self, FMConfig = ForceModelConfig()):
-        assembleModel = Assemble2ndDerivative().configure(FMConfig=FMConfig)
+        assembleModel = Assemble2ndDerivative().configure(FMConfig=FMConfig,
+                                                          ParameterConfig=self.__parameter_config,
+                                                          FrameConfig=self.__frame_config)
         '''read orbit'''
         with open('../data/Benchmark/satellite/00orbit_itrf.txt') as f:
             contents1 = f.readlines()
@@ -301,8 +433,8 @@ class BenchMark:
             diff.append(acc - acc_ref)
             timeList.append(time)
             pass
-
-        np.save(self._savedir + 'gravity.npy', np.array(diff))
+        plt.figure(figsize=(12, 8))
+        np.save(self._savedir + 'data/gravity.npy', np.array(diff))
         diff = np.array(diff)
         ax = diff[:, 0]
         ay = diff[:, 1]
@@ -314,11 +446,14 @@ class BenchMark:
         plt.plot(timeList, az, color='#1a237e', label='z')
         plt.legend()
         plt.xlabel('MJD')
-        plt.ylabel('acc')
-        plt.show()
+        plt.ylabel(r'$\mathrm{m/s^2}$')
+        plt.savefig(self._savedir + 'img/gravity.png')
+        # plt.show()
 
     def solid_earth(self, FMConfig = ForceModelConfig()):
-        assembleModel = Assemble2ndDerivative().configure(FMConfig=FMConfig)
+        assembleModel = Assemble2ndDerivative().configure(FMConfig=FMConfig,
+                                                          ParameterConfig=self.__parameter_config,
+                                                          FrameConfig=self.__frame_config)
         '''read orbit'''
         with open('../data/Benchmark/satellite/00orbit_itrf.txt') as f:
             contents1 = f.readlines()
@@ -344,8 +479,8 @@ class BenchMark:
             diff.append(acc - acc_ref)
             timeList.append(time)
             pass
-
-        np.save(self._savedir + 'solidearth.npy', np.array(diff))
+        plt.figure(figsize=(12, 8))
+        np.save(self._savedir + 'data/solidearth.npy', np.array(diff))
         diff = np.array(diff)
         ax = diff[:, 0]
         ay = diff[:, 1]
@@ -357,11 +492,14 @@ class BenchMark:
         plt.plot(timeList, az, color='#1a237e', label='z')
         plt.legend()
         plt.xlabel('MJD')
-        plt.ylabel('acc')
-        plt.show()
+        plt.ylabel(r'$\mathrm{m/s^2}$')
+        plt.savefig(self._savedir + 'img/solidearth.png')
+        # plt.show()
 
     def earth_pole(self, FMConfig = ForceModelConfig()):
-        assembleModel = Assemble2ndDerivative().configure(FMConfig=FMConfig)
+        assembleModel = Assemble2ndDerivative().configure(FMConfig=FMConfig,
+                                                          ParameterConfig=self.__parameter_config,
+                                                          FrameConfig=self.__frame_config)
         '''read orbit'''
         with open('../data/Benchmark/satellite/00orbit_itrf.txt') as f:
             contents1 = f.readlines()
@@ -395,8 +533,8 @@ class BenchMark:
             diff.append(acc - acc_ref)
             timeList.append(time)
             pass
-
-        np.save(self._savedir + 'earthpole.npy', np.array(diff))
+        plt.figure(figsize=(12, 8))
+        np.save(self._savedir + 'data/earthpole.npy', np.array(diff))
         diff = np.array(diff)
         ax = diff[:, 0]
         ay = diff[:, 1]
@@ -408,11 +546,14 @@ class BenchMark:
         plt.plot(timeList, az, color='#1a237e', label='z')
         plt.legend()
         plt.xlabel('MJD')
-        plt.ylabel('acc')
-        plt.show()
+        plt.ylabel(r'$\mathrm{m/s^2}$')
+        plt.savefig(self._savedir + 'img/earthpole.png')
+        # plt.show()
 
     def ocean_pole(self, FMConfig = ForceModelConfig()):
-        assembleModel = Assemble2ndDerivative().configure(FMConfig=FMConfig)
+        assembleModel = Assemble2ndDerivative().configure(FMConfig=FMConfig,
+                                                          ParameterConfig=self.__parameter_config,
+                                                          FrameConfig=self.__frame_config)
         '''read orbit'''
         with open('../data/Benchmark/satellite/00orbit_itrf.txt') as f:
             contents1 = f.readlines()
@@ -446,8 +587,8 @@ class BenchMark:
             diff.append(acc - acc_ref)
             timeList.append(time)
             pass
-
-        np.save(self._savedir + 'oceanpole.npy', np.array(diff))
+        plt.figure(figsize=(12, 8))
+        np.save(self._savedir + 'data/oceanpole.npy', np.array(diff))
         diff = np.array(diff)
         ax = diff[:, 0]
         ay = diff[:, 1]
@@ -459,5 +600,6 @@ class BenchMark:
         plt.plot(timeList, az, color='#1a237e', label='z')
         plt.legend()
         plt.xlabel('MJD')
-        plt.ylabel('acc')
-        plt.show()
+        plt.ylabel(r'$\mathrm{m/s^2}$')
+        plt.savefig(self._savedir + 'img/oceanpole.png')
+        # plt.show()

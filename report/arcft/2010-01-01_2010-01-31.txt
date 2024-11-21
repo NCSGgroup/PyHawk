@@ -1,6 +1,6 @@
 This ia a summary of arc True or False information.
 Created by Yi Wu (wu_yi@hust.edu.cn)
-Record time: 2024-09-27 20:54:58.341794 
+Record time: 2024-11-20 21:06:54.517305 
 
 Number of Arcs: 124 
 -------------------Please see more details in below:---------------------- 

@@ -8,12 +8,12 @@ sys.path.append("../")
 from src.Solver.CalibrateOrbit import CalibrateOrbit
 
 
-def demo1():
+def main():
     calibrate_orbit = CalibrateOrbit()
     calibrate_orbit.loadJson()
     calibrate_orbit.run()
 
 
 if __name__ == '__main__':
-    demo1()
+    main()
 

@@ -31,7 +31,7 @@ class PlanetEphemerides:
         self.__Ephemerides = None
         pass
 
-    def configure(self, FMConfig: ForceModelConfig, FrameConfig: FrameConfig, emphericType=EnumType.JPLempheric.DE440):
+    def configure(self, FMConfig: ForceModelConfig, FrameConfig: FrameConfig, emphericType=EnumType.JPLempheric.DE421):
         self.__FMConfig = FMConfig
         self.__FrameConfig = FrameConfig
 

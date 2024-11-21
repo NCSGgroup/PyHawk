@@ -26,50 +26,50 @@ def demo1():
     FMConfig = ForceModelConfig()
     benchMark = BenchMark()
     '''three body'''
-    threeBody = json.load(open('../setting/BenchMarkConfig/BenchMark_ThreeBody.json', 'r'))
+    threeBody = json.load(open('../setting/demo_2/BenchMark_ThreeBody.json', 'r'))
     FMConfig.__dict__ = threeBody
-    benchMark.three_body(FMConfig)
+    benchMark.three_body_sun(FMConfig)
     '''AOD'''
-    aod = json.load(open('../setting/BenchMarkConfig/BenchMark_AOD.json', 'r'))
+    aod = json.load(open('../setting/demo_2/BenchMark_AOD.json', 'r'))
     FMConfig.__dict__ = aod
     benchMark.aod(FMConfig)
     '''relativistic'''
-    relativistic = json.load(open('../setting/BenchMarkConfig/BenchMark_Relativity.json', 'r'))
+    relativistic = json.load(open('../setting/demo_2/BenchMark_Relativity.json', 'r'))
     FMConfig.__dict__ = relativistic
     benchMark.relativistic(FMConfig)
     '''eot11a'''
-    eot11a = json.load(open('../setting/BenchMarkConfig/BenchMark_EOT11a.json', 'r'))
+    eot11a = json.load(open('../setting/demo_2/BenchMark_EOT11a.json', 'r'))
     FMConfig.__dict__ = eot11a
     benchMark.eot11a(FMConfig)
     '''FES2014'''
-    fes2014 = json.load(open('../setting/BenchMarkConfig/BenchMark_FES2104.json', 'r'))
+    fes2014 = json.load(open('../setting/demo_2/BenchMark_FES2104.json', 'r'))
     FMConfig.__dict__ = fes2014
     benchMark.fes2014b(FMConfig)
     '''Atmos tide'''
-    atmos = json.load(open('../setting/BenchMarkConfig/BenchMark_Atmos.json', 'r'))
+    atmos = json.load(open('../setting/demo_2/BenchMark_Atmos.json', 'r'))
     FMConfig.__dict__ = atmos
     benchMark.atmos_tide(FMConfig)
     '''gravity field'''
-    gravity_field = json.load(open('../setting/BenchMarkConfig/BenchMark_Gravity.json', 'r'))
+    gravity_field = json.load(open('../setting/demo_2/BenchMark_Gravity.json', 'r'))
     FMConfig.__dict__ = gravity_field
     benchMark.gravity_field(FMConfig)
     '''solidEarth tide'''
-    solid_earth = json.load(open('../setting/BenchMarkConfig/BenchMark_SolidEarth.json', 'r'))
+    solid_earth = json.load(open('../setting/demo_2/BenchMark_SolidEarth.json', 'r'))
     FMConfig.__dict__ = solid_earth
     benchMark.solid_earth(FMConfig)
     '''solidEarth pole tide'''
-    earth_pole = json.load(open('../setting/BenchMarkConfig/BenchMark_EarthPole.json', 'r'))
+    earth_pole = json.load(open('../setting/demo_2/BenchMark_EarthPole.json', 'r'))
     FMConfig.__dict__ = earth_pole
     benchMark.earth_pole(FMConfig)
     '''ocean pole tide'''
-    ocean_pole = json.load(open('../setting/BenchMarkConfig/BenchMark_OceanPole.json', 'r'))
+    ocean_pole = json.load(open('../setting/demo_2/BenchMark_OceanPole.json', 'r'))
     FMConfig.__dict__ = ocean_pole
     benchMark.ocean_pole(FMConfig)
     pass
 
 
 def demo2():
-    diff = np.load('../result/benchmarktest/sun.npy')
+    diff = np.load('../result/benchmarktest/data/sun.npy')
     timeList = np.shape(diff)[0]
     diff = np.array(diff)
     ax = diff[:, 0]
@@ -685,10 +685,10 @@ def plot_benchmark5():
 
 
 if __name__ == '__main__':
-    # demo1()
+    demo1()
     # demo2()
     # plot()
     # plot_benchmark3()
     # plot_benchmark4()
-    plot_benchmark5()
+    # plot_benchmark5()
     # pygmt_test()

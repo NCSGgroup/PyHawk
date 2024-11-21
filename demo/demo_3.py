@@ -1,8 +1,3 @@
-# -*- coding: utf-8 -*-
-# @Author  : Wuyi
-# @Time    : 2024/10/14 15:22
-# @File    : demo_3.py
-# @Software: PyCharm
 import os.path
 import sys
 sys.path.append("../")
@@ -45,10 +40,10 @@ import json
 from datetime import datetime
 
 
-class CalibrateOrbit:
+class demo_3:
     def __init__(self):
         self.__cur_path = os.path.abspath(__file__)
-        self.__parent_path = os.path.abspath(os.path.dirname(self.__cur_path) + os.path.sep + ".." + os.path.sep + "..")
+        self.__parent_path = os.path.abspath(os.path.dirname(self.__cur_path) + os.path.sep + "..")
         self.__acc_config_A = None
         self.__acc_config_B = None
         self.__force_model_config = None
@@ -70,51 +65,51 @@ class CalibrateOrbit:
 
     def loadJson(self):
         self.__acc_config_A = AccelerometerConfig()
-        acc_A = json.load(open(os.path.join(self.__parent_path, 'setting/Calibrate/AccelerometerConfig_A.json'), 'r'))
+        acc_A = json.load(open(os.path.join(self.__parent_path, 'setting/demo_3/AccelerometerConfig_A.json'), 'r'))
         self.__acc_config_A.__dict__ = acc_A
 
         self.__acc_config_B = AccelerometerConfig()
-        acc_B = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/AccelerometerConfig_B.json'), 'r'))
+        acc_B = json.load(open(os.path.abspath(self.__parent_path + '/setting/demo_3/AccelerometerConfig_B.json'), 'r'))
         self.__acc_config_B.__dict__ = acc_B
 
         self.__force_model_config = ForceModelConfig()
-        fmDict = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/ForceModelConfig.json'), 'r'))
+        fmDict = json.load(open(os.path.abspath(self.__parent_path + '/setting/demo_3/ForceModelConfig.json'), 'r'))
         self.__force_model_config.__dict__ = fmDict
 
         self.__parameter_config = ParameterConfig()
-        Parameter = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/ParameterConfig.json'), 'r'))
+        Parameter = json.load(open(os.path.abspath(self.__parent_path + '/setting/demo_3/ParameterConfig.json'), 'r'))
         self.__parameter_config.__dict__ = Parameter
 
         self.__solver_config = SolverConfig()
-        solverDict = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/SolverConfig.json'), 'r'))
+        solverDict = json.load(open(os.path.abspath(self.__parent_path + '/setting/demo_3/SolverConfig.json'), 'r'))
         self.__solver_config.__dict__ = solverDict
 
         self.__ode_config = ODEConfig()
-        odeDict = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/ODEConfig.json'), 'r'))
+        odeDict = json.load(open(os.path.abspath(self.__parent_path + '/setting/demo_3/ODEConfig.json'), 'r'))
         self.__ode_config.__dict__ = odeDict
 
         self.__neq_config = NEQConfig()
-        neqDict = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/NEQConfig.json'), 'r'))
+        neqDict = json.load(open(os.path.abspath(self.__parent_path + '/setting/demo_3/NEQConfig.json'), 'r'))
         self.__neq_config.__dict__ = neqDict
 
         self.__adjust_config = AdjustOrbitConfig()
-        adjustOrbitDict = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/AdjustOrbitConfig.json'), 'r'))
+        adjustOrbitDict = json.load(open(os.path.abspath(self.__parent_path + '/setting/demo_3/AdjustOrbitConfig.json'), 'r'))
         self.__adjust_config.__dict__ = adjustOrbitDict
 
         self.__interface_config = InterfaceConfig()
-        interfaceDict = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/InterfaceConfig.json'), 'r'))
+        interfaceDict = json.load(open(os.path.abspath(self.__parent_path + '/setting/demo_3/InterfaceConfig.json'), 'r'))
         self.__interface_config.__dict__ = interfaceDict
 
         self.__design_parameter_config = ParameterConfig()
-        designParameter = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/DesignParameterConfig.json'), 'r'))
+        designParameter = json.load(open(os.path.abspath(self.__parent_path + '/setting/demo_3/DesignParameterConfig.json'), 'r'))
         self.__design_parameter_config.__dict__ = designParameter
 
         self.__frame_config = FrameConfig()
-        frame = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/FrameConfig.json'), 'r'))
+        frame = json.load(open(os.path.abspath(self.__parent_path + '/setting/demo_3/FrameConfig.json'), 'r'))
         self.__frame_config.__dict__ = frame
 
         self.__calibrateOrbit_config = CalibrateOrbitConfig()
-        calibrateOrbit = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/CalibrateOrbitConfig.json'), 'r'))
+        calibrateOrbit = json.load(open(os.path.abspath(self.__parent_path + '/setting/demo_3/CalibrateOrbitConfig.json'), 'r'))
         self.__calibrateOrbit_config.__dict__ = calibrateOrbit
         return self
 
@@ -139,11 +134,21 @@ class CalibrateOrbit:
         ParallelControl = CalibrateOrbitConfig.ParallelControl()
         ParallelControl.__dict__.update(calibrateOrbit_config.ParallelControlConfig.copy())
 
+        isPreprocess = StepControl.isPreprocess
+        isAdjustOrbit = StepControl.isAdjustOrbit
+        isAdjustKBRR = StepControl.isAdjustKBRR
+        isGravityDesignMat = StepControl.isGetGravityDesignMat
         isNEQ = StepControl.isGetNEQ
         isSH = StepControl.isGetSH
 
+        AdjustOrbitProcess = ParallelControl.AdjustOrbitProcess
+        AdjustKBRRProcess = ParallelControl.AdjustKBRRProcess
+        GetGravityDesignMatProcess = ParallelControl.GetGravityDesignMatProcess
         GetNEQProcess = ParallelControl.GetNEQProcess
 
+        if isPreprocess:
+            self.makeLog(stepName='preprocess', process=1)
+            self._preprocess(mission=MissionConfig.mission)
         with open(arc_path, "r", encoding='utf-8') as f:
             while True:
                 data = f.readline().split(' ')
@@ -151,7 +156,24 @@ class CalibrateOrbit:
                     self.__arcLen = int(data[3])
                     break
         self.__arclist = self.getArcList(path=arcft_path)
-
+        if isAdjustOrbit:
+            self.makeLog(stepName='adjustOrbit', process=AdjustOrbitProcess)
+            pool = multiprocessing.Pool(processes=AdjustOrbitProcess)
+            pool.map(self._adjustOrbit, self.__arclist)
+            pool.close()
+            pool.join()
+        if isAdjustKBRR:
+            self.makeLog(stepName='adjustKBRR', process=AdjustKBRRProcess)
+            pool = multiprocessing.Pool(processes=AdjustKBRRProcess)
+            pool.map(self._adjustKBRR, self.__arclist)
+            pool.close()
+            pool.join()
+        if isGravityDesignMat:
+            self.makeLog(stepName='gravityDesignMat', process=GetGravityDesignMatProcess)
+            pool = multiprocessing.Pool(processes=GetGravityDesignMatProcess)
+            pool.map(self._gravityDesignMat, self.__arclist)
+            pool.close()
+            pool.join()
         if isNEQ:
             self.makeLog(stepName='NEQ', process=GetNEQProcess)
             pool = multiprocessing.Pool(processes=GetNEQProcess)
@@ -162,7 +184,33 @@ class CalibrateOrbit:
         if isSH:
             self.makeLog(stepName='SH', process=1)
             self.__calculate_cs()
-        # self.getSpaceKBRR()
+        pass
+
+    def _preprocess(self, mission):
+        """step 1: Read raw data"""
+        eop = EOP().configure(frameConfig=self.__frame_config).load()
+        fr = Frame(eop).configure(frameConfig=self.__frame_config)
+        s = None
+        if mission == EnumType.Mission.GRACE_FO_RL04.name:
+            s = GRACE_FO_RL04().configure(InterfaceConfig=self.__interface_config).setDate()
+        elif mission == EnumType.Mission.GRACE_RL03.name:
+            s = GRACE_RL03().configure(InterfaceConfig=self.__interface_config).setDate()
+        s.read_double_sat()
+        """step 2: Convert orbit from ITRS frame into GCRS frame"""
+        kine = None
+        if mission == EnumType.Mission.GRACE_FO_RL04.name:
+            kine = KinematicOrbitFO(L1b=s).configure()
+        if mission == EnumType.Mission.GRACE_RL03.name:
+            kine = KinematicOrbitV2(L1b=s).configure()
+        kine.read_double_sat()
+        kine.GNVandKiOrbitItrs2Gcrs(fr)
+        """step 3: Gap fix"""
+        gf = GapFix(L1b=s).configure()
+        gf.fix_all().makeReport()
+
+        arc = ArcSelect(gf=gf).configure()
+        arc.unpackArcs().makeReport().makeArcTF()
+
         pass
 
     def makeLog(self, stepName, process):
@@ -175,6 +223,36 @@ class CalibrateOrbit:
             f.write('Created by Wu Yi(wu_yi@hust.edu.cn)\n')
             f.write('begain time: %s \n\n' % datetime.now())
             f.write('process: %s \n\n' % process)
+        pass
+
+    def _adjustOrbit(self, i):
+        """step 5: init AdjustOrbit"""
+        AdjustOrbit(accConfig=[self.__acc_config_A, self.__acc_config_B], date_span=self.__date_span, sat=self.__sat).\
+            configure(SerDer=Orbit_var_2nd_diff, arcNo=i, ODEConfig=self.__ode_config,
+                      FMConfig=self.__force_model_config, AdjustOrbitConfig=self.__adjust_config,
+                      ParameterConfig=self.__parameter_config, InterfaceConfig=self.__interface_config,
+                      FrameConfig=self.__frame_config).calibrate(iteration=2)
+        pass
+
+    def _adjustKBRR(self, j):
+        RR = RangeRate(arcNo=j, date_span=self.__date_span)
+        RR.configure(SerDer=Orbit_var_2nd_diff, AdjustOrbitConfig=self.__adjust_config,
+                     FMConfig=self.__force_model_config, InterfaceConfig=self.__interface_config,
+                     ParameterConfig=self.__parameter_config, FrameConfig=self.__frame_config,
+                     ODEConfig=self.__ode_config)
+        RR.calibrate()
+        pass
+
+    def _gravityDesignMat(self, k):
+        dm = GravityDesignMat(arcNo=k, date_span=self.__date_span, sat=self.__sat).\
+            configure(accConfig=[self.__acc_config_A, self.__acc_config_B],
+                      ODEConfig=self.__ode_config, AdjustOrbitConfig=self.__adjust_config,
+                      solverConfig=self.__solver_config, FMConfig=self.__force_model_config,
+                      parameterConfig=self.__design_parameter_config, InterfaceConfig=self.__interface_config,
+                      FrameConfig=self.__frame_config)
+        dm.orbit_integration()
+        dm.get_orbit_design_matrix()
+        dm.get_sst_design_matrix()
         pass
 
     def _NEQ(self, q):
@@ -236,6 +314,155 @@ class CalibrateOrbit:
 
         pass
 
+    def __saveOrbitRMS(self):
+        self.AdjustPath = AdjustOrbitConfig.PathOfFiles()
+        self.AdjustPath.__dict__.update(self.__adjust_config.PathOfFilesConfig.copy())
+        res_dir = pathlib.Path().joinpath(self.AdjustPath.StateVectorDataTemp, self.__date_span[0] + '_' + self.__date_span[1])
+        interface_config = self.__interface_config
+        rd = ArcData(interfaceConfig=interface_config)
+        RMSAX = []
+        RMSAY = []
+        RMSAZ = []
+        RMSBX = []
+        RMSBY = []
+        RMSBZ = []
+        for i in self.__arclist:
+            res_filename = res_dir.joinpath(str(i) + '_AB.hdf5')
+            h5 = h5py.File(res_filename, 'r')
+            rAB = h5['r'][:]
+            rA = rAB[:, 0:3, 0]
+            rB = rAB[:, 3:6, 0]
+            gnva = rd.getData(arc=i, kind=EnumType.Payload.GNV, sat='A')[:, 1:4]
+            gnvb = rd.getData(arc=i, kind=EnumType.Payload.GNV, sat='B')[:, 1:4]
+
+            if np.shape(gnva) == np.shape(rA):
+                diff = gnva - rA
+                RMSAX.append(self.__rms(diff[:, 0]))
+                RMSAY.append(self.__rms(diff[:, 1]))
+                RMSAZ.append(self.__rms(diff[:, 2]))
+
+            if np.shape(gnvb) == np.shape(rB):
+                diff = gnvb - rB
+                RMSBX.append(self.__rms(diff[:, 0]))
+                RMSBY.append(self.__rms(diff[:, 1]))
+                RMSBZ.append(self.__rms(diff[:, 2]))
+
+        # np.save('OrbitRMSY.npy', RMSX)
+        # np.save('OrbitRMSY.npy', RMSY)
+        # np.save('OrbitRMSZ.npy', RMSZ)
+        # X = np.load('OrbitRMSX.npy')
+        # Y = np.load('OrbitRMSY.npy')
+        # Z = np.load('OrbitRMSZ.npy')
+        self.__plotOrbitRMS(RMSAX, RMSAY, RMSAZ, 'A')
+        self.__plotOrbitRMS(RMSBX, RMSBY, RMSBZ, 'B')
+
+        pass
+
+    def __plotOrbitRMS(self,RMSX, RMSY, RMSZ, sat):
+        plt.figure(dpi=300, figsize=(16, 8))
+        plt.subplot(311)
+        plt.title('Orbit-RMS-{}-{}-{}'.format(sat, self.__date_span[0], self.__date_span[-1]), fontsize=24)
+        plt.plot(np.arange(len(RMSX)), [i * 1000 for i in RMSX], marker='o')
+        plt.yticks(fontsize=18)
+        plt.ylabel(r'$X/mm$', fontsize=20)
+
+        plt.subplot(312)
+        plt.plot(np.arange(len(RMSY)), [i * 1000 for i in RMSY], marker='o')
+        plt.yticks(fontsize=18)
+        plt.ylabel(r'$Y/mm$', fontsize=20)
+
+        plt.subplot(313)
+        plt.plot(np.arange(len(RMSZ)), [i * 1000 for i in RMSZ], marker='o')
+        plt.xlabel('arcNo', fontsize=20)
+        plt.ylabel(r'$Z/mm$', fontsize=20)
+        plt.yticks(fontsize=18)
+
+        plt.savefig('../result/img/{}-{}-{}.png'.format(sat, self.__date_span[0], self.__date_span[-1]))
+        plt.grid(ls='--')
+        plt.clf()
+        pass
+
+    def __saveKBRRRMS(self):
+        self.AdjustPath = AdjustOrbitConfig.PathOfFiles()
+        self.AdjustPath.__dict__.update(self.__adjust_config.PathOfFilesConfig.copy())
+
+        res_dir = pathlib.Path().joinpath(self.AdjustPath.RangeRateTemp, self.__date_span[0] + '_' + self.__date_span[1])
+        post_RMS = []
+        for i in self.__arclist:
+            res_filename = res_dir.joinpath('RangeRate_' + str(i) + '.hdf5')
+            if os.path.exists(res_filename):
+                h5 = h5py.File(res_filename, 'r')
+                if len(h5.keys()) != 0:
+                    postfit = h5['post_residual'][()]
+                    post_RMS.append(self.__rms(postfit))
+        plt.figure(dpi=300, figsize=(16, 8))
+        plt.title('KBRR-RMS-{}-{}'.format(self.__date_span[0], self.__date_span[-1]), fontsize=24)
+        plt.plot(np.arange(len(post_RMS)), [i * 1000000 for i in post_RMS], marker='o', label="arc RMS")
+        plt.yticks(fontsize=18)
+        plt.ylabel(r'$X/um$', fontsize=20)
+        plt.legend(loc='upper right', fontsize=20)
+        plt.savefig('../result/img/KBRR-{}-{}.png'.format(self.__date_span[0], self.__date_span[-1]))
+        pass
+
+    def __rms(self, x: np.ndarray):
+        """
+        :param x: 1-dim
+        :return:
+        """
+        # 确认公式
+        return np.linalg.norm(x) / np.sqrt(np.shape(x)[0])
+
+    def getSpaceKBRR(self):
+
+        frame_config = FrameConfig()
+        frame = json.load(open(('../setting/Calibrate/FrameConfig.json'), 'r'))
+        frame_config.__dict__ = frame
+        eop = EOP().configure(frameConfig=frame_config).load()
+        fr = Frame(eop).configure(frameConfig=frame_config)
+        interface_config = InterfaceConfig()
+        interfaceDict = json.load(open('../setting/Calibrate/InterfaceConfig.json', 'r'))
+        interface_config.__dict__ = interfaceDict
+        rd = ArcData(interfaceConfig=interface_config)
+        Lon = []
+        Lat = []
+        Postfit = []
+        RMS = []
+
+        date_span = interface_config.date_span
+        sat = interface_config.sat
+        date_list = GeoMathKit.getEveryDay(*date_span)
+        days = datetime.strptime(date_list[-1], '%Y-%m-%d') - datetime.strptime(date_list[0], '%Y-%m-%d')
+        arcLen = days.days * (24 / interface_config.arc_length)
+
+        for i in range(0, int(arcLen)):
+            if i != 110:
+                GNV = rd.getData(arc=i, kind=EnumType.Payload.GNV, sat=EnumType.SatID.A)
+                GNVTime = GNV[:, 0]
+                GNVR = GNV[:, 1:4]
+                res_dir = pathlib.Path('../temp/RangeRate').joinpath(date_span[0] + '_' + date_span[1])
+                res_filename = res_dir.joinpath('RangeRate_' + str(i) + '.hdf5')
+                h5 = h5py.File(res_filename, 'r')
+                t2 = h5['post_t'][()]
+                Postfit.extend(h5['post_residual'][()])
+                postfit = h5['post_residual'][()]
+
+                RMS.append(self.__rms(postfit))
+
+                new_index = [list(GNVTime).index(x) for x in t2]
+                new_Time = GNVTime[new_index]
+                new_GNVR = GNVR[new_index]
+                for i in range(len(new_Time)):
+                    time = new_Time[i]
+                    pos = new_GNVR[i]
+                    fr = fr.setTime(float(time))
+                    itrs = fr.PosGCRS2ITRS(np.array(pos).astype(float), fr.getRotationMatrix)
+                    lon, lat, r = GeoMathKit.CalcPolarAngles(itrs)
+                    Lon.append(lon)
+                    Lat.append(lat)
+
+        np.savez('ResKBRR.npz', data=RMS)
+        np.savez('SpaceKBRR.npz', x=Lon, y=Lat, z=Postfit)
+
     def getArcList(self, path):
         arclist = []
         with open(path, "r", encoding='utf-8') as f:
@@ -249,4 +476,7 @@ class CalibrateOrbit:
 
 
 if __name__ == '__main__':
+    demo3 = demo_3()
+    demo3.loadJson()
+    demo3.run()
     pass

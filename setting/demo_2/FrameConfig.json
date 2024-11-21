@@ -1,0 +1,28 @@
+{
+    "isCorrection_EOP": true,
+    "isRadian_EOP": true,
+    "CoorTrans_method": "CIOxy",
+    "OmegaOption": 1,
+    "tdbOption": 1,
+    "EphemeridesConfig": {
+        "isMeter": true,
+        "include_planets": {
+            "Sun": true,
+            "Moon": true,
+            "Mercury": false,
+            "Venus": false,
+            "Earth": false,
+            "Mars": false,
+            "Jupiter": false,
+            "Saturn": false,
+            "Uranus": false,
+            "Neptune": false,
+            "Pluto": false
+        }
+    },
+    "PathOfFilesConfig": {
+        "EOP": "../data/eop/eopc04_14_IAU2000.62-now",
+        "EOPgrav": "../data/eop/EOPgrav.txt",
+        "EOPocean": "../data/eop/EOPocean.txt"
+    }
+}

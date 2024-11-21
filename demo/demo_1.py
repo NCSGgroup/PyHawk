@@ -6,9 +6,16 @@
 import os.path
 import sys
 sys.path.append("../")
-
+import src.Preference.EnumType as EnumType
+from src.Frame.Frame import Frame
+from src.Frame.EOP import EOP
+from src.Interface.KinematicOrbit import KinematicOrbitV3, KinematicOrbitV2, KinematicOrbitFO
+from src.Interface.GapFix import GapFix
+from src.Interface.ArcOperation import ArcSelect
+from src.Interface.L1b import GRACE_NEW_RL02, GRACE_OLD_RL02, GRACE_RL03, GRACE_FO_RL04
 from src.SecDerivative.Instance.DualOrbitAndVar import Orbit_var_2nd_diff
 from src.Solver.AdjustOrbit import AdjustOrbit
+from src.Preference.Pre_ODE import ODEConfig
 import pathlib
 from src.Preference.Pre_Accelerometer import AccelerometerConfig
 from src.Preference.Pre_Parameterization import ParameterConfig
@@ -25,7 +32,7 @@ from datetime import datetime
 class demo_1:
     def __init__(self):
         self.__cur_path = os.path.abspath(__file__)
-        self.__parent_path = os.path.abspath(os.path.dirname(self.__cur_path) + os.path.sep + ".." + os.path.sep + "..")
+        self.__parent_path = os.path.abspath(os.path.dirname(self.__cur_path) + os.path.sep + "..")
         self.__acc_config_A = None
         self.__acc_config_B = None
         self.__force_model_config = None
@@ -44,36 +51,40 @@ class demo_1:
 
     def loadJson(self):
         self.__acc_config_A = AccelerometerConfig()
-        acc_A = json.load(open(os.path.join(self.__parent_path, 'setting/Calibrate/AccelerometerConfig_A.json'), 'r'))
+        acc_A = json.load(open(os.path.join(self.__parent_path, 'setting/demo_1/AccelerometerConfig_A.json'), 'r'))
         self.__acc_config_A.__dict__ = acc_A
 
         self.__acc_config_B = AccelerometerConfig()
-        acc_B = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/AccelerometerConfig_B.json'), 'r'))
+        acc_B = json.load(open(os.path.abspath(self.__parent_path + '/setting/demo_1/AccelerometerConfig_B.json'), 'r'))
         self.__acc_config_B.__dict__ = acc_B
 
         self.__force_model_config = ForceModelConfig()
-        fmDict = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/ForceModelConfig.json'), 'r'))
+        fmDict = json.load(open(os.path.abspath(self.__parent_path + '/setting/demo_1/ForceModelConfig.json'), 'r'))
         self.__force_model_config.__dict__ = fmDict
 
         self.__parameter_config = ParameterConfig()
-        Parameter = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/ParameterConfig.json'), 'r'))
+        Parameter = json.load(open(os.path.abspath(self.__parent_path + '/setting/demo_1/ParameterConfig.json'), 'r'))
         self.__parameter_config.__dict__ = Parameter
 
         self.__adjust_config = AdjustOrbitConfig()
-        adjustOrbitDict = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/AdjustOrbitConfig.json'), 'r'))
+        adjustOrbitDict = json.load(open(os.path.abspath(self.__parent_path + '/setting/demo_1/AdjustOrbitConfig.json'), 'r'))
         self.__adjust_config.__dict__ = adjustOrbitDict
 
         self.__interface_config = InterfaceConfig()
-        interfaceDict = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/InterfaceConfig.json'), 'r'))
+        interfaceDict = json.load(open(os.path.abspath(self.__parent_path + '/setting/demo_1/InterfaceConfig.json'), 'r'))
         self.__interface_config.__dict__ = interfaceDict
 
         self.__frame_config = FrameConfig()
-        frame = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/FrameConfig.json'), 'r'))
+        frame = json.load(open(os.path.abspath(self.__parent_path + '/setting/demo_1/FrameConfig.json'), 'r'))
         self.__frame_config.__dict__ = frame
 
         self.__calibrateOrbit_config = CalibrateOrbitConfig()
-        calibrateOrbit = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/CalibrateOrbitConfig.json'), 'r'))
+        calibrateOrbit = json.load(open(os.path.abspath(self.__parent_path + '/setting/demo_1/CalibrateOrbitConfig.json'), 'r'))
         self.__calibrateOrbit_config.__dict__ = calibrateOrbit
+
+        self.__ode_config = ODEConfig()
+        odeDict = json.load(open(os.path.abspath(self.__parent_path + '/setting/demo_1/ODEConfig.json'), 'r'))
+        self.__ode_config.__dict__ = odeDict
         return self
 
     def run(self):
@@ -92,10 +103,18 @@ class demo_1:
         calibrateOrbit_config = self.__calibrateOrbit_config
         MissionConfig = CalibrateOrbitConfig.Mission()
         MissionConfig.__dict__.update(calibrateOrbit_config.MissionConfig.copy())
+        StepControl = CalibrateOrbitConfig.StepControl()
+        StepControl.__dict__.update(calibrateOrbit_config.StepControlConfig.copy())
         ParallelControl = CalibrateOrbitConfig.ParallelControl()
         ParallelControl.__dict__.update(calibrateOrbit_config.ParallelControlConfig.copy())
 
+        isPreprocess = StepControl.isPreprocess
+        isAdjustOrbit = StepControl.isAdjustOrbit
         AdjustOrbitProcess = ParallelControl.AdjustOrbitProcess
+
+        if isPreprocess:
+            self.makeLog(stepName='preprocess', process=1)
+            self._preprocess(mission=MissionConfig.mission)
 
         with open(arc_path, "r", encoding='utf-8') as f:
             while True:
@@ -104,11 +123,12 @@ class demo_1:
                     self.__arcLen = int(data[3])
                     break
         self.__arclist = self.getArcList(path=arcft_path)
-        self.makeLog(stepName='adjustOrbit', process=AdjustOrbitProcess)
-        pool = multiprocessing.Pool(processes=AdjustOrbitProcess)
-        pool.map(self._adjustOrbit, self.__arclist)
-        pool.close()
-        pool.join()
+        if isAdjustOrbit:
+            self.makeLog(stepName='adjustOrbit', process=AdjustOrbitProcess)
+            pool = multiprocessing.Pool(processes=AdjustOrbitProcess)
+            pool.map(self._adjustOrbit, self.__arclist)
+            pool.close()
+            pool.join()
         pass
 
     def makeLog(self, stepName, process):
@@ -121,6 +141,33 @@ class demo_1:
             f.write('Created by Wu Yi(wu_yi@hust.edu.cn)\n')
             f.write('begain time: %s \n\n' % datetime.now())
             f.write('process: %s \n\n' % process)
+        pass
+
+    def _preprocess(self, mission):
+        """step 1: Read raw data"""
+        eop = EOP().configure(frameConfig=self.__frame_config).load()
+        fr = Frame(eop).configure(frameConfig=self.__frame_config)
+        s = None
+        if mission == EnumType.Mission.GRACE_FO_RL04.name:
+            s = GRACE_FO_RL04().configure(InterfaceConfig=self.__interface_config).setDate()
+        elif mission == EnumType.Mission.GRACE_RL03.name:
+            s = GRACE_RL03().configure(InterfaceConfig=self.__interface_config).setDate()
+        s.read_double_sat()
+        """step 2: Convert orbit from ITRS frame into GCRS frame"""
+        kine = None
+        if mission == EnumType.Mission.GRACE_FO_RL04.name:
+            kine = KinematicOrbitFO(L1b=s).configure()
+        if mission == EnumType.Mission.GRACE_RL03.name:
+            kine = KinematicOrbitV2(L1b=s).configure()
+        kine.read_double_sat()
+        kine.GNVandKiOrbitItrs2Gcrs(fr)
+        """step 3: Gap fix"""
+        gf = GapFix(L1b=s).configure()
+        gf.fix_all().makeReport()
+
+        arc = ArcSelect(gf=gf).configure()
+        arc.unpackArcs().makeReport().makeArcTF()
+
         pass
 
     def _adjustOrbit(self, i):

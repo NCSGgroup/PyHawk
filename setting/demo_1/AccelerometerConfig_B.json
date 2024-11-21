@@ -1,0 +1,59 @@
+{
+    "cali": {
+        "Scale": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+        ],
+        "Bias_constant": [
+            true,
+            true,
+            true
+        ],
+        "Bias_trend": [
+            true,
+            true,
+            true
+        ],
+        "Bias_quadratic": [
+            false,
+            false,
+            false
+        ]
+    },
+    "cali_value": {
+        "Scale": [
+            0.944,
+            0.0,
+            0.0,
+            0.0,
+            0.958,
+            0.0,
+            0.0,
+            0.0,
+            0.953
+        ],
+        "Bias_constant": [
+            0.0,
+            0.0,
+            0.0
+        ],
+        "Bias_trend": [
+            0.0,
+            0.0,
+            0.0
+        ],
+        "Bias_quadratic": [
+            0.0,
+            0.0,
+            0.0
+        ]
+    },
+    "temp_non_conservative_data": "../temp/NonConservativeForce"
+}

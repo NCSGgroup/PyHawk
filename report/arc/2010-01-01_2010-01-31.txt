@@ -1,6 +1,6 @@
 This ia a summary of arc information.
 Created by Yang Fan (yfan_cge@hust.edu.cn)
-Record time: 2024-09-27 20:54:58.277308 
+Record time: 2024-11-20 21:06:54.510318 
 
 Number of Arcs: 124 
 -------------------Please see more details in below:---------------------- 
