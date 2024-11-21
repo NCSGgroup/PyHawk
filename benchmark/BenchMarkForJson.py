@@ -33,7 +33,10 @@ class BenchMark:
             open(os.path.abspath(self.__parent_path + '/setting/demo_2/ParameterConfig.json'), 'r'))
         self.__parameter_config.__dict__ = Parameter
 
-        self._savedir = "../result/benchmarktest/"
+        self._savedir_data = "../result/benchmarktest/data/"
+        self._savedir_img = "../result/benchmarktest/img/"
+        os.makedirs(self._savedir_data, exist_ok=True)
+        os.makedirs(self._savedir_img, exist_ok=True)
         pass
 
     def three_body_sun(self, FMConfig = ForceModelConfig()):
@@ -64,7 +67,7 @@ class BenchMark:
             timeList.append(time)
             pass
 
-        np.save(self._savedir + 'data/sun.npy', np.array(diff))
+        np.save(self._savedir_data + '/sun.npy', np.array(diff))
         diff = np.array(diff)
         ax = diff[:, 0]
         ay = diff[:, 1]
@@ -78,7 +81,7 @@ class BenchMark:
         plt.legend()
         plt.xlabel('MJD')
         plt.ylabel(r'$\mathrm{m/s^2}$')
-        plt.savefig(self._savedir + 'img/sun.png')
+        plt.savefig(self._savedir_img + 'sun.png')
         # plt.show()
 
     def three_body_moon(self, FMConfig = ForceModelConfig()):
@@ -109,7 +112,7 @@ class BenchMark:
             timeList.append(time)
             pass
 
-        np.save(self._savedir + 'data/moon.npy', np.array(diff))
+        np.save(self._savedir_data + 'moon.npy', np.array(diff))
         diff = np.array(diff)
         ax = diff[:, 0]
         ay = diff[:, 1]
@@ -123,7 +126,7 @@ class BenchMark:
         plt.legend()
         plt.xlabel('MJD')
         plt.ylabel(r'$\mathrm{m/s^2}$')
-        plt.savefig(self._savedir + 'img/moon.png')
+        plt.savefig(self._savedir_img + 'moon.png')
         # plt.show()
 
     def three_body(self, FMConfig = ForceModelConfig()):
@@ -154,7 +157,7 @@ class BenchMark:
             timeList.append(time)
             pass
 
-        np.save(self._savedir + 'data/planets.npy', np.array(diff))
+        np.save(self._savedir_data + 'planets.npy', np.array(diff))
         diff = np.array(diff)
         ax = diff[:, 0]
         ay = diff[:, 1]
@@ -168,7 +171,7 @@ class BenchMark:
         plt.legend()
         plt.xlabel('MJD')
         plt.ylabel(r'$\mathrm{m/s^2}$')
-        plt.savefig(self._savedir + 'img/planets.png')
+        plt.savefig(self._savedir_img + 'planets.png')
         # plt.show()
 
     def relativistic(self, FMConfig = ForceModelConfig()):
@@ -200,7 +203,7 @@ class BenchMark:
             timeList.append(time)
             pass
 
-        np.save(self._savedir + 'data/relativistic.npy', np.array(diff))
+        np.save(self._savedir_data + 'relativistic.npy', np.array(diff))
         diff = np.array(diff)
         ax = diff[:, 0]
         ay = diff[:, 1]
@@ -214,7 +217,7 @@ class BenchMark:
         plt.legend()
         plt.xlabel('MJD')
         plt.ylabel(r'$\mathrm{m/s^2}$')
-        plt.savefig(self._savedir + 'img/relativistic.png')
+        plt.savefig(self._savedir_img + 'relativistic.png')
         # plt.show()
 
     def aod(self, FMConfig = ForceModelConfig()):
@@ -246,7 +249,7 @@ class BenchMark:
             timeList.append(time)
             pass
 
-        np.save(self._savedir + 'data/AODRL06.npy', np.array(diff))
+        np.save(self._savedir_data + 'AODRL06.npy', np.array(diff))
         diff = np.array(diff)
         ax = diff[:, 0]
         ay = diff[:, 1]
@@ -260,7 +263,7 @@ class BenchMark:
         plt.legend()
         plt.xlabel('MJD')
         plt.ylabel(r'$\mathrm{m/s^2}$')
-        plt.savefig(self._savedir + 'img/AODRL06.png')
+        plt.savefig(self._savedir_img + 'AODRL06.png')
         # plt.show()
 
     def eot11a(self, FMConfig = ForceModelConfig()):
@@ -293,7 +296,7 @@ class BenchMark:
             timeList.append(time)
             pass
 
-        np.save(self._savedir + 'data/eot11a.npy', np.array(diff))
+        np.save(self._savedir_data + 'eot11a.npy', np.array(diff))
         plt.figure(figsize=(12, 8))
         diff = np.array(diff)
         ax = diff[:, 0]
@@ -307,7 +310,7 @@ class BenchMark:
         plt.legend()
         plt.xlabel('MJD')
         plt.ylabel(r'$\mathrm{m/s^2}$')
-        plt.savefig(self._savedir + 'img/eot11a.png')
+        plt.savefig(self._savedir_img + 'eot11a.png')
         # plt.show()
 
     def fes2014b(self, FMConfig = ForceModelConfig()):
@@ -340,7 +343,7 @@ class BenchMark:
             timeList.append(time)
             pass
 
-        np.save(self._savedir + 'data/fes2014.npy', np.array(diff))
+        np.save(self._savedir_data + 'fes2014.npy', np.array(diff))
         plt.figure(figsize=(12, 8))
         diff = np.array(diff)
         ax = diff[:, 0]
@@ -354,7 +357,7 @@ class BenchMark:
         plt.legend()
         plt.xlabel('MJD')
         plt.ylabel(r'$\mathrm{m/s^2}$')
-        plt.savefig(self._savedir + 'img/fes2014.png')
+        plt.savefig(self._savedir_img + 'fes2014.png')
         # plt.show()
 
     def atmos_tide(self, FMConfig = ForceModelConfig()):
@@ -387,7 +390,7 @@ class BenchMark:
             timeList.append(time)
             pass
 
-        np.save(self._savedir + 'data/atmos.npy', np.array(diff))
+        np.save(self._savedir_data + 'atmos.npy', np.array(diff))
         plt.figure(figsize=(12, 8))
         diff = np.array(diff)
         ax = diff[:, 0]
@@ -401,7 +404,7 @@ class BenchMark:
         plt.legend()
         plt.xlabel('MJD')
         plt.ylabel(r'$\mathrm{m/s^2}$')
-        plt.savefig(self._savedir + 'img/atmos.png')
+        plt.savefig(self._savedir_img + 'atmos.png')
         # plt.show()
 
     def gravity_field(self, FMConfig = ForceModelConfig()):
@@ -434,7 +437,7 @@ class BenchMark:
             timeList.append(time)
             pass
         plt.figure(figsize=(12, 8))
-        np.save(self._savedir + 'data/gravity.npy', np.array(diff))
+        np.save(self._savedir_data + 'gravity.npy', np.array(diff))
         diff = np.array(diff)
         ax = diff[:, 0]
         ay = diff[:, 1]
@@ -447,7 +450,7 @@ class BenchMark:
         plt.legend()
         plt.xlabel('MJD')
         plt.ylabel(r'$\mathrm{m/s^2}$')
-        plt.savefig(self._savedir + 'img/gravity.png')
+        plt.savefig(self._savedir_img + 'gravity.png')
         # plt.show()
 
     def solid_earth(self, FMConfig = ForceModelConfig()):
@@ -480,7 +483,7 @@ class BenchMark:
             timeList.append(time)
             pass
         plt.figure(figsize=(12, 8))
-        np.save(self._savedir + 'data/solidearth.npy', np.array(diff))
+        np.save(self._savedir_data + 'solidearth.npy', np.array(diff))
         diff = np.array(diff)
         ax = diff[:, 0]
         ay = diff[:, 1]
@@ -493,7 +496,7 @@ class BenchMark:
         plt.legend()
         plt.xlabel('MJD')
         plt.ylabel(r'$\mathrm{m/s^2}$')
-        plt.savefig(self._savedir + 'img/solidearth.png')
+        plt.savefig(self._savedir_data + 'solidearth.png')
         # plt.show()
 
     def earth_pole(self, FMConfig = ForceModelConfig()):
@@ -534,7 +537,7 @@ class BenchMark:
             timeList.append(time)
             pass
         plt.figure(figsize=(12, 8))
-        np.save(self._savedir + 'data/earthpole.npy', np.array(diff))
+        np.save(self._savedir_data + 'earthpole.npy', np.array(diff))
         diff = np.array(diff)
         ax = diff[:, 0]
         ay = diff[:, 1]
@@ -547,7 +550,7 @@ class BenchMark:
         plt.legend()
         plt.xlabel('MJD')
         plt.ylabel(r'$\mathrm{m/s^2}$')
-        plt.savefig(self._savedir + 'img/earthpole.png')
+        plt.savefig(self._savedir_img + 'earthpole.png')
         # plt.show()
 
     def ocean_pole(self, FMConfig = ForceModelConfig()):
@@ -588,7 +591,7 @@ class BenchMark:
             timeList.append(time)
             pass
         plt.figure(figsize=(12, 8))
-        np.save(self._savedir + 'data/oceanpole.npy', np.array(diff))
+        np.save(self._savedir_data + 'oceanpole.npy', np.array(diff))
         diff = np.array(diff)
         ax = diff[:, 0]
         ay = diff[:, 1]
@@ -601,5 +604,5 @@ class BenchMark:
         plt.legend()
         plt.xlabel('MJD')
         plt.ylabel(r'$\mathrm{m/s^2}$')
-        plt.savefig(self._savedir + 'img/oceanpole.png')
+        plt.savefig(self._savedir_img + 'oceanpole.png')
         # plt.show()
