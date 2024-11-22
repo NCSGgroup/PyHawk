@@ -1,6 +1,0 @@
-This ia a summary of log information.
-Created by Wu Yi(wu_yi@hust.edu.cn)
-begain time: 2024-11-13 17:06:10.325314 
-
-process: 1 
-

@@ -1,8 +1,7 @@
 # PyHawk: An efficient gravity recovery solver for low-low satellite-to-satellite tracking gravity missions
 
 # 1. Description
-The low-low satellite-to-satellite tracking (ll-sst) gravity missions,such as the Gravity Recovery and Climate Experiment (GRACE) and its Follow-On (GRACE-FO), provide an important space-based Essential Climate Variable (ECV) over the last two decades. The measurement systems of these ll-sst missions are highly complex, thus, a data processing chain is required to exploit the potential of their high-precision measurements, which challenges both the general and expert users. In this study, we present an open-source, user-friendly, cross-platform and integrated toolbox "PyHawk", which is the first Python-based software in relevant field, to address the complete data processing chain of ll-sst missions including GRACE, GRACE-FO and likely the future gravity missions. This toolbox provides non-expert users an easy access to the payload data pre-processing, background force modeling, orbit integration, ranging calibration, as well as the ability for temporal gravity field recovery using ll-sst measurements.
-In addition, a series of high-standard benchmark tests have been provided
+The low-low satellite-to-satellite tracking (ll-sst) gravity missions,such as the Gravity Recovery and Climate Experiment (GRACE) and its Follow-On (GRACE-FO), provide an important space-based Essential Climate Variable (ECV) over the last two decades. The measurement systems of these ll-sst missions are highly complex, thus, a data processing chain is required to exploit the potential of their high-precision measurements, which challenges both the general and expert users. In this study, we present an open-source, user-friendly, cross-platform and integrated toolbox "PyHawk", which is the first Python-based software in relevant field, to address the complete data processing chain of ll-sst missions including GRACE, GRACE-FO and likely the future gravity missions. This toolbox provides non-expert users an easy access to the payload data pre-processing, background force modeling, orbit integration, ranging calibration, as well as the ability for temporal gravity field recovery using ll-sst measurements. In addition, a series of high-standard benchmark tests have been provided
 to evaluate PyHawk, confirming its performance to be comparable with
 those are being used for providing the official Level-2 time-variable
 gravity field solutions of GRACE and GRACE-FO. Researchers working with
@@ -15,12 +14,11 @@ determination, and gravity field modeling can benefit from this toolbox.
 
 # 2. Contact
 
-Yi Wu (wu_yi@hust.edu.cn) , Fan Yang (fany@plan.aau.dk) , ShuHao Liu (liushuhao@hust.edu.cn)
+Yi Wu (wu_yi@hust.edu.cn) , Fan Yang (fany@plan.aau.dk) , ShuHao Liu (liushuhao@hust.edu.cn), Ehsan Forootan (efo@plan.aau.dk)
 
-Huazhong University of Science and Technology
-Geodesy Group (see https://aaugeodesy.com/), Department of Sustainability and Planning, Aalborg University, Aalborg 9000, Denmark
+Huazhong University of Science and Technology; Geodesy Group (see https://aaugeodesy.com/), Department of Sustainability and Planning, Aalborg University, Aalborg 9000, Denmark
 
-This work is supported by the Huazhong University of Science and Technology. Additional supports come from and Aalborg University.
+This work is supported by the Huazhong University of Science and Technology, is also supported by the Danmarks Frie Forskningsfond [10.46540/2035-00247B] through the DANSk-LSM project. 
 
 
 # 3. Features
@@ -54,7 +52,7 @@ For quicker setup, assuming that the Conda (\url{https://www.anaconda.com/downlo
 2. `source activate py-hawk` 
 3. `pip install -r requirments.txt` 
 
-**Troubleshooting:** This toolbox has a dependence on two dynamic libraries as addressed in previous section. For this, we have provided the pre-compiled dynamic libraries (created individually for Linux and Windows) to simplify the installation. However, these pre-built libraries may occasionally fail because of incompatibility between the libraries and running platform. If this is the case, we suggest you to use the provided C (C++) source code together with the compiling script (PyHawk/lib) to automatically compile a library compatible with your own platform. This can be easily implemented if one runs PyHawk at Linux platform, however, for Windows, you may need an extra software (Visual C++) to generate the library. Please also feel free to reach out to us about this issue. 
+**Troubleshooting:** PyHawk has a dependence on two dynamic libraries as addressed in previous section. For this, we have provided the pre-compiled dynamic libraries (created individually for Linux and Windows) to simplify the installation. However, these pre-built libraries may occasionally fail because of incompatibility between the libraries and running platform. If this is the case, we suggest you to use the provided C (C++) source code together with the compiling script (PyHawk/lib) to automatically compile a library compatible with your own platform.`Open a terminal under PyHawk/lib, and execute the 'make' command.` This can be easily implemented if one runs PyHawk at Linux platform, however, for Windows, you may need an extra software (Visual C++) to generate the library. Please also feel free to reach out to us about this issue. 
 
 # 5. Sample data
 The operation of the PyHawk software requires essential data such as GRACE (-FO) Level-1b data, de-aliasing product, and Earth Orientation Parameter (EOP), as listed below. For these, we provide sample data for running the demos provided in next section, which mainly includes (but not limited to):
@@ -77,18 +75,21 @@ To be able to run the demo, please be aware that sample data as addressed in pre
 ## 6.1 Demo-1
 This demo is the basis of orbit determination. Be aware that the desired platform requires at least 4 CPU cores for parallel computation, with an estimated completion time of 7 minutes.
 
+1. Before running, you need to confirm the input data path and date span by opening the "interfaceConfig.json" configuration file.
 2. Then, navigate to the demo file path and execute the command: `python demo_1.py`
+3. The output consists of the calibrated satellite orbits for each arc segment, stored in HDF5 format, typically located in the temp/StateVector path.
 
 ## 6.2 Demo-2
 This demo is the basis of orbit determination. Be aware that the desired platform requires at least 4 CPU cores for parallel computation, with an estimated completion time of 7 minutes.
 
-2. TThen, navigate to the demo file path and execute the command: `python demo_2.py`
+1. First, need to open the "ForceModelConfig.json" configuration file to select the background force models and set the input paths and other parameters
+2. Then, navigate to the demo file path and execute the command: `python demo_2.py`
+3. The output includes the acceleration values for each force model at the corresponding epochs, stored in .npy format and img
 
 ## 6.3 Demo-3
 This demo is the basis of orbit determination. Be aware that the desired platform requires at least 4 CPU cores for parallel computation, with an estimated completion time of 7 minutes.
 
-2. Then, navigate to the demo file path and execute the command: `python demo_3.py`
-
-# 7. License
+1. Navigate to the demo file path and execute the command: `python demo_3.py`
+2. The output consists of standardized spherical harmonic coefficients for the gravity field, usually stored in the result/SH path.
 
 Please feel free to contact us for possible more examples.
