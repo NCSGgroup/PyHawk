@@ -2,7 +2,7 @@
     "mission": "GRACE_RL03",
     "date_span": [
         "2010-01-01",
-        "2010-01-31"
+        "2010-01-01"
     ],
     "arcNo": 0,
     "sat": {
@@ -10,6 +10,7 @@
         "B": true
     },
     "date_delete": [],
+    "arc_delete": [1,2,3],
     "include_payloads": {
         "ACC": true,
         "SCA": true,

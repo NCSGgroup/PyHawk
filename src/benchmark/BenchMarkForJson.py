@@ -5,7 +5,7 @@
 # @Software: PyCharm
 import os.path
 import sys
-sys.path.append("../")
+sys.path.append("../../")
 from src.Frame.EOP import EOP
 from src.Preference.Pre_ForceModel import ForceModelConfig
 from src.Preference.Pre_Parameterization import ParameterConfig
@@ -23,14 +23,14 @@ class BenchMark:
         self.__cur_path = os.path.abspath(__file__)
         self.__parent_path = os.path.abspath(os.path.dirname(self.__cur_path) + os.path.sep + "..")
         self.__frame_config = FrameConfig()
-        frame = json.load(open(os.path.abspath(self.__parent_path + '/setting/demo_2/FrameConfig.json'), 'r'))
+        frame = json.load(open('../setting/demo_2/FrameConfig.json', 'r'))
         self.__frame_config.__dict__ = frame
         eop = EOP().configure(frameConfig=self.__frame_config).load()
         self._fr = Frame(eop).configure(frameConfig=self.__frame_config)
 
         self.__parameter_config = ParameterConfig()
         Parameter = json.load(
-            open(os.path.abspath(self.__parent_path + '/setting/demo_2/ParameterConfig.json'), 'r'))
+            open('../setting/demo_2/ParameterConfig.json', 'r'))
         self.__parameter_config.__dict__ = Parameter
 
         self._savedir_data = "../result/benchmarktest/data/"
@@ -72,7 +72,6 @@ class BenchMark:
         ax = diff[:, 0]
         ay = diff[:, 1]
         az = diff[:, 2]
-        plt.style.use('grid')
         plt.figure(figsize=(12, 8))
         plt.title('TidePlanets (Sun)')
         plt.plot(timeList, ax, color='#dd2c00', label='x')
@@ -118,7 +117,6 @@ class BenchMark:
         ay = diff[:, 1]
         az = diff[:, 2]
         plt.figure(figsize=(12, 8))
-        plt.style.use('grid')
         plt.title('TidePlanets (Moon)')
         plt.plot(timeList, ax, color='#dd2c00', label='x')
         plt.plot(timeList, ay, color='#00695c', label='y')
@@ -163,7 +161,6 @@ class BenchMark:
         ay = diff[:, 1]
         az = diff[:, 2]
         plt.figure(figsize=(12, 8))
-        plt.style.use('grid')
         plt.title('TidePlanets (Mercury,Venus,Mars,Jupiter,Saturn)')
         plt.plot(timeList, ax, color='#dd2c00', label='x')
         plt.plot(timeList, ay, color='#00695c', label='y')
@@ -209,7 +206,6 @@ class BenchMark:
         ay = diff[:, 1]
         az = diff[:, 2]
         plt.figure(figsize=(12, 8))
-        plt.style.use('grid')
         plt.title('Relativistic')
         plt.plot(timeList, ax, color='#dd2c00', label='x')
         plt.plot(timeList, ay, color='#00695c', label='y')
@@ -255,7 +251,6 @@ class BenchMark:
         ay = diff[:, 1]
         az = diff[:, 2]
         plt.figure(figsize=(12, 8))
-        plt.style.use('grid')
         plt.title('AOD1B RL06 (2~180)')
         plt.plot(timeList, ax, color='#dd2c00', label='x')
         plt.plot(timeList, ay, color='#00695c', label='y')
@@ -302,7 +297,6 @@ class BenchMark:
         ax = diff[:, 0]
         ay = diff[:, 1]
         az = diff[:, 2]
-        plt.style.use('grid')
         plt.title('EOT11a ocean tide')
         plt.plot(timeList, ax, color='#dd2c00', label='x')
         plt.plot(timeList, ay, color='#00695c', label='y')
@@ -349,7 +343,6 @@ class BenchMark:
         ax = diff[:, 0]
         ay = diff[:, 1]
         az = diff[:, 2]
-        plt.style.use('grid')
         plt.title('FES2014b ocean tide')
         plt.plot(timeList, ax, color='#dd2c00', label='x')
         plt.plot(timeList, ay, color='#00695c', label='y')
@@ -396,7 +389,6 @@ class BenchMark:
         ax = diff[:, 0]
         ay = diff[:, 1]
         az = diff[:, 2]
-        plt.style.use('grid')
         plt.title('Atmos tide')
         plt.plot(timeList, ax, color='#dd2c00', label='x')
         plt.plot(timeList, ay, color='#00695c', label='y')
@@ -404,7 +396,7 @@ class BenchMark:
         plt.legend()
         plt.xlabel('MJD')
         plt.ylabel(r'$\mathrm{m/s^2}$')
-        plt.savefig(self._savedir_img + 'atmos.png')
+        plt.savefig(self._savedir_img + 'atmos.pdf')
         # plt.show()
 
     def gravity_field(self, FMConfig = ForceModelConfig()):
@@ -442,7 +434,6 @@ class BenchMark:
         ax = diff[:, 0]
         ay = diff[:, 1]
         az = diff[:, 2]
-        plt.style.use('grid')
         plt.title('GravityField')
         plt.plot(timeList, ax, color='#dd2c00', label='x')
         plt.plot(timeList, ay, color='#00695c', label='y')
@@ -488,7 +479,6 @@ class BenchMark:
         ax = diff[:, 0]
         ay = diff[:, 1]
         az = diff[:, 2]
-        plt.style.use('grid')
         plt.title('Solid tide')
         plt.plot(timeList, ax, color='#dd2c00', label='x')
         plt.plot(timeList, ay, color='#00695c', label='y')
@@ -496,7 +486,7 @@ class BenchMark:
         plt.legend()
         plt.xlabel('MJD')
         plt.ylabel(r'$\mathrm{m/s^2}$')
-        plt.savefig(self._savedir_data + 'solidearth.png')
+        plt.savefig(self._savedir_img + 'solidearth.png')
         # plt.show()
 
     def earth_pole(self, FMConfig = ForceModelConfig()):
@@ -542,7 +532,6 @@ class BenchMark:
         ax = diff[:, 0]
         ay = diff[:, 1]
         az = diff[:, 2]
-        plt.style.use('grid')
         plt.title('Earth pole tide')
         plt.plot(timeList, ax, color='#dd2c00', label='x')
         plt.plot(timeList, ay, color='#00695c', label='y')
@@ -596,7 +585,6 @@ class BenchMark:
         ax = diff[:, 0]
         ay = diff[:, 1]
         az = diff[:, 2]
-        plt.style.use('grid')
         plt.title('Ocean tide')
         plt.plot(timeList, ax, color='#dd2c00', label='x')
         plt.plot(timeList, ay, color='#00695c', label='y')

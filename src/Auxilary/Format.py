@@ -37,10 +37,10 @@ class FormatWrite:
         self.__sigmaC = sigmaC
         self.__sigmaS = sigmaS
         self.max_degree = degree
-        self.modelname = 'GSM-2_' + self.__data[0] + '-' + self.__data[1] + '_GRAC_UTCSR_BA01_0600'
+        self.modelname = 'GSM-2_' + self.__data[0] + '-' + self.__data[1] + '_GRAC_PyHawk_BA01_0600'
         self.__filename = 'HUST_HUST-Release-06_' + str(self.max_degree) +\
-        'x' + str(self.max_degree) + '_unfiltered_GSM-2_' + self.__data[0].split('-', '') \
-                          + self.__data[1].split('-', '') + '_GRAC_HUST_BA01_0600.gfc'
+        'x' + str(self.max_degree) + '_unfiltered_GSM-2_' + self.__data[0]\
+                          + self.__data[1] + '_GRAC_HUST_BA01_0600.gfc'
         self.__initFile()
         return self
 

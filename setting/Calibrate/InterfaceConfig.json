@@ -10,6 +10,7 @@
         "B": true
     },
     "date_delete": [],
+    "arc_delete": [],
     "include_payloads": {
         "ACC": true,
         "SCA": true,

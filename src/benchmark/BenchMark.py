@@ -13,11 +13,11 @@ def demo_gravity_field():
     assem_model = Assemble2ndDerivative()
 
     '''read orbit'''
-    with open('../data/Benchmark/satellite/00orbit_itrf.txt') as f:
+    with open('../../data/Benchmark/satellite/00orbit_itrf.txt') as f:
         contents1 = f.readlines()
         pass
     '''read benchmark'''
-    with open('../data/Benchmark/satellite/02gravityfield_itrf.txt') as f:
+    with open('../../data/Benchmark/satellite/02gravityfield_itrf.txt') as f:
         contents2 = f.readlines()
         pass
 
@@ -58,11 +58,11 @@ def demo_aod():
     assem_model = Assemble2ndDerivative()
 
     '''read orbit'''
-    with open('../data/Benchmark/satellite/00orbit_itrf.txt') as f:
+    with open('../../data/Benchmark/satellite/00orbit_itrf.txt') as f:
         contents1 = f.readlines()
         pass
     '''read benchmark'''
-    with open('../data/Benchmark/satellite/08aod1b_RL06_icrf.txt') as f:
+    with open('../../data/Benchmark/satellite/08aod1b_RL06_icrf.txt') as f:
         contents2 = f.readlines()
         pass
 
@@ -103,11 +103,11 @@ def demo_ocean_tide():
     assem_model = Assemble2ndDerivative()
 
     '''read orbit'''
-    with open('../data/Benchmark/satellite/00orbit_itrf.txt') as f:
+    with open('../../data/Benchmark/satellite/00orbit_itrf.txt') as f:
         contents1 = f.readlines()
         pass
     '''read benchmark'''
-    with open('../data/Benchmark/satellite/10oceanTide_eot11a_with256Admittance_icrf.txt') as f:
+    with open('../../data/Benchmark/satellite/10oceanTide_eot11a_with256Admittance_icrf.txt') as f:
         contents2 = f.readlines()
         pass
 
@@ -148,11 +148,11 @@ def demo_solidEarth_tide():
     assem_model = Assemble2ndDerivative()
 
     '''read orbit'''
-    with open('../data/Benchmark/satellite/00orbit_itrf.txt') as f:
+    with open('../../data/Benchmark/satellite/00orbit_itrf.txt') as f:
         contents1 = f.readlines()
         pass
     '''read benchmark'''
-    with open('../data/Benchmark/satellite/04solidEarthTide_icrf.txt') as f:
+    with open('../../data/Benchmark/satellite/04solidEarthTide_icrf.txt') as f:
         contents2 = f.readlines()
         pass
 
@@ -193,11 +193,11 @@ def demo_relativistic():
     assem_model = Assemble2ndDerivative()
 
     '''read orbit'''
-    with open('../data/Benchmark/satellite/00orbit_icrf.txt') as f:
+    with open('../../data/Benchmark/satellite/00orbit_icrf.txt') as f:
         contents1 = f.readlines()
         pass
     '''read benchmark'''
-    with open('../data/Benchmark/satellite/07relativistic_icrf.txt') as f:
+    with open('../../data/Benchmark/satellite/07relativistic_icrf.txt') as f:
         contents2 = f.readlines()
         pass
 
@@ -238,15 +238,15 @@ def demo_earth_pole_tide():
     assem_model = Assemble2ndDerivative()
 
     '''read orbit'''
-    with open('../data/Benchmark/satellite/00orbit_itrf.txt') as f:
+    with open('../../data/Benchmark/satellite/00orbit_itrf.txt') as f:
         contents1 = f.readlines()
         pass
     '''read benchmark'''
-    with open('../data/Benchmark/satellite/05poleTide_icrf.txt') as f:
+    with open('../../data/Benchmark/satellite/05poleTide_icrf.txt') as f:
         contents2 = f.readlines()
         pass
     '''read EOP'''
-    with open('../data/Benchmark/satellite/01earthRotation_interpolatedEOP.txt') as f:
+    with open('../../data/Benchmark/satellite/01earthRotation_interpolatedEOP.txt') as f:
         contents3 = f.readlines()
         pass
 
@@ -290,11 +290,11 @@ def demo_atm_tide():
     assem_model = Assemble2ndDerivative()
 
     '''read orbit'''
-    with open('../data/Benchmark/satellite/00orbit_itrf.txt') as f:
+    with open('../../data/Benchmark/satellite/00orbit_itrf.txt') as f:
         contents1 = f.readlines()
         pass
     '''read benchmark'''
-    with open('../data/Benchmark/satellite/09aod1b_atmosphericTides_icrf.txt') as f:
+    with open('../../data/Benchmark/satellite/09aod1b_atmosphericTides_icrf.txt') as f:
         contents2 = f.readlines()
         pass
 
@@ -335,11 +335,11 @@ def demo_direct_tide_Moon():
     assem_model = Assemble2ndDerivative()
 
     '''read orbit'''
-    with open('../data/Benchmark/satellite/00orbit_icrf.txt') as f:
+    with open('../../data/Benchmark/satellite/00orbit_icrf.txt') as f:
         contents1 = f.readlines()
         pass
     '''read benchmark'''
-    with open('../data/Benchmark/satellite/03directTideMoon_icrf.txt') as f:
+    with open('../../data/Benchmark/satellite/03directTideMoon_icrf.txt') as f:
         contents2 = f.readlines()
         pass
 
@@ -380,11 +380,11 @@ def demo_direct_tide_Sun():
     assem_model = Assemble2ndDerivative()
 
     '''read orbit'''
-    with open('../data/Benchmark/satellite/00orbit_icrf.txt') as f:
+    with open('../../data/Benchmark/satellite/00orbit_icrf.txt') as f:
         contents1 = f.readlines()
         pass
     '''read benchmark'''
-    with open('../data/Benchmark/satellite/03directTideSun_icrf.txt') as f:
+    with open('../../data/Benchmark/satellite/03directTideSun_icrf.txt') as f:
         contents2 = f.readlines()
         pass
 
@@ -425,11 +425,11 @@ def demo_3rd_body():
     assem_model = Assemble2ndDerivative()
 
     '''read orbit'''
-    with open('../data/Benchmark/satellite/00orbit_icrf.txt') as f:
+    with open('../../data/Benchmark/satellite/00orbit_icrf.txt') as f:
         contents1 = f.readlines()
         pass
     '''read benchmark'''
-    with open('../data/Benchmark/satellite/03directTidePlanets_icrf.txt') as f:
+    with open('../../data/Benchmark/satellite/03directTidePlanets_icrf.txt') as f:
         contents2 = f.readlines()
         pass
 

@@ -237,7 +237,7 @@ class ArcSelect:
 
     def makeArcTF(self):
         rd = ArcData(interfaceConfig=self.__gf.L1b.InterfaceConfig)
-
+        arc_delete = self.__gf.L1b.InterfaceConfig.arc_delete
         date = self.__gf.getDate()
         path = self.__arcft_path + '/' + date[0] + '_' + date[-1] + '.txt'
         with open(path, 'w') as f:
@@ -248,8 +248,7 @@ class ArcSelect:
 
             f.write('-------------------Please see more details in below:---------------------- \n\n')
 
-            i = 0
-            for arc in self.__arcs:
+            for i in range(len(self.__arcs)):
                 state = True
                 info = ''
                 GNVA = rd.getData(arc=i, kind=Payload.GNV, sat=SatID.A)
@@ -261,8 +260,10 @@ class ArcSelect:
                 if len(kbrr) == 0:
                     state = False
                     info = 'kbrr is None'
+                if i in arc_delete:
+                    state = False
+                    info = 'user configure'
                 f.write('Arc NO: %s %s ----- %s;\n' % (i, state, info))
-                i += 1
         pass
 
     def rms(self, x: np.ndarray):

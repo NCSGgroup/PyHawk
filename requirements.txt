@@ -1,8 +1,8 @@
-numpy
-tqdm
-scipy
-h5py
-numba 
-Quaternion
-jplephem
-matplotlib
+numpy==1.24.4
+tqdm==4.66.5
+scipy==1.10.1
+h5py==3.11.0
+numba==0.58.1
+Quaternion==3.5.2.post4
+jplephem==2.22
+matplotlib==3.7.5

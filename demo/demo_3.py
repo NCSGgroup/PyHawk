@@ -286,7 +286,6 @@ class demo_3:
 
         for i in tqdm(self.__arclist, desc='Solve normal equations: '):
             res_filename = res_dir + '/' + str(i) + '.hdf5'
-            print(res_filename)
             h5 = h5py.File(res_filename, 'r')
             NMatrix = NMatrix + (h5['Orbit_N_A'][:] + h5['Orbit_N_B'][:]) + h5['RangeRate_N'][:] * OrbitKinFactor
             LMatrix = LMatrix + (h5['Orbit_l_A'][:] + h5['Orbit_l_B'][:]) + h5['RangeRate_l'][:].reshape(
@@ -309,7 +308,6 @@ class demo_3:
         format = FormatWrite().configure(filedir=neq_path_config.ResultCS,
                                          data=date_span, degree=stokes_coefficients_config.MaxDegree,
                                          c=C, s=S, sigmaC=sigmaC, sigmaS=sigmaS)
-        print(len(C))
         format.unfiltered()
 
         pass

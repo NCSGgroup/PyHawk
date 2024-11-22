@@ -11,7 +11,7 @@
         "isGetSH": false
     },
     "ParallelControlConfig": {
-        "AdjustOrbitProcess": 1,
+        "AdjustOrbitProcess": 4,
         "AdjustKBRRProcess": 1,
         "GetGravityDesignMatProcess": 1,
         "GetNEQProcess": 1

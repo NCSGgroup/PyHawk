@@ -3,10 +3,9 @@
 # @Time    : 2023/3/25 21:54
 # @File    : demo_BenchMark.py
 # @Software: PyCharm
-import os.path
 import sys
 sys.path.append("../")
-from benchmark.BenchMarkForJson import BenchMark
+from src.benchmark.BenchMarkForJson import BenchMark
 from src.Preference.Pre_ForceModel import ForceModelConfig
 import matplotlib.pyplot as plt
 import numpy as np
@@ -27,50 +26,62 @@ def demo2():
     FMConfig = ForceModelConfig()
     benchMark = BenchMark()
     '''sun'''
+    print('Calculating sun...')
     threeBody_sun = json.load(open('../setting/demo_2/BenchMark_Sun.json', 'r'))
     FMConfig.__dict__ = threeBody_sun
     benchMark.three_body_sun(FMConfig)
     '''moon'''
+    print('Calculating moon...')
     threeBody_moon = json.load(open('../setting/demo_2/BenchMark_Moon.json', 'r'))
     FMConfig.__dict__ = threeBody_moon
     benchMark.three_body_moon(FMConfig)
     '''three body'''
+    print('Calculating planets...')
     threeBody = json.load(open('../setting/demo_2/BenchMark_ThreeBody.json', 'r'))
     FMConfig.__dict__ = threeBody
     benchMark.three_body(FMConfig)
     '''AOD'''
+    print('Calculating aod...')
     aod = json.load(open('../setting/demo_2/BenchMark_AOD.json', 'r'))
     FMConfig.__dict__ = aod
     benchMark.aod(FMConfig)
     '''relativistic'''
+    print('Calculating relativistic...')
     relativistic = json.load(open('../setting/demo_2/BenchMark_Relativity.json', 'r'))
     FMConfig.__dict__ = relativistic
     benchMark.relativistic(FMConfig)
     '''eot11a'''
+    print('Calculating eot11a...')
     eot11a = json.load(open('../setting/demo_2/BenchMark_EOT11a.json', 'r'))
     FMConfig.__dict__ = eot11a
     benchMark.eot11a(FMConfig)
     '''FES2014'''
+    print('Calculating fes2014...')
     fes2014 = json.load(open('../setting/demo_2/BenchMark_FES2104.json', 'r'))
     FMConfig.__dict__ = fes2014
     benchMark.fes2014b(FMConfig)
     '''Atmos tide'''
+    print('Calculating atmos...')
     atmos = json.load(open('../setting/demo_2/BenchMark_Atmos.json', 'r'))
     FMConfig.__dict__ = atmos
     benchMark.atmos_tide(FMConfig)
     '''gravity field'''
+    print('Calculating gravity field...')
     gravity_field = json.load(open('../setting/demo_2/BenchMark_Gravity.json', 'r'))
     FMConfig.__dict__ = gravity_field
     benchMark.gravity_field(FMConfig)
     '''solidEarth tide'''
+    print('Calculating solid earth tide...')
     solid_earth = json.load(open('../setting/demo_2/BenchMark_SolidEarth.json', 'r'))
     FMConfig.__dict__ = solid_earth
     benchMark.solid_earth(FMConfig)
     '''solidEarth pole tide'''
+    print('Calculating solid earth pole tide...')
     earth_pole = json.load(open('../setting/demo_2/BenchMark_EarthPole.json', 'r'))
     FMConfig.__dict__ = earth_pole
     benchMark.earth_pole(FMConfig)
     '''ocean pole tide'''
+    print('Calculating ocean pole tide...')
     ocean_pole = json.load(open('../setting/demo_2/BenchMark_OceanPole.json', 'r'))
     FMConfig.__dict__ = ocean_pole
     benchMark.ocean_pole(FMConfig)

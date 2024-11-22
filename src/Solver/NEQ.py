@@ -105,9 +105,9 @@ class GravityNEQperArc:
 
         for i in tqdm(range(3), desc='Build normal equations: '):
             if i == 0:
-                self.get_neq_orbit_V2(SatID.A)
+                self.get_neq_orbit(SatID.A)
             elif i == 1:
-                self.get_neq_orbit_V2(SatID.B)
+                self.get_neq_orbit(SatID.B)
             elif i == 2:
                 self.get_neq_range_rate()
 

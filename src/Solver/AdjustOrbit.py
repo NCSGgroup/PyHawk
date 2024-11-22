@@ -73,6 +73,9 @@ class AdjustOrbit:
         '''config Adjust path'''
         self.AdjustPath = AdjustOrbitConfig.PathOfFiles()
         self.AdjustPath.__dict__.update(AdjustOrbitConfig.PathOfFilesConfig.copy())
+        '''config adjust'''
+        self.AdjustConfig = AdjustOrbitConfig.Orbit()
+        self.AdjustConfig.__dict__.update(AdjustOrbitConfig.OrbitConfig.copy())
         '''config ODE'''
         self.ODEConfig = ODEConfig
         '''config Force model'''
@@ -131,6 +134,7 @@ class AdjustOrbit:
 
     def calibrate(self, iteration: int = 2):
         # assert iteration >= 2
+        iteration = self.AdjustConfig.iteration
         res_filename = self._res_dir + '/' + str(self._arcNo) + '_' + self._satName + '.hdf5'
         self._res_h5 = h5py.File(res_filename, 'w')
         ode = self._ode
@@ -244,7 +248,6 @@ class AdjustOrbit:
     def _save_StateVectors(self, state):
         res_dir = self._state_dir
         res_filename = res_dir + '/' + str(self._arcNo) + '_' + self._satName + '.hdf5'
-        print(res_filename)
         h5 = h5py.File(res_filename, 'w')
         h5.create_dataset('t', data=state[0])
         h5.create_dataset('r', data=state[1])
