@@ -25,9 +25,9 @@
 #SBATCH --comment=public_cluster
 ### 程序的执行命令
 
-source activate py-hawk
+source activate test5
 cd /home/ud202180057/py-hawk-v2/demo/
-python3 demo_CalibrateOrbit.py
+python3 demo_1.py
 
 
 
