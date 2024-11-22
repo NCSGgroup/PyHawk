@@ -1,20 +1,7 @@
 # PyHawk: An efficient gravity recovery solver for low-low satellite-to-satellite tracking gravity missions
 
 # 1. Description
-The low-low satellite-to-satellite tracking (ll-sst) gravity missions,
-such as the Gravity Recovery and Climate Experiment (GRACE) and its
-Follow-On (GRACE-FO), provide an important space-based Essential
-Climate Variable (ECV) over the last two decades. The measurement systems
-of these ll-sst missions are highly complex, thus, a data processing chain is required to exploit
-the potential of their high-precision measurements, which challenges
-both the general and expert users. In this study, we present an open-source,
-user-friendly, cross-platform and integrated toolbox "PyHawk", which is
-the first Python-based software in relevant field, to address the complete
-data processing chain of ll-sst missions including GRACE, GRACE-FO and
-likely the future gravity missions. This toolbox provides non-expert
-users an easy access to the payload data pre-processing, background
-force modeling, orbit integration, ranging calibration, as well as
-the ability for temporal gravity field recovery using ll-sst measurements.
+The low-low satellite-to-satellite tracking (ll-sst) gravity missions,such as the Gravity Recovery and Climate Experiment (GRACE) and its Follow-On (GRACE-FO), provide an important space-based Essential Climate Variable (ECV) over the last two decades. The measurement systems of these ll-sst missions are highly complex, thus, a data processing chain is required to exploit the potential of their high-precision measurements, which challenges both the general and expert users. In this study, we present an open-source, user-friendly, cross-platform and integrated toolbox "PyHawk", which is the first Python-based software in relevant field, to address the complete data processing chain of ll-sst missions including GRACE, GRACE-FO and likely the future gravity missions. This toolbox provides non-expert users an easy access to the payload data pre-processing, background force modeling, orbit integration, ranging calibration, as well as the ability for temporal gravity field recovery using ll-sst measurements.
 In addition, a series of high-standard benchmark tests have been provided
 to evaluate PyHawk, confirming its performance to be comparable with
 those are being used for providing the official Level-2 time-variable
