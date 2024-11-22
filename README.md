@@ -37,7 +37,7 @@ Essential sample data for running the demos are provided that include (but not l
 - **Auxiliary:** Suggested default path: /PyHawk/data/Auxiliary.
 - **Benchmark:** Suggested default path: /PyHawk/data/Benchmark.
 
-Be aware that these sample data are of large size, so that we put them at an open data repository (https://doi.org/10.5281/zenodo.14196917) for use when running the demos.
+Be aware that these sample data are of large size, so that we put them at an open data repository (https://doi.org/10.5281/zenodo.14205243) for use when running the demos. After downloading the data file, simply place it in the /PyHawk/ path
 
 # 6. Quick Start
 Here we present three demo (demo1, demo2, demo3), which are available under /PyHawk/demo, to showcase the usage of PyHawk. For the sake of generality, we design three specific demos to cover the major interests of the users: (1) demo-1 for orbit determination (2) demo-2 for background force modeling and (3) for the gravity field modeling. Be aware that, since PyHawk is a comprehensive toolbox for various research objectives, it is unlikely to be exhaustive to list all operations here. Nevertheless, one can see the detailed description at the comments of each demo in its scripts.
