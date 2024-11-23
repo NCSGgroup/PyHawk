@@ -28,6 +28,10 @@ class ArcSelect:
         self.__raw_data_path = self.__gf.L1b.InterfacePathConfig.temp_raw_data
         self.__sr_target = self.__gf.L1b.InterfaceConfig.sr_target
         self.__OrbitConfig = self.__gf.L1b.OrbitConfig
+
+        os.makedirs(self.__arcft_path, exist_ok=True)
+        os.makedirs(self.__raw_data_path, exist_ok=True)
+        os.makedirs(self.__arc_path, exist_ok=True)
         return self
 
     def unpackArcs(self):

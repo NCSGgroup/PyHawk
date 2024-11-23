@@ -6,6 +6,7 @@ import pathlib as pathlib
 import src.Preference.Pre_Constants as Pre_Constants
 from src.Interface.ArcOperation import ArcData
 from src.Preference.Pre_Accelerometer import AccelerometerConfig
+import os
 
 
 class AccCaliPar:
@@ -86,6 +87,7 @@ class Accelerometer:
         # self.__sca = self.__sca[index2, :]
         assert np.max(np.abs(self.__acc[:, 0] - self.__sca[:, 0])) < Pre_Constants.num_tolerance
         self.__dataTemp = kwargs.get('dataTemp', ap.accConfig.temp_non_conservative_data)
+        os.makedirs(self.__dataTemp, exist_ok=True)
         '''Above defines a fully populated scale matrix (span to 1-d)'''
         '''
         for example
