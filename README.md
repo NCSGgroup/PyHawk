@@ -22,7 +22,7 @@ Yi Wu (wu_yi@hust.edu.cn) , Fan Yang (fany@plan.aau.dk)
 Assuming that Conda is already configured, one can follow the steps to install the required dependencies (both work for Windows and Linux):
 1. `conda create -n py-hawk python=3.8.10`
 2. `source activate py-hawk` 
-3. `pip install -r requirments.txt` 
+3. `pip install -r requirements.txt` 
 
 **Troubleshooting:** PyHawk has a dependence on two essential dynamic libraries (C++), see 'PyHawk/lib'. For this, we have provided the pre-compiled dynamic libraries (created individually for Linux and Windows) to simplify the installation. However, these pre-built libraries may occasionally fail because of incompatibility between the libraries and running platform. If this is the case, we suggest you to use the provided C (C++) source code together with the compiling script (PyHawk/lib) to automatically compile a library compatible with your own platform: Open a terminal under PyHawk/lib, and execute the 'make' command. In this manner, it automatically generates a library of 'GravHar.so' if this is run at Linux platform; however, for Windows, you may need an extra software (Visual C++) to generate the 'GravHar.dll' library. For another important dependency 'sofa', please see the official website for its source code and cookbook (http://www.iausofa.org/). Please also feel free to reach out to us about any further issues. 
 
