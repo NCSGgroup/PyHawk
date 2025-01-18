@@ -1,7 +1,9 @@
 from src.SecDerivative.Common.Assemble2ndDerivative import Assemble2ndDerivative
 from src.Frame.Frame import Frame
-from src.Preference.EnumType import TimeFormat
-
+from src.Preference.EnumType import TimeFormat, Payload, SatID
+from src.Preference.Pre_ForceModel import ForceModelConfig
+from src.Preference.Pre_Parameterization import ParameterConfig
+from src.Preference.Pre_Frame import FrameConfig
 
 # class SingleSatForceModel(Assemble2ndDerivative):
 #
@@ -85,6 +87,11 @@ class Orbit_2nd_diff(Assemble2ndDerivative):
         self.__fr = fr
         super(Orbit_2nd_diff, self).__init__()
 
+    def configures(self, arc: int, FMConfig:ForceModelConfig, ParConfig:ParameterConfig, FrameConfig:FrameConfig):
+        self._arc = arc
+        self.configure(FMConfig=FMConfig, ParameterConfig=ParConfig, FrameConfig=FrameConfig)
+        return self
+
     def secDerivative(self, t, r, v):
         """
         For orbit only in terms of 2nd order differential equation
@@ -94,7 +101,9 @@ class Orbit_2nd_diff(Assemble2ndDerivative):
         :return:
         """
         self.__fr = self.__fr.setTime(t, TimeFormat.GPS_second)
-        self.setPosAndVel(r, v).setTime(self.__fr)
+        self.setTime(self.__fr).getCS()
+
+        self.setPosAndVel(r, v).ChangeSat(SatID.A).calculation()
 
         return self.getAcceleration()
 

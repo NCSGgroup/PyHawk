@@ -10,6 +10,12 @@ import numpy as np
 import scipy.linalg
 from src.Preference.Pre_AdjustOrbit import AdjustOrbitConfig
 from src.Preference.Pre_Interface import InterfaceConfig
+from src.ODE.Instance.GravimetryODE import GravimetryODE
+from src.Preference.Pre_ODE import ODEConfig
+from src.Preference.Pre_Parameterization import ParameterConfig
+from src.Frame.Frame import Frame, EOP
+from src.Preference.Pre_Frame import FrameConfig
+from src.Preference.Pre_ForceModel import ForceModelConfig
 import matplotlib.pyplot as plt
 plt.rcParams['font.sans-serif']=['Microsoft YaHei']         #指定默认字体（因为matplotlib默认为英文字体，汉字会使其乱码）
 plt.rcParams['axes.unicode_minus']=False    #可显示‘-’负号
@@ -33,14 +39,44 @@ class RangeRate:
         self._InterfaceConfig = None
         pass
 
-    def configure(self, AdjustOrbitConfig:AdjustOrbitConfig, InterfaceConfig: InterfaceConfig,**kwargs):
+    def configure(self, SerDer, ODEConfig:ODEConfig, ParameterConfig: ParameterConfig,
+                  AdjustOrbitConfig:AdjustOrbitConfig, FrameConfig:FrameConfig,
+                  InterfaceConfig: InterfaceConfig,FMConfig: ForceModelConfig, **kwargs):
         self._AdjustOrbitConfig = AdjustOrbitConfig
         self._InterfaceConfig = InterfaceConfig
+        eop = EOP().configure(frameConfig=FrameConfig).load()
+        self._fr = Frame(eop).configure(frameConfig=FrameConfig)
+        '''config Force model'''
+        self.FMConfig = FMConfig
         '''config adjust orbit'''
         self._RangeRateConfig = self._AdjustOrbitConfig.RangeRate()
         self._RangeRateConfig.__dict__.update(self._AdjustOrbitConfig.RangeRateConfig.copy())
         self._PathfileConfig = self._AdjustOrbitConfig.PathOfFiles()
         self._PathfileConfig.__dict__.update(self._AdjustOrbitConfig.PathOfFilesConfig.copy())
+        """load data"""
+        filename = self._PathfileConfig.StateVectorDataTemp + '/' +\
+                   self.__date_span[0] + '_' + self.__date_span[1] + '/' + str(self.__arcNo) + '_AB.hdf5'
+        h5AB = h5py.File(filename, 'r')
+
+        '''config ODE'''
+        self.ODEConfig = ODEConfig
+        '''config TransitionMatrix'''
+        self.ParameterConfig = ParameterConfig
+        """step 3: instance second Derivative"""
+        rd = ArcData(interfaceConfig=self._InterfaceConfig)
+
+        self._secDer = SerDer(self._fr, rd).configures\
+            (arc=self.__arcNo, FMConfig=self.FMConfig,
+             ParConfig=self.ParameterConfig, FrameConfig=FrameConfig).setInitData(kind=EnumType.Payload.GNV)
+
+        self._startTime, self._startPos, self._startVel = h5AB['t'][:][4], \
+                        np.vstack((h5AB['r'][:][4, 0:3, 0], h5AB['r'][:][4, 3:6, 0])), \
+                        np.vstack((h5AB['v'][:][4, 0:3, 0], h5AB['v'][:][4, 3:6, 0]))
+        self._ode = GravimetryODE().configure(ODEConfig=self.ODEConfig, ParameterConfig=self.ParameterConfig).setParNum().\
+            setInitial(self._startTime, self._startPos.copy(), self._startVel.copy()).\
+            set2ndDerivative(self._secDer)
+        self._ode_res = self._ode.propagate()
+        t,r,v = self._ode_res[0], self._ode_res[1], self._ode_res[2]
 
         kbr_arc = self._RangeRateConfig.ArcLength
         self.__rms_times = self._RangeRateConfig.OutlierTimes
@@ -50,31 +86,28 @@ class RangeRate:
         '''the arc length to Calibrate kbr: unit [hour]'''
         self.__kbr_arc = kbr_arc * 3600
 
-        """load data"""
-        filename = self._PathfileConfig.StateVectorDataTemp + '/' +\
-                   self.__date_span[0] + '_' + self.__date_span[1] + '/' + str(self.__arcNo) + '_AB.hdf5'
-        h5AB = h5py.File(filename, 'r')
         rd = ArcData(interfaceConfig=self._InterfaceConfig)
         KBR = rd.getData(arc=self.__arcNo, kind=EnumType.Payload.KBR)
 
         kbr_time = KBR[:, 0]
         self.__kbr_r = KBR[:, 2]
 
-        state_time = h5AB['t'][:]
+        # state_time = h5AB['t'][:]
+        state_time = t
 
         commonTime = set(KBR[:, 0].astype(np.int64))
-        commonTime = commonTime & set(h5AB['t'][:].astype(np.int64))
+        commonTime = commonTime & set(state_time.astype(np.int64))
         commonTime = np.array(list(commonTime))
         commonTime.sort()
 
         '''find the common time of orbit and kbr data'''
         orbit_index = [list(state_time).index(x) for x in commonTime]
         kbr_index = [list(kbr_time).index(x) for x in commonTime]
-        self.Time = h5AB['t'][:][orbit_index]
-        self.__PosA = h5AB['r'][:][orbit_index, 0:3, 0]
-        self.__PosB = h5AB['r'][:][orbit_index, 3:6, 0]
-        self.__VelA = h5AB['v'][:][orbit_index, 0:3, 0]
-        self.__VelB = h5AB['v'][:][orbit_index, 3:6, 0]
+        self.Time = t[orbit_index]
+        self.__PosA = r[orbit_index, 0:3, 0]
+        self.__PosB = r[orbit_index, 3:6, 0]
+        self.__VelA = v[orbit_index, 0:3, 0]
+        self.__VelB = v[orbit_index, 3:6, 0]
         self.__kbr_r = KBR[kbr_index, 2]
         '''define the directory of range-rate output'''
         res_dir = self._PathfileConfig.RangeRateTemp + '/' + self.__date_span[0] + '_' + self.__date_span[1]
@@ -167,6 +200,13 @@ class RangeRate:
                     vz=mid_vel[:, 2])
 
         return oe.getMeanMotion()
+
+    def orbit_calibration(self):
+        self._ode = GravimetryODE().configure(ODEConfig=self.ODEConfig,
+                                              ParameterConfig=self.ParameterConfig).setParNum(). \
+            setInitial(self._startTime, self._startPos.copy(), self._startVel.copy()). \
+            set2ndDerivative(self._secDer)
+        pass
 
 
 class FitSST:

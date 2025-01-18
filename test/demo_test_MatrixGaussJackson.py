@@ -1,3 +1,6 @@
+import os.path
+import sys
+sys.path.append("../")
 from src.ODE.Common.MultiStepODE import MatrixGaussJackson
 from src.ODE.Common.SingleStepODE import RKN
 from src.ODE.Common.KeplerOrbit import KeplerOrbit
@@ -5,6 +8,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 from scipy.integrate import ode
+from src.SecDerivative.Instance.DualOrbitAndVar import Orbit_var_2nd_diff
+from src.SecDerivative.Instance.DualOrbit import Orbit_2nd_diff as Dual_Orbit
+from src.SecDerivative.Instance.SoleOrbit import Orbit_2nd_diff as Sole_Orbit
+from src.Preference.Pre_ODE import ODEConfig
+from src.Preference.Pre_Interface import InterfaceConfig
+from src.Frame.Frame import Frame, EOP
+from src.Interface.ArcOperation import ArcData
+from src.Preference.EnumType import TimeFormat, Payload, SatID
+from src.ODE.Common.ComplexODE import ComplexODE, ConfigComplexODE
+import json
+from src.Preference.Pre_ForceModel import ForceModelConfig
+from src.Preference.Pre_Parameterization import ParameterConfig
+from src.Preference.Pre_Frame import FrameConfig
+from datetime import datetime
 
 
 def force_for_demo_use(t, r, v):
@@ -83,7 +100,7 @@ def demo_test_GJ():
     iniR = r1 + r2
     iniV = v1 + v2
     '''Gauss-Jackson integration'''
-    GJ = MatrixGaussJackson().setOrder().setInitial(iniX, iniR, iniV).setForce(force_for_demo_use).setIterArgs().setRecord()
+    GJ = MatrixGaussJackson().setOrder(order=8).setInitial(iniX, iniR, iniV).setForce(force_for_demo_use).setIterArgs().setRecord()
     X_GJ, R_GJ, V_GJ = GJ.propagate(Nstep, h)
     X_GJ = np.array(X_GJ)
     X_GJ = np.swapaxes(X_GJ,1,0)
@@ -120,6 +137,124 @@ def demo_test_GJ():
     return True
 
 
+def demo_vector_GJ():
+    frame_config = FrameConfig()
+    frame = json.load(open('../setting/TimeCost/FrameConfig.json', 'r'))
+    frame_config.__dict__ = frame
+
+    interface_config = InterfaceConfig()
+    interfaceDict = json.load(
+        open('../setting/TimeCost/InterfaceConfig.json', 'r'))
+    interface_config.__dict__ = interfaceDict
+
+    ode_config = ODEConfig()
+    odeDict = json.load(open('../setting/TimeCost/ODEConfig.json', 'r'))
+    ode_config.__dict__ = odeDict
+
+    parameter_config = ParameterConfig()
+    Parameter = json.load(open('../setting/TimeCost/ParameterConfig.json', 'r'))
+    parameter_config.__dict__ = Parameter
+
+    force_model_config = ForceModelConfig()
+    fmDict = json.load(open('../setting/TimeCost/ForceModelConfig.json', 'r'))
+    force_model_config.__dict__ = fmDict
+
+    eop = EOP().configure(frameConfig=frame_config).load()
+    fr = Frame(eop).configure(frameConfig=frame_config)
+    rd = ArcData(interfaceConfig=interface_config)
+
+    GNVA = rd.getData(arc=0, kind=Payload.GNV, sat=SatID.A)
+    startPosA, startVelA = GNVA[4, 1:4], GNVA[4, 4:7]
+    time = GNVA[4, 0]
+    secDer = Sole_Orbit(fr).configures(arc=0, FMConfig=force_model_config,
+                                  ParConfig=parameter_config, FrameConfig=frame_config)
+
+    config = ConfigComplexODE().configure(ODEConfig=ode_config).setOdePar()
+    propagator = ComplexODE(config).setSecondDerivative(secDer.secDerivative, ArcLen=len(GNVA[:, 0]) - 4). \
+        setInitial(time, startPosA, startVelA)
+    propagator.propagate()
+    pass
+
+
+def demo_matrix_GJ():
+    frame_config = FrameConfig()
+    frame = json.load(open('../setting/TimeCost/FrameConfig.json', 'r'))
+    frame_config.__dict__ = frame
+
+    interface_config = InterfaceConfig()
+    interfaceDict = json.load(
+        open('../setting/TimeCost/InterfaceConfig.json', 'r'))
+    interface_config.__dict__ = interfaceDict
+
+    ode_config = ODEConfig()
+    odeDict = json.load(open('../setting/TimeCost/ODEConfig.json', 'r'))
+    ode_config.__dict__ = odeDict
+
+    parameter_config = ParameterConfig()
+    Parameter = json.load(open('../setting/TimeCost/ParameterConfig.json', 'r'))
+    parameter_config.__dict__ = Parameter
+
+    force_model_config = ForceModelConfig()
+    fmDict = json.load(open('../setting/TimeCost/ForceModelConfig.json', 'r'))
+    force_model_config.__dict__ = fmDict
+
+    eop = EOP().configure(frameConfig=frame_config).load()
+    fr = Frame(eop).configure(frameConfig=frame_config)
+    rd = ArcData(interfaceConfig=interface_config)
+
+    GNVA = rd.getData(arc=0, kind=Payload.GNV, sat=SatID.A)
+
+    startPosA, startVelA = GNVA[4, 1:4], GNVA[4, 4:7]
+    time = GNVA[4, 0]
+    for i in range(19):
+        startPosA, startVelA = np.vstack((GNVA[4, 1:4], startPosA)), np.vstack((GNVA[4, 4:7], startVelA))
+
+    secDer = Dual_Orbit(fr, rd).configures(arc=0, FMConfig=force_model_config,
+                                       ParConfig=parameter_config, FrameConfig=frame_config)
+
+    config = ConfigComplexODE().configure(ODEConfig=ode_config).setOdePar()
+    propagator = ComplexODE(config).setSecondDerivative(secDer.secDerivative, ArcLen=len(GNVA[:, 0]) - 4). \
+        setInitial(time, startPosA, startVelA)
+    propagator.propagate()
+    pass
+
+
+def demo_time_cost():
+    config = {
+        "font.family": 'serif',
+        "font.size": 26,
+        "mathtext.fontset": 'stix',
+        "font.serif": ['Times New Roman'],
+    }
+    matplotlib.rcParams.update(config)
+    # matplotlib.rcParams.update({'font.size': 30})
+    # plt.style.use('science')
+    plt.style.use(['grid'])
+    border = plt.gca()
+    border.spines['top'].set_linewidth(2)  # 设置顶部边框线宽度为2
+    border.spines['right'].set_linewidth(2)  # 设置右侧边框线宽度为2
+    border.spines['bottom'].set_linewidth(2)  # 设置底部边框线宽度为2
+    border.spines['left'].set_linewidth(2)  # 设置左侧边框线宽度为2
+
+    namelist = ['2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14']
+    sole = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+    dual = [1.27, 1.29, 1.44, 2.00, 2.15, 2.30, 2.45, 3.03, 3.18, 3.33, 3.48, 4.03, 4.16]
+    # plt.scatter(np.arange(len(rms)), rms * 1e6, s=20, color='black', label='KBRR arc RMS')
+    plt.plot(namelist, sole, marker='o', linestyle='--', markersize=6, color='r', label='Traditional ODE')
+    plt.plot(namelist, dual, marker='o', linestyle='--', markersize=6, color='darkblue', label='Multi-channel ODE')
+    plt.xlabel('Number of satellites')
+    plt.ylabel('Time cost [min]')
+    # plt.ylim(0, 14)
+    # plt.xticks([1354, 2708, 4062, 5416, 6770], namelist)
+    plt.legend(loc='upper left', frameon=True)
+    # plt.set(xlim=, ylim=[0, 30], ylabel='X [mm]')
+    plt.show()
+    pass
+
+
 if __name__ == '__main__':
-    demo_test_GJ()
+    # demo_test_GJ()
+    # demo_vector_GJ()
+    # demo_matrix_GJ()
+    demo_time_cost()
 

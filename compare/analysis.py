@@ -74,23 +74,24 @@ def drawTime(data1, data2):
     '''static model'''
     static_c, static_s = LoadGif48().load('../data/StaticGravityField/gif48.gfc').getCS(60)
     '''read hust'''
-    hust_filename = '../result/AOD_6h/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + data1 + '_GRAC_HUST_BA01_0600.gfc'
+
+    hust_filename = '../result/AodAndCra/AOD/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + data1 + '_GRAC_HUST_BA01_0600.gfc'
     hust_c, hust_s = LoadCSR().load(fileIn=hust_filename).getCS(Nmax=60)
     hust_c, hust_s = hust_c - static_c, hust_s - static_s
     # hust_c, hust_s = hust_c - static_c, hust_s - static_s
     hust_c, hust_s = GeoMathKit.CS_1dTo2d(hust_c), GeoMathKit.CS_1dTo2d(hust_s)
     '''read hust'''
-    hust_filename2 = '../result/CRA_Licom_1007/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + data1 + '_GRAC_HUST_BA01_0600.gfc'
+    hust_filename2 = '../result/AodAndCra/CRA/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + data1 + '_GRAC_HUST_BA01_0600.gfc'
     hust_c2, hust_s2 = LoadCSR().load(fileIn=hust_filename2).getCS(Nmax=60)
     hust_c2, hust_s2 = hust_c2 - static_c, hust_s2 - static_s
     hust_c2, hust_s2 = GeoMathKit.CS_1dTo2d(hust_c2), GeoMathKit.CS_1dTo2d(hust_s2)
     '''read hust'''
-    hust_filename3 = '../result/SH/RL06/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_2006-01-05-2006-02-04_GRAC_HUST_BA01_0600.gfc'
+    hust_filename3 = '../result/AodAndCra/2009-01-APM_aod6h.gfc'
     hust_c3, hust_s3 = LoadCSR().load(fileIn=hust_filename3).getCS(Nmax=60)
     hust_c3, hust_s3 = hust_c3 - static_c, hust_s3 - static_s
     hust_c3, hust_s3 = GeoMathKit.CS_1dTo2d(hust_c3), GeoMathKit.CS_1dTo2d(hust_s3)
     '''read hust'''
-    hust_filename4 = '../result/SH/RL06/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_2009-01-01-2009-01-31_GRAC_HUST_BA01_0600.gfc'
+    hust_filename4 = '../result/AodAndCra/2009-01-APM_Licom.gfc'
     hust_c4, hust_s4 = LoadCSR().load(fileIn=hust_filename4).getCS(Nmax=60)
     hust_c4, hust_s4 = hust_c4 - static_c, hust_s4 - static_s
     hust_c4, hust_s4 = GeoMathKit.CS_1dTo2d(hust_c4), GeoMathKit.CS_1dTo2d(hust_s4)
@@ -166,10 +167,9 @@ def drawTime(data1, data2):
     plt.style.use(['science'])
     plt.plot(np.arange(2, 61, 1), hust[2:], color='green', linewidth=2.0, marker='', label='PyHawk-AOD')
     plt.plot(np.arange(2, 61, 1), hust2[2:], color='black', linewidth=2.0, marker='', label='PyHawk-CRA')
-    # plt.plot(np.arange(2, 61, 1), hust3[2:], color='olive', linewidth=2.0, marker='', label='2006-01-04-2006-02-03')
-
-    # plt.plot(np.arange(2, 61, 1), hust4[2:], color='olive', marker='^', label='HUST kin-3h-2e11')
-    plt.plot(np.arange(2, 61, 1), csr[2:], color='red', marker='', linewidth=2.0,label='CSR')
+    # plt.plot(np.arange(2, 61, 1), hust3[2:], color='olive', linewidth=2.0, marker='', label='PMA-AOD')
+    # plt.plot(np.arange(2, 61, 1), hust4[2:], color='red', linewidth=2.0, marker='', label='PMA-CRA')
+    # plt.plot(np.arange(2, 61, 1), csr[2:], color='red', marker='', linewidth=2.0,label='CSR')
     # plt.plot(np.arange(2, 61, 1), gfz[2:], color='indigo', marker='', linewidth=2.0,label='GFZ')
     # plt.plot(np.arange(2, 61, 1), jpl[2:], color='blue', marker='',linewidth=2.0, label='JPL')
     # plt.plot(np.arange(2, 61, 1), csr_05[2:], color='indigo', marker='h', label='CSR 05')
@@ -189,8 +189,8 @@ def drawTime(data1, data2):
     plt.yscale("log")
     plt.legend(fontsize=26, loc=1)
     plt.grid(True, which='both', linestyle='-.')
-    plt.savefig('../result/img/CRA_LICOM_v2/' + data1 + '.png')
-    # plt.show()
+    # plt.savefig('../result/img/CRA_LICOM_v2/' + data1 + '.png')
+    plt.show()
 
 
 def drawPotentialError():
@@ -527,7 +527,7 @@ def subplotsGeoid():
         month = data_span[i][0].split('-')[0] + '-' + data_span[i][0].split('-')[1]
         plt.subplot(3, 4, i+1)
         '''read hust'''
-        hust_filename = '../result/SH/RL06/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + data1 + '_GRAC_HUST_BA01_0600.gfc'
+        hust_filename = '../result/SH/2007/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + data1 + '_GRAC_HUST_BA01_0600.gfc'
         hust_c, hust_s = LoadCSR().load(fileIn=hust_filename).getCS(Nmax=60)
         hust_c, hust_s = hust_c - static_c, hust_s - static_s
         hust_c, hust_s = GeoMathKit.CS_1dTo2d(hust_c), GeoMathKit.CS_1dTo2d(hust_s)
@@ -579,7 +579,7 @@ def subplotsGeoid():
     fig.text(0.508, 0.085, 'Degree', fontsize=24)
     # plt.xlabel('Degree', fontsize=24, horizontalalignment='right')
     plt.subplots_adjust(left=0.09, right=0.981, top=0.94, bottom=0.15, wspace=0.1, hspace=0.27)
-    plt.savefig('../result/img/2007/sh.pdf')
+    plt.savefig('../result/img/2007/sh.png')
     plt.show()
 
 
@@ -587,14 +587,14 @@ def subplotsGeoid():
 
 
 if __name__ == '__main__':
-    span1 = '2010-12-01-2010-12-31'
-    span2 = '2010335-2010361'
-    data_span = get_month_start_and_end_by_date_interval('2009-01-01', '2010-12-31')
+    span1 = '2006-05-01_2006-05-31'
+    span2 = '2006001-2006031'
+    # data_span = get_month_start_and_end_by_date_interval('2009-01-01', '2010-12-31')
 
-    for i in range(len(data_span)):
-        span1 = data_span[i][0] + '-' + data_span[i][1]
-        span2 = datetransfor(data_span[i][0]) + '-' + datetransfor(data_span[i][1])
-        drawTime(data1=span1, data2=span2)
+    # for i in range(len(data_span)):
+    #     span1 = data_span[i][0] + '-' + data_span[i][1]
+    #     span2 = datetransfor(data_span[i][0]) + '-' + datetransfor(data_span[i][1])
+    #     drawTime(data1=span1, data2=span2)
     #     # GRACE_FO(data=span)
     #     # GeoidGMT()
     #     # drawPotentialError()
@@ -602,7 +602,7 @@ if __name__ == '__main__':
     #     # drawMat()
     #     # drawKBRR()
     #     # drawMean()
-    # drawTime(data1=span1, data2=span2)
+    drawTime(data1=span1, data2=span2)
     # subplotsGeoid()
     pass
 

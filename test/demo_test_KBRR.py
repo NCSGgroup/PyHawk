@@ -119,7 +119,7 @@ def drawKBRR(datespan, arcLen):
 
 
 def xyz2lonlat():
-    datespan = get_month_start_and_end_by_date_interval('2010-01-01', '2010-12-31')
+    datespan = get_month_start_and_end_by_date_interval('2010-12-01', '2010-12-31')
 
     for i in range(len(datespan)):
         frame_config = FrameConfig()
@@ -143,7 +143,7 @@ def xyz2lonlat():
             GNVTime = GNV[:, 0]
             GNVR = GNV[:, 1:4]
 
-            res_dir = pathlib.Path("D:/zwh/HAE/RangeRate/").joinpath(datespan[i][0] + '_' + datespan[i][1])
+            res_dir = pathlib.Path("D:/py-hawk-v2/temp/RangeRate/CRA-6h/").joinpath(datespan[i][0] + '_' + datespan[i][1])
             res_filename = res_dir.joinpath('RangeRate_' + str(j) + '.hdf5')
             if not os.path.exists(res_filename):
                 continue
@@ -175,7 +175,7 @@ def xyz2lonlat():
         Lat = np.degrees(np.array(Lat))
         Postfit = np.array(Postfit)
 
-        filename = 'D:/zwh/HAE/Spatial/' + datespan[i][0] + '_' + datespan[i][1] + '.hdf5'
+        filename = 'D:/py-hawk-v2/temp/RangeRate/CRA-6h/' + datespan[i][0] + '_' + datespan[i][1] + '.hdf5'
         h5data = h5py.File(filename, "w")
         h5data.create_dataset('lon', data=Lon)
         h5data.create_dataset('lat', data=Lat)

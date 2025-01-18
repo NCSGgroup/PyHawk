@@ -4,6 +4,9 @@ from src.SecDerivative.Common.Assemble2ndDerivative import Assemble2ndDerivative
 from src.Frame.Frame import Frame
 from src.Preference.EnumType import TimeFormat, Payload, SatID
 from src.Interface.ArcOperation import ArcData
+from src.Preference.Pre_ForceModel import ForceModelConfig
+from src.Preference.Pre_Parameterization import ParameterConfig
+from src.Preference.Pre_Frame import FrameConfig
 
 
 class Orbit_2nd_diff(Assemble2ndDerivative):
@@ -28,6 +31,11 @@ class Orbit_2nd_diff(Assemble2ndDerivative):
         self.__initVel = np.vstack((startVelA, startVelB))
         return self
 
+    def configures(self, arc: int, FMConfig:ForceModelConfig, ParConfig:ParameterConfig, FrameConfig:FrameConfig):
+        self._arc = arc
+        self.configure(FMConfig=FMConfig, ParameterConfig=ParConfig, FrameConfig=FrameConfig)
+        return self
+
     def secDerivative(self, t, r, v):
         """
         For orbit only in terms of 2nd order differential equation
@@ -38,13 +46,16 @@ class Orbit_2nd_diff(Assemble2ndDerivative):
         """
 
         self.__fr = self.__fr.setTime(t, TimeFormat.GPS_second)
-        self.setPosAndVel(r[0], v[0]).setTime(self.__fr)
-        accA = self.getAcceleration()
+        self.setTime(self.__fr).getCS()
+        acc = None
+        for i in range(len(r)):
+            self.setPosAndVel(r[i], v[i]).ChangeSat(SatID.A).calculation()
+            if acc is None:
+                acc = self.getAcceleration()
+            else:
+                acc = np.vstack((acc, self.getAcceleration()))
 
-        self.setPosAndVel(r[1], v[1]).setTime(self.__fr)
-        accB = self.getAcceleration()
-
-        return np.vstack((accA, accB))
+        return acc
 
 
 
