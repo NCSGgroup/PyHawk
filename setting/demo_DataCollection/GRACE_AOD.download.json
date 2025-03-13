@@ -1,0 +1,8 @@
+{
+    "Mission": "AOD",
+    "Level": "L1B",
+    "Local directory": "RL06",
+    "Remote site": "ftp://anonymous@isdcftp.gfz-potsdam.de/grace/Level-1B/GFZ/AOD/RL06/",
+    "Data begin": "2011-05-25",
+    "Data end": "2011-12-31"
+}

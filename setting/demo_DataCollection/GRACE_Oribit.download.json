@@ -1,0 +1,9 @@
+{
+    "Mission": "Oribit",
+    "Level": "L1B",
+    "Sat": "B",
+    "Local directory": "KinOrbit",
+    "Remote site":"http://ftp.tugraz.at/outgoing/ITSG/tvgogo/orbits/GRACE/v2/",
+    "Data begin": "2011-01-01",
+    "Data end": "2011-12-31"
+}

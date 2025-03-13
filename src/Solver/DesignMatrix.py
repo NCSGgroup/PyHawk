@@ -19,6 +19,7 @@ import numpy as np
 import scipy.linalg
 import pathlib
 import h5py
+import os
 
 
 class GravityDesignMat:
@@ -84,8 +85,7 @@ class GravityDesignMat:
                            FrameConfig=self._FrameConfig)
         '''define the directory of res output'''
         res_dir = pathlib.Path(self._res).joinpath(self.__data_span[0] + '_' + self.__data_span[1])
-        if not res_dir.is_dir():
-            res_dir.mkdir(exist_ok=True)
+        os.makedirs(res_dir, exist_ok=True)
         # kwargs = {'ChangeTempPath': res_dir}
         adjustDM.calibrate()
 

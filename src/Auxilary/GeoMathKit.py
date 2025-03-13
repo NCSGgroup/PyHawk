@@ -13,6 +13,7 @@ import functools
 import numba as nb
 import datetime
 from scipy import linalg
+import gzip, tarfile, os
 
 
 class GeoMathKit:
@@ -336,7 +337,6 @@ class GeoMathKit:
 
         return CS[index]
 
-
     @staticmethod
     def CS_1dTo2d(CS: np.ndarray):
         """
@@ -361,7 +361,6 @@ class GeoMathKit:
         CS2d[n, m] = CS
 
         return CS2d
-
 
     @staticmethod
     def arrayAdd(array1: np.ndarray, array2: np.ndarray):
@@ -520,6 +519,74 @@ class GeoMathKit:
         y = Nyy_inv@Wy - Nyy_inv @ Nyx @ global_p
 
         return y
+
+    @staticmethod
+    def un_gz(file_name):
+
+        # aquire the filename and remove the postfix
+        f_name = file_name.replace(".gz", "")
+        # start uncompress
+        g_file = gzip.GzipFile(file_name)
+        # read uncompressed files and write down a copy without postfix
+        open(f_name, "wb+").write(g_file.read())
+        g_file.close()
+
+    @staticmethod
+    def un_tar(file_name):
+        """
+        Also applicable for .tgz
+        :param file_name:
+        :return:
+        """
+        tar = tarfile.open(file_name)
+        names = tar.getnames()
+        if os.path.isdir(file_name + '_files'):
+            pass
+        else:
+            os.mkdir(file_name + '_files')
+
+        for name in names:
+            tar.extract(name, file_name + '_files')
+        tar.close()
+
+    @staticmethod
+    def un_targz(file_name):
+        """
+        Also applicable for .tgz
+        :param file_name:
+        :return:
+        """
+        tar = tarfile.open(file_name)
+        names = tar.getnames()
+        if os.path.isdir(file_name):
+            pass
+        else:
+            os.mkdir(file_name + '_files')
+
+        for name in names:
+            tar.extract(name, file_name + '_files')
+        tar.close()
+
+    @staticmethod
+    def dayListByDay(begin, end):
+        """
+        get the date of every day between the given 'begin' day and 'end' day
+
+        :param begin: year, month, day. '2009-01-01'
+        :param end: year,month,day. '2010-01-01'
+        :return:
+        """
+
+        daylist = []
+        begin_date = datetime.datetime.strptime(begin, "%Y-%m-%d")
+        end_date = datetime.datetime.strptime(end, "%Y-%m-%d")
+
+        while begin_date <= end_date:
+            date_str = begin_date
+            daylist.append(date_str)
+            begin_date += datetime.timedelta(days=1)
+
+        return daylist
 
 
 if __name__ == '__main__':
