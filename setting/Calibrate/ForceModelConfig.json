@@ -23,8 +23,8 @@
     },
     "NonConservativeConfig": {
         "date_span": [
-            "2010-10-01",
-            "2010-10-31"
+            "2009-01-01",
+            "2009-01-31"
         ],
         "arcNo": 0,
         "sat": {
@@ -125,7 +125,7 @@
     "NonTideConfig": {
         "kind": "GLO",
         "MaxDeg": 180,
-        "TS": 6
+        "TS": 3
     },
     "RefGravModelConfig": {
         "kind": 0,

@@ -16,17 +16,25 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
         super(Orbit_var_2nd_diff, self).__init__()
         self.__fr = fr
         self.__rd = rd
+        self.Time = None
         self.__ArcLen = None
         self.__initTime = None
         self.__initPos = None
         self.__initVel = None
         self.__PosAndVel = None
         self.__commonTime = None
+        self.adjustLength = None
         self.accA = []
         self.accB = []
 
     def configures(self, arc: int, FMConfig:ForceModelConfig, ParConfig:ParameterConfig, FrameConfig:FrameConfig):
         self._arc = arc
+        self._ParameterConfig = ParConfig
+        '''config AccelerometerConfig'''
+        self._AccelerometerConfig = self._ParameterConfig.Accelerometer()
+        self._AccelerometerConfig.__dict__.update(self._ParameterConfig.AccelerometerConfig.copy())
+        self.adjustLength = self._AccelerometerConfig.AdjustLength * 3600
+
         self.configure(FMConfig=FMConfig, ParameterConfig=ParConfig, FrameConfig=FrameConfig)
         return self
 
@@ -39,9 +47,11 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
 
         if len(time_A) != len(time_B):
             self.__ArcLen = len(time_B) if len(time_A) > len(time_B) else len(time_A)
+            self.Time = time_B if len(time_A) > len(time_B) else time_A
         else:
             self.__ArcLen = len(time_B)
-        # self.__ArcLen = len(time_A)
+            self.Time = time_B
+            # self.__ArcLen = len(time_A)
             commonTime = set(time_A.astype(np.int64))
             commonTime = commonTime & set(time_B.astype(np.int64))
             commonTime = np.array(list(commonTime))
@@ -50,6 +60,22 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
             index2 = [list(time_B).index(x) for x in commonTime]
             GNVA = GNVA[index1, :]
             GNVB = GNVB[index2, :]
+
+        self.node = [self.Time[0]]
+        t1 = self.Time[0]
+        while True:
+            t2 = t1 + self.adjustLength
+            if np.fabs(t2 - self.Time[-1]) <= 0.5 * 3600:
+                '''difference less than 0.5 hour, end'''
+                self.node.append(t2)
+                break
+            elif len(self.Time[self.Time >= t2]) <= 100:
+                '''the rest points are too short, e.g., less than 100: include the rest into the last arc'''
+                self.node[-1] = self.Time[-1] + 10  # +10, a little bigger than the last point to ensure all is included
+                break
+            else:
+                self.node.append(t2)
+                t1 = t2
 
         self.__initTime = GNVA[4, 0]
         startPosA, startPosB = GNVA[4, 1:4], GNVB[4, 1:4]
@@ -86,6 +112,12 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
         # acc = self.get_acceleration()
         # ar = self.get_du2xyz()
         # ap = self.get_du2p()
+        index = 0
+        step = int((np.shape(PhirSr[0:3])[1] - 7) / (len(self.node) - 1))
+        for i in range(len(self.node) - 1):
+            if self.node[i] <= t < self.node[i+1]:
+                index = i
+                break
 
         self.__fr = self.__fr.setTime(t, TimeFormat.GPS_second)
         self.setTime(self.__fr).getCS()
@@ -131,12 +163,12 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
             bool2 = False
 
         '''calculate the second order differentials'''
-        diff2ndA = MatrixVarEqn.VarEq2ndOrder(PhirSr[0:3], PhivSv[0:3], arA, apA, accA,
+        diff2ndA = MatrixVarEqn.VarEq2ndOrder(PhirSr[0:3], PhivSv[0:3], arA, apA, accA, index, step,
                                        isIncludeStateVec=True,
                                        isIncludeTransitionMatrix=bool1,
                                        isIncludeSensitivityMatrix=bool2)
 
-        diff2ndB = MatrixVarEqn.VarEq2ndOrder(PhirSr[3:6], PhivSv[3:6], arB, apB, accB,
+        diff2ndB = MatrixVarEqn.VarEq2ndOrder(PhirSr[3:6], PhivSv[3:6], arB, apB, accB, index, step,
                                        isIncludeStateVec=True,
                                        isIncludeTransitionMatrix=bool1,
                                        isIncludeSensitivityMatrix=bool2)
@@ -147,5 +179,7 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
         return self.__ArcLen
 
     def getacc(self):
-
         return self.accA, self.accB
+
+    def getTimes(self):
+        return self.node

@@ -22,10 +22,10 @@ def readDate():
     interface_config.__dict__ = interfaceDict
     rd = ArcData(interfaceConfig=interface_config)
 
-    date_span = ["2019-01-01", "2019-01-31"]
+    date_span = ["2009-01-01", "2009-01-31"]
     res_dir = "../temp/StateVector/" + str(date_span[0]) + '_' + str(date_span[1])
 
-    for i in range(0, 2):
+    for i in range(5, 6):
         gnv = rd.getData(arc=i, kind=Payload.GNV, sat='A')
         StateName = res_dir + '/' + str(i) + '_AB.hdf5'
         StateH5 = h5py.File(StateName, "r")
@@ -86,7 +86,7 @@ def __rms(x: np.ndarray):
 
 
 if __name__ == '__main__':
-    # readDate()
-    filename = '../temp/RawData/2006-03-01_2006-03-31.hdf5'
-    h5 = h5py.File(filename, 'r')
-    h5.keys()
+    readDate()
+    # filename = '../temp/RawData/2006-03-01_2006-03-31.hdf5'
+    # h5 = h5py.File(filename, 'r')
+    # h5.keys()

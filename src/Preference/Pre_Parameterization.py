@@ -17,6 +17,7 @@ class ParameterConfig:
     class Accelerometer:
         def __init__(self):
             self.isRequired = True
+            self.AdjustLength = 2
             self.Parameter_Number = 6
             self.AllisGlobal = False
 

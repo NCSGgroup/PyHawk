@@ -229,9 +229,9 @@ def kbrrseries():
 
     for i in range(len(date_span)):
         post_RMS = []
-        res_dir = "../temp/RangeRate/" + str(date_span[i][0]) + '_' + str(date_span[i][1]) + "-AOD"
+        res_dir = "../temp/RangeRate/" + str(date_span[i][0]) + '_' + str(date_span[i][1])
 
-        resulth5 = h5py.File(resultpath + str(date_span[i][0]) + '_' + str(date_span[i][1]) + '-AOD.hdf5', "w")
+        resulth5 = h5py.File(resultpath + str(date_span[i][0]) + '_' + str(date_span[i][1]) + '.hdf5', "w")
         for j in range(0, 115):
             res_filename = res_dir + '/RangeRate_' + str(j) + '.hdf5'
             if not os.path.exists(res_filename):
@@ -241,26 +241,26 @@ def kbrrseries():
                 postfit = h5['post_residual'][()]
                 post_RMS.append(__rms(postfit))
                 h5.close()
-                print(__rms(postfit))
-        print(date_span[i][0])
+                # print(__rms(postfit))
+        # print(date_span[i][0])
         resulth5.create_dataset('rms', data=post_RMS)
         resulth5.close()
     pass
 
 
 def drawkbrr():
-    date_span = get_month_start_and_end_by_date_interval('2009-05-01', '2009-05-31')
+    date_span = get_month_start_and_end_by_date_interval('2006-01-01', '2010-12-31')
     filepath = '../result/kbrr/'
-    rms1 = []
+    rms = []
     for i in range(len(date_span)):
-        filename1 = filepath + str(date_span[i][0]) + '_' +str(date_span[i][1]) + '-AOD.hdf5'
+        filename1 = filepath + str(date_span[i][0]) + '_' + str(date_span[i][1]) + '.hdf5'
         h5data1 = h5py.File(filename1, 'r')
-        rms1 = np.append(rms1, h5data1['rms'][:])
-    rms2 = []
-    for i in range(len(date_span)):
-        filename2 = filepath + str(date_span[i][0]) + '_' +str(date_span[i][1]) + '-CRA.hdf5'
-        h5data2 = h5py.File(filename2, 'r')
-        rms2 = np.append(rms2, h5data2['rms'][:])
+        rms = np.append(rms, h5data1['rms'][:])
+    # rms2 = []
+    # for i in range(len(date_span)):
+    #     filename2 = filepath + str(date_span[i][0]) + '_' +str(date_span[i][1]) + '-CRA.hdf5'
+    #     h5data2 = h5py.File(filename2, 'r')
+    #     rms2 = np.append(rms2, h5data2['rms'][:])
 
     config = {
         "font.family": 'serif',
@@ -279,14 +279,14 @@ def drawkbrr():
     border.spines['left'].set_linewidth(2)  # 设置左侧边框线宽度为2
 
     namelist = ['2006/12','2007/12','2008/12', '2009/12', '2010/12']
-    # plt.scatter(np.arange(len(rms)), rms * 1e6, s=20, color='black', label='KBRR arc RMS')
-    plt.plot(np.arange(len(rms1)), rms1 * 1e6, marker='o', markersize=5, color='black', label='AOD KBRR arc RMS')
-    plt.plot(np.arange(len(rms2)), rms2 * 1e6, marker='o', markersize=5, color='red', label='CRA KBRR arc RMS')
-    plt.xlim([np.arange(len(rms1))[0], np.arange(len(rms1))[-1]])
-    plt.ylim([0.2, 0.4])
-    plt.ylabel('Residual [um/s]')
-    # plt.xticks([1354, 2708, 4062, 5416, 6770], namelist)
-    plt.legend(loc='upper right', frameon=True)
+    plt.plot(np.arange(len(rms)), rms * 1e6, linestyle='-', marker='.', markersize=10, color='black', label='KBRR arc RMS')
+    # plt.plot(np.arange(len(rms1)), rms1 * 1e6, marker='o', markersize=5, color='black', label='AOD KBRR arc RMS')
+    # plt.plot(np.arange(len(rms2)), rms2 * 1e6, marker='o', markersize=5, color='red', label='CRA KBRR arc RMS')
+    plt.xlim([np.arange(len(rms))[0], np.arange(len(rms))[-1]])
+    plt.ylim([0.1, 0.5])
+    plt.ylabel('Residual [$\mathrm{\mu m/s}$]')
+    plt.xticks([1354, 2708, 4062, 5416, 6770], namelist)
+    plt.legend(loc='lower right', frameon=True)
     # plt.set(xlim=, ylim=[0, 30], ylabel='X [mm]')
     plt.show()
     pass
@@ -314,7 +314,7 @@ def xyz2lonlat():
     fr = Frame(eop).configure(frameConfig=frame_config)
 
     resultpath = '../result/kbrr/spatial/'
-    date_span = get_month_start_and_end_by_date_interval('2006-01-01', '2010-12-31')
+    date_span = get_month_start_and_end_by_date_interval('2009-05-01', '2009-05-31')
 
     for i in range(len(date_span)):
         Lon = []
@@ -336,7 +336,7 @@ def xyz2lonlat():
             res_dir = pathlib.Path("../temp/RangeRate").joinpath(date_span[i][0] + '_' + date_span[i][1])
             res_filename = res_dir.joinpath('RangeRate_' + str(j) + '.hdf5')
             h5 = h5py.File(res_filename, 'r')
-            t2 = h5['post_t'][()]
+            t2 = h5['pre_t'][()]
 
             commonTime = set(GNVTime.astype(np.int64))
             commonTime = commonTime & set(t2.astype(np.int64))
@@ -347,7 +347,7 @@ def xyz2lonlat():
             new_index2 = [list(t2).index(x) for x in commonTime]
             new_Time = GNVTime[new_index1]
             new_GNVR = GNVR[new_index1]
-            Postfit.extend(h5['post_residual'][()][new_index2])
+            Postfit.extend(h5['pre_residual'][()][new_index2])
 
             for k in range(len(new_Time)):
                 time = new_Time[k]
@@ -362,7 +362,7 @@ def xyz2lonlat():
         Lat = np.degrees(np.array(Lat))
         Postfit = np.array(Postfit)
 
-        filename = '../result/kbrr/spatial/' + date_span[i][0] + '_' + date_span[i][1] + ".hdf5"
+        filename = '../result/' + date_span[i][0] + '_' + date_span[i][1] + "-pre.hdf5"
         h5data = h5py.File(filename, "w")
         h5data.create_dataset('lon', data=Lon)
         h5data.create_dataset('lat', data=Lat)

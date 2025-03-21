@@ -3,7 +3,7 @@ from src.Interface.ArcOperation import ArcData
 import src.Preference.EnumType as EnumType
 import numpy as np
 from src.ODE.Instance.GravimetryODE import GravimetryODE
-from src.Interface.Accelerometer import Accelerometer, AccCaliPar
+from src.Interface.Accelerometer import Accelerometer, Accelerometer_V2, AccCaliPar
 from src.Frame.Frame import Frame, EOP
 from src.Preference.Pre_Parameterization import ParameterConfig
 from src.SecDerivative.Common.Assemble2ndDerivative import Assemble2ndDerivative
@@ -326,6 +326,7 @@ class AdjustOrbit:
         self._InterfaceConfig = None
         self.FMConfig = None
         self.ODEConfig = None
+        self.AccAdjustLength = None
         self.AdjustPath = None
         self._commonTime = None
 
@@ -336,7 +337,7 @@ class AdjustOrbit:
         self._arcNo = arcNo
         eop = EOP().configure(frameConfig=FrameConfig).load()
         self._fr = Frame(eop).configure(frameConfig=FrameConfig)
-        '''config Interface Config'''
+        '''config Interface'''
         self._InterfaceConfig = InterfaceConfig
         '''config Adjust path'''
         self.AdjustPath = AdjustOrbitConfig.PathOfFiles()
@@ -352,6 +353,7 @@ class AdjustOrbit:
         '''config AccelerometerConfig'''
         self.AccelerometerConfig = self.ParameterConfig.Accelerometer()
         self.AccelerometerConfig.__dict__.update(self.ParameterConfig.AccelerometerConfig.copy())
+        self.AccAdjustLength = self.AccelerometerConfig.AdjustLength
         '''config StokesCoefficientsConfig'''
         self.StokesCoefficientsConfig = self.ParameterConfig.StokesCoefficients()
         self.StokesCoefficientsConfig.__dict__.update(self.ParameterConfig.StokesCoefficientsConfig.copy())
@@ -387,10 +389,11 @@ class AdjustOrbit:
 
         """step 4: Propagator config"""
         self._startTime, self._startPos, self._startVel = self._secDer.getInitData()
+        times = self._secDer.getTimes()
         self._obsGNV = self._secDer.getInitState()
         # self._commonTime = self._secDer.getCommonTime()
-        self._ode = GravimetryODE().configure(ODEConfig=self.ODEConfig, ParameterConfig=self.ParameterConfig).setParNum().\
-            setInitial(self._startTime, self._startPos.copy(), self._startVel.copy()).\
+        self._ode = GravimetryODE().configure(ODEConfig=self.ODEConfig, ParameterConfig=self.ParameterConfig).\
+            setDataTime(times).setParNum().setInitial(self._startTime, self._startPos.copy(), self._startVel.copy()).\
             set2ndDerivative(self._secDer)
         return self
 
@@ -398,8 +401,9 @@ class AdjustOrbit:
         # assert iteration >= 2
         '''init acc'''
         for i in range(len(self._sat)):
-            ap = AccCaliPar(sat=self._sat[i], arcNo=self._arcNo, accConfig=self.accConfig[i])
-            ac = Accelerometer(rd=self._rd, ap=ap)
+            ap = AccCaliPar(rd=self._rd, sat=self._sat[i], arcNo=self._arcNo,
+                            accConfig=self.accConfig[i], adjustlength=self.AccAdjustLength)
+            ac = Accelerometer_V2(ap=ap)
             ac.get_and_save()
             self._ac[self._sat[i]] = ac
             self._ap[self._sat[i]] = ap
@@ -466,8 +470,7 @@ class AdjustOrbit:
         key = self.AccelerometerConfig
         if key.isRequired:
             left = self.TransitionMatrixConfig.Parameter_Number
-            right = left + key.Parameter_Number
-            iniAcc += res[:, left:right]
+            iniAcc += res[:, left:]
             if self.ParameterConfig.Accelerometer.__name__ in h5:
                 h5[self.ParameterConfig.Accelerometer.__name__][()] = iniAcc
             else:
