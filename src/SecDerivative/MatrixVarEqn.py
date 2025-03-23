@@ -122,7 +122,7 @@ class MatrixVarEqn:
     #     return PhirSrp
 
     @staticmethod
-    def VarEq2ndOrder(PhirSr, PhivSv, ar, ap, acc, index:int, step:int,
+    def VarEq2ndOrder(PhirSr, PhivSv, ar, ap, acc,
                       isIncludeStateVec=False, isIncludeTransitionMatrix=False, isIncludeSensitivityMatrix=False):
         """
         Reference 1, eq.(7.48)
@@ -158,15 +158,11 @@ class MatrixVarEqn:
             PhirSrp = np.hstack((PhirSrp, PhirS))
 
         if isIncludeSensitivityMatrix:
-            index_Phir = (index + 1) * step + 1
-            index_Srp = index * step
-            Srp = np.zeros(np.shape(PhirSr[:, 7:]))
-            Sr = PhirSr[:, index_Phir: index_Phir + step]
-
+            Sr = PhirSr[:, 7:]
             if isIncludeTransitionMatrix:
-                Srp[:, index_Srp: index_Srp + step] = np.matmul(ar, Sr) + ap
+                Srp = np.matmul(ar, Sr) + ap
             else:
-                Srp[:, index_Srp: index_Srp + step] = ap
+                Srp = ap
 
             PhirSrp = np.hstack((PhirSrp, Srp))
 

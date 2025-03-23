@@ -25,7 +25,7 @@ def readDate():
     date_span = ["2009-01-01", "2009-01-31"]
     res_dir = "../temp/StateVector/" + str(date_span[0]) + '_' + str(date_span[1])
 
-    for i in range(5, 6):
+    for i in range(4, 6):
         gnv = rd.getData(arc=i, kind=Payload.GNV, sat='A')
         StateName = res_dir + '/' + str(i) + '_AB.hdf5'
         StateH5 = h5py.File(StateName, "r")
@@ -56,7 +56,7 @@ def plot(t, x, y, z):
     t = np.arange(len(x))
     plt.figure(figsize=(12, 6))
     plt.subplot(311)
-    plt.title('{}-{}-{}-{}'.format('GNV', 'A', '2021-01', 'arc0'), fontsize=24)
+    plt.title('{}-{}-{}-{}'.format('GNV', 'A', '2009-01', 'arc4'), fontsize=24)
     plt.scatter(t, x, marker='o')
     plt.yticks(fontsize=18)
     plt.ylabel(r'$X/mm$', fontsize=20)

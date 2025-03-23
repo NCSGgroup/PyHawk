@@ -112,12 +112,6 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
         # acc = self.get_acceleration()
         # ar = self.get_du2xyz()
         # ap = self.get_du2p()
-        index = 0
-        step = int((np.shape(PhirSr[0:3])[1] - 7) / (len(self.node) - 1))
-        for i in range(len(self.node) - 1):
-            if self.node[i] <= t < self.node[i+1]:
-                index = i
-                break
 
         self.__fr = self.__fr.setTime(t, TimeFormat.GPS_second)
         self.setTime(self.__fr).getCS()
@@ -163,12 +157,12 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
             bool2 = False
 
         '''calculate the second order differentials'''
-        diff2ndA = MatrixVarEqn.VarEq2ndOrder(PhirSr[0:3], PhivSv[0:3], arA, apA, accA, index, step,
+        diff2ndA = MatrixVarEqn.VarEq2ndOrder(PhirSr[0:3], PhivSv[0:3], arA, apA, accA,
                                        isIncludeStateVec=True,
                                        isIncludeTransitionMatrix=bool1,
                                        isIncludeSensitivityMatrix=bool2)
 
-        diff2ndB = MatrixVarEqn.VarEq2ndOrder(PhirSr[3:6], PhivSv[3:6], arB, apB, accB, index, step,
+        diff2ndB = MatrixVarEqn.VarEq2ndOrder(PhirSr[3:6], PhivSv[3:6], arB, apB, accB,
                                        isIncludeStateVec=True,
                                        isIncludeTransitionMatrix=bool1,
                                        isIncludeSensitivityMatrix=bool2)

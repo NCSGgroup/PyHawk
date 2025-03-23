@@ -488,7 +488,7 @@ class Accelerometer_V2:
             b3 = a3[:, :, isBias_trend]
             b4 = a4[:, :, isBias_quadratic]
             dadp_step = np.zeros((b1.shape[0], b1.shape[1], b1.shape[2] + b2.shape[2] + b3.shape[2] + b4.shape[2]))
-
+            dadp_exp = np.zeros((b1.shape[0], b1.shape[1], (b1.shape[2] + b2.shape[2] + b3.shape[2] + b4.shape[2]) * len(self.arclist_t)))
             if dadp_step.shape[2] == 0:
                 return None
 
@@ -506,10 +506,12 @@ class Accelerometer_V2:
             n += b4.shape[2]
             dadp_step[:, :, m:n] = b4
 
+            dadp_exp[:, :, i * np.shape(dadp_step)[2]: (i+1) * np.shape(dadp_step)[2]] = dadp_step
+
             if dadp.size == 0:
-                dadp = dadp_step
+                dadp = dadp_exp
             else:
-                dadp = np.vstack((dadp, dadp_step))
+                dadp = np.vstack((dadp, dadp_exp))
         return dadp
 
     # def get_timestamp(self):
