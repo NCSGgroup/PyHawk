@@ -1,3 +1,5 @@
+import os.path
+
 import numpy as np
 from Quaternion import Quat, Quaternion
 from src.Preference.EnumType import Payload
@@ -9,12 +11,12 @@ from src.Preference.Pre_Accelerometer import AccelerometerConfig
 
 
 class AccCaliPar:
-    def __init__(self, rd: ArcData, sat, arcNo, accConfig:AccelerometerConfig, nodes):
+    def __init__(self, rd: ArcData, sat, arcNo, accConfig:AccelerometerConfig, adjustlength):
         self.rd = rd
         self.sat = sat
         self.arcNo = arcNo
         self.accConfig = accConfig
-        self.node = nodes
+        self.adjustLength = adjustlength * 3600
         self.acc = None
         self.sca = None
         # if kwargs:
@@ -39,6 +41,26 @@ class AccCaliPar:
         q = Quaternion.normalize(self.sca[:, index])
         self.sca = Quat(q=q).transform
 
+        self.Time = self.acc[:,0]
+        self.node = [self.Time[0]]
+        t1 = self.Time[0]
+        while True:
+            t2 = t1 + self.adjustLength
+            if np.fabs(t2 - self.Time[-1]) <= 0.5 * 3600:
+                '''difference less than 0.5 hour, end'''
+                self.node.append(t2)
+                break
+            elif len(self.Time[self.Time >= t2]) <= 100:
+                if len(self.Time[self.Time >= t2]) == 0:
+                    self.node.append(self.Time[-1] + 10)
+                else:
+                    '''the rest points are too short, e.g., less than 100: include the rest into the last arc'''
+                    self.node[-1] = self.Time[
+                                        -1] + 10  # +10, a little bigger than the last point to ensure all is included
+                break
+            else:
+                self.node.append(t2)
+                t1 = t2
         '''Above defines a fully populated scale matrix (span to 1-d)'''
         '''
         for example
@@ -506,6 +528,9 @@ class Accelerometer_V2:
         sat = self.__sat
         time = self.__acc[:, 0]
         date_span = self.__rd.date_span
+
+        if not os.path.exists(self.__dataTemp):
+            os.mkdir(self.__dataTemp)
 
         filename = pathlib.Path(self.__dataTemp).joinpath(
             date_span[0] + '_' + date_span[1] + '_' + sat + '_' + str(self.__arcNo) + '.hdf5')

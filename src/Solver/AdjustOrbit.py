@@ -382,21 +382,21 @@ class AdjustOrbit:
         """step 1: combine the SCA and ACC data to obtain the non-conservative force as well as dadp arc by arc"""
         self._rd = ArcData(interfaceConfig=self._InterfaceConfig)
 
-        """step 3: instance second Derivative"""
-        self._secDer = SerDer(self._fr, self._rd).configures\
-            (arc=self._arcNo, FMConfig=self.FMConfig, ParConfig=self.ParameterConfig, FrameConfig=FrameConfig).\
-            setInitData(kind=self._kind)
-        times = self._secDer.getTimes()
-
         '''init acc'''
         for i in range(len(self._sat)):
             ap = AccCaliPar(rd=self._rd, sat=self._sat[i], arcNo=self._arcNo,
-                            accConfig=self.accConfig[i], nodes=times)
+                            accConfig=self.accConfig[i], adjustlength=self.AccAdjustLength)
             ac = Accelerometer_V2(ap=ap)
             ac.get_and_save()
             self._ac[self._sat[i]] = ac
             self._ap[self._sat[i]] = ap
 
+        """step 3: instance second Derivative"""
+        self._secDer = SerDer(self._fr, self._rd).configures \
+            (arc=self._arcNo, FMConfig=self.FMConfig, ParConfig=self.ParameterConfig, FrameConfig=FrameConfig). \
+            setInitData(kind=self._kind)
+
+        times = self._secDer.getTimes()
         """step 4: Propagator config"""
         self._startTime, self._startPos, self._startVel = self._secDer.getInitData()
         self._obsGNV = self._secDer.getInitState()
