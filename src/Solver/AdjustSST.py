@@ -68,13 +68,15 @@ class RangeRate:
         self._secDer = SerDer(self._fr, rd).configures\
             (arc=self.__arcNo, FMConfig=self.FMConfig,
              ParConfig=self.ParameterConfig, FrameConfig=FrameConfig).setInitData(kind=EnumType.Payload.GNV)
+        times = self._secDer.getTimes()
 
         self._startTime, self._startPos, self._startVel = h5AB['t'][:][4], \
                         np.vstack((h5AB['r'][:][4, 0:3, 0], h5AB['r'][:][4, 3:6, 0])), \
                         np.vstack((h5AB['v'][:][4, 0:3, 0], h5AB['v'][:][4, 3:6, 0]))
-        self._ode = GravimetryODE().configure(ODEConfig=self.ODEConfig, ParameterConfig=self.ParameterConfig).setParNum().\
-            setInitial(self._startTime, self._startPos.copy(), self._startVel.copy()).\
+        self._ode = GravimetryODE().configure(ODEConfig=self.ODEConfig, ParameterConfig=self.ParameterConfig).\
+            setDataTime(times).setParNum().setInitial(self._startTime, self._startPos.copy(), self._startVel.copy()).\
             set2ndDerivative(self._secDer)
+
         self._ode_res = self._ode.propagate()
         t,r,v = self._ode_res[0], self._ode_res[1], self._ode_res[2]
 

@@ -386,10 +386,19 @@ class AdjustOrbit:
         self._secDer = SerDer(self._fr, self._rd).configures\
             (arc=self._arcNo, FMConfig=self.FMConfig, ParConfig=self.ParameterConfig, FrameConfig=FrameConfig).\
             setInitData(kind=self._kind)
+        times = self._secDer.getTimes()
+
+        '''init acc'''
+        for i in range(len(self._sat)):
+            ap = AccCaliPar(rd=self._rd, sat=self._sat[i], arcNo=self._arcNo,
+                            accConfig=self.accConfig[i], nodes=times)
+            ac = Accelerometer_V2(ap=ap)
+            ac.get_and_save()
+            self._ac[self._sat[i]] = ac
+            self._ap[self._sat[i]] = ap
 
         """step 4: Propagator config"""
         self._startTime, self._startPos, self._startVel = self._secDer.getInitData()
-        times = self._secDer.getTimes()
         self._obsGNV = self._secDer.getInitState()
         # self._commonTime = self._secDer.getCommonTime()
         self._ode = GravimetryODE().configure(ODEConfig=self.ODEConfig, ParameterConfig=self.ParameterConfig).\
@@ -399,15 +408,6 @@ class AdjustOrbit:
 
     def calibrate(self, iteration: int = 2):
         # assert iteration >= 2
-        '''init acc'''
-        for i in range(len(self._sat)):
-            ap = AccCaliPar(rd=self._rd, sat=self._sat[i], arcNo=self._arcNo,
-                            accConfig=self.accConfig[i], adjustlength=self.AccAdjustLength)
-            ac = Accelerometer_V2(ap=ap)
-            ac.get_and_save()
-            self._ac[self._sat[i]] = ac
-            self._ap[self._sat[i]] = ap
-
         ode = self._ode
         '''step 1: orbit integration and save data'''
         self._ode_res = ode.propagate()

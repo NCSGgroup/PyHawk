@@ -158,6 +158,8 @@ class CalibrateOrbit:
         self.__arclist = self.getArcList(path=arcft_path)
         if isAdjustOrbit:
             self.makeLog(stepName='adjustOrbit', process=AdjustOrbitProcess)
+            # for i in np.arange(63, 64, 1):
+            #     self._adjustOrbit(i)
             pool = multiprocessing.Pool(processes=AdjustOrbitProcess)
             pool.map(self._adjustOrbit, self.__arclist)
             pool.close()
@@ -230,6 +232,7 @@ class CalibrateOrbit:
 
     def _adjustOrbit(self, i):
         """step 5: init AdjustOrbit"""
+        print(i)
         AdjustOrbit(accConfig=[self.__acc_config_A, self.__acc_config_B], date_span=self.__date_span, sat=self.__sat).\
             configure(SerDer=Orbit_var_2nd_diff, arcNo=i, ODEConfig=self.__ode_config,
                       FMConfig=self.__force_model_config, AdjustOrbitConfig=self.__adjust_config,
@@ -380,6 +383,8 @@ class CalibrateOrbit:
         plt.ylabel(r'$Z/mm$', fontsize=20)
         plt.yticks(fontsize=18)
 
+        if not os.path.exists('../result/img'):
+            os.mkdir('../result/img')
         plt.savefig('../result/img/{}-{}-{}.png'.format(sat, self.__date_span[0], self.__date_span[-1]))
         plt.grid(ls='--')
         plt.clf()

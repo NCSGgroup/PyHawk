@@ -9,12 +9,12 @@ from src.Preference.Pre_Accelerometer import AccelerometerConfig
 
 
 class AccCaliPar:
-    def __init__(self, rd: ArcData, sat, arcNo, accConfig:AccelerometerConfig, adjustlength: int):
+    def __init__(self, rd: ArcData, sat, arcNo, accConfig:AccelerometerConfig, nodes):
         self.rd = rd
         self.sat = sat
         self.arcNo = arcNo
         self.accConfig = accConfig
-        self.adjustlength = adjustlength
+        self.node = nodes
         self.acc = None
         self.sca = None
         # if kwargs:
@@ -30,7 +30,6 @@ class AccCaliPar:
         #     cali_value = self.AccCaliValue
         #======= strategy ======
         '''the length to adjust acc: unit [hour]'''
-        self.adjustLength = self.adjustlength * 3600
         self.acc = self.rd.getData(arc=self.arcNo, kind=Payload.ACC, sat=self.sat)
         self.sca = self.rd.getData(arc=self.arcNo, kind=Payload.SCA, sat=self.sat)
 
@@ -39,24 +38,6 @@ class AccCaliPar:
         index = [2, 3, 4, 1]
         q = Quaternion.normalize(self.sca[:, index])
         self.sca = Quat(q=q).transform
-
-        '''divide arcs to adjust acc individually'''
-        self.Time = self.acc[:, 0]
-        self.node = [self.Time[0]]
-        t1 = self.Time[0]
-        while True:
-            t2 = t1 + self.adjustLength
-            if np.fabs(t2 - self.Time[-1]) <= 0.5 * 3600:
-                '''difference less than 0.5 hour, end'''
-                self.node.append(t2)
-                break
-            elif len(self.Time[self.Time >= t2]) <= 100:
-                '''the rest points are too short, e.g., less than 100: include the rest into the last arc'''
-                self.node[-1] = self.Time[-1] + 10  # +10, a little bigger than the last point to ensure all is included
-                break
-            else:
-                self.node.append(t2)
-                t1 = t2
 
         '''Above defines a fully populated scale matrix (span to 1-d)'''
         '''
