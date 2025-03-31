@@ -25,7 +25,7 @@ def readDate():
     date_span = ["2009-01-01", "2009-01-31"]
     res_dir = "../temp/StateVector/" + str(date_span[0]) + '_' + str(date_span[1])
 
-    for i in range(4, 6):
+    for i in range(0, 1):
         gnv = rd.getData(arc=i, kind=Payload.GNV, sat='A')
         StateName = res_dir + '/' + str(i) + '_AB.hdf5'
         StateH5 = h5py.File(StateName, "r")

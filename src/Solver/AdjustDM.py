@@ -34,6 +34,7 @@ class AdjustDM:
         self._initPath = None
         self._ArcData = None
         self._fr = None
+        self.times = None
         self._ODE = None
         self._satName = None
         for sat in self._sat:
@@ -78,14 +79,16 @@ class AdjustDM:
             setInitData(kind=self._kind)
         init_r, init_v = self.__getInit()
         startTime, _, _ = self._SerDer.getInitData()
+        self.times = self._SerDer.getTimes()
         self._ODE = GravimetryODE().configure(ODEConfig=self._ODEConfig, ParameterConfig=self._ParameterConfig)\
-            .setParNum().setInitial(startTime, init_r.copy(), init_v.copy()). \
+            .setDataTime(self.times).setParNum().setInitial(startTime, init_r.copy(), init_v.copy()). \
             set2ndDerivative(self._SerDer)
         return self
 
     def calibrate(self):
         ode_res = self._ODE.propagate()
         self._save_StateVectors(ode_res)
+        return self
 
     def _save_StateVectors(self, state):
         res_dir = self._resPath + '/' + self._date_span[0] + '_' + self._date_span[1]
@@ -110,3 +113,7 @@ class AdjustDM:
         a = res[EnumType.ParaType.TransitionMatrix.name]
         r_ini, v_ini = a[:, 0:3], a[:, 3:]
         return r_ini, v_ini
+
+    def getTimes(self):
+
+        return self.times

@@ -44,6 +44,7 @@ class GravityDesignMat:
         self._AdjustConfig = None
         self._InterfaceConfig = None
         self._FrameConfig = None
+        self.nodes = None
         pass
 
     def configure(self, accConfig, solverConfig: SolverConfig, AdjustOrbitConfig: AdjustOrbitConfig,
@@ -88,13 +89,13 @@ class GravityDesignMat:
             res_dir.mkdir(exist_ok=True)
         # kwargs = {'ChangeTempPath': res_dir}
         adjustDM.calibrate()
-
+        self.nodes = adjustDM.getTimes()
         return self
 
     def get_orbit_design_matrix(self):
 
         DM_orbit = self.__load_state_vec()
-        pp = Parameterization().configure(parameterConfig=self._parameterConfig)
+        pp = Parameterization().configure(parameterConfig=self._parameterConfig, nodes=self.nodes)
 
         dm_r = DM_orbit['r']
         dm_v = DM_orbit['v']

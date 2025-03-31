@@ -239,6 +239,8 @@ class ArcSelect:
         rd = ArcData(interfaceConfig=self.__gf.L1b.InterfaceConfig)
 
         date = self.__gf.getDate()
+        if not os.path.exists(self.__arcft_path):
+            os.mkdir(self.__arcft_path)
         path = self.__arcft_path + '/' + date[0] + '_' + date[-1] + '.txt'
         with open(path, 'w') as f:
             f.write('This ia a summary of arc True or False information.\n')
