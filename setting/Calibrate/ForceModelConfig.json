@@ -63,11 +63,11 @@
             "M2": true,
             "L2": true,
             "T2": true,
-            "S2": false,
-            "R2": false,
-            "T3": false,
-            "S3": false,
-            "R3": false
+            "S2": true,
+            "R2": true,
+            "T3": true,
+            "S3": true,
+            "R3": true
         },
         "kind": "ATM",
         "Nmax": 180,
