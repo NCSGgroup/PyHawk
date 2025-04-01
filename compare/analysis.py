@@ -100,20 +100,20 @@ def drawTime(data1, data2):
     # csr_05_c, csr_05_s = LoadCSR().load(fileIn=csr_05_name).getCS(Nmax=60)
     # csr_05_c, csr_05_s = csr_05_c - static_c, csr_05_s - static_s
     # csr_05_c, csr_05_s = GeoMathKit.CS_1dTo2d(csr_05_c), GeoMathKit.CS_1dTo2d(csr_05_s)
-    # '''read CSR'''
-    # csr_filename = '../result/SH/CSR/GSM-2_' + data2 + '_GRAC_UTCSR_BA01_0600.gfc'
-    # csr_c, csr_s = LoadCSR().load(fileIn=csr_filename).getCS(Nmax=60)
-    # csr_c, csr_s = csr_c - static_c, csr_s - static_s
-    # csr_c, csr_s = GeoMathKit.CS_1dTo2d(csr_c), GeoMathKit.CS_1dTo2d(csr_s)
-    # # csr_diff_c = hust_c - csr_c
-    # # csr_diff_s = hust_s - csr_s
-    # # csr_e_l = get_drgee_rms(diff_c=csr_diff_c, diff_s=csr_diff_s)
-    # # csr_n_l = get_geoid_drgee_error(diff_c=csr_diff_c, diff_s=csr_diff_s)
-    # '''read GFZ'''
-    # gfz_filename = '../result/SH/GFZ/GSM-2_' + data2 + '_GRAC_GFZOP_BA01_0600.gfc'
-    # gfz_c, gfz_s = LoadCSR().load(fileIn=gfz_filename).getCS(Nmax=60)
-    # gfz_c, gfz_s = gfz_c - static_c, gfz_s - static_s
-    # gfz_c, gfz_s = GeoMathKit.CS_1dTo2d(gfz_c), GeoMathKit.CS_1dTo2d(gfz_s)
+    '''read CSR'''
+    csr_filename = '../result/SH/CSR/GSM-2_' + data2 + '_GRAC_UTCSR_BA01_0600.gfc'
+    csr_c, csr_s = LoadCSR().load(fileIn=csr_filename).getCS(Nmax=60)
+    csr_c, csr_s = csr_c - static_c, csr_s - static_s
+    csr_c, csr_s = GeoMathKit.CS_1dTo2d(csr_c), GeoMathKit.CS_1dTo2d(csr_s)
+    # csr_diff_c = hust_c - csr_c
+    # csr_diff_s = hust_s - csr_s
+    # csr_e_l = get_drgee_rms(diff_c=csr_diff_c, diff_s=csr_diff_s)
+    # csr_n_l = get_geoid_drgee_error(diff_c=csr_diff_c, diff_s=csr_diff_s)
+    '''read GFZ'''
+    gfz_filename = '../result/SH/GFZ/GSM-2_' + data2 + '_GRAC_GFZOP_BA01_0600.gfc'
+    gfz_c, gfz_s = LoadCSR().load(fileIn=gfz_filename).getCS(Nmax=60)
+    gfz_c, gfz_s = gfz_c - static_c, gfz_s - static_s
+    gfz_c, gfz_s = GeoMathKit.CS_1dTo2d(gfz_c), GeoMathKit.CS_1dTo2d(gfz_s)
     # '''read GFZ 05'''
     # gfz_05_name = '../compare/GFZ_GFZ-Release-05_monthly_unfiltered_GSM-2_2008001-2008031_0031_EIGEN_G---_005a.gfc'
     # gfz_05_c, gfz_05_s = LoadCSR().load(fileIn=gfz_05_name).getCS(Nmax=60)
@@ -123,11 +123,11 @@ def drawTime(data1, data2):
     # # gfz_diff_s = hust_s - gfz_s
     # # gfz_e_l = get_drgee_rms(diff_c=gfz_diff_c, diff_s=gfz_diff_s)
     # # gfz_n_l = get_geoid_drgee_error(diff_c=gfz_diff_c, diff_s=gfz_diff_s)
-    # '''read JPL'''
-    # jpl_filename = '../result/SH/JPL/GSM-2_' + data2 + '_GRAC_JPLEM_BA01_0600.gfc'
-    # jpl_c, jpl_s = LoadCSR().load(fileIn=jpl_filename).getCS(Nmax=60)
-    # jpl_c, jpl_s = jpl_c - static_c, jpl_s - static_s
-    # jpl_c, jpl_s = GeoMathKit.CS_1dTo2d(jpl_c), GeoMathKit.CS_1dTo2d(jpl_s)
+    '''read JPL'''
+    jpl_filename = '../result/SH/JPL/GSM-2_' + data2 + '_GRAC_JPLEM_BA01_0600.gfc'
+    jpl_c, jpl_s = LoadCSR().load(fileIn=jpl_filename).getCS(Nmax=60)
+    jpl_c, jpl_s = jpl_c - static_c, jpl_s - static_s
+    jpl_c, jpl_s = GeoMathKit.CS_1dTo2d(jpl_c), GeoMathKit.CS_1dTo2d(jpl_s)
     # jpl_diff_c = hust_c - jpl_c
     # jpl_diff_s = hust_s - jpl_s
     # jpl_e_l = get_drgee_rms(diff_c=jpl_diff_c, diff_s=jpl_diff_s)
@@ -151,16 +151,16 @@ def drawTime(data1, data2):
     # hust3 = get_geoid_drgee_error(diff_c=hust_c3, diff_s=hust_s3)
     # hust4 = get_geoid_drgee_error(diff_c=hust_c4, diff_s=hust_s4)
     # static = get_geoid_drgee_error(diff_c=hust_c, diff_s=hust_s)
-    # '''csr'''
-    # csr = get_geoid_drgee_error(diff_c=csr_c, diff_s=csr_s)
-    # '''csr 05'''
+    '''csr'''
+    csr = get_geoid_drgee_error(diff_c=csr_c, diff_s=csr_s)
+    '''csr 05'''
     # csr_05 = get_geoid_drgee_error(diff_c=csr_05_c, diff_s=csr_05_s)
-    # '''gfz'''
-    # gfz = get_geoid_drgee_error(diff_c=gfz_c, diff_s=gfz_s)
-    # '''gfz 05'''
+    '''gfz'''
+    gfz = get_geoid_drgee_error(diff_c=gfz_c, diff_s=gfz_s)
+    '''gfz 05'''
     # gfz_05 = get_geoid_drgee_error(diff_c=gfz_05_c, diff_s=gfz_05_s)
-    # '''jpl'''
-    # jpl = get_geoid_drgee_error(diff_c=jpl_c, diff_s=jpl_s)
+    '''jpl'''
+    jpl = get_geoid_drgee_error(diff_c=jpl_c, diff_s=jpl_s)
     # plt.title('Geoid Degree', fontsize=30)
     matplotlib.rcParams.update({'font.size': 30})
     fig = plt.figure(figsize=(10, 8))
@@ -169,9 +169,9 @@ def drawTime(data1, data2):
     plt.plot(np.arange(2, 61, 1), hust2[2:], color='black', linewidth=2.0, marker='', label='PyHawk-2h')
     # plt.plot(np.arange(2, 61, 1), hust3[2:], color='olive', linewidth=2.0, marker='', label='PMA-AOD')
     # plt.plot(np.arange(2, 61, 1), hust4[2:], color='red', linewidth=2.0, marker='', label='PMA-CRA')
-    # plt.plot(np.arange(2, 61, 1), csr[2:], color='red', marker='', linewidth=2.0,label='CSR')
-    # plt.plot(np.arange(2, 61, 1), gfz[2:], color='indigo', marker='', linewidth=2.0,label='GFZ')
-    # plt.plot(np.arange(2, 61, 1), jpl[2:], color='blue', marker='',linewidth=2.0, label='JPL')
+    plt.plot(np.arange(2, 61, 1), csr[2:], color='red', marker='', linewidth=2.0,label='CSR')
+    plt.plot(np.arange(2, 61, 1), gfz[2:], color='indigo', marker='', linewidth=2.0,label='GFZ')
+    plt.plot(np.arange(2, 61, 1), jpl[2:], color='blue', marker='',linewidth=2.0, label='JPL')
     # plt.plot(np.arange(2, 61, 1), csr_05[2:], color='indigo', marker='h', label='CSR 05')
     # plt.plot(np.arange(2, 61, 1), gfz_05[2:], color='blue', marker='H', label='GFZ 05')
     # plt.plot(np.arange(2, 61, 1), csr_e_l[2:], color='red', marker='s', label='CSR - HUST')
@@ -588,7 +588,7 @@ def subplotsGeoid():
 
 if __name__ == '__main__':
     span1 = '2009-05-01-2009-05-31'
-    span2 = '2006001-2006031'
+    span2 = '2009121-2009151'
     # data_span = get_month_start_and_end_by_date_interval('2009-01-01', '2010-12-31')
 
     # for i in range(len(data_span)):

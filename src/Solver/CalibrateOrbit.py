@@ -158,12 +158,12 @@ class CalibrateOrbit:
         self.__arclist = self.getArcList(path=arcft_path)
         if isAdjustOrbit:
             self.makeLog(stepName='adjustOrbit', process=AdjustOrbitProcess)
-            for i in np.arange(119, 120, 1):
-                self._adjustOrbit(i)
-            # pool = multiprocessing.Pool(processes=AdjustOrbitProcess)
-            # pool.map(self._adjustOrbit, self.__arclist)
-            # pool.close()
-            # pool.join()
+            # for i in np.arange(119, 120, 1):
+            #     self._adjustOrbit(i)
+            pool = multiprocessing.Pool(processes=AdjustOrbitProcess)
+            pool.map(self._adjustOrbit, self.__arclist)
+            pool.close()
+            pool.join()
         self.__saveOrbitRMS()
         if isAdjustKBRR:
             self.makeLog(stepName='adjustKBRR', process=AdjustKBRRProcess)
@@ -174,6 +174,8 @@ class CalibrateOrbit:
         self.__saveKBRRRMS()
         if isGravityDesignMat:
             self.makeLog(stepName='gravityDesignMat', process=GetGravityDesignMatProcess)
+            # for i in np.arange(0, 10, 1):
+            #     self._gravityDesignMat(i)
             pool = multiprocessing.Pool(processes=GetGravityDesignMatProcess)
             pool.map(self._gravityDesignMat, self.__arclist)
             pool.close()
