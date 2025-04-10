@@ -111,6 +111,28 @@ from src.Preference.EnumType import ParaType
 # plt.tight_layout()
 # plt.show()
 
-for key in [ParaType.TransitionMatrix, ParaType.Accelerometer, ParaType.StokesCoefficients]:
-    if key is ParaType.Accelerometer:
-        print(ParaType.Accelerometer)
+# for key in [ParaType.TransitionMatrix, ParaType.Accelerometer, ParaType.StokesCoefficients]:
+#     if key is ParaType.Accelerometer:
+#         print(ParaType.Accelerometer)
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.signal import welch
+
+# 生成信号
+fs = 1000  # 采样频率为1000Hz
+t = np.linspace(0, 1, fs, endpoint=False)  # 生成1秒的时间序列
+f = 5  # 正弦波的频率为5Hz
+signal = np.sin(2 * np.pi * f * t) + 0.5 * np.random.randn(len(t))  # 添加一些噪声
+
+# 计算功率谱密度
+f, psd = welch(signal, fs, nperseg=1000)  # nperseg指定每个段的长度
+
+# 绘制功率谱密度图
+plt.figure()
+plt.semilogy(f, psd)  # 使用对数y轴来更好地显示低频部分
+plt.title('Power Spectral Density')
+plt.xlabel('Frequency (Hz)')
+plt.ylabel('PSD (dB/Hz)')
+plt.grid()
+plt.show()

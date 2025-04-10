@@ -6,7 +6,7 @@
     },
     "AccelerometerConfig": {
         "isRequired": true,
-        "AdjustLength": 6,
+        "AdjustLength": 3,
         "Parameter_Number": 6,
         "AllisGlobal": false
     },

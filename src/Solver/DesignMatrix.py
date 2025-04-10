@@ -66,13 +66,7 @@ class GravityDesignMat:
         self._PathfileConfig = self._AdjustConfig.PathOfFiles()
         self._PathfileConfig.__dict__.update(self._AdjustConfig.PathOfFilesConfig.copy())
 
-        kbr_arc = self._RangeRateConfig.ArcLength
-        self.__rms_times = self._RangeRateConfig.OutlierTimes
-        self.__upper_RMS = self._RangeRateConfig.OutlierLimit
         self.__kbr_fit = self._RangeRateConfig.ParameterFitting
-        self.__iterations = self._RangeRateConfig.Iterations
-        '''the arc length to Calibrate kbr: unit [hour]'''
-        self.__kbr_arc = kbr_arc * 3600
 
         return self
 

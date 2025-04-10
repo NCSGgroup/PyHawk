@@ -17,7 +17,8 @@ class AdjustOrbitConfig:
         def __init__(self):
             self.ParameterFitting = EnumType.SSTFitOption.biasC0C1_OneCPR.name
             self.OutlierTimes = 6  # how
-            self.OutlierLimit = 7e-07
+            self.OutlierRMS = 7e-07
+            self.OutlierObs = 7e-07
             self.ArcLength = 1.5
             self.Iterations = 3  # times
 

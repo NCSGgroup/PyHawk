@@ -41,7 +41,7 @@ class AccCaliPar:
         q = Quaternion.normalize(self.sca[:, index])
         self.sca = Quat(q=q).transform
 
-        self.Time = self.acc[:,0]
+        self.Time = self.acc[:, 0]
         self.node = [self.Time[0]]
         t1 = self.Time[0]
         while True:
@@ -52,11 +52,10 @@ class AccCaliPar:
                 break
             elif len(self.Time[self.Time >= t2]) <= 100:
                 if len(self.Time[self.Time >= t2]) == 0:
-                    self.node.append(self.Time[-1] + 10)
+                    self.node.append(self.Time[-1] + 5)
                 else:
                     '''the rest points are too short, e.g., less than 100: include the rest into the last arc'''
-                    self.node[-1] = self.Time[
-                                        -1] + 10  # +10, a little bigger than the last point to ensure all is included
+                    self.node[-1] = self.Time[-1] + 5 # +10, a little bigger than the last point to ensure all is included
                 break
             else:
                 self.node.append(t2)

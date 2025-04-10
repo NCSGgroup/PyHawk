@@ -71,10 +71,10 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
                 break
             elif len(self.Time[self.Time >= t2]) <= 100:
                 if len(self.Time[self.Time >= t2]) == 0:
-                    self.node.append(self.Time[-1] + 10)
+                    self.node.append(self.Time[-1] + 5)
                 else:
                     '''the rest points are too short, e.g., less than 100: include the rest into the last arc'''
-                    self.node[-1] = self.Time[-1] + 10  # +10, a little bigger than the last point to ensure all is included
+                    self.node[-1] = self.Time[-1] + 5  # +10, a little bigger than the last point to ensure all is included
                 break
             else:
                 self.node.append(t2)

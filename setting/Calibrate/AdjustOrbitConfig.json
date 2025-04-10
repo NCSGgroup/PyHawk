@@ -5,12 +5,11 @@
     },
     "RangeRateConfig": {
         "ParameterFitting": "biasC0C1_OneCPR",
-        "OutlierTimes": 6,
-        "OutlierLimit": 7e-07,
+        "OutlierTimes": 3,
+        "OutlierRMS": 7e-07,
+        "OutlierObs": 7e-07,
+        "ArcLength": 1.5,
         "Iterations": 3
-    },
-    "AccelerometerConfig": {
-        "AdjustLength": 2
     },
     "PathOfFilesConfig": {
         "StateVectorDataTemp": "../temp/StateVector",

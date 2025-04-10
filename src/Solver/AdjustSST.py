@@ -28,6 +28,7 @@ class RangeRate:
         """init variable"""
         self.__rms_times = None
         self.__upper_RMS = None
+        self.__upper_obs = None
         self.__kbr_fit = None
         self.__iterations = None
         self.__kbr_arc = None
@@ -82,7 +83,8 @@ class RangeRate:
 
         kbr_arc = self._RangeRateConfig.ArcLength
         self.__rms_times = self._RangeRateConfig.OutlierTimes
-        self.__upper_RMS = self._RangeRateConfig.OutlierLimit
+        self.__upper_RMS = self._RangeRateConfig.OutlierRMS
+        self.__upper_obs = self._RangeRateConfig.OutlierObs
         self.__kbr_fit = self._RangeRateConfig.ParameterFitting
         self.__iterations = self._RangeRateConfig.Iterations
         '''the arc length to Calibrate kbr: unit [hour]'''
@@ -160,7 +162,8 @@ class RangeRate:
 
             for iter in range(self.__iterations):
                 residual = kf.get_residual(dm.copy(), obs)
-                index = Outlier(rms_times=self.__rms_times, upper_RMS=self.__upper_RMS).remove(t, residual)
+                index = Outlier(rms_times=self.__rms_times, upper_RMS=self.__upper_RMS,
+                                upper_obs=self.__upper_obs).remove(t, residual)
                 t = t[index]
                 dm = dm[index, :]
                 obs = residual[index]
