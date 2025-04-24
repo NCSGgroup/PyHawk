@@ -3,6 +3,10 @@
 # 1. Description
 The low-low satellite-to-satellite tracking (ll-sst) gravity missions,such as the Gravity Recovery and Climate Experiment (GRACE) and its Follow-On (GRACE-FO), provide an important space-based Essential Climate Variable (ECV) over the last two decades. The measurement systems of these ll-sst missions are highly complex, thus, a data processing chain is required to exploit the potential of their high-precision measurements, which challenges both the general and expert users. In this study, we present an open-source, user-friendly, cross-platform and integrated toolbox "PyHawk", which is the first Python-based software in relevant field, to address the complete data processing chain of ll-sst missions including GRACE, GRACE-FO and likely the future gravity missions. This toolbox provides non-expert users an easy access to the payload data pre-processing, background force modeling, orbit integration, ranging calibration, as well as the ability for temporal gravity field recovery using ll-sst measurements. Researchers working with the low-Earth-orbit space geodetic techniques, GNSS based orbit determination, and gravity field modeling can benefit from this toolbox.
 
+When referencing this work, please cite:
+> Wu Y, Yang F, Liu S, et al. PyHawk: An efficient gravity recovery solver for low-low satellite-to-satellite tracking gravity missions[J]. Computers & Geosciences, 2025: 105934.
+> https://doi.org/10.1016/j.cageo.2025.105934
+
 <div align=center>
     <img src="module.png" width="450" >
 </div>
