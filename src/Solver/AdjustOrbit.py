@@ -499,16 +499,17 @@ class AdjustOrbit:
 
         DesignMatrixA = xyz[:, 0:3, 1:].reshape((len(xyz) * 3, -1))
         bA = residual[:, 0:3].flatten()
-        QA, RA = np.linalg.qr(DesignMatrixA)
-        xA = np.linalg.inv(RA).dot(QA.T).dot(bA)
+        # QA, RA = np.linalg.qr(DesignMatrixA)
+        # xA = np.linalg.solve(RA, QA.T @ bA)
 
-        # xA = np.linalg.lstsq(DesignMatrixA, bA, rcond=None)[0]
+        xA = np.linalg.lstsq(DesignMatrixA, bA, rcond=None)[0]
 
         DesignMatrixB = xyz[:, 3:6, 1:].reshape((len(xyz) * 3, -1))
         bB = residual[:, 3:6].flatten()
-        QB, RB = np.linalg.qr(DesignMatrixB)
-        xB = np.linalg.inv(RB).dot(QB.T).dot(bB)
-        # xB = np.linalg.lstsq(DesignMatrixB, bB, rcond=None)[0]
+        # QB, RB = np.linalg.qr(DesignMatrixB)
+        # xB = np.linalg.solve(RB, QB.T @ bB)
+
+        xB = np.linalg.lstsq(DesignMatrixB, bB, rcond=None)[0]
 
         self._res = np.vstack((xA, xB))
 

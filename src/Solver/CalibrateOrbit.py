@@ -38,6 +38,7 @@ from src.Auxilary.Format import FormatWrite
 import multiprocessing
 import json
 from datetime import datetime
+from src.Preference.EnumType import Payload, SatID, SSTObserve
 
 
 class CalibrateOrbit:
@@ -158,20 +159,20 @@ class CalibrateOrbit:
         self.__arclist = self.getArcList(path=arcft_path)
         if isAdjustOrbit:
             self.makeLog(stepName='adjustOrbit', process=AdjustOrbitProcess)
-            # for i in np.arange(119, 120, 1):
+            # for i in np.arange(61, 120, 1):
             #     self._adjustOrbit(i)
             pool = multiprocessing.Pool(processes=AdjustOrbitProcess)
             pool.map(self._adjustOrbit, self.__arclist)
             pool.close()
             pool.join()
-        self.__saveOrbitRMS()
+            self.__saveOrbitRMS()
         if isAdjustKBRR:
             self.makeLog(stepName='adjustKBRR', process=AdjustKBRRProcess)
             pool = multiprocessing.Pool(processes=AdjustKBRRProcess)
             pool.map(self._adjustKBRR, self.__arclist)
             pool.close()
             pool.join()
-        self.__saveKBRRRMS()
+            self.__saveKBRRRMS()
         if isGravityDesignMat:
             self.makeLog(stepName='gravityDesignMat', process=GetGravityDesignMatProcess)
             # for i in np.arange(0, 10, 1):
@@ -184,12 +185,13 @@ class CalibrateOrbit:
             self.makeLog(stepName='NEQ', process=GetNEQProcess)
             pool = multiprocessing.Pool(processes=GetNEQProcess)
             pool.map(self._NEQ, self.__arclist)
-            # pool.map(self._NEQ, range(0, 1))
             pool.close()
             pool.join()
         if isSH:
             self.makeLog(stepName='SH', process=1)
             self.__calculate_cs()
+            self.plotPostKbrr()
+            self.xyz2lonlat()
         # self.getSpaceKBRR()
         pass
 
@@ -292,9 +294,11 @@ class CalibrateOrbit:
         LMatrix = np.zeros((parameter_number, 1))
         date_span = interface_config.date_span
 
+        self.n = interface_config.arc_length * 3600 / interface_config.sr_target * 3
+        self.p = parameter_number
+
         for i in tqdm(self.__arclist, desc='Solve normal equations: '):
             res_filename = res_dir + '/' + str(i) + '.hdf5'
-            print(res_filename)
             h5 = h5py.File(res_filename, 'r')
             NMatrix = NMatrix + (h5['Orbit_N_A'][:] + h5['Orbit_N_B'][:]) + h5['RangeRate_N'][:] * OrbitKinFactor
             LMatrix = LMatrix + (h5['Orbit_l_A'][:] + h5['Orbit_l_B'][:]) + h5['RangeRate_l'][:].reshape(
@@ -303,21 +307,34 @@ class CalibrateOrbit:
 
         cs = np.linalg.lstsq(NMatrix, LMatrix[:, 0], rcond=None)[0]
 
+        sigma = self.getLocalPar(solverConfig=self.__solver_config, cs=cs, N=NMatrix)
+        # QA, RA = np.linalg.qr(NMatrix)
+        # cs = np.linalg.inv(RA).dot(QA.T).dot(LMatrix[:, 0])
+
+        # cs = []
+        # with open('../result/dcs.txt', 'r') as file:
+        #     lines = file.readlines()
+        #     # 创建一个列表来存储转换后的浮点数
+        #     for line in lines:
+        #         try:
+        #             number = float(line.strip())
+        #             cs.append(number)
+        #         except ValueError:
+        #             print(f"无法将'{line.strip()}'转换为浮点数")
+
         sort = SortCS(method=stokes_coefficients_config.SortMethod,
                       degree_max=stokes_coefficients_config.MaxDegree,
                       degree_min=stokes_coefficients_config.MinDegree)
         c, s = sort.invert(cs)
+        sigmaC , sigmaS = sort.invert(sigma)
 
         static_c, static_s = LoadGif48().load(force_model_path_config.Gif48).getCS(stokes_coefficients_config.MaxDegree)
 
         C, S = c + static_c, s + static_s
 
-        sigmaC , sigmaS = np.zeros(len(C)), np.zeros(len(S))
-
         format = FormatWrite().configure(filedir=neq_path_config.ResultCS,
                                          data=date_span, degree=stokes_coefficients_config.MaxDegree,
                                          c=C, s=S, sigmaC=sigmaC, sigmaS=sigmaS)
-        print(len(C))
         format.unfiltered()
 
         pass
@@ -409,6 +426,7 @@ class CalibrateOrbit:
         plt.title('KBRR-RMS-{}-{}'.format(self.__date_span[0], self.__date_span[-1]), fontsize=24)
         plt.plot(np.arange(len(post_RMS)), [i * 1000000 for i in post_RMS], marker='o', label="arc RMS")
         plt.yticks(fontsize=18)
+        plt.ylim(0.2, 0.5)
         plt.ylabel(r'$X/um$', fontsize=20)
         plt.legend(loc='upper right', fontsize=20)
         plt.savefig('../result/img/KBRR-{}-{}.png'.format(self.__date_span[0], self.__date_span[-1]))
@@ -483,3 +501,243 @@ class CalibrateOrbit:
                     if data[3] == 'True':
                         arclist.append(int(data[2]))
         return arclist
+
+    def getLocalPar(self, solverConfig, cs, N):
+        self._AdjustPathConfig = self.__adjust_config.PathOfFiles()
+        self._AdjustPathConfig.__dict__.update(self.__adjust_config.PathOfFilesConfig.copy())
+        self.cs=cs
+        '''get orbit par'''
+        res_dir = solverConfig.DesignMatrixTemp + '/' + self.__date_span[0] + '_' + self.__date_span[1]
+
+        self.b_rss = 0
+
+        for i in tqdm(self.__arclist, desc='Solve local parameters: '):
+            res_filename = res_dir + '/Orbit_' + str(self.__arclist[i]) + '_' + 'AB.hdf5'
+            h5 = h5py.File(res_filename, 'r')
+            self.__orbit_nominal = h5['r'][()]
+            self.__t_nominal = h5['t'][()]
+            self.__local_r = h5['local_r'][()]
+            self.__global_r = h5['global_r'][()]
+            h5.close()
+
+            LocalA = self.getOrbitPar(sat=SatID.A, arcNo=i)
+            LocalB = self.getOrbitPar(sat=SatID.B, arcNo=i)
+
+            self.saveAccPar(LocalA, LocalB, arcNo=i)
+            self.savePostKbrr(arcNo=i)
+
+        sigma2_hat = self.b_rss / (self.n - self.p)
+        cov = sigma2_hat * np.linalg.inv(N)
+        sigma = np.sqrt(np.diag(cov))
+
+        CovName = solverConfig.CovarianceMatrix + '/' + self.__date_span[0] + '-' + self.__date_span[1] + '.hdf5'
+        if not os.path.exists(solverConfig.CovarianceMatrix):
+            os.mkdir(solverConfig.CovarianceMatrix)
+        h5 = h5py.File(CovName, 'w')
+        h5.create_dataset('cov', data=cov)
+        h5.close()
+
+        return sigma
+
+    def getOrbitPar(self, sat: SatID, arcNo: int):
+        if sat == SatID.A:
+            orbit_nominal = self.__orbit_nominal[:, 0:3]
+            local_r = self.__local_r[:, 0:3, :]
+            global_r = self.__global_r[:, 0:3, :]
+        else:
+            orbit_nominal = self.__orbit_nominal[:, 3:6]
+            local_r = self.__local_r[:, 3:6, :]
+            global_r = self.__global_r[:, 3:6, :]
+
+        t_nominal = self.__t_nominal
+        self._rd = ArcData(interfaceConfig=self.__interface_config)
+        orbit_obs = self._rd.getData(arc=self.__arclist[arcNo], kind=Payload.GNV, sat=sat)[:, 0:4]
+
+        t_obs = orbit_obs[:, 0]
+        '''for the orbit, only position (r) is needed for the inversion'''
+        '''find the common'''
+        int_t_obs = t_obs.astype(np.int64)
+        int_t_nominal = t_nominal.astype(np.int64)
+        new_index = [list(int_t_nominal).index(x) for x in int_t_obs]
+        '''Reassignment'''
+        t_nominal = t_nominal[new_index]
+        orbit_nominal = orbit_nominal[new_index, :]
+        local_r = local_r[new_index, :, :]
+        global_r = global_r[new_index, :, :]
+        '''Expanding the observations'''
+        obs = orbit_obs[:, 1:] - orbit_nominal
+
+        obs = obs.reshape((-1, 1))
+
+        # TODO: Fix the kinematic orbit
+
+        '''Expanding the design matrix'''
+        n_local = np.shape(local_r)[-1]
+        n_global = np.shape(global_r)[-1]
+        local_r = local_r.reshape((-1, n_local))
+        global_r = global_r.reshape((-1, n_global))
+
+        Local = np.linalg.lstsq(local_r, (obs[:, 0] - global_r @ self.cs), rcond=None)[0]
+
+        b_res = obs[:, 0] - local_r @ Local - global_r @ self.cs
+        self.b_rss += np.sum(b_res ** 2)
+        return Local
+
+    def saveAccPar(self, par_a, par_b, arcNo: int):
+        res_path = self.__solver_config.PostParameter + '/' + self.__date_span[0] + '-' + self.__date_span[1] + '/'
+        if not os.path.exists(res_path):
+            os.makedirs(res_path, exist_ok=True)
+
+        res_name = res_path + str(arcNo) + '_AB.hdf5'
+        h5 = h5py.File(res_name, 'w')
+        h5.create_dataset('par_a', data=par_a)
+        h5.create_dataset('par_b', data=par_b)
+        h5.close()
+        pass
+
+    def savePostKbrr(self, arcNo: int):
+        '''get kbrr par'''
+        dm_dir = self.__solver_config.DesignMatrixTemp + '/' + self.__date_span[0] + '_' + self.__date_span[1]
+        res_filename = dm_dir + '/' + SSTObserve.RangeRate.name + '_' + str(arcNo) + '.hdf5'
+        h5 = h5py.File(res_filename, 'r')
+        t_dm = h5['t'][()]
+        global_dm = h5['global'][()]
+        local_dm = h5['local'][()]
+        h5.close()
+
+        dm_dir = self._AdjustPathConfig.RangeRateTemp + '/' + self.__date_span[0] + '_' + self.__date_span[1]
+        res_filename = dm_dir + '/' + SSTObserve.RangeRate.name + '_' + str(arcNo) + '.hdf5'
+        h5 = h5py.File(res_filename, 'r')
+        t_obs = h5['post_t'][()]
+        obs = h5['post_residual'][()]
+        local_dm_empirical = h5['design_matrix'][()]
+        h5.close()
+
+        int_t_obs = t_obs.astype(np.int64)
+        int_t_dm = t_dm.astype(np.int64)
+        new_index = [list(int_t_dm).index(x) for x in int_t_obs]
+
+        '''Reassignment'''
+        t_dm = t_dm[new_index]
+        global_dm = global_dm[new_index, :]
+        local_dm = local_dm[new_index, :]
+
+        Local_par = np.linalg.lstsq(local_dm, (obs - global_dm @ self.cs))[0]
+        kbrr_res = obs - local_dm @ Local_par - global_dm @ self.cs
+
+        res_path = self.__solver_config.PostKBRR + '/' + self.__date_span[0] + '-' + self.__date_span[1] + '/'
+        if not os.path.exists(res_path):
+            os.makedirs(res_path, exist_ok=True)
+
+        res_name = res_path + 'RangeRate_' + str(arcNo) + '.hdf5'
+        h5 = h5py.File(res_name, 'w')
+        h5.create_dataset('post_kbrr', data=kbrr_res)
+        h5.close()
+        pass
+
+    def plotPostKbrr(self):
+        self.AdjustPath = AdjustOrbitConfig.PathOfFiles()
+        self.AdjustPath.__dict__.update(self.__adjust_config.PathOfFilesConfig.copy())
+
+        res_dir = pathlib.Path().joinpath(self.AdjustPath.RangeRateTemp,
+                                          self.__date_span[0] + '_' + self.__date_span[1])
+
+        post_dir = self.__solver_config.PostKBRR + '/' + self.__date_span[0] + '-' + self.__date_span[1]
+        pre_RMS = []
+        post_RMS = []
+        for i in self.__arclist:
+            res_filename = res_dir.joinpath('RangeRate_' + str(i) + '.hdf5')
+            post_filename = post_dir + '/RangeRate_' + str(i) + '.hdf5'
+            if os.path.exists(res_filename):
+                h5 = h5py.File(res_filename, 'r')
+                post_h5 = h5py.File(post_filename, 'r')
+                if len(h5.keys()) != 0:
+                    postfit = h5['post_residual'][()]
+                    pre_RMS.append(self.__rms(postfit))
+
+                    post_kbrr = post_h5['post_kbrr'][()]
+                    post_RMS.append(self.__rms(post_kbrr))
+                h5.close()
+                post_h5.close()
+
+        plt.figure(dpi=300, figsize=(16, 8))
+        plt.title('KBRR-RMS-{}-{}'.format(self.__date_span[0], self.__date_span[-1]), fontsize=24)
+        plt.plot(np.arange(len(pre_RMS)), [i * 1000000 for i in pre_RMS], marker='o', color='green', label="pre kbrr RMS")
+        plt.plot(np.arange(len(post_RMS)), [i * 1000000 for i in post_RMS], marker='*', color='red', label="post kbrr RMS")
+        plt.yticks(fontsize=18)
+        plt.ylim(0.15, 0.5)
+        plt.ylabel(r'$X/um$', fontsize=20)
+        plt.legend(loc='upper right', fontsize=20)
+
+        if not os.path.exists('../result/img'):
+            os.mkdir('../result/img')
+
+        plt.savefig('../result/img/post-KBRR-{}-{}.png'.format(self.__date_span[0], self.__date_span[-1]))
+        pass
+
+    def xyz2lonlat(self):
+        datespan = self.__date_span
+
+        eop = EOP().configure(frameConfig=self.__frame_config).load()
+        fr = Frame(eop).configure(frameConfig=self.__frame_config)
+        self.AdjustPath = AdjustOrbitConfig.PathOfFiles()
+        self.AdjustPath.__dict__.update(self.__adjust_config.PathOfFilesConfig.copy())
+        raw_data_path = self.InterfacePathConfig.temp_raw_data
+        filename = pathlib.Path().joinpath(raw_data_path, datespan[0] + '_' + datespan[1] + ".hdf5")
+        post_dir = self.__solver_config.PostKBRR + '/' + self.__date_span[0] + '-' + self.__date_span[1]
+
+        res_dir = pathlib.Path().joinpath(self.AdjustPath.RangeRateTemp,
+                                          self.__date_span[0] + '_' + self.__date_span[1])
+
+        h5data = h5py.File(filename, "r")
+
+        Lon = []
+        Lat = []
+        Postfit = []
+
+        for j in self.__arclist:
+            GNV = h5data['GNV_A_arc' + str(j)][()]
+            GNVTime = GNV[:, 0]
+            GNVR = GNV[:, 1:4]
+
+            post_filename = post_dir + '/RangeRate_' + str(j) + '.hdf5'
+            res_filename = res_dir.joinpath('RangeRate_' + str(j) + '.hdf5')
+            if not os.path.exists(res_filename):
+                continue
+            h5 = h5py.File(res_filename, 'r')
+            post_h5 = h5py.File(post_filename, 'r')
+
+            t2 = h5['post_t'][()]
+
+            commonTime = set(GNVTime.astype(np.int64))
+            commonTime = commonTime & set(t2.astype(np.int64))
+            commonTime = np.array(list(commonTime))
+            commonTime.sort()
+
+            new_index1 = [list(GNVTime).index(x) for x in commonTime]
+            new_index2 = [list(t2).index(x) for x in commonTime]
+            new_Time = GNVTime[new_index1]
+            new_GNVR = GNVR[new_index1]
+            Postfit.extend(post_h5['post_kbrr'][()][new_index2])
+
+            for k in range(len(new_Time)):
+                time = new_Time[k]
+                pos = new_GNVR[k]
+                fr = fr.setTime(float(time))
+                itrs = fr.PosGCRS2ITRS(np.array(pos).astype(float), fr.getRotationMatrix)
+                lon, lat, r = GeoMathKit.CalcPolarAngles(itrs)
+                Lon.append(lon)
+                Lat.append(lat)
+            h5.close()
+
+        Lon = np.degrees(np.array(Lon))
+        Lat = np.degrees(np.array(Lat))
+        Postfit = np.array(Postfit)
+
+        filename = '../result/' + datespan[0] + '_' + datespan[1] + '.hdf5'
+        h5data = h5py.File(filename, "w")
+        h5data.create_dataset('lon', data=Lon)
+        h5data.create_dataset('lat', data=Lat)
+        h5data.create_dataset('postfit', data=Postfit)
+        h5data.close()
+        pass

@@ -1,13 +1,13 @@
 {
     "OrbitConfig": {
-        "OutlierTimes": 3,
+        "OutlierTimes": 6,
         "OutlierLimit": 1
     },
     "RangeRateConfig": {
         "ParameterFitting": "biasC0C1_OneCPR",
-        "OutlierTimes": 3,
-        "OutlierRMS": 7e-07,
-        "OutlierObs": 7e-07,
+        "OutlierTimes": 6,
+        "OutlierRMS": 7e-06,
+        "OutlierObs": 1e-05,
         "ArcLength": 1.5,
         "Iterations": 3
     },

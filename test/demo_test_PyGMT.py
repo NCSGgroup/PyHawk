@@ -86,13 +86,13 @@ def readDat():
 
 def draw():
     # res1 = np.load("BeforeRes.npz", allow_pickle=True)
-    res1 = h5py.File("../result/2009-05-01_2009-05-31-post.hdf5", "r")
+    res1 = h5py.File("../temp/RangeRate/2009-05-01_2009-05-31.hdf5", "r")
     x1 = np.array(res1['lon'][:])
     y1 = np.array(res1['lat'][:])
     z1 = res1['postfit'][:] * 1e7
 
     # res = np.load("AfterRes.npz", allow_pickle=True)
-    res = h5py.File("../temp/RangeRate/acc-2h/2009-05-01_2009-05-31.hdf5", "r")
+    res = h5py.File("../temp/RangeRate/acc-1.5h/2009-05-01_2009-05-31-post.hdf5", "r")
     x = np.array(res['lon'][:])
     y = np.array(res['lat'][:])
     z = res['postfit'][:] * 1e7
@@ -120,11 +120,11 @@ def draw():
             margins=["0.5c", "0.8c"],
     ):
         with fig.set_panel(panel=0):
-            pygmt.makecpt(series=[0, 10, 1], background="red")  # color bar range
+            pygmt.makecpt(series=[0, 5, 1], background="red")  # color bar range
             fig.grdimage(grid=grid1, frame="f")
             fig.coast(region=[-180, 180, -90, 90], shorelines="1/0.5p", projection="Q12c")
             fig.basemap(projection="Q12c", frame=["f"])
-            # fig.colorbar(frame=["y"])
+            fig.colorbar(frame=["y"])
 
         with fig.set_panel(panel=1):
             pygmt.makecpt(series=[0, 10, 1], background="red")  # color bar range

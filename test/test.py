@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from src.Preference.EnumType import ParaType
+import h5py
 # # 参数设置
 # G = 6.67430e-11  # 引力常数
 # M_Earth = 5.972e24  # 地球质量
@@ -115,24 +116,12 @@ from src.Preference.EnumType import ParaType
 #     if key is ParaType.Accelerometer:
 #         print(ParaType.Accelerometer)
 
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.signal import welch
+filename = '../temp/CovarianceMatrix/2009-05-01-2009-05-31.hdf5'
 
-# 生成信号
-fs = 1000  # 采样频率为1000Hz
-t = np.linspace(0, 1, fs, endpoint=False)  # 生成1秒的时间序列
-f = 5  # 正弦波的频率为5Hz
-signal = np.sin(2 * np.pi * f * t) + 0.5 * np.random.randn(len(t))  # 添加一些噪声
+h5 = h5py.File(filename, 'r')
+cov = h5['cov'][:]
+h5.close()
 
-# 计算功率谱密度
-f, psd = welch(signal, fs, nperseg=1000)  # nperseg指定每个段的长度
+sigma = np.sqrt(np.diag(cov))
 
-# 绘制功率谱密度图
-plt.figure()
-plt.semilogy(f, psd)  # 使用对数y轴来更好地显示低频部分
-plt.title('Power Spectral Density')
-plt.xlabel('Frequency (Hz)')
-plt.ylabel('PSD (dB/Hz)')
-plt.grid()
-plt.show()
+print(sigma)

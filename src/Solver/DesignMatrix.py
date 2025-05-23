@@ -148,8 +148,10 @@ class GravityDesignMat:
 
         local_1 = dd_r1[:, None, :] @ DM_orbit['local_r'][:, 0:3] + \
                   dd_v1[:, None, :] @ DM_orbit['local_v'][:, 0:3]
+
         local_2 = dd_r2[:, None, :] @ DM_orbit['local_r'][:, 3:6] + \
                   dd_v2[:, None, :] @ DM_orbit['local_v'][:, 3:6]
+
         Global = dd_r1[:, None, :] @ DM_orbit['global_r'][:, 0:3] + \
                  dd_v1[:, None, :] @ DM_orbit['global_v'][:, 0:3] + \
                  dd_r2[:, None, :] @ DM_orbit['global_r'][:, 3:6] + \
