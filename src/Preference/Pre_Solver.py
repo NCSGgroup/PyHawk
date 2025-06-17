@@ -10,6 +10,7 @@ class SolverConfig:
         self.CovarianceMatrix = "../temp/CovarianceMatrix"
         self.PostParameter = "../temp/PostParameter"
         self.PostKBRR = "../temp/PostKBRR"
+        self.PostOrbit = "../temp/PostOrbit"
 
 
 def class_to_json():

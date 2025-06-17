@@ -1,8 +1,8 @@
 {
     "mission": "GRACE_RL03",
     "date_span": [
-        "2009-05-01",
-        "2009-05-31"
+        "2010-12-01",
+        "2010-12-31"
     ],
     "arcNo": 0,
     "sat": {
@@ -15,7 +15,7 @@
         "SCA": true,
         "KBR": true,
         "GNV": true,
-        "KinematicOrbit": true,
+        "KinematicOrbit": false,
         "LRI": false
     },
     "is_orbit_GCRS": {

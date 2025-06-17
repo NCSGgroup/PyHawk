@@ -143,7 +143,7 @@ def xyz2lonlat():
             GNVTime = GNV[:, 0]
             GNVR = GNV[:, 1:4]
 
-            res_dir = pathlib.Path("D:/py-hawk-v2/temp/RangeRate/acc-1.5h/").joinpath(datespan[i][0] + '_' + datespan[i][1])
+            res_dir = pathlib.Path("D:/py-hawk-v2/result/GRACE/3h-arc/3h-acc/").joinpath(datespan[i][0] + '_' + datespan[i][1])
             res_filename = res_dir.joinpath('RangeRate_' + str(j) + '.hdf5')
             if not os.path.exists(res_filename):
                 continue
@@ -175,7 +175,7 @@ def xyz2lonlat():
         Lat = np.degrees(np.array(Lat))
         Postfit = np.array(Postfit)
 
-        filename = 'D:/py-hawk-v2/temp/RangeRate/acc-1.5h/' + datespan[i][0] + '_' + datespan[i][1] + '.hdf5'
+        filename = 'D:/py-hawk-v2/result/GRACE/3h-arc/3h-acc/' + datespan[i][0] + '_' + datespan[i][1] + '.hdf5'
         h5data = h5py.File(filename, "w")
         h5data.create_dataset('lon', data=Lon)
         h5data.create_dataset('lat', data=Lat)

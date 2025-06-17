@@ -18,6 +18,9 @@ class ParameterConfig:
         def __init__(self):
             self.isRequired = True
             self.AdjustLength = 2
+            self.X_AdjustLength = 2
+            self.Y_AdjustLength = 2
+            self.Z_AdjustLength = 2
             self.Parameter_Number = 6
             self.AllisGlobal = False
 

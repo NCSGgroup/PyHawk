@@ -6,8 +6,8 @@
     "RangeRateConfig": {
         "ParameterFitting": "biasC0C1_OneCPR",
         "OutlierTimes": 6,
-        "OutlierRMS": 7e-06,
-        "OutlierObs": 1e-05,
+        "OutlierRMS": 6e-07,
+        "OutlierObs": 6,
         "ArcLength": 1.5,
         "Iterations": 3
     },

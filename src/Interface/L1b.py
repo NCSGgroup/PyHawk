@@ -833,6 +833,7 @@ class GRACE_FO_RL04(L1b):
         path = str(self.dir.joinpath(self._path_SCA, date.split('-')[0] + '-' + date.split('-')[1],
                                      'gracefo_1B_' + date + '_RL04.ascii.noLRI.tgz_files',
                                      'SCA1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
+
         try:
             f = open(path, 'r')
         except FileNotFoundError as e:
@@ -848,42 +849,43 @@ class GRACE_FO_RL04(L1b):
                 break
 
         # SCA = np.zeros((NumOfSCA, 5))
-        # SCA = []
-        # for i in range(NumOfSCA):
-        #     s = f.readline().split()
-        #     if len(s) == 9:
-        #         SCAd = np.zeros(5)
-        #         '''time'''
-        #         SCAd[0] = s[0]
-        #         '''cos(mu/2)'''
-        #         SCAd[1] = s[3]
-        #         '''I'''
-        #         SCAd[2] = s[4]
-        #         '''J'''
-        #         SCAd[3] = s[5]
-        #         '''K'''
-        #         SCAd[4] = s[6]
-        #         SCA.append(SCAd)
-        #     else:
-        #         continue
-
-        SCA = np.zeros((NumOfSCA, 5))
-
+        SCA = []
         for i in range(NumOfSCA):
             s = f.readline().split()
-            '''time'''
-            SCA[i, 0] = float(s[0])
-            '''cos(mu/2)'''
-            SCA[i, 1] = s[3]
-            '''I'''
-            SCA[i, 2] = s[4]
-            '''J'''
-            SCA[i, 3] = s[5]
-            '''K'''
-            SCA[i, 4] = s[6]
+            if len(s) == 9:
+                SCAd = np.zeros(5)
+                '''time'''
+                SCAd[0] = s[0]
+                '''cos(mu/2)'''
+                SCAd[1] = s[3]
+                '''I'''
+                SCAd[2] = s[4]
+                '''J'''
+                SCAd[3] = s[5]
+                '''K'''
+                SCAd[4] = s[6]
+                SCA.append(SCAd)
+            else:
+                continue
+
+        # SCA = np.zeros((NumOfSCA, 5))
+        #
+        # for i in range(NumOfSCA):
+        #     print(i)
+        #     s = f.readline().split()
+        #     '''time'''
+        #     SCA[i, 0] = float(s[0])
+        #     '''cos(mu/2)'''
+        #     SCA[i, 1] = s[3]
+        #     '''I'''
+        #     SCA[i, 2] = s[4]
+        #     '''J'''
+        #     SCA[i, 3] = s[5]
+        #     '''K'''
+        #     SCA[i, 4] = s[6]
         f.close()
 
-        return SCA
+        return np.array(SCA)
 
     def _readKBR(self, date: str):
         path = str(self.dir.joinpath(self._path_KBR, date.split('-')[0] + '-' + date.split('-')[1],

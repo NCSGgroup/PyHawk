@@ -86,16 +86,16 @@ def readDat():
 
 def draw():
     # res1 = np.load("BeforeRes.npz", allow_pickle=True)
-    res1 = h5py.File("../temp/RangeRate/2009-05-01_2009-05-31.hdf5", "r")
+    res1 = h5py.File("../result/butter/0.01/pre-2019-05-01_2019-05-31.hdf5", "r")
     x1 = np.array(res1['lon'][:])
     y1 = np.array(res1['lat'][:])
-    z1 = res1['postfit'][:] * 1e7
+    z1 = res1['prefit'][:] * 1e6
 
     # res = np.load("AfterRes.npz", allow_pickle=True)
-    res = h5py.File("../temp/RangeRate/acc-1.5h/2009-05-01_2009-05-31-post.hdf5", "r")
+    res = h5py.File("../result/butter/0.01/post-2019-05-01_2019-05-31.hdf5", "r")
     x = np.array(res['lon'][:])
     y = np.array(res['lat'][:])
-    z = res['postfit'][:] * 1e7
+    z = res['postfit'][:] * 1e6
 
     grid1 = pygmt.xyz2grd(x=x1, y=y1, z=z1, spacing=(1, 1), region="d", duplicate='r')
     grid1 = pygmt.grdfill(grid=grid1, mode="n")
@@ -103,9 +103,9 @@ def draw():
     grid = pygmt.xyz2grd(x=x, y=y, z=z, spacing=(1, 1), region="d", duplicate='r')
     grid = pygmt.grdfill(grid=grid, mode="n")
 
-    # grid2 = pygmt.xyz2grd(x=x, y=y, z=z, spacing=(1, 1), region="d", duplicate='r')
-    # grid2 = pygmt.grdfill(grid=grid, mode="n")
-    # grid2.data = grid.data - grid1.data
+    grid2 = pygmt.xyz2grd(x=x, y=y, z=z, spacing=(1, 1), region="d", duplicate='r')
+    grid2 = pygmt.grdfill(grid=grid, mode="n")
+    grid2.data = grid.data - grid1.data
 
     fig = pygmt.Figure()
     # pygmt.makecpt(cmap=cpt, series=[0, 10, 2]) # color bar range
@@ -120,14 +120,14 @@ def draw():
             margins=["0.5c", "0.8c"],
     ):
         with fig.set_panel(panel=0):
-            pygmt.makecpt(series=[0, 5, 1], background="red")  # color bar range
+            pygmt.makecpt(series=[0, 1, 0.1], background="red")  # color bar range
             fig.grdimage(grid=grid1, frame="f")
             fig.coast(region=[-180, 180, -90, 90], shorelines="1/0.5p", projection="Q12c")
             fig.basemap(projection="Q12c", frame=["f"])
             fig.colorbar(frame=["y"])
 
         with fig.set_panel(panel=1):
-            pygmt.makecpt(series=[0, 10, 1], background="red")  # color bar range
+            pygmt.makecpt(series=[0, 1, 0.1], background="red")  # color bar range
             fig.basemap(region="d", frame=["f"])
             fig.grdimage(grid=grid)
             fig.coast(shorelines="1/0.5p", projection="Q12c")
