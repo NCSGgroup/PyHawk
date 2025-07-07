@@ -15,7 +15,7 @@ from ctypes.util import find_library
 from ctypes import c_int, c_char, c_double, c_char_p
 
 from numpy.ctypeslib import ndpointer
-from numpy import ndarray, array, zeros, asarray, asfarray, asmatrix
+from numpy import ndarray, array, zeros, asmatrix
 
 import pathlib as _pathlib
 import glob as _glob
