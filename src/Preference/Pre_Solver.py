@@ -7,6 +7,10 @@ class SolverConfig:
         self.SSTOption = SSTObserve.RangeRate.name
         self.OrbitKinFactor = 1e11
         self.DesignMatrixTemp = "../temp/DesignMatrixSH"
+        self.CovarianceMatrix = "../temp/CovarianceMatrix"
+        self.PostParameter = "../temp/PostParameter"
+        self.PostKBRR = "../temp/PostKBRR"
+        self.PostOrbit = "../temp/PostOrbit"
 
 
 def class_to_json():

@@ -8,7 +8,7 @@
         "ParameterFitting": "biasC0C1_OneCPR",
         "OutlierTimes": 6,
         "OutlierLimit": 7e-07,
-        "ArcLength": 1.5,
+        "ArcLength": 3,
         "Iterations": 3
     },
     "PathOfFilesConfig": {
