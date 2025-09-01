@@ -164,7 +164,7 @@ class GravityNEQperArc:
         local_r = local_r.reshape((-1, n_local))
         global_r = global_r.reshape((-1, n_global))
 
-        N, l = GeoMathKit.keepGlobal(dm_global=global_r, dm_local=local_r, obs=obs)
+        N, l = GeoMathKit.keepGlobal2(dm_global=global_r, dm_local=local_r, obs=obs)
 
         self.__saveData.create_dataset('Orbit_N_%1s' % sat.name, data=N)
         self.__saveData.create_dataset('Orbit_l_%1s' % sat.name, data=l)
@@ -276,7 +276,7 @@ class GravityNEQperArc:
         if config.CalibrateEmpiricalParameters:
             local_dm = np.concatenate((local_dm_empirical, local_dm), axis=1)
 
-        N, l = GeoMathKit.keepGlobal(dm_global=global_dm, dm_local=local_dm, obs=obs)
+        N, l = GeoMathKit.keepGlobal2(dm_global=global_dm, dm_local=local_dm, obs=obs)
 
         self.__saveData.create_dataset('%s_N' % SSTObserve.RangeRate.name, data=N)
         self.__saveData.create_dataset('%s_l' % SSTObserve.RangeRate.name, data=l)

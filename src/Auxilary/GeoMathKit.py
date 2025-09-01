@@ -491,6 +491,39 @@ class GeoMathKit:
         l = Wx - tm @ Wy
         return N, l
 
+    def keepGlobal2(dm_global: np.ndarray, dm_local: np.ndarray, obs: np.ndarray):
+        """
+        Ax + By = z
+        x--global parameter
+        y--local parameter
+        z--obs
+        Our aim: remove the local parameters and keep only the global parameters to be solved.
+        Avoid directly inverting local parameter matrices
+        :param dm_global: design matrix for the global parameters
+        :param dm_local: design matrix for the local parameters
+        :param obs: observations
+        :return: Normal equations related only to the global parameters （Nx = l）
+        """
+        # time
+        Nxx = dm_global.T @ dm_global
+        Wx = dm_global.T @ obs
+        if np.shape(dm_local)[-1] == 0:
+            '''No local parameters'''
+            return Nxx, Wx
+
+        Nxy = dm_global.T @ dm_local
+        Nyx = dm_local.T @ dm_global
+        Nyy = dm_local.T @ dm_local
+
+        Wy = dm_local.T @ obs
+
+        M_n = np.linalg.lstsq(Nyy, Nyx, rcond=None)[0]
+        M_l = np.linalg.lstsq(Nyy, Wy, rcond=None)[0]
+
+        N = Nxx - Nxy @ M_n
+        l = Wx - Nxy @ M_l
+        return N, l
+
     @staticmethod
     def solveLocal(dm_global, dm_local, obs, global_p):
         """
