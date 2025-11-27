@@ -67,11 +67,11 @@ class SSTpartial:
         diff_vel = Va - Vb
 
         '''rhow w.r.t r1'''
-        dd_r1 = (diff_vel - diff_pos / self.Range * self.RangeRate) / self.Range[:, 0]
+        dd_r1 = (diff_vel - diff_pos / self.Range * self.RangeRate) / self.Range
         '''rhow w.r.t r2'''
         dd_r2 = -dd_r1
         '''rhow w.r.t v1'''
-        dd_v1 = (diff_pos / self.Range)
+        dd_v1 = diff_pos / self.Range
         '''rhow w.r.t v2'''
         dd_v2 = - dd_v1
 

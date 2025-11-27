@@ -38,13 +38,19 @@ def draw1():
     ax = fig.add_subplot(1, 1, 1)
     ax.set(xlabel='GPS time [sec]', ylabel=r'$m$')
 
-    res_dir = pathlib.Path(Pre_AdjustOrbit.PathOfFiles.RangeRateTemp).joinpath(date_begin + '_' + date_end)
+    res_dir = pathlib.Path("../temp/RangeRate").joinpath(date_begin + '_' + date_end)
+    filtered_dir = pathlib.Path("../temp/FilteredRangeRate").joinpath(date_begin + '_' + date_end)
+
     res_filename = res_dir.joinpath('RangeRate_' + str(arcNo) + '.hdf5')
-    h5 = h5py.File(res_filename, 'r')
-    t1 = h5['pre_t'][()]
-    t2 = h5['post_t'][()]
-    prefit = h5['pre_residual'][()]
-    postfit = h5['post_residual'][()]
+    filtered_filename = filtered_dir.joinpath('RangeRate_' + str(arcNo) + '.hdf5')
+
+    h51 = h5py.File(res_filename, 'r')
+    t1 = h51['post_t'][()]
+    postfit = h51['post_residual'][()]
+
+    h52 = h5py.File(filtered_filename, 'r')
+    t2 = h52['post_t'][()]
+    filtered = h52['post_residual'][()]
 
     ax.plot(t2, postfit, label='postfit')
     # ax.plot(t1, prefit, label='prefit')
@@ -174,4 +180,5 @@ if __name__ == '__main__':
     # drawRMS()
     # draw1()
     # psd()
-    drawPSD()
+    draw1()
+    # drawPSD()

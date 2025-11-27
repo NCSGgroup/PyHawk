@@ -3,7 +3,7 @@ from src.Interface.ArcOperation import ArcData
 import src.Preference.EnumType as EnumType
 import numpy as np
 from src.ODE.Instance.GravimetryODE import GravimetryODE
-from src.Interface.Accelerometer import Accelerometer, Accelerometer_V2, AccCaliPar
+from src.Interface.Accelerometer import Accelerometer, Accelerometer_V2, AccCaliPar, Accelerometer_V3, AccCaliPar_V3
 from src.Frame.Frame import Frame, EOP
 from src.Preference.Pre_Parameterization import ParameterConfig
 from src.SecDerivative.Common.Assemble2ndDerivative import Assemble2ndDerivative
@@ -354,6 +354,9 @@ class AdjustOrbit:
         self.AccelerometerConfig = self.ParameterConfig.Accelerometer()
         self.AccelerometerConfig.__dict__.update(self.ParameterConfig.AccelerometerConfig.copy())
         self.AccAdjustLength = self.AccelerometerConfig.AdjustLength
+        self.X_AdjustLength = self.AccelerometerConfig.X_AdjustLength
+        self.Y_AdjustLength = self.AccelerometerConfig.Y_AdjustLength
+        self.Z_AdjustLength = self.AccelerometerConfig.Z_AdjustLength
         '''config StokesCoefficientsConfig'''
         self.StokesCoefficientsConfig = self.ParameterConfig.StokesCoefficients()
         self.StokesCoefficientsConfig.__dict__.update(self.ParameterConfig.StokesCoefficientsConfig.copy())
@@ -383,11 +386,18 @@ class AdjustOrbit:
         self._rd = ArcData(interfaceConfig=self._InterfaceConfig)
 
         '''init acc'''
+
         for i in range(len(self._sat)):
-            ap = AccCaliPar(rd=self._rd, sat=self._sat[i], arcNo=self._arcNo,
-                            accConfig=self.accConfig[i], adjustlength=self.AccAdjustLength)
-            ac = Accelerometer_V2(ap=ap)
+            ap = AccCaliPar_V3(rd=self._rd, sat=self._sat[i], arcNo=self._arcNo,
+                            accConfig=self.accConfig[i], adjustlength_x=self.X_AdjustLength,
+                               adjustlength_y=self.Y_AdjustLength, adjustlength_z=self.Z_AdjustLength)
+            # ap = AccCaliPar(rd=self._rd, sat=self._sat[i], arcNo=self._arcNo,
+            #                 accConfig=self.accConfig[i], adjustlength=self.AccAdjustLength)
+            # ac = Accelerometer(ap=ap, rd=self._rd)
+            # ac = Accelerometer_V2(ap=ap)
+            ac = Accelerometer_V3(ap=ap)
             ac.get_and_save()
+
             self._ac[self._sat[i]] = ac
             self._ap[self._sat[i]] = ap
 

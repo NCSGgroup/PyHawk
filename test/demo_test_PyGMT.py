@@ -86,16 +86,16 @@ def readDat():
 
 def draw():
     # res1 = np.load("BeforeRes.npz", allow_pickle=True)
-    res1 = h5py.File("../result/butter/0.01/pre-2019-05-01_2019-05-31.hdf5", "r")
+    res1 = h5py.File("../result/20250728/GRFO/acc-1.5h/pre-2019-01-01_2019-01-31.hdf5", "r")
     x1 = np.array(res1['lon'][:])
     y1 = np.array(res1['lat'][:])
     z1 = res1['prefit'][:] * 1e6
 
     # res = np.load("AfterRes.npz", allow_pickle=True)
-    res = h5py.File("../result/butter/0.01/post-2019-05-01_2019-05-31.hdf5", "r")
+    res = h5py.File("../result/IGG-2019-01-01_2019-01-31.hdf5", "r")
     x = np.array(res['lon'][:])
     y = np.array(res['lat'][:])
-    z = res['postfit'][:] * 1e6
+    z = res['prefit'][:] * 1e6
 
     grid1 = pygmt.xyz2grd(x=x1, y=y1, z=z1, spacing=(1, 1), region="d", duplicate='r')
     grid1 = pygmt.grdfill(grid=grid1, mode="n")
@@ -139,7 +139,7 @@ def draw():
         #     fig.grdimage(grid=grid2)
         #     fig.coast(shorelines="1/0.5p", projection="Q12c")
         #     fig.colorbar(frame=["y+lum/s"])
-    fig.savefig("output.png")
+    # fig.savefig("output.png")
     fig.show()
 
 

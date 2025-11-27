@@ -79,6 +79,7 @@ class GravityNEQperArc:
         if not os.path.exists(res_dir):
             os.makedirs(res_dir, exist_ok=True)
         res_filename = res_dir + str(self.__arcNo) + '.hdf5'
+        # self.__saveData = h5py.File(res_filename, 'r')
         self.__saveData = h5py.File(res_filename, 'w')
         return self
 
@@ -141,6 +142,7 @@ class GravityNEQperArc:
             orbit_obs = self._rd.getData(arc=self.__arcNo, kind=Payload.GNV, sat=sat)[:, 0:4]
         # orbit_obs = self.get_orbit_obs(sat=sat, Kin_obs=kin_obs)
         t_obs = orbit_obs[:, 0]
+        t_obs = t_obs[t_obs % 60 == 0]
         '''for the orbit, only position (r) is needed for the inversion'''
         '''find the common'''
         int_t_obs = t_obs.astype(np.int64)
@@ -151,6 +153,7 @@ class GravityNEQperArc:
         orbit_nominal = orbit_nominal[new_index, :]
         local_r = local_r[new_index, :, :]
         global_r = global_r[new_index, :, :]
+        orbit_obs = orbit_obs[new_index, :]
         '''Expanding the observations'''
         obs = orbit_obs[:, 1:] - orbit_nominal
 
@@ -164,8 +167,20 @@ class GravityNEQperArc:
         local_r = local_r.reshape((-1, n_local))
         global_r = global_r.reshape((-1, n_global))
 
+        # with h5py.File(("orbit_" + sat.name + '_' + str(self.__arcNo) + '.h5'), "w") as f:
+        #     f.create_dataset("global_r", data=global_r)
+        #     f.create_dataset("local_r", data=local_r)
+        #     f.create_dataset("obs", data=obs)
+
         N, l = GeoMathKit.keepGlobal(dm_global=global_r, dm_local=local_r, obs=obs)
 
+        # h5 = h5py.File("orbit_A_0_out.h5", 'r')
+        # matlab_n = h5['N'][()]
+        # matlab_l = h5['L'][()]
+
+        # diff_n = (matlab_n.T - N)
+        # diff_l = (matlab_l.T - l)
+        #
         self.__saveData.create_dataset('Orbit_N_%1s' % sat.name, data=N)
         self.__saveData.create_dataset('Orbit_l_%1s' % sat.name, data=l)
         pass
@@ -247,20 +262,20 @@ class GravityNEQperArc:
 
         assert config.measurement == SSTObserve.RangeRate.value, 'Range-rate is not allowed by user setting'
 
-        dm_dir = self._solverConfig.DesignMatrixTemp + '/' + self.__date_span[0] + '_' + self.__date_span[1]
-        res_filename = dm_dir + '/' + SSTObserve.RangeRate.name + '_' + str(self.__arcNo) + '.hdf5'
-        h5 = h5py.File(res_filename, 'r')
-        t_dm = h5['t'][()]
-        global_dm = h5['global'][()]
-        local_dm = h5['local'][()]
-        h5.close()
-
         dm_dir = self._AdjustPathConfig.RangeRateTemp + '/' + self.__date_span[0] + '_' + self.__date_span[1]
         res_filename = dm_dir + '/' + SSTObserve.RangeRate.name + '_' + str(self.__arcNo) + '.hdf5'
         h5 = h5py.File(res_filename, 'r')
         t_obs = h5['post_t'][()]
         obs = h5['post_residual'][()]
         local_dm_empirical = h5['design_matrix'][()]
+        h5.close()
+
+        dm_dir = self._solverConfig.DesignMatrixTemp + '/' + self.__date_span[0] + '_' + self.__date_span[1]
+        res_filename = dm_dir + '/' + SSTObserve.RangeRate.name + '_' + str(self.__arcNo) + '.hdf5'
+        h5 = h5py.File(res_filename, 'r')
+        t_dm = h5['t'][()]
+        global_dm = h5['global'][()]
+        local_dm = h5['local'][()]
         h5.close()
 
         int_t_obs = t_obs.astype(np.int64)
@@ -275,6 +290,12 @@ class GravityNEQperArc:
         '''Combination'''
         if config.CalibrateEmpiricalParameters:
             local_dm = np.concatenate((local_dm_empirical, local_dm), axis=1)
+        
+        # with h5py.File(("kbrr_" + str(self.__arcNo) + '.h5'), "w") as f:
+        #     f.create_dataset("global_dm", data=global_dm)
+        #     f.create_dataset("local_dm", data=local_dm)
+        #     f.create_dataset("obs", data=obs)
+        obs = obs.reshape((-1, 1))
 
         N, l = GeoMathKit.keepGlobal(dm_global=global_dm, dm_local=local_dm, obs=obs)
 

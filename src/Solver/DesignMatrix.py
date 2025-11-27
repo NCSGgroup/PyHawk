@@ -11,6 +11,7 @@ from src.Preference.Pre_AdjustOrbit import AdjustOrbitConfig
 from src.Preference.Pre_Interface import InterfaceConfig
 from src.Preference.Pre_Frame import FrameConfig
 from src.Auxilary.KeplerOrbitElements import OrbitalElements
+from src.Interface.Accelerometer import Accelerometer, Accelerometer_V2, AccCaliPar, Accelerometer_V3, AccCaliPar_V3
 from src.Interface.ArcOperation import ArcData
 import src.Preference.EnumType as EnumType
 from src.Solver.AdjustSST import FitSST
@@ -68,6 +69,23 @@ class GravityDesignMat:
 
         self.__kbr_fit = self._RangeRateConfig.ParameterFitting
 
+        '''update dadp'''
+        '''config AccelerometerConfig'''
+        self.AccelerometerConfig = self._parameterConfig.Accelerometer()
+        self.AccelerometerConfig.__dict__.update(self._parameterConfig.AccelerometerConfig.copy())
+        self.AccAdjustLength = self.AccelerometerConfig.AdjustLength
+        self.X_AdjustLength = self.AccelerometerConfig.X_AdjustLength
+        self.Y_AdjustLength = self.AccelerometerConfig.Y_AdjustLength
+        self.Z_AdjustLength = self.AccelerometerConfig.Z_AdjustLength
+
+        self._rd = ArcData(interfaceConfig=self._InterfaceConfig)
+
+        for i in range(len(self.__sat)):
+            ap = AccCaliPar_V3(rd=self._rd, sat=self.__sat[i], arcNo=self._arcNo,
+                            accConfig=self._accConfig[i], adjustlength_x=self.X_AdjustLength,
+                               adjustlength_y=self.Y_AdjustLength, adjustlength_z=self.Z_AdjustLength)
+            ac = Accelerometer_V3(ap=ap)
+            ac.updatedadp()
         return self
 
     def orbit_integration(self):
@@ -152,10 +170,24 @@ class GravityDesignMat:
         local_2 = dd_r2[:, None, :] @ DM_orbit['local_r'][:, 3:6] + \
                   dd_v2[:, None, :] @ DM_orbit['local_v'][:, 3:6]
 
-        Global = dd_r1[:, None, :] @ DM_orbit['global_r'][:, 0:3] + \
-                 dd_v1[:, None, :] @ DM_orbit['global_v'][:, 0:3] + \
-                 dd_r2[:, None, :] @ DM_orbit['global_r'][:, 3:6] + \
-                 dd_v2[:, None, :] @ DM_orbit['global_v'][:, 3:6]
+        if self.AccelerometerConfig.isScale:
+            Global1 = dd_r1[:, None, :] @ DM_orbit['global_r'][:, 0:3] + \
+                     dd_v1[:, None, :] @ DM_orbit['global_v'][:, 0:3]
+
+            Global2 = dd_r2[:, None, :] @ DM_orbit['global_r'][:, 3:6] + \
+                      dd_v2[:, None, :] @ DM_orbit['global_v'][:, 3:6]
+
+            Global = np.zeros((np.shape(Global1)[0], np.shape(Global1)[2] + 9))
+
+            Global[:, 0:9] = Global1[:, 0, 0:9]
+            Global[:, 9:18] = Global2[:, 0, 0:9]
+            Global[:, 18:] = Global1[:, 0, 9:] + Global2[:, 0, 9:]
+        else:
+            Global = dd_r1[:, None, :] @ DM_orbit['global_r'][:, 0:3] + \
+                     dd_v1[:, None, :] @ DM_orbit['global_v'][:, 0:3] + \
+                     dd_r2[:, None, :] @ DM_orbit['global_r'][:, 3:6] + \
+                     dd_v2[:, None, :] @ DM_orbit['global_v'][:, 3:6]
+            Global = Global[:, 0, :]
         # '''divide arcs to Calibrate kbr individually'''
         # node = [self.Time[0]]
         # t1 = self.Time[0]
@@ -195,7 +227,7 @@ class GravityDesignMat:
         h5 = h5py.File(res_filename, 'w')
         h5.create_dataset('t', data=DM_orbit['t'][:])
         h5.create_dataset('local', data=np.concatenate((local_1[:, 0, :], local_2[:, 0, :]), axis=1))
-        h5.create_dataset('global', data=Global[:, 0, :])
+        h5.create_dataset('global', data=Global)
         h5.close()
         pass
 

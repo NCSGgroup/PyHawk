@@ -40,6 +40,8 @@ import json
 from datetime import datetime
 from src.Auxilary.Outlier import Outlier
 from src.Preference.EnumType import Payload, SatID, SSTObserve
+from scipy.signal import butter, filtfilt
+from scipy import signal
 
 
 class CalibrateOrbit:
@@ -73,6 +75,15 @@ class CalibrateOrbit:
         self.__acc_config_B = AccelerometerConfig()
         acc_B = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/AccelerometerConfig_B.json'), 'r'))
         self.__acc_config_B.__dict__ = acc_B
+
+        self.__design_acc_config_A = AccelerometerConfig()
+        designacc_A = json.load(open(os.path.join(self.__parent_path, 'setting/Calibrate/DesignAccelerometerConfig_A.json'), 'r'))
+        self.__design_acc_config_A.__dict__ = designacc_A
+
+        self.__design_acc_config_B = AccelerometerConfig()
+        designacc_B = json.load(
+            open(os.path.abspath(self.__parent_path + '/setting/Calibrate/DesignAccelerometerConfig_B.json'), 'r'))
+        self.__design_acc_config_B.__dict__ = designacc_B
 
         self.__force_model_config = ForceModelConfig()
         fmDict = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/ForceModelConfig.json'), 'r'))
@@ -160,8 +171,6 @@ class CalibrateOrbit:
         self.__arclist = self.getArcList(path=arcft_path)
         if isAdjustOrbit:
             self.makeLog(stepName='adjustOrbit', process=AdjustOrbitProcess)
-            # for i in np.arange(61, 120, 1):
-            #     self._adjustOrbit(i)
             pool = multiprocessing.Pool(processes=AdjustOrbitProcess)
             pool.map(self._adjustOrbit, self.__arclist)
             pool.close()
@@ -174,6 +183,7 @@ class CalibrateOrbit:
             pool.close()
             pool.join()
             self.__saveKBRRRMS()
+            # self.butter_low_filter()
         if isGravityDesignMat:
             self.makeLog(stepName='gravityDesignMat', process=GetGravityDesignMatProcess)
             # for i in np.arange(0, 10, 1):
@@ -190,10 +200,10 @@ class CalibrateOrbit:
             pool.join()
         if isSH:
             self.makeLog(stepName='SH', process=1)
-            # self.__calculate_cs()
-            # self.plotPostKbrr()
-            # self.xyz2lonlat()
-            self.re_calculate_cs()
+            self.__calculate_cs()
+            self.plotPostKbrr()
+            self.xyz2lonlat()
+            # self.re_calculate_cs()
         # self.getSpaceKBRR()
         pass
 
@@ -238,7 +248,6 @@ class CalibrateOrbit:
 
     def _adjustOrbit(self, i):
         """step 5: init AdjustOrbit"""
-        print(i)
         AdjustOrbit(accConfig=[self.__acc_config_A, self.__acc_config_B], date_span=self.__date_span, sat=self.__sat).\
             configure(SerDer=Orbit_var_2nd_diff, arcNo=i, ODEConfig=self.__ode_config,
                       FMConfig=self.__force_model_config, AdjustOrbitConfig=self.__adjust_config,
@@ -257,7 +266,7 @@ class CalibrateOrbit:
 
     def _gravityDesignMat(self, k):
         dm = GravityDesignMat(arcNo=k, date_span=self.__date_span, sat=self.__sat).\
-            configure(accConfig=[self.__acc_config_A, self.__acc_config_B],
+            configure(accConfig=[self.__design_acc_config_A, self.__design_acc_config_B],
                       ODEConfig=self.__ode_config, AdjustOrbitConfig=self.__adjust_config,
                       solverConfig=self.__solver_config, FMConfig=self.__force_model_config,
                       parameterConfig=self.__design_parameter_config, InterfaceConfig=self.__interface_config,
@@ -282,47 +291,88 @@ class CalibrateOrbit:
         interface_config = self.__interface_config
         stokes_coefficients_config = self.__design_parameter_config.StokesCoefficients()
         stokes_coefficients_config.__dict__.update(self.__design_parameter_config.StokesCoefficientsConfig.copy())
+
+        self.AccelerometerConfig = self.__design_parameter_config.Accelerometer()
+        self.AccelerometerConfig.__dict__.update(self.__design_parameter_config.AccelerometerConfig.copy())
+
         '''config force model path'''
         force_model_path_config = self.__force_model_config.PathOfFiles()
         force_model_path_config.__dict__.update(self.__force_model_config.PathOfFilesConfig.copy())
 
-        res_dir = neq_path_config.NormalEqTemp + '/' +\
+        res_dir1 = neq_path_config.NormalEqTemp + '/' +\
                   interface_config.date_span[0] + '_' + interface_config.date_span[1]
+
+        # res_dir2 = neq_path_config.NormalEqTemp + '/' + \
+        #            interface_config.date_span[0] + '_' + interface_config.date_span[1] + '-onebyone'
+
         result_name = neq_path_config.ResultCS + '/' + \
                       interface_config.date_span[0] + '_' + interface_config.date_span[1] + '.hdf5'
 
         parameter_number = stokes_coefficients_config.Parameter_Number
-        NMatrix = np.zeros((parameter_number, parameter_number))
-        LMatrix = np.zeros((parameter_number, 1))
+
+        if self.AccelerometerConfig.isScale:
+            parameter_number += 18
+
+        NMatrix1 = np.zeros((parameter_number, parameter_number))
+        LMatrix1 = np.zeros((parameter_number, 1))
+
         date_span = interface_config.date_span
 
         self.n = interface_config.arc_length * 3600 / interface_config.sr_target * 3
         self.p = parameter_number
 
         for i in tqdm(self.__arclist, desc='Solve normal equations: '):
-            res_filename = res_dir + '/' + str(i) + '.hdf5'
-            h5 = h5py.File(res_filename, 'r')
-            NMatrix = NMatrix + (h5['Orbit_N_A'][:] + h5['Orbit_N_B'][:]) + h5['RangeRate_N'][:] * OrbitKinFactor
-            LMatrix = LMatrix + (h5['Orbit_l_A'][:] + h5['Orbit_l_B'][:]) + h5['RangeRate_l'][:].reshape(
-                (parameter_number, 1)) * OrbitKinFactor
-            h5.close()
+        # for i in tqdm((0, 1), desc='Solve normal equations: '):
+            res_filename1 = res_dir1 + '/' + str(i) + '.hdf5'
+            h51 = h5py.File(res_filename1, 'r')
+            Orbit_N_A = h51['Orbit_N_A'][:]
+            Orbit_N_B = h51['Orbit_N_B'][:]
+            RangeRate_N = h51['RangeRate_N'][:]
 
-        cs = np.linalg.lstsq(NMatrix, LMatrix[:, 0], rcond=None)[0]
+            Orbit_l_A = h51['Orbit_l_A'][:]
+            Orbit_l_B = h51['Orbit_l_B'][:]
+            RangeRate_l = h51['RangeRate_l'][:]
+            # if self.AccelerometerConfig.isScale:
+                # Orbit_N_A, Orbit_l_A = self.keepGlobal(Orbit_N_A, Orbit_l_A)
+                # Orbit_N_B, Orbit_l_B = self.keepGlobal(Orbit_N_B, Orbit_l_B)
+                # RangeRate_N, RangeRate_l = self.keepGlobal(RangeRate_N, RangeRate_l)
 
-        sigma = self.getLocalPar(solverConfig=self.__solver_config, cs=cs, N=NMatrix)
-        # QA, RA = np.linalg.qr(NMatrix)
-        # cs = np.linalg.inv(RA).dot(QA.T).dot(LMatrix[:, 0])
+            if self.AccelerometerConfig.isScale:
+                NMatrix1[0:9, 0:9] = NMatrix1[0:9, 0:9] + Orbit_N_A[0:9, 0:9] + RangeRate_N[0:9, 0:9] * OrbitKinFactor
+                NMatrix1[0:9, 18:] = NMatrix1[0:9, 18:] + Orbit_N_A[0:9, 9:] + RangeRate_N[0:9, 18:] * OrbitKinFactor
 
-        # cs = []
-        # with open('../result/dcs.txt', 'r') as file:
-        #     lines = file.readlines()
-        #     # 创建一个列表来存储转换后的浮点数
-        #     for line in lines:
-        #         try:
-        #             number = float(line.strip())
-        #             cs.append(number)
-        #         except ValueError:
-        #             print(f"无法将'{line.strip()}'转换为浮点数")
+                NMatrix1[9:18, 9:18] = NMatrix1[9:18, 9:18] + Orbit_N_B[0:9, 0:9] + RangeRate_N[9:18, 9:18] * OrbitKinFactor
+                NMatrix1[9:18, 18:] = NMatrix1[9:18, 18:] + Orbit_N_B[0:9, 9:] + RangeRate_N[9:18, 18:] * OrbitKinFactor
+
+                NMatrix1[18:, 0:9] = NMatrix1[18:, 0:9] + Orbit_N_A[9:, 0:9] + RangeRate_N[18:, 0:9] * OrbitKinFactor
+                NMatrix1[18:, 9:18] = NMatrix1[18:, 9:18] + Orbit_N_B[9:, 0:9] + RangeRate_N[18:, 9:18] * OrbitKinFactor
+
+                NMatrix1[18:, 18:] = NMatrix1[18:, 18:] + Orbit_N_A[9:, 9:] + Orbit_N_B[9:, 9:] + RangeRate_N[18:, 18:] * OrbitKinFactor
+
+                LMatrix1[0:9] = LMatrix1[0:9] + Orbit_l_A[0:9] + RangeRate_l[0:9] * OrbitKinFactor
+                LMatrix1[9:18] = LMatrix1[9:18] + Orbit_l_B[0:9] + RangeRate_l[9:18] * OrbitKinFactor
+                LMatrix1[18:] = LMatrix1[18:] + Orbit_l_A[9:] + Orbit_l_B[9:] + RangeRate_l[18:] * OrbitKinFactor
+            else:
+                NMatrix1 = NMatrix1 + (Orbit_N_A + Orbit_N_B) + RangeRate_N * OrbitKinFactor
+                LMatrix1 = LMatrix1 + (Orbit_l_A + Orbit_l_B) + RangeRate_l * OrbitKinFactor
+            h51.close()
+
+            # res_filename2 = res_dir2 + '/' + str(i) + '.hdf5'
+            # h52 = h5py.File(res_filename2, 'r')
+            # NMatrix2 = NMatrix2 + (h52['Orbit_N_A'][:] + h52['Orbit_N_B'][:]) + h52['RangeRate_N'][:] * OrbitKinFactor
+            # LMatrix2 = LMatrix2 + (h52['Orbit_l_A'][:] + h52['Orbit_l_B'][:]) + h52['RangeRate_l'][:].reshape(
+            #     (parameter_number, 1)) * OrbitKinFactor
+            # h52.close()
+
+        cs = np.linalg.lstsq(NMatrix1, LMatrix1[:, 0], rcond=None)[0]
+
+        # cs2 = np.linalg.lstsq(NMatrix2, LMatrix2[:, 0], rcond=None)[0]
+        if self.AccelerometerConfig.isScale:
+            scale = cs[0:18]
+            print(scale)
+            cs = cs[18:]
+        # sigma = self.getLocalPar(solverConfig=self.__solver_config, cs=cs, N=NMatrix1)
+        sigma = cs
 
         sort = SortCS(method=stokes_coefficients_config.SortMethod,
                       degree_max=stokes_coefficients_config.MaxDegree,
@@ -432,7 +482,71 @@ class CalibrateOrbit:
         plt.ylabel(r'$X/um$', fontsize=20)
         plt.legend(loc='upper right', fontsize=20)
         plt.savefig('../result/img/KBRR-{}-{}.png'.format(self.__date_span[0], self.__date_span[-1]))
+        plt.clf()
         pass
+
+    # def butter_low_filter(self):
+    #     self.AdjustPath = AdjustOrbitConfig.PathOfFiles()
+    #     self.AdjustPath.__dict__.update(self.__adjust_config.PathOfFilesConfig.copy())
+    #
+    #     res_dir = pathlib.Path().joinpath(self.AdjustPath.RangeRateTemp,
+    #                                       self.__date_span[0] + '_' + self.__date_span[1])
+    #
+    #     timespan_arc = {}
+    #     post_time = {}
+    #     post_arc = []
+    #     post_design_matrix = {}
+    #     for i in self.__arclist:
+    #         res_filename = res_dir.joinpath('RangeRate_' + str(i) + '.hdf5')
+    #         if os.path.exists(res_filename):
+    #             h5 = h5py.File(res_filename, 'r')
+    #             if len(h5.keys()) != 0:
+    #                 time = h5['post_t'][()]
+    #                 post_time[i] = time
+    #                 timespan_arc[i] = len(time)
+    #                 post_design_matrix[i] = h5['design_matrix'][()]
+    #                 postfit = h5['post_residual'][()]
+    #                 post_arc.extend(list(postfit))
+    #             h5.close()
+    #
+    #     fs = 0.2
+    #     cutoff = 0.005
+    #     nyq = 0.5 * fs
+    #     normal_cutoff = cutoff / nyq
+    #     b, a = butter(N=4, Wn=normal_cutoff, btype='low', analog=False)
+    #     filtered_data = filtfilt(b, a, post_arc)
+    #
+    #     index = 0
+    #     filtered_dir = pathlib.Path().joinpath(self.AdjustPath.FilteredRangeRateTemp,
+    #                                       self.__date_span[0] + '_' + self.__date_span[1])
+    #     for i in self.__arclist:
+    #         if not os.path.exists(filtered_dir):
+    #             os.makedirs(filtered_dir)
+    #         res_filename = filtered_dir.joinpath('RangeRate_' + str(i) + '.hdf5')
+    #         h5 = h5py.File(res_filename, 'w')
+    #
+    #         h5.create_dataset('post_t', data=post_time[i])
+    #         h5.create_dataset('post_residual', data=filtered_data[index: index + timespan_arc[i]])
+    #         h5.create_dataset('design_matrix', data=post_design_matrix[i])
+    #         h5.close()
+    #
+    #         index += timespan_arc[i]
+    #
+    #     npe = int(fs * len(post_arc))
+    #     frequencies_welch_post_arc, psd_welch_post_arc = signal.welch(post_arc, fs, nperseg=npe)
+    #     frequencies_filtered, psd_filtered = signal.welch(filtered_data, fs, nperseg=npe)
+    #     plt.plot(frequencies_welch_post_arc, psd_welch_post_arc, lw=1.5, alpha=0.8, color='black', label='Non')
+    #     plt.plot(frequencies_filtered, psd_filtered, lw=1.5, alpha=0.8, color='red', label=cutoff)
+    #     plt.xscale('log')
+    #     plt.yscale('log')
+    #     plt.grid(True, linestyle='dashed')
+    #     font = {'size': 20}
+    #     plt.xlabel('Frequency [Hz]', fontdict=font)
+    #     plt.ylabel(r'$\sqrt{PSD}$ ($arcsec /\sqrt{Hz}$)', fontdict=font)
+    #     plt.legend(loc=2, fontsize='20')
+    #     plt.savefig('../result/img/psd.png'.format(self.__date_span[0], self.__date_span[-1]))
+    #
+    #     return self
 
     def __rms(self, x: np.ndarray):
         """
@@ -514,7 +628,7 @@ class CalibrateOrbit:
         self.b_rss = 0
 
         for i in tqdm(self.__arclist, desc='Solve local parameters: '):
-            res_filename = res_dir + '/Orbit_' + str(self.__arclist[i]) + '_' + 'AB.hdf5'
+            res_filename = res_dir + '/Orbit_' + str(i) + '_' + 'AB.hdf5'
             h5 = h5py.File(res_filename, 'r')
             self.__orbit_nominal = h5['r'][()]
             self.__t_nominal = h5['t'][()]
@@ -553,10 +667,10 @@ class CalibrateOrbit:
 
         t_nominal = self.__t_nominal
         self._rd = ArcData(interfaceConfig=self.__interface_config)
-        # orbit_obs = self._rd.getData(arc=self.__arclist[arcNo], kind=Payload.GNV, sat=sat)[:, 0:4]
-
-        orbit_obs = self._rd.getData(arc=self.__arclist[arcNo], kind=Payload.KinematicOrbit, sat=sat)[:, 0:4]
-        orbit_obs = self.kin_obs_outlier(sat=sat, kin_orbit=orbit_obs, arc=self.__arclist[arcNo])
+        orbit_obs = self._rd.getData(arc=arcNo, kind=Payload.GNV, sat=sat)[:, 0:4]
+        #
+        # orbit_obs = self._rd.getData(arc=self.__arclist[arcNo], kind=Payload.KinematicOrbit, sat=sat)[:, 0:4]
+        # orbit_obs = self.kin_obs_outlier(sat=sat, kin_orbit=orbit_obs, arc=self.__arclist[arcNo])
 
         t_obs = orbit_obs[:, 0]
         '''for the orbit, only position (r) is needed for the inversion'''
@@ -805,13 +919,13 @@ class CalibrateOrbit:
 
             resA_name_h5 = h5py.File(resA_name, 'r')
             post_Orbit_A = resA_name_h5['post_Orbit'][:]
-            # leo_A = self.__rms(post_Orbit_A) * 10
-            leo_A = 0.02
+            leo_A = self.__rms(post_Orbit_A) * 10
+            # leo_A = 0.02
 
             resB_name_h5 = h5py.File(resB_name, 'r')
             post_Orbit_B = resB_name_h5['post_Orbit'][:]
-            # leo_B = self.__rms(post_Orbit_B) * 10
-            leo_B = 0.02
+            leo_B = self.__rms(post_Orbit_B) * 10
+            # leo_B = 0.02
 
             res_filename = res_dir + '/' + str(i) + '.hdf5'
             h5 = h5py.File(res_filename, 'r')
@@ -884,3 +998,23 @@ class CalibrateOrbit:
         gnv_orbit[index, 1:] = kin_orbit[index, 1:]
 
         return gnv_orbit
+
+    def keepGlobal(self, N, L):
+        N_ll = N[0:9, 0:9]
+        N_lg = N[0:9, 9:]
+        N_gl = N[9:, 0:9]
+        N_gg = N[9:, 9:]
+
+        l_l = L[0:9]
+        l_g = L[9:]
+
+        M_n = np.linalg.lstsq(N_ll, N_lg, rcond=None)[0]
+        M_l = np.linalg.lstsq(N_ll, l_l, rcond=None)[0]
+
+        N_G = N_gg - N_gl @ M_n
+        N_l = l_g - N_gl @ M_l
+
+        return N_G, N_l
+
+    def getScale(self):
+        pass

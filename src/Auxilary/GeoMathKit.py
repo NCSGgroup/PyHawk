@@ -13,6 +13,7 @@ import functools
 import numba as nb
 import datetime
 from scipy import linalg
+from scipy.linalg import qr
 
 
 class GeoMathKit:
@@ -435,25 +436,24 @@ class GeoMathKit:
         :return: Normal equations related only to the global parameters （Nx = l）
         """
         # time
-        # p = np.eye(np.shape(dm_global.T)[-1])
+        p = np.eye(np.shape(dm_global.T)[-1])
         I = np.eye(np.shape(dm_global.T)[-1])
-        # w = linalg.cholesky(p)
-        # B = w @ dm_local
-        B = dm_local
+        w = linalg.cholesky(p)
+        B = w @ dm_local
+        # B = dm_local
         # n = np.shape(B)[1]
         # Q, R = np.linalg.qr(B, mode='complete')
         # Q2 = Q[:, n:]
 
-        Q1, R = np.linalg.qr(B, mode="complete")
+        # Q1, R = np.linalg.qr(B, mode="complete")
+        Q1, R = np.linalg.qr(B)
         Q2 = I - Q1 @ Q1.T
         Q2_T = Q2.T
 
-        # A = Q2_T @ w @ dm_global
-        A = Q2_T @ dm_global
+        A = Q2_T @ w @ dm_global
         A_T = A.T
 
-        # l = Q2_T @ w @ obs
-        l = Q2_T @ obs
+        l = Q2_T @ w @ obs
 
         N = A_T @ A
         L = A_T @ l
@@ -494,6 +494,7 @@ class GeoMathKit:
         l = Wx - tm @ Wy
         return N, l
 
+    @staticmethod
     def keepGlobal2(dm_global: np.ndarray, dm_local: np.ndarray, obs: np.ndarray):
         """
         Ax + By = z
@@ -567,6 +568,188 @@ class GeoMathKit:
             N = N - Nxy @ M_n
             l = l - Nxy @ M_l
         return N, l
+
+    def keepGlobal4(dm_global: np.ndarray, dm_local: np.ndarray, obs: np.ndarray):
+        """
+               Ax + By = z
+               x--global parameter
+               y--local parameter
+               z--obs
+               Our aim: remove the local parameters and keep only the global parameters to be solved.
+               :param dm_global: design matrix for the global parameters
+               :param dm_local: design matrix for the local parameters
+               :param obs: observations
+               :return: Normal equations related only to the global parameters （Nx = l）
+               """
+        # time
+        Nxx = dm_global.T @ dm_global
+        Wx = dm_global.T @ obs
+        if np.shape(dm_local)[-1] == 0:
+            '''No local parameters'''
+            return Nxx, Wx
+
+        Nxy = dm_global.T @ dm_local
+        Nyx = dm_local.T @ dm_global
+        Nyy = dm_local.T @ dm_local
+
+        Wy = dm_local.T @ obs
+
+        Nyy_inv = np.linalg.pinv(Nyy.copy(), rcond=1e-12)
+
+        tm = Nxy @ Nyy_inv
+
+        N = Nxx - tm @ Nyx
+        l = Wx - tm @ Wy
+        return N, l
+
+    def keepGlobal5(dm_global: np.ndarray, dm_local: np.ndarray, obs: np.ndarray):
+        """
+               Ax + By = z
+               x--global parameter
+               y--local parameter
+               z--obs
+               Our aim: remove the local parameters and keep only the global parameters to be solved.
+               :param dm_global: design matrix for the global parameters
+               :param dm_local: design matrix for the local parameters
+               :param obs: observations
+               :return: Normal equations related only to the global parameters （Nx = l）
+               """
+        # time
+        Nxx = dm_global.T @ dm_global
+        Wx = dm_global.T @ obs
+        if np.shape(dm_local)[-1] == 0:
+            '''No local parameters'''
+            return Nxx, Wx
+
+        Nxy = dm_global.T @ dm_local
+        Nyx = dm_local.T @ dm_global
+        Nyy = dm_local.T @ dm_local
+
+        Wy = dm_local.T @ obs
+
+        U, s, Vt = np.linalg.svd(Nyy.copy(), full_matrices=False)
+        tol = 1e-6 * s[0]
+        s_inv = np.array([1 / si if si > tol else 0.0 for si in s])
+
+        Nyy_inv = (Vt.T * s_inv) @ U.T
+
+        tm = Nxy @ Nyy_inv
+
+        N = Nxx - tm @ Nyx
+        l = Wx - tm @ Wy
+        return N, l
+
+    def keepGlobal6(dm_global: np.ndarray, dm_local: np.ndarray, obs: np.ndarray):
+        """
+          Ax + By = z
+          x--global parameter
+          y--local parameter
+          z--obs
+          Our aim: remove the local parameters and keep only the global parameters to be solved.
+          :param dm_global: design matrix for the global parameters
+          :param dm_local: design matrix for the local parameters
+          :param obs: observations
+          :return: Normal equations related only to the global parameters （Nx = l）
+          """
+        # time
+        p = np.eye(np.shape(dm_global.T)[-1])
+        I = np.eye(np.shape(dm_global.T)[-1])
+        w = linalg.cholesky(p)
+        B = w @ dm_local
+        # B = dm_local
+        # n = np.shape(B)[1]
+        # Q, R = np.linalg.qr(B, mode='complete')
+        # Q2 = Q[:, n:]
+
+        # Q1, R = np.linalg.qr(B, mode="complete")
+        Q1, R, piv = qr(B, pivoting=True, mode='economic')
+        Q2 = I - Q1 @ Q1.T
+        Q2_T = Q2.T
+
+        A = Q2_T @ w @ dm_global
+        A_T = A.T
+
+        l = Q2_T @ w @ obs
+
+        N = A_T @ A
+        L = A_T @ l
+
+        return N, L
+
+    @staticmethod
+    def keepGlobal7(dm_global: np.ndarray, dm_local: np.ndarray, obs: np.ndarray):
+        """
+          Ax + By = z
+          x--global parameter
+          y--local parameter
+          z--obs
+          Our aim: remove the local parameters and keep only the global parameters to be solved.
+          :param dm_global: design matrix for the global parameters
+          :param dm_local: design matrix for the local parameters
+          :param obs: observations
+          :return: Normal equations related only to the global parameters （Nx = l）
+          """
+        # time
+        A = np.hstack((dm_local, dm_global))
+
+        N = A.T @ A
+        B = A.T @ obs
+        par_num = np.shape(dm_local)[-1]
+
+        N_out, L_out = GeoMathKit.preEliminate(N, B, par_num)
+
+        return N_out, L_out
+
+    @staticmethod
+    def preEliminate(N: np.ndarray, B: np.ndarray, locParamsCout: int):
+        """
+        Python translation of MATLAB preEliminate function.
+
+        Parameters
+        ----------
+        N : ndarray
+            Full (square) normal equation matrix.
+        B : ndarray
+            Right-hand side vector.
+        locParamsCout : int
+            Number of local parameters to eliminate.
+
+        Returns
+        -------
+        Nout : ndarray
+            Reduced normal equation matrix after elimination.
+        Bout : ndarray
+            Reduced right-hand side vector.
+        """
+        N = N.copy()
+        B = B.copy()
+
+        npar = len(B)
+
+        for i in range(locParamsCout):
+            a11 = N[0, 0]
+            a12 = N[0, 1:npar]
+            a22 = N[1:npar, 1:npar]
+
+            u1 = B[0]
+            u2 = B[1:npar]
+
+            a22_temp = (a12[None, :].T @ a12[None, :]) / a11
+            u2_temp = (a12[None, :].T * u1) / a11
+
+            n = a22 - a22_temp
+            b = u2 - u2_temp
+
+            npar -= 1
+
+            # 更新 N 和 B
+            N[0:npar, 0:npar] = n
+            B[0:npar] = b
+
+        Nout = N[0:npar, 0:npar]
+        Bout = B[0:npar]
+
+        return Nout, Bout
 
     @staticmethod
     def solveLocal(dm_global, dm_local, obs, global_p):

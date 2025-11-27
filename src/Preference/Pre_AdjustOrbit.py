@@ -28,6 +28,7 @@ class AdjustOrbitConfig:
             self.StateVectorDataTemp = "../temp/StateVector"
             self.OrbitAdjustResTemp = "../temp/OrbitAdjustment"
             self.RangeRateTemp = "../temp/RangeRate"
+            self.FilteredRangeRateTemp = "../temp/FilteredRangeRate"
 
 
 def class_to_json():

@@ -47,7 +47,9 @@ class GravimetryODE:
         if self.TransitionMatrixConfig.isRequired:
             self.__ParNum += self.TransitionMatrixConfig.Parameter_Number
         if self.AccelerometerConfig.isRequired:
-            self.__ParNum += self.AccelerometerConfig.Parameter_Number * (len(self.node) - 1)
+            if self.AccelerometerConfig.isScale:
+                self.__ParNum += 9
+            self.__ParNum += self.node
         if self.StokesCoefficientsConfig.isRequired:
             self.__ParNum += self.StokesCoefficientsConfig.Parameter_Number
         return self

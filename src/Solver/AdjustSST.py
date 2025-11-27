@@ -125,25 +125,7 @@ class RangeRate:
     def calibrate(self):
         obs = self.pre_residual()
 
-        fs = 5
-        cutoff = 0.03
-        #
-        obs = self.butter_low_filter(data=self.pre_residual(), cutoff=cutoff, fs=fs, order=1)
-
         n = self.mean_motion_of_the_mid_point()
-        '''arc Calibrate'''
-        kf = FitSST(self.Time, n, option=self.__kbr_fit)
-        dm = kf.get_design_matrix()
-
-        for iter in range(self.__iterations):
-            residual = kf.get_residual(dm.copy(), obs)
-            index = Outlier(rms_times=self.__rms_times,
-                                upper_obs=self.__upper_obs).remove(self.Time, residual)
-            self.Time = self.Time[index]
-            dm = dm[index, :]
-            obs = residual[index]
-            if any(index) == False:
-                break
 
         '''divide arcs to Calibrate kbr individually'''
         node = [self.Time[0]]
@@ -232,11 +214,6 @@ class RangeRate:
             setInitial(self._startTime, self._startPos.copy(), self._startVel.copy()). \
             set2ndDerivative(self._secDer)
         pass
-
-    def butter_low_filter(self, data, cutoff, fs, order=1):
-        b, a = butter(N=order, Wn=cutoff, btype='low', analog=False)
-        filtered_data = filtfilt(b, a, data)
-        return filtered_data
 
 
 class FitSST:

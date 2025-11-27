@@ -548,7 +548,8 @@ class KinematicOrbitFO(KinematicOrbit):
         if not os.path.exists(path):
             return None
         try:
-            res = np.loadtxt(path, dtype=np.float64, comments='#', usecols=(0, 1, 2, 3))
+            # res = np.loadtxt(path, dtype=np.float64, comments='#', usecols=(0, 1, 2, 3))
+            res = np.genfromtxt(path, delimiter=None, dtype=np.float64, skip_header=6, usecols=(0, 1, 2, 3))
             if np.shape(res)[0] == 0:
                 return None
             res[:, 0] = np.round(Frame.mjd2sec(res[:, 0]))

@@ -8,6 +8,7 @@ from src.Interface.ArcOperation import ArcData
 from src.Preference.Pre_ForceModel import ForceModelConfig
 from src.Preference.Pre_Parameterization import ParameterConfig
 from src.Preference.Pre_Frame import FrameConfig
+from src.Interface.Accelerometer import Accelerometer, Accelerometer_V2, AccCaliPar, Accelerometer_V3, AccCaliPar_V3
 
 
 class Orbit_var_2nd_diff(Assemble2ndDerivative):
@@ -23,7 +24,8 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
         self.__initVel = None
         self.__PosAndVel = None
         self.__commonTime = None
-        self.adjustLength = None
+        self.node = None
+
         self.accA = []
         self.accB = []
 
@@ -33,7 +35,11 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
         '''config AccelerometerConfig'''
         self._AccelerometerConfig = self._ParameterConfig.Accelerometer()
         self._AccelerometerConfig.__dict__.update(self._ParameterConfig.AccelerometerConfig.copy())
-        self.adjustLength = self._AccelerometerConfig.AdjustLength * 3600
+        self.adjustlength_x = self._AccelerometerConfig.X_AdjustLength * 3600
+        self.adjustlength_y = self._AccelerometerConfig.Y_AdjustLength * 3600
+        self.adjustlength_z = self._AccelerometerConfig.Z_AdjustLength * 3600
+
+        '''init acc'''
 
         self.configure(FMConfig=FMConfig, ParameterConfig=ParConfig, FrameConfig=FrameConfig)
         return self
@@ -61,22 +67,14 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
             GNVA = GNVA[index1, :]
             GNVB = GNVB[index2, :]
 
-        self.node = [self.Time[0]]
-        t1 = self.Time[0]
-        while True:
-            t2 = t1 + self.adjustLength
-            if t2 - self.Time[-1] <= 0:
-                '''difference less than 0.5 hour, end'''
-                self.node.append(t2)
-                t1 = t2
-            elif len(self.Time[self.Time >= t2]) <= 100:
-                if len(self.Time[self.Time >= t2]) == 0:
-                    self.node.append(self.Time[-1] + 5)
-                else:
-                    '''the rest points are too short, e.g., less than 100: include the rest into the last arc'''
-                    self.node[-1] = self.Time[
-                                        -1] + 5  # +10, a little bigger than the last point to ensure all is included
-                break
+        '''divide x layer'''
+        self.node_x = self.divideLayer(self.adjustlength_x)
+        '''divide y layer'''
+        self.node_y = self.divideLayer(self.adjustlength_y)
+        '''divide z layer'''
+        self.node_z = self.divideLayer(self.adjustlength_z)
+
+        self.node = (len(self.node_x) + len(self.node_y) + len(self.node_z) - 3) * 2
 
         self.__initTime = GNVA[4, 0]
         startPosA, startPosB = GNVA[4, 1:4], GNVB[4, 1:4]
@@ -175,6 +173,25 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
 
     def getacc(self):
         return self.accA, self.accB
+
+    def divideLayer(self, adjustlength):
+        node = [self.Time[0]]
+        t1 = self.Time[0]
+        while True:
+            t2 = t1 + adjustlength
+            if t2 - self.Time[-1] <= 0:
+                '''difference less than 0.5 hour, end'''
+                node.append(t2)
+                t1 = t2
+            elif len(self.Time[self.Time >= t2]) <= 100:
+                if len(self.Time[self.Time >= t2]) == 0:
+                    node.append(self.Time[-1] + 5)
+                else:
+                    '''the rest points are too short, e.g., less than 100: include the rest into the last arc'''
+                    node[-1] = self.Time[-1] + 5  # +10, a little bigger than the last point to ensure all is included
+                break
+
+        return node
 
     def getTimes(self):
         return self.node

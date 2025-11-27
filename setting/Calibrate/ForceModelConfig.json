@@ -23,8 +23,8 @@
     },
     "NonConservativeConfig": {
         "date_span": [
-            "2010-12-01",
-            "2010-12-31"
+            "2019-05-01",
+            "2019-05-31"
         ],
         "arcNo": 0,
         "sat": {
@@ -125,7 +125,7 @@
     "NonTideConfig": {
         "kind": "GLO",
         "MaxDeg": 180,
-        "TS": 6
+        "TS": 3
     },
     "RefGravModelConfig": {
         "kind": 0,
@@ -151,7 +151,7 @@
     },
     "PathOfFilesConfig": {
         "Ephemerides": "../data/ephemerides",
-        "AOD": "../data/AOD/RL06",
+        "AOD": "../data/AOD/RL07",
         "EOT11a": "../data/eot11a",
         "FES2014": "../data/FES2014",
         "Atmos": "../data/atmos",

@@ -67,7 +67,11 @@ class Parameterization:
             term = self.__config[key]
             if term.isRequired:
                 if key is ParaType.Accelerometer:
-                    num = term.Parameter_Number * (len(self.nodes) - 1)
+                    if term.isScale:
+                        num = 9
+                        global_dm = np.dstack((global_dm, dm[:, :, index:index + num]))
+                        index = index + num
+                    num = self.nodes
                 else:
                     num = term.Parameter_Number
                 if not term.AllisGlobal:
