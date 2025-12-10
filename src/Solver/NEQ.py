@@ -133,6 +133,8 @@ class GravityNEQperArc:
         if not config.IsRequired:
             return None
 
+        sgima_path = self._solverConfig.PostOrbit + '/' + self.__date_span[0] + '-' + self.__date_span[1]
+
         self._rd = ArcData(interfaceConfig=self._InterfaceConfig)
 
         if config.UseKinematicOrbit:
@@ -142,7 +144,7 @@ class GravityNEQperArc:
             orbit_obs = self._rd.getData(arc=self.__arcNo, kind=Payload.GNV, sat=sat)[:, 0:4]
         # orbit_obs = self.get_orbit_obs(sat=sat, Kin_obs=kin_obs)
         t_obs = orbit_obs[:, 0]
-        t_obs = t_obs[t_obs % 60 == 0]
+        # t_obs = t_obs[t_obs % 60 == 0]
         '''for the orbit, only position (r) is needed for the inversion'''
         '''find the common'''
         int_t_obs = t_obs.astype(np.int64)
@@ -171,16 +173,14 @@ class GravityNEQperArc:
         #     f.create_dataset("global_r", data=global_r)
         #     f.create_dataset("local_r", data=local_r)
         #     f.create_dataset("obs", data=obs)
+        sigmafilename = sgima_path + '/Orbit_' + str(self.__arcNo) + str(sat.name) + '.hdf5'
+        sigmah5 = h5py.File(sigmafilename, "r")
+        if "Sigma" in sigmah5:
+            sigma = sigmah5['Sigma'][:]
+            N, l = GeoMathKit.keepGlobal(dm_global=global_r, dm_local=local_r, obs=obs, p=sigma)
+        else:
+            N, l = GeoMathKit.keepGlobal(dm_global=global_r, dm_local=local_r, obs=obs, p=None)
 
-        N, l = GeoMathKit.keepGlobal(dm_global=global_r, dm_local=local_r, obs=obs)
-
-        # h5 = h5py.File("orbit_A_0_out.h5", 'r')
-        # matlab_n = h5['N'][()]
-        # matlab_l = h5['L'][()]
-
-        # diff_n = (matlab_n.T - N)
-        # diff_l = (matlab_l.T - l)
-        #
         self.__saveData.create_dataset('Orbit_N_%1s' % sat.name, data=N)
         self.__saveData.create_dataset('Orbit_l_%1s' % sat.name, data=l)
         pass
@@ -261,6 +261,7 @@ class GravityNEQperArc:
             return None
 
         assert config.measurement == SSTObserve.RangeRate.value, 'Range-rate is not allowed by user setting'
+        sgima_path = self._solverConfig.PostKBRR + '/' + self.__date_span[0] + '-' + self.__date_span[1]
 
         dm_dir = self._AdjustPathConfig.RangeRateTemp + '/' + self.__date_span[0] + '_' + self.__date_span[1]
         res_filename = dm_dir + '/' + SSTObserve.RangeRate.name + '_' + str(self.__arcNo) + '.hdf5'
@@ -297,7 +298,13 @@ class GravityNEQperArc:
         #     f.create_dataset("obs", data=obs)
         obs = obs.reshape((-1, 1))
 
-        N, l = GeoMathKit.keepGlobal(dm_global=global_dm, dm_local=local_dm, obs=obs)
+        sigmafilename = sgima_path + '/' + SSTObserve.RangeRate.name + '_' + str(self.__arcNo) + '.hdf5'
+        sigmah5 = h5py.File(sigmafilename, "r")
+        if "Sigma" in sigmah5:
+            sigma = sigmah5['Sigma'][:]
+            N, l = GeoMathKit.keepGlobal(dm_global=global_dm, dm_local=local_dm, obs=obs, p=sigma)
+        else:
+            N, l = GeoMathKit.keepGlobal(dm_global=global_dm, dm_local=local_dm, obs=obs, p=None)
 
         self.__saveData.create_dataset('%s_N' % SSTObserve.RangeRate.name, data=N)
         self.__saveData.create_dataset('%s_l' % SSTObserve.RangeRate.name, data=l)

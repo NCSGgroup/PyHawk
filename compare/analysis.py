@@ -109,8 +109,8 @@ def GRACE(date):
     matplotlib.rcParams.update({'font.size': 30})
     fig = plt.figure(figsize=(10, 8))
     # plt.style.use(['science'])
-    plt.plot(np.arange(2, 61, 1), hust[2:], color='green', linewidth=2.0, marker='', label='PyHawk')
-    # plt.plot(np.arange(2, 61, 1), hust2[2:], color='black', linewidth=2.0, marker='', label='y-3h')
+    plt.plot(np.arange(2, 61, 1), hust[2:], color='green', linewidth=2.0, marker='', label='Non')
+    plt.plot(np.arange(2, 61, 1), hust2[2:], color='black', linewidth=2.0, marker='', label='LGS')
     # plt.plot(np.arange(2, 61, 1), hust3[2:], color='red', linewidth=2.0, marker='', label='y-1.5h')
     # plt.plot(np.arange(2, 61, 1), hust4[2:], color='blue', linewidth=2.0, marker='', label='qr')
     plt.plot(np.arange(2, 61, 1), csr[2:], color='indigo', marker='', linewidth=2.0,label='CSR 06')
@@ -148,13 +148,13 @@ def GRACE_FO(date):
     static_c_GGM, static_s_GGM = LoadGif48().load('../data/StaticGravityField/GGM05C.gfc').getCS(60)
     '''read hust'''
 
-    hust_filename = '../result/scale/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600-non.gfc'
+    hust_filename = '../result/GLS/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600-non.gfc'
     hust_c, hust_s = LoadCSR().load(fileIn=hust_filename).getCS(Nmax=60)
     hust_c, hust_s = hust_c - static_c, hust_s - static_s
     # hust_c, hust_s = hust_c - static_c, hust_s - static_s
     hust_c, hust_s = GeoMathKit.CS_1dTo2d(hust_c), GeoMathKit.CS_1dTo2d(hust_s)
     # '''read hust'''
-    hust_filename2 = '../result/scale/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600.gfc'
+    hust_filename2 = '../result/GLS/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600.gfc'
     hust_c2, hust_s2 = LoadCSR().load(fileIn=hust_filename2).getCS(Nmax=60)
     hust_c2, hust_s2 = hust_c2 - static_c, hust_s2 - static_s
     hust_c2, hust_s2 = GeoMathKit.CS_1dTo2d(hust_c2), GeoMathKit.CS_1dTo2d(hust_s2)
@@ -229,8 +229,8 @@ def GRACE_FO(date):
     matplotlib.rcParams.update({'font.size': 30})
     fig = plt.figure(figsize=(10, 8))
     # plt.style.use(['science'])
-    plt.plot(np.arange(2, 61, 1), hust[2:], color='green', linewidth=2.0, marker='', label='nonscale')
-    plt.plot(np.arange(2, 61, 1), hust2[2:], color='black', linewidth=2.0, marker='', label='scale')
+    plt.plot(np.arange(2, 61, 1), hust[2:], color='green', linewidth=2.0, marker='', label='non')
+    plt.plot(np.arange(2, 61, 1), hust2[2:], color='black', linewidth=2.0, marker='', label='GLS')
     # plt.plot(np.arange(2, 61, 1), hust3[2:], color='red', linewidth=2.0, marker='', label='test4')
     # plt.plot(np.arange(2, 61, 1), hust4[2:], color='blue', linewidth=2.0, marker='', label='gif48')
     # plt.plot(np.arange(2, 61, 1), csr[2:], color='indigo', marker='', linewidth=2.0,label='CSR')
@@ -786,8 +786,8 @@ def convert_range(date_range, converter):
 
 
 if __name__ == '__main__':
-    span1 = '2009-01-01_2009-01-31'
-    # span1 = '2019-01-01_2019-01-31'
+    # span1 = '2009-01-01_2009-01-31'
+    span1 = '2019-01-01_2019-01-31'
     # span2 = '2021001-2021031'
     # data_span = get_month_start_and_end_by_date_interval('2009-01-01', '2010-12-31')
 
@@ -802,8 +802,8 @@ if __name__ == '__main__':
     #     # drawMat()
     #     # drawKBRR()
     #     # drawMean()
-    GRACE(span1)
-    # GRACE_FO(span1)
+    # GRACE(span1)
+    GRACE_FO(span1)
     # drawTime(data1=span1, data2=span2)
     # subplotsGeoid()
     pass

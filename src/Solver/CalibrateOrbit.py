@@ -42,6 +42,13 @@ from src.Auxilary.Outlier import Outlier
 from src.Preference.EnumType import Payload, SatID, SSTObserve
 from scipy.signal import butter, filtfilt
 from scipy import signal
+from scipy.linalg import toeplitz, cholesky, eigh, solve_triangular
+from scipy.sparse.linalg import eigsh
+from scipy.signal import detrend
+from scipy.ndimage import uniform_filter1d
+from statsmodels.regression.linear_model import yule_walker
+from statsmodels.tsa.ar_model import AutoReg
+from scipy.linalg import solve_discrete_lyapunov
 
 
 class CalibrateOrbit:
@@ -199,10 +206,22 @@ class CalibrateOrbit:
             pool.close()
             pool.join()
         if isSH:
+            # self.makeLog(stepName='SH', process=1)
+            # self.__calculate_cs()
+            # self.plotPostKbrr()
+            # self.xyz2lonlat()
+            self.GLS()
+
+            self.makeLog(stepName='NEQ', process=GetNEQProcess)
+            pool = multiprocessing.Pool(processes=GetNEQProcess)
+            pool.map(self._NEQ, self.__arclist)
+            pool.close()
+            pool.join()
+
             self.makeLog(stepName='SH', process=1)
             self.__calculate_cs()
-            self.plotPostKbrr()
-            self.xyz2lonlat()
+            # self.plotPostKbrr()
+            # self.xyz2lonlat()
             # self.re_calculate_cs()
         # self.getSpaceKBRR()
         pass
@@ -371,8 +390,9 @@ class CalibrateOrbit:
             scale = cs[0:18]
             print(scale)
             cs = cs[18:]
-        # sigma = self.getLocalPar(solverConfig=self.__solver_config, cs=cs, N=NMatrix1)
-        sigma = cs
+
+        sigma = self.getLocalPar(solverConfig=self.__solver_config, cs=cs, N=NMatrix1)
+        # sigma = cs
 
         sort = SortCS(method=stokes_coefficients_config.SortMethod,
                       degree_max=stokes_coefficients_config.MaxDegree,
@@ -759,6 +779,7 @@ class CalibrateOrbit:
 
         res_name = res_path + 'RangeRate_' + str(arcNo) + '.hdf5'
         h5 = h5py.File(res_name, 'w')
+        h5.create_dataset('kbrr_par', data=Local_par)
         h5.create_dataset('post_kbrr', data=kbrr_res)
         h5.close()
         pass
@@ -1016,5 +1037,292 @@ class CalibrateOrbit:
 
         return N_G, N_l
 
-    def getScale(self):
+    def GLS(self):
+        '''get orbit obs'''
+        orbit_path = self.__solver_config.PostOrbit + '/' + self.__date_span[0] + '-' + self.__date_span[1]
+        kbrr_path = self.__solver_config.PostKBRR + '/' + self.__date_span[0] + '-' + self.__date_span[1]
+
+        for i in tqdm(self.__arclist, desc='Solve Orbit and KBRR Cov: '):
+            postOrbitname_a = orbit_path + '/Orbit_' + str(i) + 'A.hdf5'
+            postOrbitname_b = orbit_path + '/Orbit_' + str(i) + 'B.hdf5'
+            kbrrname = kbrr_path + '/' + SSTObserve.RangeRate.name + '_' + str(i) + '.hdf5'
+
+            postOrbith5_a = h5py.File(postOrbitname_a, "r+")
+            postOrbith5_b = h5py.File(postOrbitname_b, "r+")
+            postKBRRh5 = h5py.File(kbrrname, "r+")
+
+            res_orbit_a = postOrbith5_a['post_Orbit'][:]
+            res_orbit_b = postOrbith5_b['post_Orbit'][:]
+            res_kbrr = postKBRRh5['post_kbrr'][:]
+
+            self.getSigma(res=res_orbit_a, h5path=postOrbith5_a)
+            self.getSigma(res=res_orbit_b, h5path=postOrbith5_b)
+            self.getSigma(res=res_kbrr, h5path=postKBRRh5)
         pass
+
+    def getSigma(self, res, h5path):
+        n = len(res)
+        res = detrend(res)
+        res -= np.mean(res)
+
+        p_max = min(50, n // 10)
+        p = self.pick_AR_order(res, p_max=p_max, ic='bic')
+
+        phi, sigma2 = self.estimate_ARp(res, p)
+        cov = self.AR_toeplitz_cov(phi, sigma2, n)
+
+        # res = detrend(res, type='linear')
+        acov = self.estimate_acov(res, max_lag=(int(np.sqrt(n))))
+        # acov = self.estimate_acov(res, max_lag=(int(n - 1)))
+        '''FFT'''
+        eps = max(acov[0] * 1e-8, 1e-16)
+
+        acov_full = self.psd_clip_autocov(acov, n, eps=eps)
+        # acov_full = self.psd_clip_with_taper(acov, n)
+
+        # '''构建协方差矩阵'''
+        # first_col = np.zeros(n)
+        # first_col[:len(acov_full)] = acov_full
+        Sigma = toeplitz(acov_full)
+        '''正定化'''
+        # Sigma += np.eye(n) * 1e-2
+        # Sigma = self.nearest_pos_def(Sigma, eps_rel=1e-10)
+
+        if "Sigma" in h5path:
+            del h5path["Sigma"]
+
+        h5path.create_dataset("Sigma", data=Sigma)
+        h5path.close()
+        pass
+
+    def estimate_acov(self, residuals, max_lag=50):
+        """
+        用残差估计自协函数（ACF），无偏估计版本。
+        """
+        residuals = np.asarray(residuals)
+        n = len(residuals)
+        mean = residuals.mean()
+        r = residuals - mean
+
+        acov = np.zeros(max_lag + 1)
+        for k in range(max_lag + 1):
+            acov[k] = np.dot(residuals[:n - k], residuals[k:]) / (n - k)
+        return acov
+        # n = len(residuals)
+        # x = residuals - np.mean(residuals)
+        # return np.array([np.dot(x[:n - k], x[k:]) / (n - k) for k in range(max_lag + 1)])
+
+    def nearest_pos_def(self, mat, eps_rel=1e-8):
+        # mat = 0.5 * (mat + mat.T)
+        # vals, vecs = eigh(mat)
+        # max_val = vals[-1] if vals.size > 0 else 0.0
+        # tol = eps_rel * max(1.0, max_val)
+        # vals_clipped = np.clip(vals, tol, None)
+        # mat_pd = (vecs @ np.diag(vals_clipped)) @ vecs.T
+        # Sigma_pd = mat + eps_rel * np.eye(mat.shape[0])
+        # return (mat_pd + mat_pd.T) / 2.0
+
+        n = mat.shape[0]
+
+        # 只提取最小的 k 个特征值
+        vals, vecs = eigsh(mat, k=20, which='SA')
+
+        min_val = np.min(vals)
+        if min_val > eps_rel:
+            return mat  # 已正定
+
+        # 修正负特征值
+        vals_clipped = np.maximum(vals, eps_rel)
+
+        # 只更新部分特征值贡献（低秩修补）
+        Sigma_fix = mat + vecs @ np.diag(vals_clipped - vals) @ vecs.T
+
+        return Sigma_fix
+
+    def psd_clip_autocov(self, acov, n_out=None, eps=1e-20):
+        """
+            Method A: FFT → PSD clipping → IFFT.
+            acov: length K+1  (estimated gamma(0..K))
+            n_out: desired size of autocov for Toeplitz (same as observation count n)
+            eps: lower bound of PSD to enforce strict positive definiteness
+            """
+        K = len(acov) - 1
+
+        # Step 1: Make FFT input symmetric: g = [gamma0, gamma1,...gammaK, 0,...,0, gammaK,...gamma1]
+        # Choose FFT length >= 2*K for good spectral resolution
+        m = int(2 ** np.ceil(np.log2(max(2 * (K + 1), 4 * n_out))))
+        g = np.zeros(m)
+        g[:K + 1] = acov
+        g[m - K:m] = acov[1:K+1][::-1]  # symmetry (exclude gamma0 to avoid double counting)
+
+        # Step 2: FFT -> PSD
+        S = np.fft.rfft(g)
+
+        S_real = np.real(S)
+
+        # Step 3: PSD clipping (key step)
+        S_clipped = np.maximum(S_real, eps)
+
+        # Step 4: inverse FFT
+        g_corr = np.fft.irfft(S_clipped).real
+
+        # Step 5: real autocov lags = 0..n_out-1
+        acov_corr = g_corr[:n_out]
+        return acov_corr
+
+    def taper_keep0_window(self, K, kind='hann'):
+        if kind == 'hann':
+            w = np.hanning(K + 1)
+        elif kind == 'exp':
+            k = np.arange(K + 1)
+            w = np.exp(-k / (K / 5.0))
+        else:
+            w = np.ones(K + 1)
+        w[0] = 1.0  # 关键：保留 gamma(0)
+        return w
+
+    def psd_clip_with_taper(self, acov, n_out,
+                            pad_factor=4,
+                            eps_rel=1e-10,
+                            freq_smooth=11,
+                            taper_kind='hann',
+                            renormalize=True):
+        # acov length = K+1
+        K = len(acov) - 1
+        if K < 1:
+            raise ValueError("acov too short")
+        gamma0 = float(acov[0])
+
+        # taper but keep gamma0
+        w = self.taper_keep0_window(K, kind=taper_kind)
+        acov_tap = acov * w
+
+        # choose FFT length m (power of 2)
+        m_candidate = max(2 * (K + 1), pad_factor * n_out)
+        m = 1 << int(np.ceil(np.log2(m_candidate)))
+
+        # construct symmetric padded g
+        g = np.zeros(m, dtype=float)
+        g[:K + 1] = acov_tap
+        if K >= 1:
+            g[m - K:m] = acov_tap[1:K + 1][::-1]
+
+        # rfft, smooth, clip
+        S = np.fft.rfft(g)
+        S_real = S.real
+        if freq_smooth and freq_smooth > 1:
+            S_smooth = uniform_filter1d(S_real, size=freq_smooth, mode='reflect')
+        else:
+            S_smooth = S_real
+
+        # eps relative to gamma0; if big negative excursions exist, lift scale
+        eps_floor = max(eps_rel * max(acov_tap[0], gamma0), 1e-18)
+        if S_smooth.min() < 0:
+            eps = max(eps_floor, -S_smooth.min() * 1.001)
+        else:
+            eps = eps_floor
+
+        S_clipped = np.maximum(S_smooth, eps)
+
+        # inverse
+        g_corr = np.fft.irfft(S_clipped, n=m).real
+        acov_corr = g_corr[:n_out].copy()
+
+        # optional renormalize to preserve gamma0
+        if renormalize:
+            if acov_corr[0] <= 0:
+                raise RuntimeError("acov_corr[0] <= 0 after clipping; increase eps_rel or freq_smooth")
+            acov_corr *= (gamma0 / acov_corr[0])
+
+        # diagnostics
+        Sigma = toeplitz(acov_corr[:n_out])
+        eigs = eigh(Sigma, eigvals_only=True)
+        diag = {
+            'm': m,
+            'gamma0_orig': gamma0,
+            'gamma0_tap': acov_tap[0],
+            'gamma0_corr': acov_corr[0],
+            'S_real_min': float(S_real.min()),
+            'S_smooth_min': float(S_smooth.min()),
+            'S_clipped_min': float(S_clipped.min()),
+            'Sigma_min_eig': float(eigs.min()),
+            'Sigma_cond': float(eigs.max() / max(eigs.min(), 1e-30)),
+            'eps_used': eps
+        }
+        return acov_corr, diag
+
+    def estimate_ARp(self, res, p):
+        # 去均值
+        r = res - np.mean(res)
+        # Yule-Walker 估计 AR(p)
+        rho, sigma = yule_walker(r, order=p, method='mle')
+        return rho, sigma
+
+    def AR_toeplitz_cov(self, phi, sigma2, n):
+        p = len(phi)
+        # 用混合系统求自协
+        # Companion matrix
+        F = np.zeros((p, p))
+        F[0, :] = phi
+        F[1:, :-1] = np.eye(p - 1)
+
+        # 计算协方差前 p 项
+        gam = np.zeros(n)
+        # solve Lyapunov equation for gamma(0:p)
+        from numpy.linalg import solve
+
+        # 利用 Yule-Walker 取 gamma(0:p)
+        # gamma(0) = sigma^2 / (1 - sum(phi_i * psi_i))（通过 Y-W 已经获得）
+        # 用前 p 个自协构造初始向量
+        # 我们直接用求解 Lyapunov eq 的方法
+        Q = np.zeros((p, p))
+        Q[0, 0] = sigma2
+
+        # 解稳定 AR(p) 的协方差矩阵（离散 Lyapunov）
+
+        P = solve_discrete_lyapunov(F, Q)  # p×p
+
+        # 前 p 个自协
+        gam[:p] = P[0, :]
+
+        # 后续用递推
+        for k in range(p, n):
+            gam[k] = np.dot(phi, gam[k - p:k][::-1])
+
+        # 返回 Toeplitz
+        return toeplitz(gam[:n])
+
+    def pick_AR_order(self, res, p_max=50, ic='bic'):
+        """
+            自动选择 AR 阶数
+            """
+        res = np.asarray(res)
+        aic_list = []
+        bic_list = []
+        orders = list(range(1, p_max + 1))
+        for p in orders:
+            try:
+                model = AutoReg(res, lags=p, old_names=False).fit()
+                aic_list.append(model.aic)
+                bic_list.append(model.bic)
+            except:
+                aic_list.append(np.inf)
+                bic_list.append(np.inf)
+        ic_list = aic_list if ic.lower().startswith('a') else bic_list
+        p_opt = orders[int(np.argmin(ic_list))]
+        return p_opt
+
+    def ar_to_acov(self, phi, sigma2, n_lags):
+        """
+            根据 AR 系数生成自协方差序列
+            phi: AR(p) 系数
+            sigma2: 白噪声方差
+            n_lags: 生成多少滞后
+            """
+        p = len(phi)
+        acov = np.zeros(n_lags)
+        acov[0] = sigma2 / (1 - np.sum(phi)) ** 2  # 零滞后
+        for k in range(1, n_lags):
+            # 用 AR 递推生成 acov[k]（简单近似）
+            acov[k] = np.dot(phi[:min(k, p)], acov[k - 1:k - p - 1:-1])
+        return acov

@@ -21,6 +21,7 @@ from src.Frame.Frame import Frame
 from src.Frame.EOP import EOP
 from src.Preference.Pre_Frame import FrameConfig
 from src.Auxilary.GeoMathKit import GeoMathKit
+from scipy.linalg import toeplitz, cholesky, eigh, solve_triangular
 
 
 def readDate():
@@ -235,6 +236,76 @@ def plot(t, x, y, z, arc):
     plt.savefig('../result/checkorbit/diff-gnv-A-{}.png'.format(arc))
     # plt.show()
 
+def postValue():
+    postKBRR = "../temp/PostKBRR/2019-01-01-2019-01-31"
+    postOrbit = "../temp/PostOrbit/2019-01-01-2019-01-31"
+    postPar = "../temp/PostParameter/2019-01-01-2019-01-31"
+
+    for i in range(0, 123):
+        postKBRRname = postKBRR + "/RangeRate_" + str(i) + ".hdf5"
+        postOrbitname_a = postOrbit + "/Orbit_" + str(i) + "A.hdf5"
+        postOrbitname_b = postOrbit + "/Orbit_" + str(i) + "B.hdf5"
+
+        postKBRRh5 = h5py.File(postKBRRname, "r")
+        postOrbith5_a = h5py.File(postOrbitname_a, "r")
+        postOrbith5_b = h5py.File(postOrbitname_b, "r")
+
+        res_kbrr = postKBRRh5['post_kbrr'][:]
+        res_orbit_a = postOrbith5_a['post_Orbit'][:]
+        res_orbit_b = postOrbith5_b['post_Orbit'][:]
+
+        n = len(res_kbrr)
+        acov_kbrr = estimate_acov(res_kbrr, max_lag=(int(np.sqrt(n))))
+        acov_orbit_a = estimate_acov(res_orbit_a)
+        acov_orbit_b = estimate_acov(res_orbit_b)
+        '''构建协方差矩阵'''
+        first_col = np.zeros(n)
+        first_col[:len(acov_kbrr)] = acov_kbrr
+        Sigma = toeplitz(first_col)
+        '''正定化'''
+        diag_scale = np.max(np.abs(np.diag(Sigma)))
+        if diag_scale <= 0:
+            diag_scale = 1.0
+        Sigma += np.eye(n) * (1e-8 * diag_scale)
+        Sigma = nearest_pos_def(Sigma, eps_rel=1e-8)
+        '''Cholesky白化'''
+        L = cholesky(Sigma, lower=True)
+
+        # # A is n x p
+        # Aw = solve_triangular(L, A, lower=True)
+        # lw = solve_triangular(L, l, lower=True)
+        #
+        # # GLS via OLS on whitened system
+        # x_gls, *_ = np.linalg.lstsq(Aw, lw, rcond=None)
+        print(1)
+    pass
+
+
+def estimate_acov(residuals, max_lag=50):
+    """
+    用残差估计自协函数（ACF），无偏估计版本。
+    """
+    residuals = np.asarray(residuals)
+    n = len(residuals)
+    mean = residuals.mean()
+    r = residuals - mean
+
+    acov = []
+    for k in range(max_lag + 1):
+        cov = np.sum(r[:n-k] * r[k:]) / (n - k)
+        acov.append(cov)
+    return np.array(acov)
+
+
+def nearest_pos_def(mat, eps_rel=1e-8):
+    mat = 0.5 * (mat + mat.T)
+    vals, vecs = eigh(mat)
+    max_val = vals[-1] if vals.size>0 else 0.0
+    tol = eps_rel * max(1.0, max_val)
+    vals_clipped = np.clip(vals, tol, None)
+    mat_pd = (vecs @ np.diag(vals_clipped)) @ vecs.T
+    return (mat_pd + mat_pd.T) / 2.0
+
 
 def __rms(x: np.ndarray):
     """
@@ -246,7 +317,8 @@ def __rms(x: np.ndarray):
 
 
 if __name__ == '__main__':
-    xyzspace()
+    # xyzspace()
+    postValue()
     # filename = '../temp/RawData/2006-03-01_2006-03-31.hdf5'
     # h5 = h5py.File(filename, 'r')
     # h5.keys()

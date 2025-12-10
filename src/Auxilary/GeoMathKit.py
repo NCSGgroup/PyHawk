@@ -13,7 +13,7 @@ import functools
 import numba as nb
 import datetime
 from scipy import linalg
-from scipy.linalg import qr
+from scipy.linalg import qr, toeplitz, cholesky, eigh, solve_triangular
 
 
 class GeoMathKit:
@@ -423,7 +423,7 @@ class GeoMathKit:
         return np.linalg.norm(x) / np.sqrt(np.shape(x)[0])
 
     @staticmethod
-    def keepGlobal(dm_global: np.ndarray, dm_local: np.ndarray, obs: np.ndarray):
+    def keepGlobal(dm_global: np.ndarray, dm_local: np.ndarray, obs: np.ndarray, p):
         """
         Ax + By = z
         x--global parameter
@@ -436,24 +436,31 @@ class GeoMathKit:
         :return: Normal equations related only to the global parameters （Nx = l）
         """
         # time
-        p = np.eye(np.shape(dm_global.T)[-1])
+        if p is None:
+            p = np.eye(np.shape(dm_global.T)[-1])
         I = np.eye(np.shape(dm_global.T)[-1])
-        w = linalg.cholesky(p)
-        B = w @ dm_local
+
+        '''Cholesky白化'''
+        L = cholesky(p, lower=True)
+        Agw = solve_triangular(L, dm_global, lower=True)  # n x p
+        Alw = solve_triangular(L, dm_local, lower=True)  # n x q
+        lw = solve_triangular(L, obs, lower=True)
+
+
         # B = dm_local
         # n = np.shape(B)[1]
         # Q, R = np.linalg.qr(B, mode='complete')
         # Q2 = Q[:, n:]
 
         # Q1, R = np.linalg.qr(B, mode="complete")
-        Q1, R = np.linalg.qr(B)
+        Q1, R = np.linalg.qr(Alw)
         Q2 = I - Q1 @ Q1.T
         Q2_T = Q2.T
 
-        A = Q2_T @ w @ dm_global
+        A = Q2_T @ Agw
         A_T = A.T
 
-        l = Q2_T @ w @ obs
+        l = Q2_T @ lw
 
         N = A_T @ A
         L = A_T @ l

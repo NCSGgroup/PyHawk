@@ -7,7 +7,7 @@
         "isAdjustOrbit": false,
         "isAdjustKBRR": false,
         "isGetGravityDesignMat": false,
-        "isGetNEQ": true,
+        "isGetNEQ": false,
         "isGetSH": true
     },
     "ParallelControlConfig": {
