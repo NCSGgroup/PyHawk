@@ -245,14 +245,20 @@ def postValue():
         postKBRRname = postKBRR + "/RangeRate_" + str(i) + ".hdf5"
         postOrbitname_a = postOrbit + "/Orbit_" + str(i) + "A.hdf5"
         postOrbitname_b = postOrbit + "/Orbit_" + str(i) + "B.hdf5"
+        postParname = postPar + "/" + str(i) + "_AB.hdf5"
 
         postKBRRh5 = h5py.File(postKBRRname, "r")
         postOrbith5_a = h5py.File(postOrbitname_a, "r")
         postOrbith5_b = h5py.File(postOrbitname_b, "r")
+        postParh5 = h5py.File(postParname, "r")
 
         res_kbrr = postKBRRh5['post_kbrr'][:]
         res_orbit_a = postOrbith5_a['post_Orbit'][:]
         res_orbit_b = postOrbith5_b['post_Orbit'][:]
+
+        orbit_a = postParh5['par_a'][:]
+        orbit_b = postParh5['par_b'][:]
+        kbrr_a = postKBRRh5['kbrr_par'][:]
 
         n = len(res_kbrr)
         acov_kbrr = estimate_acov(res_kbrr, max_lag=(int(np.sqrt(n))))

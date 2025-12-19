@@ -422,6 +422,83 @@ class GeoMathKit:
 
         return np.linalg.norm(x) / np.sqrt(np.shape(x)[0])
 
+    # @staticmethod
+    # def keepGlobal(dm_global: np.ndarray, dm_local: np.ndarray, obs: np.ndarray, p, sigma_x=1, sigma_y=1, sigma_z=1):
+    #     """
+    #     Ax + By = z
+    #     x--global parameter
+    #     y--local parameter
+    #     z--obs
+    #     Our aim: remove the local parameters and keep only the global parameters to be solved.
+    #     :param dm_global: design matrix for the global parameters
+    #     :param dm_local: design matrix for the local parameters
+    #     :param obs: observations
+    #     :return: Normal equations related only to the global parameters （Nx = l）
+    #     """
+    #     # time
+    #
+    #     if p is False:
+    #         sigma_x = np.eye(np.shape(dm_global.T)[-1])
+    #         sigma_y = np.eye(np.shape(dm_global.T)[-1])
+    #         sigma_z = np.eye(np.shape(dm_global.T)[-1])
+    #     '''Cholesky白化'''
+    #     Lx = cholesky(sigma_x, lower=True)
+    #     Ly = cholesky(sigma_y, lower=True)
+    #     Lz = cholesky(sigma_z, lower=True)
+    #
+    #     res = np.array(obs).reshape((-1, 3))
+    #     lx_w = solve_triangular(Lx, res[:, 0])
+    #     ly_w = solve_triangular(Ly, res[:, 1])
+    #     lz_w = solve_triangular(Lz, res[:, 2])
+    #
+    #     Ax_w = GeoMathKit.whiten_mat(Lx, dm_global[0::3, :])
+    #     Ay_w = GeoMathKit.whiten_mat(Ly, dm_global[1::3, :])
+    #     Az_w = GeoMathKit.whiten_mat(Lz, dm_global[2::3, :])
+    #
+    #     Bx_w = GeoMathKit.whiten_mat(Lx, dm_local[0::3, :])
+    #     By_w = GeoMathKit.whiten_mat(Ly, dm_local[1::3, :])
+    #     Bz_w = GeoMathKit.whiten_mat(Lz, dm_local[2::3, :])
+    #
+    #     # 合并
+    #     l_w = np.empty_like(obs)
+    #     l_w[0::3] = lx_w
+    #     l_w[1::3] = ly_w
+    #     l_w[2::3] = lz_w
+    #
+    #     A_w = np.zeros_like(dm_global)
+    #     A_w[0::3, :] = Ax_w
+    #     A_w[1::3, :] = Ay_w
+    #     A_w[2::3, :] = Az_w
+    #
+    #     B_w = np.zeros_like(dm_local)
+    #     B_w[0::3, :] = Bx_w
+    #     B_w[1::3, :] = By_w
+    #     B_w[2::3, :] = Bz_w
+    #     # Agw = solve_triangular(L, dm_global, lower=True)  # n x p
+    #     # Alw = solve_triangular(L, dm_local, lower=True)  # n x q
+    #     # lw = solve_triangular(L, obs, lower=True)
+    #
+    #     I = np.eye(np.shape(dm_global.T)[-1])
+    #     # B = dm_local
+    #     # n = np.shape(B)[1]
+    #     # Q, R = np.linalg.qr(B, mode='complete')
+    #     # Q2 = Q[:, n:]
+    #
+    #     # Q1, R = np.linalg.qr(B, mode="complete")
+    #     Q1, R = np.linalg.qr(B_w)
+    #     Q2 = I - Q1 @ Q1.T
+    #     Q2_T = Q2.T
+    #
+    #     A = Q2_T @ A_w
+    #     A_T = A.T
+    #
+    #     l = Q2_T @ l_w
+    #
+    #     N = A_T @ A
+    #     L = A_T @ l
+    #
+    #     return N, L
+
     @staticmethod
     def keepGlobal(dm_global: np.ndarray, dm_local: np.ndarray, obs: np.ndarray, p):
         """
@@ -445,7 +522,6 @@ class GeoMathKit:
         Agw = solve_triangular(L, dm_global, lower=True)  # n x p
         Alw = solve_triangular(L, dm_local, lower=True)  # n x q
         lw = solve_triangular(L, obs, lower=True)
-
 
         # B = dm_local
         # n = np.shape(B)[1]
@@ -502,7 +578,7 @@ class GeoMathKit:
         return N, l
 
     @staticmethod
-    def keepGlobal2(dm_global: np.ndarray, dm_local: np.ndarray, obs: np.ndarray):
+    def keepGlobal2(dm_global: np.ndarray, dm_local: np.ndarray, obs: np.ndarray, p):
         """
         Ax + By = z
         x--global parameter
@@ -515,6 +591,16 @@ class GeoMathKit:
         :return: Normal equations related only to the global parameters （Nx = l）
         """
         # time
+        if p is None:
+            p = np.eye(np.shape(dm_global.T)[-1])
+        I = np.eye(np.shape(dm_global.T)[-1])
+
+        '''Cholesky白化'''
+        L = cholesky(p, lower=True)
+        dm_global = solve_triangular(L, dm_global, lower=True)  # n x p
+        dm_local = solve_triangular(L, dm_local, lower=True)  # n x q
+        obs = solve_triangular(L, obs, lower=True)
+
         Nxx = dm_global.T @ dm_global
         Wx = dm_global.T @ obs
         if np.shape(dm_local)[-1] == 0:
@@ -786,6 +872,13 @@ class GeoMathKit:
         y = Nyy_inv@Wy - Nyy_inv @ Nyx @ global_p
 
         return y
+
+    @staticmethod
+    def whiten_mat(L, A):
+        Aw = np.zeros_like(A)
+        for j in range(A.shape[1]):
+            Aw[:, j] = solve_triangular(L, A[:, j], lower=True)
+        return Aw
 
 
 if __name__ == '__main__':

@@ -46,9 +46,9 @@ from scipy.linalg import toeplitz, cholesky, eigh, solve_triangular
 from scipy.sparse.linalg import eigsh
 from scipy.signal import detrend
 from scipy.ndimage import uniform_filter1d
-from statsmodels.regression.linear_model import yule_walker
-from statsmodels.tsa.ar_model import AutoReg
+from scipy.fft import dct, idct
 from scipy.linalg import solve_discrete_lyapunov
+from scipy.linalg import block_diag
 
 
 class CalibrateOrbit:
@@ -72,6 +72,7 @@ class CalibrateOrbit:
         self.__sat = None
         self.__log_path = None
         self.__arclist = []
+        self.lagNum = None
         pass
 
     def loadJson(self):
@@ -207,19 +208,20 @@ class CalibrateOrbit:
             pool.join()
         if isSH:
             # self.makeLog(stepName='SH', process=1)
-            # self.__calculate_cs()
+            # self.__calculate_cs(int(self.__solver_config.OrbitKinFactor))
             # self.plotPostKbrr()
             # self.xyz2lonlat()
-            self.GLS()
 
+            # self.GLS()
+            #
             self.makeLog(stepName='NEQ', process=GetNEQProcess)
             pool = multiprocessing.Pool(processes=GetNEQProcess)
             pool.map(self._NEQ, self.__arclist)
             pool.close()
             pool.join()
-
+            # #
             self.makeLog(stepName='SH', process=1)
-            self.__calculate_cs()
+            self.__calculate_cs(int(1))
             # self.plotPostKbrr()
             # self.xyz2lonlat()
             # self.re_calculate_cs()
@@ -302,9 +304,8 @@ class CalibrateOrbit:
                       AdjustOrbitConfig=self.__adjust_config, InterfaceConfig=self.__interface_config).get_neq()
         pass
 
-    def __calculate_cs(self):
+    def __calculate_cs(self, OrbitKinFactor):
         '''orbit and kbrr factor'''
-        OrbitKinFactor = int(self.__solver_config.OrbitKinFactor)
         neq_path_config = self.__neq_config.PathOfFiles()
         neq_path_config.__dict__.update(self.__neq_config.PathOfFilesConfig.copy())
         interface_config = self.__interface_config
@@ -1041,59 +1042,336 @@ class CalibrateOrbit:
         '''get orbit obs'''
         orbit_path = self.__solver_config.PostOrbit + '/' + self.__date_span[0] + '-' + self.__date_span[1]
         kbrr_path = self.__solver_config.PostKBRR + '/' + self.__date_span[0] + '-' + self.__date_span[1]
+        self.lagNum = int(self.__interface_config.arc_length * 3600 / self.__interface_config.sr_target)
 
+        kbrr = []
+        orbit_a = []
+        orbit_b = []
+
+        # acov_a_x = np.zeros((self.lagNum,))
+        # acov_a_y = np.zeros((self.lagNum,))
+        # acov_a_z = np.zeros((self.lagNum,))
+        # acov_b_x = np.zeros((self.lagNum,))
+        # acov_b_y = np.zeros((self.lagNum,))
+        # acov_b_z = np.zeros((self.lagNum,))
+        # acov_kbrr = np.zeros((self.lagNum,))
         for i in tqdm(self.__arclist, desc='Solve Orbit and KBRR Cov: '):
+        # for i in tqdm((0, 1), desc='Solve Orbit and KBRR Cov: '):
             postOrbitname_a = orbit_path + '/Orbit_' + str(i) + 'A.hdf5'
             postOrbitname_b = orbit_path + '/Orbit_' + str(i) + 'B.hdf5'
             kbrrname = kbrr_path + '/' + SSTObserve.RangeRate.name + '_' + str(i) + '.hdf5'
 
-            postOrbith5_a = h5py.File(postOrbitname_a, "r+")
-            postOrbith5_b = h5py.File(postOrbitname_b, "r+")
-            postKBRRh5 = h5py.File(kbrrname, "r+")
+            postOrbith5_a = h5py.File(postOrbitname_a, "r")
+            postOrbith5_b = h5py.File(postOrbitname_b, "r")
+            postKBRRh5 = h5py.File(kbrrname, "r")
 
             res_orbit_a = postOrbith5_a['post_Orbit'][:]
             res_orbit_b = postOrbith5_b['post_Orbit'][:]
             res_kbrr = postKBRRh5['post_kbrr'][:]
 
-            self.getSigma(res=res_orbit_a, h5path=postOrbith5_a)
-            self.getSigma(res=res_orbit_b, h5path=postOrbith5_b)
-            self.getSigma(res=res_kbrr, h5path=postKBRRh5)
+            # res_a = np.array(res_orbit_a).reshape((-1, 3))
+            # res_a_x = res_a[:, 0]
+            # res_a_y = res_a[:, 1]
+            # res_a_z = res_a[:, 2]
+            #
+            # res_b = np.array(res_orbit_b).reshape((-1, 3))
+            # res_b_x = res_b[:, 0]
+            # res_b_y = res_b[:, 1]
+            # res_b_z = res_b[:, 2]
+            #
+            # acov_a_x += self.estimate_acov(res_a_x, max_lag=len(res_a_x) - 1)
+            # acov_a_y += self.estimate_acov(res_a_y, max_lag=len(res_a_x) - 1)
+            # acov_a_z += self.estimate_acov(res_a_z, max_lag=len(res_a_x) - 1)
+            #
+            # acov_b_x += self.estimate_acov(res_b_x, max_lag=len(res_b_x) - 1)
+            # acov_b_y += self.estimate_acov(res_b_y, max_lag=len(res_a_x) - 1)
+            # acov_b_z += self.estimate_acov(res_b_z, max_lag=len(res_a_x) - 1)
+            #
+            # acov_kbrr += self.estimate_acov(res_kbrr, max_lag=len(res_kbrr) - 1)
+            orbit_a.extend(res_orbit_a)
+            orbit_b.extend(res_orbit_b)
+            kbrr.extend(res_kbrr)
+
+            postOrbith5_a.close()
+            postOrbith5_b.close()
+            postKBRRh5.close()
+
+        # acov_a_x = acov_a_x / len(self.__arclist)
+        # Sigma_a = self.getSigma6(acov_a_x, acov_a_y, acov_a_z)
+        # Sigma_b = self.getSigma6(acov_b_x, acov_b_y, acov_b_z)
+        # Sigma = self.getSigma5(acov_kbrr)
+
+        Sigma_a = self.getSigma2(res=orbit_a)
+        Sigma_b = self.getSigma2(res=orbit_b)
+        Sigma = self.getSigma(res=kbrr)
+
+        for i in tqdm(self.__arclist, desc='save Orbit and KBRR Cov: '):
+        # for i in tqdm((0, 1), desc='save Orbit and KBRR Cov: '):
+            kbrrname = kbrr_path + '/' + SSTObserve.RangeRate.name + '_' + str(i) + '.hdf5'
+            postOrbitname_a = orbit_path + '/Orbit_' + str(i) + 'A.hdf5'
+            postOrbitname_b = orbit_path + '/Orbit_' + str(i) + 'B.hdf5'
+
+            postOrbith5_a = h5py.File(postOrbitname_a, "r+")
+            postOrbith5_b = h5py.File(postOrbitname_b, "r+")
+            postKBRRh5 = h5py.File(kbrrname, "r+")
+
+            self.saveSigma1(Sigma_a, h5path=postOrbith5_a)
+            self.saveSigma1(Sigma_b, h5path=postOrbith5_b)
+            self.saveSigma1(Sigma, h5path=postKBRRh5)
         pass
 
-    def getSigma(self, res, h5path):
+    def getSigma(self, res):
         n = len(res)
-        res = detrend(res)
-        res -= np.mean(res)
+        res = detrend(res, type="linear")
+        res -= res.mean()
+        # res = detrend(res)
+        # res -= np.mean(res)
 
-        p_max = min(50, n // 10)
-        p = self.pick_AR_order(res, p_max=p_max, ic='bic')
-
-        phi, sigma2 = self.estimate_ARp(res, p)
-        cov = self.AR_toeplitz_cov(phi, sigma2, n)
+        # p_max = min(50, n // 10)
+        # p = self.pick_AR_order(res, p_max=p_max, ic='bic')
+        #
+        # phi, sigma2 = self.estimate_ARp(res, p)
+        # cov = self.AR_toeplitz_cov(phi, sigma2, n)
 
         # res = detrend(res, type='linear')
-        acov = self.estimate_acov(res, max_lag=(int(np.sqrt(n))))
+        acov = self.estimate_acov(res, max_lag=self.lagNum - 1)
+        # FFT
+        eps = max(acov[0] * 1e-3, 1e-16)
+        # eps = max(acov[0] * 1e-8, 1e-20)
+        # Step 1: DCT-I
+        S = dct(acov, type=1, norm='ortho')
+        # f = np.linspace(0, 1 / (2 * 5), len(S))
+        # plt.figure(figsize=(7, 4))
+        # plt.loglog(f[1:], S[1:], lw=1.5)
+        # plt.xlabel("Frequency [Hz]")
+        # plt.ylabel("PSD (variance)")
+        # plt.title("Noise PSD estimated via DCT-I")
+        # plt.grid(True)
+        # plt.axhline(eps, color='r', ls='--', label='eps')
+        # plt.legend()
+        # plt.tight_layout()
+        # plt.show()
+        # Step 2: clipping
+        S_clipped = np.maximum(S, eps)
+        # Step 3: inverse DCT-I
+        acov_corr = idct(S_clipped, type=1, norm='ortho')
+        Sigma = toeplitz(acov_corr)
+        return Sigma
+
+    def getSigma2(self, res):
+        res = np.array(res).reshape((-1, 3))
+        res_x = res[:, 0]
+        res_y = res[:, 1]
+        res_z = res[:, 2]
+
+        res_x = detrend(res_x, type="linear")
+        res_y = detrend(res_y, type="linear")
+        res_z = detrend(res_z, type="linear")
+
+        res_x -= res_x.mean()
+        res_y -= res_y.mean()
+        res_z -= res_z.mean()
+
+        acov_x = self.estimate_acov(res_x, max_lag=self.lagNum - 1)
+        acov_y = self.estimate_acov(res_y, max_lag=self.lagNum - 1)
+        acov_z = self.estimate_acov(res_z, max_lag=self.lagNum - 1)
+
+        # res = detrend(res)
+        # res -= np.mean(res)
+
+        # p_max = min(50, n // 10)
+        # p = self.pick_AR_order(res, p_max=p_max, ic='bic')
+        #
+        # phi, sigma2 = self.estimate_ARp(res, p)
+        # cov = self.AR_toeplitz_cov(phi, sigma2, n)
+
+        # res = detrend(res, type='linear')
+        # acov = self.estimate_acov(res_x, max_lag=4320)
         # acov = self.estimate_acov(res, max_lag=(int(n - 1)))
-        '''FFT'''
-        eps = max(acov[0] * 1e-8, 1e-16)
+        # '''FFT'''
+        eps_x = max(acov_x[0] * 1e-5, 1e-11)
+        #
+        # # acov_full = self.psd_clip_autocov(acov, n, eps=eps)
+        #
+        # # Sigma = toeplitz(acov_full)
+        # '''正定化'''
+        # # Sigma += np.eye(n) * 1e-2
+        # # Sigma = self.nearest_pos_def(Sigma, eps_rel=1e-10)
+        #
+        # Step 1: DCT-I
+        S_x = dct(acov_x, type=1)
+        # f = np.linspace(0, 1/(2 * 5), len(S_x))
+        # plt.figure(figsize=(7, 4))
+        # plt.loglog(f[1:4320], S_x[1:], lw=1.5)
+        # plt.xlabel("Frequency [Hz]")
+        # plt.ylabel("PSD (variance)")
+        # plt.title("Noise PSD estimated via DCT-I")
+        # plt.grid(True)
+        # plt.axhline(eps_x, color='r', ls='--', label='eps')
+        # plt.tight_layout()
+        # plt.show()
+        # Step 2: clipping
+        S_clipped_x = np.maximum(S_x, eps_x)
 
-        acov_full = self.psd_clip_autocov(acov, n, eps=eps)
-        # acov_full = self.psd_clip_with_taper(acov, n)
+        # Step 3: inverse DCT-I
+        acov_corr_x = idct(S_clipped_x, type=1, norm=None)
+        # plt.plot(np.arange(len(acov_corr)), acov_corr)
+        # plt.show()
+        Sigma_x = toeplitz(acov_corr_x)
 
-        # '''构建协方差矩阵'''
-        # first_col = np.zeros(n)
-        # first_col[:len(acov_full)] = acov_full
-        Sigma = toeplitz(acov_full)
-        '''正定化'''
-        # Sigma += np.eye(n) * 1e-2
-        # Sigma = self.nearest_pos_def(Sigma, eps_rel=1e-10)
+        # '''FFT'''
+        eps_y = max(acov_y[0] * 1e-5, 1e-11)
+        S_y= dct(acov_y, type=1)
+        S_clipped_y = np.maximum(S_y, eps_y)
+        acov_corr_y = idct(S_clipped_y, type=1, norm=None)
+        Sigma_y = toeplitz(acov_corr_y)
 
-        if "Sigma" in h5path:
-            del h5path["Sigma"]
+        # '''FFT'''
+        eps_z = max(acov_z[0] * 1e-5, 1e-11)
+        S_z = dct(acov_z, type=1)
+        S_clipped_z = np.maximum(S_z, eps_z)
+        acov_corr_z = idct(S_clipped_z, type=1, norm=None)
+        Sigma_z = toeplitz(acov_corr_z)
 
-        h5path.create_dataset("Sigma", data=Sigma)
-        h5path.close()
-        pass
+        N = len(acov_x)
+        Sigma = np.zeros((3 * N, 3 * N))
+
+        for i in range(N):
+            for j in range(N):
+                Sigma[3 * i, 3 * j] = Sigma_x[i, j]
+                Sigma[3 * i + 1, 3 * j + 1] = Sigma_y[i, j]
+                Sigma[3 * i + 2, 3 * j + 2] = Sigma_z[i, j]
+
+        return Sigma
+
+
+        # return Sigma_x, Sigma_y, Sigma_z
+
+    def getSigma5(self, acov):
+        # FFT
+        eps = max(acov[0] * 1e-3, 1e-16)
+        # Step 1: DCT-I
+        S = dct(acov, type=1, norm='ortho')
+        f = np.linspace(0, 1 / (2 * 5), len(S))
+        plt.figure(figsize=(7, 4))
+        plt.loglog(f[1:], S[1:], lw=1.5)
+        plt.xlabel("Frequency [Hz]")
+        plt.ylabel("PSD (variance)")
+        plt.title("Noise PSD estimated via DCT-I")
+        plt.grid(True)
+        plt.axhline(eps, color='r', ls='--', label='eps')
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
+        # Step 2: clipping
+        S_clipped = np.maximum(S, eps)
+        # Step 3: inverse DCT-I
+        acov_corr = idct(S_clipped, type=1, norm='ortho')
+        Sigma = toeplitz(acov_corr)
+        return Sigma
+
+    def getSigma6(self, acov_x, acov_y, acov_z):
+
+        eps_x = max(acov_x[0] * 1e-5, 1e-11)
+        #
+        # # acov_full = self.psd_clip_autocov(acov, n, eps=eps)
+        #
+        # # Sigma = toeplitz(acov_full)
+        # '''正定化'''
+        # # Sigma += np.eye(n) * 1e-2
+        # # Sigma = self.nearest_pos_def(Sigma, eps_rel=1e-10)
+        #
+        # Step 1: DCT-I
+        S_x = dct(acov_x, type=1)
+        f = np.linspace(0, 1/(2 * 5), len(S_x))
+        plt.figure(figsize=(7, 4))
+        plt.loglog(f[1:4320], S_x[1:], lw=1.5)
+        plt.xlabel("Frequency [Hz]")
+        plt.ylabel("PSD (variance)")
+        plt.title("Noise PSD estimated via DCT-I")
+        plt.grid(True)
+        plt.axhline(eps_x, color='r', ls='--', label='eps')
+        plt.tight_layout()
+        plt.show()
+        # Step 2: clipping
+        S_clipped_x = np.maximum(S_x, eps_x)
+
+        # Step 3: inverse DCT-I
+        acov_corr_x = idct(S_clipped_x, type=1, norm=None)
+        # plt.plot(np.arange(len(acov_corr)), acov_corr)
+        # plt.show()
+        Sigma_x = toeplitz(acov_corr_x)
+
+        # '''FFT'''
+        eps_y = max(acov_y[0] * 1e-5, 1e-11)
+        S_y= dct(acov_y, type=1)
+        S_clipped_y = np.maximum(S_y, eps_y)
+        acov_corr_y = idct(S_clipped_y, type=1, norm=None)
+        Sigma_y = toeplitz(acov_corr_y)
+
+        # '''FFT'''
+        eps_z = max(acov_z[0] * 1e-5, 1e-11)
+        S_z = dct(acov_z, type=1)
+        S_clipped_z = np.maximum(S_z, eps_z)
+        acov_corr_z = idct(S_clipped_z, type=1, norm=None)
+        Sigma_z = toeplitz(acov_corr_z)
+
+        N = len(acov_x)
+        Sigma = np.zeros((3 * N, 3 * N))
+
+        for i in range(N):
+            for j in range(N):
+                Sigma[3 * i, 3 * j] = Sigma_x[i, j]
+                Sigma[3 * i + 1, 3 * j + 1] = Sigma_y[i, j]
+                Sigma[3 * i + 2, 3 * j + 2] = Sigma_z[i, j]
+
+        return Sigma
+
+
+        # return Sigma_x, Sigma_y, Sigma_z
+
+    def getSigma3(self, res):
+        res = np.array(res).reshape((-1, 3))
+        res_x = res[:, 0]
+        res_y = res[:, 1]
+        res_z = res[:, 2]
+
+        res_x = detrend(res_x, type="linear")
+        res_y = detrend(res_y, type="linear")
+        res_z = detrend(res_z, type="linear")
+
+        res_x -= res_x.mean()
+        res_y -= res_y.mean()
+        res_z -= res_z.mean()
+
+        acov_x = self.estimate_acov(res_x, max_lag=self.lagNum - 1)
+        acov_y = self.estimate_acov(res_y, max_lag=self.lagNum - 1)
+        acov_z = self.estimate_acov(res_z, max_lag=self.lagNum - 1)
+
+        Sigma_x = self.build_banded_toeplitz(acov_x, self.lagNum, self.lagNum)
+        Sigma_y = self.build_banded_toeplitz(acov_y, self.lagNum, self.lagNum)
+        Sigma_z = self.build_banded_toeplitz(acov_z, self.lagNum, self.lagNum)
+
+        return Sigma_x, Sigma_y, Sigma_z
+
+    def getSigma4(self, res):
+        n = len(res)
+        res = detrend(res)
+        # res = detrend(res)
+        # res -= np.mean(res)
+
+        # p_max = min(50, n // 10)
+        # p = self.pick_AR_order(res, p_max=p_max, ic='bic')
+        #
+        # phi, sigma2 = self.estimate_ARp(res, p)
+        # cov = self.AR_toeplitz_cov(phi, sigma2, n)
+
+        # res = detrend(res, type='linear')
+        acov = self.estimate_acov(res, max_lag=self.lagNum - 1)
+
+        Sigma = self.build_banded_toeplitz(acov, self.lagNum, 1080)
+
+        return Sigma
 
     def estimate_acov(self, residuals, max_lag=50):
         """
@@ -1101,8 +1379,6 @@ class CalibrateOrbit:
         """
         residuals = np.asarray(residuals)
         n = len(residuals)
-        mean = residuals.mean()
-        r = residuals - mean
 
         acov = np.zeros(max_lag + 1)
         for k in range(max_lag + 1):
@@ -1251,12 +1527,12 @@ class CalibrateOrbit:
         }
         return acov_corr, diag
 
-    def estimate_ARp(self, res, p):
-        # 去均值
-        r = res - np.mean(res)
-        # Yule-Walker 估计 AR(p)
-        rho, sigma = yule_walker(r, order=p, method='mle')
-        return rho, sigma
+    # def estimate_ARp(self, res, p):
+    #     # 去均值
+    #     r = res - np.mean(res)
+    #     # Yule-Walker 估计 AR(p)
+    #     rho, sigma = yule_walker(r, order=p, method='mle')
+    #     return rho, sigma
 
     def AR_toeplitz_cov(self, phi, sigma2, n):
         p = len(phi)
@@ -1292,25 +1568,25 @@ class CalibrateOrbit:
         # 返回 Toeplitz
         return toeplitz(gam[:n])
 
-    def pick_AR_order(self, res, p_max=50, ic='bic'):
-        """
-            自动选择 AR 阶数
-            """
-        res = np.asarray(res)
-        aic_list = []
-        bic_list = []
-        orders = list(range(1, p_max + 1))
-        for p in orders:
-            try:
-                model = AutoReg(res, lags=p, old_names=False).fit()
-                aic_list.append(model.aic)
-                bic_list.append(model.bic)
-            except:
-                aic_list.append(np.inf)
-                bic_list.append(np.inf)
-        ic_list = aic_list if ic.lower().startswith('a') else bic_list
-        p_opt = orders[int(np.argmin(ic_list))]
-        return p_opt
+    # def pick_AR_order(self, res, p_max=50, ic='bic'):
+    #     """
+    #         自动选择 AR 阶数
+    #         """
+    #     res = np.asarray(res)
+    #     aic_list = []
+    #     bic_list = []
+    #     orders = list(range(1, p_max + 1))
+    #     for p in orders:
+    #         try:
+    #             model = AutoReg(res, lags=p, old_names=False).fit()
+    #             aic_list.append(model.aic)
+    #             bic_list.append(model.bic)
+    #         except:
+    #             aic_list.append(np.inf)
+    #             bic_list.append(np.inf)
+    #     ic_list = aic_list if ic.lower().startswith('a') else bic_list
+    #     p_opt = orders[int(np.argmin(ic_list))]
+    #     return p_opt
 
     def ar_to_acov(self, phi, sigma2, n_lags):
         """
@@ -1326,3 +1602,59 @@ class CalibrateOrbit:
             # 用 AR 递推生成 acov[k]（简单近似）
             acov[k] = np.dot(phi[:min(k, p)], acov[k - 1:k - p - 1:-1])
         return acov
+
+    def build_banded_toeplitz(self, acov, N, K, eps_factor=1e-8):
+        """
+        acov       : 自协函数 γ(0..)
+        N          : 弧段长度（如 4320）
+        K          : 最大滞后（带宽）
+        eps_factor : nugget 强度
+        """
+        assert K < N
+        assert len(acov) >= K + 1
+
+        Sigma = np.zeros((N, N))
+
+        # 主对角 + K 条副对角
+        for k in range(K + 1):
+            val = acov[k]
+            if k == 0:
+                Sigma += np.diag(val * np.ones(N))
+            else:
+                Sigma += np.diag(val * np.ones(N - k), k)
+                Sigma += np.diag(val * np.ones(N - k), -k)
+
+        # 强制对称（数值安全）
+        Sigma = 0.5 * (Sigma + Sigma.T)
+
+        # 对角加载（nugget）
+        eps = eps_factor * acov[0]
+        Sigma += eps * np.eye(N)
+
+        return Sigma
+
+    def saveSigma1(self, Sigma, h5path):
+
+        if "Sigma" in h5path:
+            del h5path["Sigma"]
+        #
+        # if "Sigma_y" in h5path:
+        #     del h5path["Sigma_y"]
+        # #
+        # if "Sigma_z" in h5path:
+        #     del h5path["Sigma_z"]
+        #
+        # h5path.create_dataset("Sigma_x", data=Sigma_x)
+        # h5path.create_dataset("Sigma_y", data=Sigma_y)
+        h5path.create_dataset("Sigma", data=Sigma)
+        h5path.close()
+        return self
+
+    def saveSigma2(self, Sigma, h5path):
+
+        if "Sigma" in h5path:
+            del h5path["Sigma"]
+
+        h5path.create_dataset("Sigma", data=Sigma)
+        h5path.close()
+        return self

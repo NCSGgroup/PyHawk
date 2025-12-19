@@ -174,10 +174,29 @@ class GravityNEQperArc:
         #     f.create_dataset("local_r", data=local_r)
         #     f.create_dataset("obs", data=obs)
         sigmafilename = sgima_path + '/Orbit_' + str(self.__arcNo) + str(sat.name) + '.hdf5'
-        sigmah5 = h5py.File(sigmafilename, "r")
-        if "Sigma" in sigmah5:
-            sigma = sigmah5['Sigma'][:]
-            N, l = GeoMathKit.keepGlobal(dm_global=global_r, dm_local=local_r, obs=obs, p=sigma)
+        if os.path.exists(sigmafilename):
+            sigmah5 = h5py.File(sigmafilename, "r")
+            if "Sigma" in sigmah5:
+                sigma = sigmah5['Sigma'][:]
+                # sigma_y = sigmah5['Sigma_y'][:]
+                # sigma_z = sigmah5['Sigma_z'][:]
+
+                index = np.array(new_index)
+
+                idx = np.empty(3*len(index), dtype=int)
+                idx[0::3] = 3 * index + 0
+                idx[1::3] = 3 * index + 1
+                idx[2::3] = 3 * index + 2
+
+                sigma = sigma[np.ix_(idx, idx)]
+                # sigma_y = sigma_y[np.ix_(index, index)]
+                # sigma_z = sigma_z[np.ix_(index, index)]
+
+                N, l = GeoMathKit.keepGlobal(dm_global=global_r, dm_local=local_r,
+                                             obs=obs, p=sigma)
+            else:
+                N, l = GeoMathKit.keepGlobal(dm_global=global_r, dm_local=local_r, obs=obs, p=None)
+            sigmah5.close()
         else:
             N, l = GeoMathKit.keepGlobal(dm_global=global_r, dm_local=local_r, obs=obs, p=None)
 
@@ -299,10 +318,18 @@ class GravityNEQperArc:
         obs = obs.reshape((-1, 1))
 
         sigmafilename = sgima_path + '/' + SSTObserve.RangeRate.name + '_' + str(self.__arcNo) + '.hdf5'
-        sigmah5 = h5py.File(sigmafilename, "r")
-        if "Sigma" in sigmah5:
-            sigma = sigmah5['Sigma'][:]
-            N, l = GeoMathKit.keepGlobal(dm_global=global_dm, dm_local=local_dm, obs=obs, p=sigma)
+        if os.path.exists(sigmafilename):
+            sigmah5 = h5py.File(sigmafilename, "r")
+            if "Sigma" in sigmah5:
+                index = np.array(new_index)
+
+                sigma = sigmah5['Sigma'][:]
+                sigma = sigma[np.ix_(index, index)]
+
+                N, l = GeoMathKit.keepGlobal(dm_global=global_dm, dm_local=local_dm, obs=obs, p=sigma)
+            else:
+                N, l = GeoMathKit.keepGlobal(dm_global=global_dm, dm_local=local_dm, obs=obs, p=None)
+            sigmah5.close()
         else:
             N, l = GeoMathKit.keepGlobal(dm_global=global_dm, dm_local=local_dm, obs=obs, p=None)
 
