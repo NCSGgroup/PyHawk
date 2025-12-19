@@ -79,6 +79,7 @@ class GravityNEQperArc:
         if not os.path.exists(res_dir):
             os.makedirs(res_dir, exist_ok=True)
         res_filename = res_dir + str(self.__arcNo) + '.hdf5'
+        # self.__saveData = h5py.File(res_filename, 'r')
         self.__saveData = h5py.File(res_filename, 'w')
         return self
 
@@ -132,6 +133,8 @@ class GravityNEQperArc:
         if not config.IsRequired:
             return None
 
+        sgima_path = self._solverConfig.PostOrbit + '/' + self.__date_span[0] + '-' + self.__date_span[1]
+
         self._rd = ArcData(interfaceConfig=self._InterfaceConfig)
 
         if config.UseKinematicOrbit:
@@ -141,6 +144,7 @@ class GravityNEQperArc:
             orbit_obs = self._rd.getData(arc=self.__arcNo, kind=Payload.GNV, sat=sat)[:, 0:4]
         # orbit_obs = self.get_orbit_obs(sat=sat, Kin_obs=kin_obs)
         t_obs = orbit_obs[:, 0]
+        # t_obs = t_obs[t_obs % 60 == 0]
         '''for the orbit, only position (r) is needed for the inversion'''
         '''find the common'''
         int_t_obs = t_obs.astype(np.int64)
@@ -151,6 +155,7 @@ class GravityNEQperArc:
         orbit_nominal = orbit_nominal[new_index, :]
         local_r = local_r[new_index, :, :]
         global_r = global_r[new_index, :, :]
+        orbit_obs = orbit_obs[new_index, :]
         '''Expanding the observations'''
         obs = orbit_obs[:, 1:] - orbit_nominal
 
@@ -164,7 +169,36 @@ class GravityNEQperArc:
         local_r = local_r.reshape((-1, n_local))
         global_r = global_r.reshape((-1, n_global))
 
-        N, l = GeoMathKit.keepGlobal2(dm_global=global_r, dm_local=local_r, obs=obs)
+        # with h5py.File(("orbit_" + sat.name + '_' + str(self.__arcNo) + '.h5'), "w") as f:
+        #     f.create_dataset("global_r", data=global_r)
+        #     f.create_dataset("local_r", data=local_r)
+        #     f.create_dataset("obs", data=obs)
+        sigmafilename = sgima_path + '/Orbit_' + str(self.__arcNo) + str(sat.name) + '.hdf5'
+        if os.path.exists(sigmafilename):
+            sigmah5 = h5py.File(sigmafilename, "r")
+            if "Sigma" in sigmah5:
+                sigma = sigmah5['Sigma'][:]
+                # sigma_y = sigmah5['Sigma_y'][:]
+                # sigma_z = sigmah5['Sigma_z'][:]
+
+                index = np.array(new_index)
+
+                idx = np.empty(3*len(index), dtype=int)
+                idx[0::3] = 3 * index + 0
+                idx[1::3] = 3 * index + 1
+                idx[2::3] = 3 * index + 2
+
+                sigma = sigma[np.ix_(idx, idx)]
+                # sigma_y = sigma_y[np.ix_(index, index)]
+                # sigma_z = sigma_z[np.ix_(index, index)]
+
+                N, l = GeoMathKit.keepGlobal(dm_global=global_r, dm_local=local_r,
+                                             obs=obs, p=sigma)
+            else:
+                N, l = GeoMathKit.keepGlobal(dm_global=global_r, dm_local=local_r, obs=obs, p=None)
+            sigmah5.close()
+        else:
+            N, l = GeoMathKit.keepGlobal(dm_global=global_r, dm_local=local_r, obs=obs, p=None)
 
         self.__saveData.create_dataset('Orbit_N_%1s' % sat.name, data=N)
         self.__saveData.create_dataset('Orbit_l_%1s' % sat.name, data=l)
@@ -224,12 +258,12 @@ class GravityNEQperArc:
         obs = obs.reshape((-1, 1))
         # TODO: Fix the kinematic orbit
         '''Expanding the design matrix'''
-        n_local = np.shape(local_r)[-1]
         n_global = np.shape(global_r)[-1]
-        local_r = local_r.reshape((-1, n_local))
         global_r = global_r.reshape((-1, n_global))
+        n_local = np.shape(local_r)[-1]
+        local_r = local_r.reshape((-1, n_local))
 
-        N, l = GeoMathKit.keepGlobal(dm_global=global_r, dm_local=local_r, obs=obs)
+        N, l = GeoMathKit.keepGlobal2(dm_global=global_r, dm_local=local_r, obs=obs)
 
         self.__saveData.create_dataset('Orbit_N_%1s' % sat.name, data=N)
         self.__saveData.create_dataset('Orbit_l_%1s' % sat.name, data=l)
@@ -246,14 +280,7 @@ class GravityNEQperArc:
             return None
 
         assert config.measurement == SSTObserve.RangeRate.value, 'Range-rate is not allowed by user setting'
-
-        dm_dir = self._solverConfig.DesignMatrixTemp + '/' + self.__date_span[0] + '_' + self.__date_span[1]
-        res_filename = dm_dir + '/' + SSTObserve.RangeRate.name + '_' + str(self.__arcNo) + '.hdf5'
-        h5 = h5py.File(res_filename, 'r')
-        t_dm = h5['t'][()]
-        global_dm = h5['global'][()]
-        local_dm = h5['local'][()]
-        h5.close()
+        sgima_path = self._solverConfig.PostKBRR + '/' + self.__date_span[0] + '-' + self.__date_span[1]
 
         dm_dir = self._AdjustPathConfig.RangeRateTemp + '/' + self.__date_span[0] + '_' + self.__date_span[1]
         res_filename = dm_dir + '/' + SSTObserve.RangeRate.name + '_' + str(self.__arcNo) + '.hdf5'
@@ -261,6 +288,14 @@ class GravityNEQperArc:
         t_obs = h5['post_t'][()]
         obs = h5['post_residual'][()]
         local_dm_empirical = h5['design_matrix'][()]
+        h5.close()
+
+        dm_dir = self._solverConfig.DesignMatrixTemp + '/' + self.__date_span[0] + '_' + self.__date_span[1]
+        res_filename = dm_dir + '/' + SSTObserve.RangeRate.name + '_' + str(self.__arcNo) + '.hdf5'
+        h5 = h5py.File(res_filename, 'r')
+        t_dm = h5['t'][()]
+        global_dm = h5['global'][()]
+        local_dm = h5['local'][()]
         h5.close()
 
         int_t_obs = t_obs.astype(np.int64)
@@ -275,8 +310,28 @@ class GravityNEQperArc:
         '''Combination'''
         if config.CalibrateEmpiricalParameters:
             local_dm = np.concatenate((local_dm_empirical, local_dm), axis=1)
+        
+        # with h5py.File(("kbrr_" + str(self.__arcNo) + '.h5'), "w") as f:
+        #     f.create_dataset("global_dm", data=global_dm)
+        #     f.create_dataset("local_dm", data=local_dm)
+        #     f.create_dataset("obs", data=obs)
+        obs = obs.reshape((-1, 1))
 
-        N, l = GeoMathKit.keepGlobal2(dm_global=global_dm, dm_local=local_dm, obs=obs)
+        sigmafilename = sgima_path + '/' + SSTObserve.RangeRate.name + '_' + str(self.__arcNo) + '.hdf5'
+        if os.path.exists(sigmafilename):
+            sigmah5 = h5py.File(sigmafilename, "r")
+            if "Sigma" in sigmah5:
+                index = np.array(new_index)
+
+                sigma = sigmah5['Sigma'][:]
+                sigma = sigma[np.ix_(index, index)]
+
+                N, l = GeoMathKit.keepGlobal(dm_global=global_dm, dm_local=local_dm, obs=obs, p=sigma)
+            else:
+                N, l = GeoMathKit.keepGlobal(dm_global=global_dm, dm_local=local_dm, obs=obs, p=None)
+            sigmah5.close()
+        else:
+            N, l = GeoMathKit.keepGlobal(dm_global=global_dm, dm_local=local_dm, obs=obs, p=None)
 
         self.__saveData.create_dataset('%s_N' % SSTObserve.RangeRate.name, data=N)
         self.__saveData.create_dataset('%s_l' % SSTObserve.RangeRate.name, data=l)

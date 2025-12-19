@@ -13,7 +13,7 @@ import functools
 import numba as nb
 import datetime
 from scipy import linalg
-import gzip, tarfile, os
+from scipy.linalg import qr, toeplitz, cholesky, eigh, solve_triangular
 
 
 class GeoMathKit:
@@ -337,6 +337,7 @@ class GeoMathKit:
 
         return CS[index]
 
+
     @staticmethod
     def CS_1dTo2d(CS: np.ndarray):
         """
@@ -361,6 +362,7 @@ class GeoMathKit:
         CS2d[n, m] = CS
 
         return CS2d
+
 
     @staticmethod
     def arrayAdd(array1: np.ndarray, array2: np.ndarray):
@@ -420,8 +422,85 @@ class GeoMathKit:
 
         return np.linalg.norm(x) / np.sqrt(np.shape(x)[0])
 
+    # @staticmethod
+    # def keepGlobal(dm_global: np.ndarray, dm_local: np.ndarray, obs: np.ndarray, p, sigma_x=1, sigma_y=1, sigma_z=1):
+    #     """
+    #     Ax + By = z
+    #     x--global parameter
+    #     y--local parameter
+    #     z--obs
+    #     Our aim: remove the local parameters and keep only the global parameters to be solved.
+    #     :param dm_global: design matrix for the global parameters
+    #     :param dm_local: design matrix for the local parameters
+    #     :param obs: observations
+    #     :return: Normal equations related only to the global parameters （Nx = l）
+    #     """
+    #     # time
+    #
+    #     if p is False:
+    #         sigma_x = np.eye(np.shape(dm_global.T)[-1])
+    #         sigma_y = np.eye(np.shape(dm_global.T)[-1])
+    #         sigma_z = np.eye(np.shape(dm_global.T)[-1])
+    #     '''Cholesky白化'''
+    #     Lx = cholesky(sigma_x, lower=True)
+    #     Ly = cholesky(sigma_y, lower=True)
+    #     Lz = cholesky(sigma_z, lower=True)
+    #
+    #     res = np.array(obs).reshape((-1, 3))
+    #     lx_w = solve_triangular(Lx, res[:, 0])
+    #     ly_w = solve_triangular(Ly, res[:, 1])
+    #     lz_w = solve_triangular(Lz, res[:, 2])
+    #
+    #     Ax_w = GeoMathKit.whiten_mat(Lx, dm_global[0::3, :])
+    #     Ay_w = GeoMathKit.whiten_mat(Ly, dm_global[1::3, :])
+    #     Az_w = GeoMathKit.whiten_mat(Lz, dm_global[2::3, :])
+    #
+    #     Bx_w = GeoMathKit.whiten_mat(Lx, dm_local[0::3, :])
+    #     By_w = GeoMathKit.whiten_mat(Ly, dm_local[1::3, :])
+    #     Bz_w = GeoMathKit.whiten_mat(Lz, dm_local[2::3, :])
+    #
+    #     # 合并
+    #     l_w = np.empty_like(obs)
+    #     l_w[0::3] = lx_w
+    #     l_w[1::3] = ly_w
+    #     l_w[2::3] = lz_w
+    #
+    #     A_w = np.zeros_like(dm_global)
+    #     A_w[0::3, :] = Ax_w
+    #     A_w[1::3, :] = Ay_w
+    #     A_w[2::3, :] = Az_w
+    #
+    #     B_w = np.zeros_like(dm_local)
+    #     B_w[0::3, :] = Bx_w
+    #     B_w[1::3, :] = By_w
+    #     B_w[2::3, :] = Bz_w
+    #     # Agw = solve_triangular(L, dm_global, lower=True)  # n x p
+    #     # Alw = solve_triangular(L, dm_local, lower=True)  # n x q
+    #     # lw = solve_triangular(L, obs, lower=True)
+    #
+    #     I = np.eye(np.shape(dm_global.T)[-1])
+    #     # B = dm_local
+    #     # n = np.shape(B)[1]
+    #     # Q, R = np.linalg.qr(B, mode='complete')
+    #     # Q2 = Q[:, n:]
+    #
+    #     # Q1, R = np.linalg.qr(B, mode="complete")
+    #     Q1, R = np.linalg.qr(B_w)
+    #     Q2 = I - Q1 @ Q1.T
+    #     Q2_T = Q2.T
+    #
+    #     A = Q2_T @ A_w
+    #     A_T = A.T
+    #
+    #     l = Q2_T @ l_w
+    #
+    #     N = A_T @ A
+    #     L = A_T @ l
+    #
+    #     return N, L
+
     @staticmethod
-    def keepGlobal(dm_global: np.ndarray, dm_local: np.ndarray, obs: np.ndarray):
+    def keepGlobal(dm_global: np.ndarray, dm_local: np.ndarray, obs: np.ndarray, p):
         """
         Ax + By = z
         x--global parameter
@@ -434,23 +513,30 @@ class GeoMathKit:
         :return: Normal equations related only to the global parameters （Nx = l）
         """
         # time
-        p = np.eye(np.shape(dm_global.T)[-1])
+        if p is None:
+            p = np.eye(np.shape(dm_global.T)[-1])
         I = np.eye(np.shape(dm_global.T)[-1])
-        w = linalg.cholesky(p)
-        B = w @ dm_local
 
+        '''Cholesky白化'''
+        L = cholesky(p, lower=True)
+        Agw = solve_triangular(L, dm_global, lower=True)  # n x p
+        Alw = solve_triangular(L, dm_local, lower=True)  # n x q
+        lw = solve_triangular(L, obs, lower=True)
+
+        # B = dm_local
         # n = np.shape(B)[1]
         # Q, R = np.linalg.qr(B, mode='complete')
         # Q2 = Q[:, n:]
 
-        Q1, R = np.linalg.qr(B)
+        # Q1, R = np.linalg.qr(B, mode="complete")
+        Q1, R = np.linalg.qr(Alw)
         Q2 = I - Q1 @ Q1.T
         Q2_T = Q2.T
 
-        A = Q2_T @ w @ dm_global
+        A = Q2_T @ Agw
         A_T = A.T
 
-        l = Q2_T @ w @ obs
+        l = Q2_T @ lw
 
         N = A_T @ A
         L = A_T @ l
@@ -491,19 +577,103 @@ class GeoMathKit:
         l = Wx - tm @ Wy
         return N, l
 
-    def keepGlobal2(dm_global: np.ndarray, dm_local: np.ndarray, obs: np.ndarray):
+    @staticmethod
+    def keepGlobal2(dm_global: np.ndarray, dm_local: np.ndarray, obs: np.ndarray, p):
         """
         Ax + By = z
         x--global parameter
         y--local parameter
         z--obs
         Our aim: remove the local parameters and keep only the global parameters to be solved.
-        Avoid directly inverting local parameter matrices
         :param dm_global: design matrix for the global parameters
         :param dm_local: design matrix for the local parameters
         :param obs: observations
         :return: Normal equations related only to the global parameters （Nx = l）
         """
+        # time
+        if p is None:
+            p = np.eye(np.shape(dm_global.T)[-1])
+        I = np.eye(np.shape(dm_global.T)[-1])
+
+        '''Cholesky白化'''
+        L = cholesky(p, lower=True)
+        dm_global = solve_triangular(L, dm_global, lower=True)  # n x p
+        dm_local = solve_triangular(L, dm_local, lower=True)  # n x q
+        obs = solve_triangular(L, obs, lower=True)
+
+        Nxx = dm_global.T @ dm_global
+        Wx = dm_global.T @ obs
+        if np.shape(dm_local)[-1] == 0:
+            '''No local parameters'''
+            return Nxx, Wx
+
+        Nxy = dm_global.T @ dm_local
+        Nyx = dm_local.T @ dm_global
+        Nyy = dm_local.T @ dm_local
+
+        Wy = dm_local.T @ obs
+
+        # Q, R = np.linalg.qr(Nyy)
+        # M_n = np.linalg.solve(R, Q.T @ Nyx)
+        # M_l = np.linalg.solve(R, Q.T @ Wy)
+
+        # M_n = np.linalg.lstsq(R, Q.T @ Nyx, rcond=None)[0]
+        # M_l = np.linalg.lstsq(R, Q.T @ Wy, rcond=None)[0]
+
+        M_n = np.linalg.lstsq(Nyy, Nyx, rcond=None)[0]
+        M_l = np.linalg.lstsq(Nyy, Wy, rcond=None)[0]
+
+        N = Nxx - Nxy @ M_n
+        l = Wx - Nxy @ M_l
+        return N, l
+
+    def keepGlobal3(dm_global: np.ndarray, dm_local: np.ndarray, obs: np.ndarray):
+        """
+        Ax + By = z
+        x--global parameter
+        y--local parameter
+        z--obs
+        Our aim: remove the local parameters and keep only the global parameters to be solved.
+        :param dm_global: design matrix for the global parameters
+        :param dm_local: design matrix for the local parameters
+        :param obs: observations
+        :return: Normal equations related only to the global parameters （Nx = l）
+        """
+        # time
+        Nxx = dm_global.T @ dm_global
+        Wx = dm_global.T @ obs
+        if np.shape(dm_local)[-1] == 0:
+            '''No local parameters'''
+            return Nxx, Wx
+        N = Nxx
+        l = Wx
+        for i in range(np.shape(dm_local)[-1]):
+            local_step = dm_local[:, i, None]
+
+            Nxy = dm_global.T @ local_step
+            Nyx = local_step.T @ dm_global
+            Nyy = local_step.T @ local_step
+            Wy = local_step.T @ obs
+
+            M_n = np.linalg.lstsq(Nyy, Nyx, rcond=None)[0]
+            M_l = np.linalg.lstsq(Nyy, Wy, rcond=None)[0]
+
+            N = N - Nxy @ M_n
+            l = l - Nxy @ M_l
+        return N, l
+
+    def keepGlobal4(dm_global: np.ndarray, dm_local: np.ndarray, obs: np.ndarray):
+        """
+               Ax + By = z
+               x--global parameter
+               y--local parameter
+               z--obs
+               Our aim: remove the local parameters and keep only the global parameters to be solved.
+               :param dm_global: design matrix for the global parameters
+               :param dm_local: design matrix for the local parameters
+               :param obs: observations
+               :return: Normal equations related only to the global parameters （Nx = l）
+               """
         # time
         Nxx = dm_global.T @ dm_global
         Wx = dm_global.T @ obs
@@ -517,12 +687,162 @@ class GeoMathKit:
 
         Wy = dm_local.T @ obs
 
-        M_n = np.linalg.lstsq(Nyy, Nyx, rcond=None)[0]
-        M_l = np.linalg.lstsq(Nyy, Wy, rcond=None)[0]
+        Nyy_inv = np.linalg.pinv(Nyy.copy(), rcond=1e-12)
 
-        N = Nxx - Nxy @ M_n
-        l = Wx - Nxy @ M_l
+        tm = Nxy @ Nyy_inv
+
+        N = Nxx - tm @ Nyx
+        l = Wx - tm @ Wy
         return N, l
+
+    def keepGlobal5(dm_global: np.ndarray, dm_local: np.ndarray, obs: np.ndarray):
+        """
+               Ax + By = z
+               x--global parameter
+               y--local parameter
+               z--obs
+               Our aim: remove the local parameters and keep only the global parameters to be solved.
+               :param dm_global: design matrix for the global parameters
+               :param dm_local: design matrix for the local parameters
+               :param obs: observations
+               :return: Normal equations related only to the global parameters （Nx = l）
+               """
+        # time
+        Nxx = dm_global.T @ dm_global
+        Wx = dm_global.T @ obs
+        if np.shape(dm_local)[-1] == 0:
+            '''No local parameters'''
+            return Nxx, Wx
+
+        Nxy = dm_global.T @ dm_local
+        Nyx = dm_local.T @ dm_global
+        Nyy = dm_local.T @ dm_local
+
+        Wy = dm_local.T @ obs
+
+        U, s, Vt = np.linalg.svd(Nyy.copy(), full_matrices=False)
+        tol = 1e-6 * s[0]
+        s_inv = np.array([1 / si if si > tol else 0.0 for si in s])
+
+        Nyy_inv = (Vt.T * s_inv) @ U.T
+
+        tm = Nxy @ Nyy_inv
+
+        N = Nxx - tm @ Nyx
+        l = Wx - tm @ Wy
+        return N, l
+
+    def keepGlobal6(dm_global: np.ndarray, dm_local: np.ndarray, obs: np.ndarray):
+        """
+          Ax + By = z
+          x--global parameter
+          y--local parameter
+          z--obs
+          Our aim: remove the local parameters and keep only the global parameters to be solved.
+          :param dm_global: design matrix for the global parameters
+          :param dm_local: design matrix for the local parameters
+          :param obs: observations
+          :return: Normal equations related only to the global parameters （Nx = l）
+          """
+        # time
+        p = np.eye(np.shape(dm_global.T)[-1])
+        I = np.eye(np.shape(dm_global.T)[-1])
+        w = linalg.cholesky(p)
+        B = w @ dm_local
+        # B = dm_local
+        # n = np.shape(B)[1]
+        # Q, R = np.linalg.qr(B, mode='complete')
+        # Q2 = Q[:, n:]
+
+        # Q1, R = np.linalg.qr(B, mode="complete")
+        Q1, R, piv = qr(B, pivoting=True, mode='economic')
+        Q2 = I - Q1 @ Q1.T
+        Q2_T = Q2.T
+
+        A = Q2_T @ w @ dm_global
+        A_T = A.T
+
+        l = Q2_T @ w @ obs
+
+        N = A_T @ A
+        L = A_T @ l
+
+        return N, L
+
+    @staticmethod
+    def keepGlobal7(dm_global: np.ndarray, dm_local: np.ndarray, obs: np.ndarray):
+        """
+          Ax + By = z
+          x--global parameter
+          y--local parameter
+          z--obs
+          Our aim: remove the local parameters and keep only the global parameters to be solved.
+          :param dm_global: design matrix for the global parameters
+          :param dm_local: design matrix for the local parameters
+          :param obs: observations
+          :return: Normal equations related only to the global parameters （Nx = l）
+          """
+        # time
+        A = np.hstack((dm_local, dm_global))
+
+        N = A.T @ A
+        B = A.T @ obs
+        par_num = np.shape(dm_local)[-1]
+
+        N_out, L_out = GeoMathKit.preEliminate(N, B, par_num)
+
+        return N_out, L_out
+
+    @staticmethod
+    def preEliminate(N: np.ndarray, B: np.ndarray, locParamsCout: int):
+        """
+        Python translation of MATLAB preEliminate function.
+
+        Parameters
+        ----------
+        N : ndarray
+            Full (square) normal equation matrix.
+        B : ndarray
+            Right-hand side vector.
+        locParamsCout : int
+            Number of local parameters to eliminate.
+
+        Returns
+        -------
+        Nout : ndarray
+            Reduced normal equation matrix after elimination.
+        Bout : ndarray
+            Reduced right-hand side vector.
+        """
+        N = N.copy()
+        B = B.copy()
+
+        npar = len(B)
+
+        for i in range(locParamsCout):
+            a11 = N[0, 0]
+            a12 = N[0, 1:npar]
+            a22 = N[1:npar, 1:npar]
+
+            u1 = B[0]
+            u2 = B[1:npar]
+
+            a22_temp = (a12[None, :].T @ a12[None, :]) / a11
+            u2_temp = (a12[None, :].T * u1) / a11
+
+            n = a22 - a22_temp
+            b = u2 - u2_temp
+
+            npar -= 1
+
+            # 更新 N 和 B
+            N[0:npar, 0:npar] = n
+            B[0:npar] = b
+
+        Nout = N[0:npar, 0:npar]
+        Bout = B[0:npar]
+
+        return Nout, Bout
 
     @staticmethod
     def solveLocal(dm_global, dm_local, obs, global_p):
@@ -554,72 +874,11 @@ class GeoMathKit:
         return y
 
     @staticmethod
-    def un_gz(file_name):
-
-        # aquire the filename and remove the postfix
-        f_name = file_name.replace(".gz", "")
-        # start uncompress
-        g_file = gzip.GzipFile(file_name)
-        # read uncompressed files and write down a copy without postfix
-        open(f_name, "wb+").write(g_file.read())
-        g_file.close()
-
-    @staticmethod
-    def un_tar(file_name):
-        """
-        Also applicable for .tgz
-        :param file_name:
-        :return:
-        """
-        tar = tarfile.open(file_name)
-        names = tar.getnames()
-        if os.path.isdir(file_name + '_files'):
-            pass
-        else:
-            os.mkdir(file_name + '_files')
-
-        for name in names:
-            tar.extract(name, file_name + '_files')
-        tar.close()
-
-    @staticmethod
-    def un_targz(file_name):
-        """
-        Also applicable for .tgz
-        :param file_name:
-        :return:
-        """
-        tar = tarfile.open(file_name)
-        names = tar.getnames()
-        if os.path.isdir(file_name):
-            pass
-        else:
-            os.mkdir(file_name + '_files')
-
-        for name in names:
-            tar.extract(name, file_name + '_files')
-        tar.close()
-
-    @staticmethod
-    def dayListByDay(begin, end):
-        """
-        get the date of every day between the given 'begin' day and 'end' day
-
-        :param begin: year, month, day. '2009-01-01'
-        :param end: year,month,day. '2010-01-01'
-        :return:
-        """
-
-        daylist = []
-        begin_date = datetime.datetime.strptime(begin, "%Y-%m-%d")
-        end_date = datetime.datetime.strptime(end, "%Y-%m-%d")
-
-        while begin_date <= end_date:
-            date_str = begin_date
-            daylist.append(date_str)
-            begin_date += datetime.timedelta(days=1)
-
-        return daylist
+    def whiten_mat(L, A):
+        Aw = np.zeros_like(A)
+        for j in range(A.shape[1]):
+            Aw[:, j] = solve_triangular(L, A[:, j], lower=True)
+        return Aw
 
 
 if __name__ == '__main__':

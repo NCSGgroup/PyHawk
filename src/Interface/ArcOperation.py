@@ -28,10 +28,6 @@ class ArcSelect:
         self.__raw_data_path = self.__gf.L1b.InterfacePathConfig.temp_raw_data
         self.__sr_target = self.__gf.L1b.InterfaceConfig.sr_target
         self.__OrbitConfig = self.__gf.L1b.OrbitConfig
-
-        os.makedirs(self.__arcft_path, exist_ok=True)
-        os.makedirs(self.__raw_data_path, exist_ok=True)
-        os.makedirs(self.__arc_path, exist_ok=True)
         return self
 
     def unpackArcs(self):
@@ -241,8 +237,10 @@ class ArcSelect:
 
     def makeArcTF(self):
         rd = ArcData(interfaceConfig=self.__gf.L1b.InterfaceConfig)
-        arc_delete = self.__gf.L1b.InterfaceConfig.arc_delete
+
         date = self.__gf.getDate()
+        if not os.path.exists(self.__arcft_path):
+            os.mkdir(self.__arcft_path)
         path = self.__arcft_path + '/' + date[0] + '_' + date[-1] + '.txt'
         with open(path, 'w') as f:
             f.write('This ia a summary of arc True or False information.\n')
@@ -252,7 +250,8 @@ class ArcSelect:
 
             f.write('-------------------Please see more details in below:---------------------- \n\n')
 
-            for i in range(len(self.__arcs)):
+            i = 0
+            for arc in self.__arcs:
                 state = True
                 info = ''
                 GNVA = rd.getData(arc=i, kind=Payload.GNV, sat=SatID.A)
@@ -264,10 +263,8 @@ class ArcSelect:
                 if len(kbrr) == 0:
                     state = False
                     info = 'kbrr is None'
-                if i in arc_delete:
-                    state = False
-                    info = 'user configure'
                 f.write('Arc NO: %s %s ----- %s;\n' % (i, state, info))
+                i += 1
         pass
 
     def rms(self, x: np.ndarray):

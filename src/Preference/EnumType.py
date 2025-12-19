@@ -218,8 +218,3 @@ class FieldType(Enum):
     EWH = 1
     geoid = 2
     density = 3
-
-
-class Level(Enum):
-    L1A = 0
-    L1B = 1

@@ -143,7 +143,6 @@ class Assemble2ndDerivative:
                 if self._AccelerometerConfig.isRequired:
                     self.__isExistDaDp = True
                     self.__dadp = np.hstack((self.__dadp, obj.getDaDp()))
-
         return self
         # for obj in self.ForceType.values():
         #     if isinstance(obj, ConfigGravHar):

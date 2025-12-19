@@ -13,6 +13,7 @@ class Parameterization:
         self._TransitionMatrixConfig = None
         self._AccelerometerConfig = None
         self._StokesCoefficientsConfig = None
+        self.nodes = None
         self.__reset()
 
     def __reset(self):
@@ -24,7 +25,7 @@ class Parameterization:
     def getInfo(self):
         pass
 
-    def configure(self, parameterConfig: ParameterConfig):
+    def configure(self, parameterConfig: ParameterConfig, nodes):
         self._ParameterConfig = parameterConfig
         '''config TransitionMatrix'''
         self._TransitionMatrixConfig = self._ParameterConfig.TransitionMatrix()
@@ -36,6 +37,7 @@ class Parameterization:
         self._StokesCoefficientsConfig = self._ParameterConfig.StokesCoefficients()
         self._StokesCoefficientsConfig.__dict__.update(self._ParameterConfig.StokesCoefficientsConfig.copy())
 
+        self.nodes = nodes
         self.__config[ParaType.TransitionMatrix] = self._TransitionMatrixConfig
         self.__config[ParaType.Accelerometer] = self._AccelerometerConfig
         self.__config[ParaType.StokesCoefficients] = self._StokesCoefficientsConfig
@@ -64,7 +66,14 @@ class Parameterization:
         for key in [ParaType.TransitionMatrix, ParaType.Accelerometer, ParaType.StokesCoefficients]:
             term = self.__config[key]
             if term.isRequired:
-                num = term.Parameter_Number
+                if key is ParaType.Accelerometer:
+                    if term.isScale:
+                        num = 9
+                        global_dm = np.dstack((global_dm, dm[:, :, index:index + num]))
+                        index = index + num
+                    num = self.nodes
+                else:
+                    num = term.Parameter_Number
                 if not term.AllisGlobal:
                     local_dm = np.dstack((local_dm, dm[:, :, index:index + num]))
                 else:

@@ -17,6 +17,7 @@ from src.Frame.Frame import Frame, EOP
 from src.Preference.Pre_Frame import FrameConfig
 from src.Preference.Pre_ForceModel import ForceModelConfig
 import matplotlib.pyplot as plt
+from scipy.signal import butter, filtfilt
 plt.rcParams['font.sans-serif']=['Microsoft YaHei']         #指定默认字体（因为matplotlib默认为英文字体，汉字会使其乱码）
 plt.rcParams['axes.unicode_minus']=False    #可显示‘-’负号
 
@@ -28,6 +29,7 @@ class RangeRate:
         """init variable"""
         self.__rms_times = None
         self.__upper_RMS = None
+        self.__upper_obs = None
         self.__kbr_fit = None
         self.__iterations = None
         self.__kbr_arc = None
@@ -68,19 +70,22 @@ class RangeRate:
         self._secDer = SerDer(self._fr, rd).configures\
             (arc=self.__arcNo, FMConfig=self.FMConfig,
              ParConfig=self.ParameterConfig, FrameConfig=FrameConfig).setInitData(kind=EnumType.Payload.GNV)
+        times = self._secDer.getTimes()
 
         self._startTime, self._startPos, self._startVel = h5AB['t'][:][4], \
                         np.vstack((h5AB['r'][:][4, 0:3, 0], h5AB['r'][:][4, 3:6, 0])), \
                         np.vstack((h5AB['v'][:][4, 0:3, 0], h5AB['v'][:][4, 3:6, 0]))
-        self._ode = GravimetryODE().configure(ODEConfig=self.ODEConfig, ParameterConfig=self.ParameterConfig).setParNum().\
-            setInitial(self._startTime, self._startPos.copy(), self._startVel.copy()).\
+        self._ode = GravimetryODE().configure(ODEConfig=self.ODEConfig, ParameterConfig=self.ParameterConfig).\
+            setDataTime(times).setParNum().setInitial(self._startTime, self._startPos.copy(), self._startVel.copy()).\
             set2ndDerivative(self._secDer)
+
         self._ode_res = self._ode.propagate()
         t,r,v = self._ode_res[0], self._ode_res[1], self._ode_res[2]
 
         kbr_arc = self._RangeRateConfig.ArcLength
         self.__rms_times = self._RangeRateConfig.OutlierTimes
-        self.__upper_RMS = self._RangeRateConfig.OutlierLimit
+        self.__upper_RMS = self._RangeRateConfig.OutlierRMS
+        self.__upper_obs = self._RangeRateConfig.OutlierObs
         self.__kbr_fit = self._RangeRateConfig.ParameterFitting
         self.__iterations = self._RangeRateConfig.Iterations
         '''the arc length to Calibrate kbr: unit [hour]'''
@@ -119,6 +124,7 @@ class RangeRate:
 
     def calibrate(self):
         obs = self.pre_residual()
+
         n = self.mean_motion_of_the_mid_point()
 
         '''divide arcs to Calibrate kbr individually'''
@@ -158,7 +164,8 @@ class RangeRate:
 
             for iter in range(self.__iterations):
                 residual = kf.get_residual(dm.copy(), obs)
-                index = Outlier(rms_times=self.__rms_times, upper_RMS=self.__upper_RMS).remove(t, residual)
+                index = Outlier(rms_times=self.__rms_times, upper_RMS=self.__upper_RMS,
+                                upper_obs=self.__upper_obs).remove(t, residual)
                 t = t[index]
                 dm = dm[index, :]
                 obs = residual[index]

@@ -163,6 +163,7 @@ class MatrixVarEqn:
                 Srp = np.matmul(ar, Sr) + ap
             else:
                 Srp = ap
+
             PhirSrp = np.hstack((PhirSrp, Srp))
 
         return PhirSrp
@@ -247,6 +248,7 @@ class MatrixVarEqn:
         if paraNum > 6:
             iniR = np.hstack((iniR, TransMat))
             iniV = np.hstack((iniV, TransMatV))
+
             iniR = np.hstack((iniR, np.zeros((3, (paraNum - 6)))))
             iniV = np.hstack((iniV, np.zeros((3, (paraNum - 6)))))
         elif paraNum == 6:

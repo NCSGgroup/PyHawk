@@ -12,13 +12,13 @@ class AdjustOrbitConfig:
         def __init__(self):
             self.OutlierTimes = 3
             self.OutlierLimit = 1
-            self.iteration = 1
 
     class RangeRate:
         def __init__(self):
             self.ParameterFitting = EnumType.SSTFitOption.biasC0C1_OneCPR.name
             self.OutlierTimes = 6  # how
-            self.OutlierLimit = 7e-07
+            self.OutlierRMS = 7e-07
+            self.OutlierObs = 7e-07
             self.ArcLength = 1.5
             self.Iterations = 3  # times
 
@@ -28,6 +28,7 @@ class AdjustOrbitConfig:
             self.StateVectorDataTemp = "../temp/StateVector"
             self.OrbitAdjustResTemp = "../temp/OrbitAdjustment"
             self.RangeRateTemp = "../temp/RangeRate"
+            self.FilteredRangeRateTemp = "../temp/FilteredRangeRate"
 
 
 def class_to_json():

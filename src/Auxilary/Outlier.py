@@ -35,18 +35,22 @@ class Outlier:
         index1 = list(np.ones(leng).astype(bool))
         index2 = list(np.ones(leng).astype(bool))
         index3 = list(np.ones(leng).astype(bool))
+        index4 = list(np.ones(leng).astype(bool))
 
         rms = GeoMathKit.rms(data)
+        mean = np.mean(data)
+        std = np.std(data)
         if self.__upper_RMS is not None and rms > self.__upper_RMS:
             index1 = list(np.zeros(leng).astype(bool))
 
         index2 = data < rms * self.__rms_times
 
         if self.__upper_obs is not None:
-            index3 = data < self.__upper_obs
+            index3 = (mean - std * self.__upper_obs) < data
+            index4 = data < (mean + std * self.__upper_obs)
 
         '''index of the inliers'''
-        index = np.array(index1) * np.array(index2) * np.array(index3)
+        index = np.array(index1) * np.array(index2) * np.array(index3) * np.array(index4)
 
         return index
 

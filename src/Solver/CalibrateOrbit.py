@@ -42,6 +42,13 @@ from src.Auxilary.Outlier import Outlier
 from src.Preference.EnumType import Payload, SatID, SSTObserve
 from scipy.signal import butter, filtfilt
 from scipy import signal
+from scipy.linalg import toeplitz, cholesky, eigh, solve_triangular
+from scipy.sparse.linalg import eigsh
+from scipy.signal import detrend
+from scipy.ndimage import uniform_filter1d
+from scipy.fft import dct, idct
+from scipy.linalg import solve_discrete_lyapunov
+from scipy.linalg import block_diag
 
 
 class CalibrateOrbit:
@@ -65,6 +72,7 @@ class CalibrateOrbit:
         self.__sat = None
         self.__log_path = None
         self.__arclist = []
+        self.lagNum = None
         pass
 
     def loadJson(self):
@@ -75,6 +83,15 @@ class CalibrateOrbit:
         self.__acc_config_B = AccelerometerConfig()
         acc_B = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/AccelerometerConfig_B.json'), 'r'))
         self.__acc_config_B.__dict__ = acc_B
+
+        self.__design_acc_config_A = AccelerometerConfig()
+        designacc_A = json.load(open(os.path.join(self.__parent_path, 'setting/Calibrate/DesignAccelerometerConfig_A.json'), 'r'))
+        self.__design_acc_config_A.__dict__ = designacc_A
+
+        self.__design_acc_config_B = AccelerometerConfig()
+        designacc_B = json.load(
+            open(os.path.abspath(self.__parent_path + '/setting/Calibrate/DesignAccelerometerConfig_B.json'), 'r'))
+        self.__design_acc_config_B.__dict__ = designacc_B
 
         self.__force_model_config = ForceModelConfig()
         fmDict = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/ForceModelConfig.json'), 'r'))
@@ -190,8 +207,21 @@ class CalibrateOrbit:
             pool.close()
             pool.join()
         if isSH:
+            # self.makeLog(stepName='SH', process=1)
+            # self.__calculate_cs(int(self.__solver_config.OrbitKinFactor))
+            # self.plotPostKbrr()
+            # self.xyz2lonlat()
+
+            # self.GLS()
+            #
+            self.makeLog(stepName='NEQ', process=GetNEQProcess)
+            pool = multiprocessing.Pool(processes=GetNEQProcess)
+            pool.map(self._NEQ, self.__arclist)
+            pool.close()
+            pool.join()
+            # #
             self.makeLog(stepName='SH', process=1)
-            self.__calculate_cs()
+            self.__calculate_cs(int(1))
             # self.plotPostKbrr()
             # self.xyz2lonlat()
             # self.re_calculate_cs()
@@ -257,7 +287,7 @@ class CalibrateOrbit:
 
     def _gravityDesignMat(self, k):
         dm = GravityDesignMat(arcNo=k, date_span=self.__date_span, sat=self.__sat).\
-            configure(accConfig=[self.__acc_config_A, self.__acc_config_B],
+            configure(accConfig=[self.__design_acc_config_A, self.__design_acc_config_B],
                       ODEConfig=self.__ode_config, AdjustOrbitConfig=self.__adjust_config,
                       solverConfig=self.__solver_config, FMConfig=self.__force_model_config,
                       parameterConfig=self.__design_parameter_config, InterfaceConfig=self.__interface_config,
@@ -274,56 +304,96 @@ class CalibrateOrbit:
                       AdjustOrbitConfig=self.__adjust_config, InterfaceConfig=self.__interface_config).get_neq()
         pass
 
-    def __calculate_cs(self):
+    def __calculate_cs(self, OrbitKinFactor):
         '''orbit and kbrr factor'''
-        OrbitKinFactor = int(self.__solver_config.OrbitKinFactor)
         neq_path_config = self.__neq_config.PathOfFiles()
         neq_path_config.__dict__.update(self.__neq_config.PathOfFilesConfig.copy())
         interface_config = self.__interface_config
         stokes_coefficients_config = self.__design_parameter_config.StokesCoefficients()
         stokes_coefficients_config.__dict__.update(self.__design_parameter_config.StokesCoefficientsConfig.copy())
+
+        self.AccelerometerConfig = self.__design_parameter_config.Accelerometer()
+        self.AccelerometerConfig.__dict__.update(self.__design_parameter_config.AccelerometerConfig.copy())
+
         '''config force model path'''
         force_model_path_config = self.__force_model_config.PathOfFiles()
         force_model_path_config.__dict__.update(self.__force_model_config.PathOfFilesConfig.copy())
 
-        res_dir = neq_path_config.NormalEqTemp + '/' +\
+        res_dir1 = neq_path_config.NormalEqTemp + '/' +\
                   interface_config.date_span[0] + '_' + interface_config.date_span[1]
+
+        # res_dir2 = neq_path_config.NormalEqTemp + '/' + \
+        #            interface_config.date_span[0] + '_' + interface_config.date_span[1] + '-onebyone'
+
         result_name = neq_path_config.ResultCS + '/' + \
                       interface_config.date_span[0] + '_' + interface_config.date_span[1] + '.hdf5'
 
         parameter_number = stokes_coefficients_config.Parameter_Number
-        NMatrix = np.zeros((parameter_number, parameter_number))
-        LMatrix = np.zeros((parameter_number, 1))
+
+        if self.AccelerometerConfig.isScale:
+            parameter_number += 18
+
+        NMatrix1 = np.zeros((parameter_number, parameter_number))
+        LMatrix1 = np.zeros((parameter_number, 1))
+
         date_span = interface_config.date_span
 
         self.n = interface_config.arc_length * 3600 / interface_config.sr_target * 3
         self.p = parameter_number
 
         for i in tqdm(self.__arclist, desc='Solve normal equations: '):
-            res_filename = res_dir + '/' + str(i) + '.hdf5'
-            h5 = h5py.File(res_filename, 'r')
-            NMatrix = NMatrix + (h5['Orbit_N_A'][:] + h5['Orbit_N_B'][:]) + h5['RangeRate_N'][:] * OrbitKinFactor
-            LMatrix = LMatrix + (h5['Orbit_l_A'][:] + h5['Orbit_l_B'][:]) + h5['RangeRate_l'][:].reshape(
-                (parameter_number, 1)) * OrbitKinFactor
-            h5.close()
+        # for i in tqdm((0, 1), desc='Solve normal equations: '):
+            res_filename1 = res_dir1 + '/' + str(i) + '.hdf5'
+            h51 = h5py.File(res_filename1, 'r')
+            Orbit_N_A = h51['Orbit_N_A'][:]
+            Orbit_N_B = h51['Orbit_N_B'][:]
+            RangeRate_N = h51['RangeRate_N'][:]
 
-        cs = np.linalg.lstsq(NMatrix, LMatrix[:, 0], rcond=None)[0]
+            Orbit_l_A = h51['Orbit_l_A'][:]
+            Orbit_l_B = h51['Orbit_l_B'][:]
+            RangeRate_l = h51['RangeRate_l'][:]
+            # if self.AccelerometerConfig.isScale:
+                # Orbit_N_A, Orbit_l_A = self.keepGlobal(Orbit_N_A, Orbit_l_A)
+                # Orbit_N_B, Orbit_l_B = self.keepGlobal(Orbit_N_B, Orbit_l_B)
+                # RangeRate_N, RangeRate_l = self.keepGlobal(RangeRate_N, RangeRate_l)
 
-        sigma = self.getLocalPar(solverConfig=self.__solver_config, cs=cs, N=NMatrix)
+            if self.AccelerometerConfig.isScale:
+                NMatrix1[0:9, 0:9] = NMatrix1[0:9, 0:9] + Orbit_N_A[0:9, 0:9] + RangeRate_N[0:9, 0:9] * OrbitKinFactor
+                NMatrix1[0:9, 18:] = NMatrix1[0:9, 18:] + Orbit_N_A[0:9, 9:] + RangeRate_N[0:9, 18:] * OrbitKinFactor
+
+                NMatrix1[9:18, 9:18] = NMatrix1[9:18, 9:18] + Orbit_N_B[0:9, 0:9] + RangeRate_N[9:18, 9:18] * OrbitKinFactor
+                NMatrix1[9:18, 18:] = NMatrix1[9:18, 18:] + Orbit_N_B[0:9, 9:] + RangeRate_N[9:18, 18:] * OrbitKinFactor
+
+                NMatrix1[18:, 0:9] = NMatrix1[18:, 0:9] + Orbit_N_A[9:, 0:9] + RangeRate_N[18:, 0:9] * OrbitKinFactor
+                NMatrix1[18:, 9:18] = NMatrix1[18:, 9:18] + Orbit_N_B[9:, 0:9] + RangeRate_N[18:, 9:18] * OrbitKinFactor
+
+                NMatrix1[18:, 18:] = NMatrix1[18:, 18:] + Orbit_N_A[9:, 9:] + Orbit_N_B[9:, 9:] + RangeRate_N[18:, 18:] * OrbitKinFactor
+
+                LMatrix1[0:9] = LMatrix1[0:9] + Orbit_l_A[0:9] + RangeRate_l[0:9] * OrbitKinFactor
+                LMatrix1[9:18] = LMatrix1[9:18] + Orbit_l_B[0:9] + RangeRate_l[9:18] * OrbitKinFactor
+                LMatrix1[18:] = LMatrix1[18:] + Orbit_l_A[9:] + Orbit_l_B[9:] + RangeRate_l[18:] * OrbitKinFactor
+            else:
+                NMatrix1 = NMatrix1 + (Orbit_N_A + Orbit_N_B) + RangeRate_N * OrbitKinFactor
+                LMatrix1 = LMatrix1 + (Orbit_l_A + Orbit_l_B) + RangeRate_l * OrbitKinFactor
+            h51.close()
+
+            # res_filename2 = res_dir2 + '/' + str(i) + '.hdf5'
+            # h52 = h5py.File(res_filename2, 'r')
+            # NMatrix2 = NMatrix2 + (h52['Orbit_N_A'][:] + h52['Orbit_N_B'][:]) + h52['RangeRate_N'][:] * OrbitKinFactor
+            # LMatrix2 = LMatrix2 + (h52['Orbit_l_A'][:] + h52['Orbit_l_B'][:]) + h52['RangeRate_l'][:].reshape(
+            #     (parameter_number, 1)) * OrbitKinFactor
+            # h52.close()
+
+        cs = np.linalg.lstsq(NMatrix1, LMatrix1[:, 0], rcond=None)[0]
+
+        # cs2 = np.linalg.lstsq(NMatrix2, LMatrix2[:, 0], rcond=None)[0]
+        if self.AccelerometerConfig.isScale:
+            scale = cs[0:18]
+            print(scale)
+            cs = cs[18:]
+
+        sigma = self.getLocalPar(solverConfig=self.__solver_config, cs=cs, N=NMatrix1)
         # sigma = cs
-        # QA, RA = np.linalg.qr(NMatrix)
-        # cs = np.linalg.inv(RA).dot(QA.T).dot(LMatrix[:, 0])
-
-        # cs = []
-        # with open('../result/dcs.txt', 'r') as file:
-        #     lines = file.readlines()
-        #     # 创建一个列表来存储转换后的浮点数
-        #     for line in lines:
-        #         try:
-        #             number = float(line.strip())
-        #             cs.append(number)
-        #         except ValueError:
-        #             print(f"无法将'{line.strip()}'转换为浮点数")
 
         sort = SortCS(method=stokes_coefficients_config.SortMethod,
                       degree_max=stokes_coefficients_config.MaxDegree,
@@ -710,6 +780,7 @@ class CalibrateOrbit:
 
         res_name = res_path + 'RangeRate_' + str(arcNo) + '.hdf5'
         h5 = h5py.File(res_name, 'w')
+        h5.create_dataset('kbrr_par', data=Local_par)
         h5.create_dataset('post_kbrr', data=kbrr_res)
         h5.close()
         pass
@@ -870,13 +941,13 @@ class CalibrateOrbit:
 
             resA_name_h5 = h5py.File(resA_name, 'r')
             post_Orbit_A = resA_name_h5['post_Orbit'][:]
-            # leo_A = self.__rms(post_Orbit_A) * 10
-            leo_A = 0.02
+            leo_A = self.__rms(post_Orbit_A) * 10
+            # leo_A = 0.02
 
             resB_name_h5 = h5py.File(resB_name, 'r')
             post_Orbit_B = resB_name_h5['post_Orbit'][:]
-            # leo_B = self.__rms(post_Orbit_B) * 10
-            leo_B = 0.02
+            leo_B = self.__rms(post_Orbit_B) * 10
+            # leo_B = 0.02
 
             res_filename = res_dir + '/' + str(i) + '.hdf5'
             h5 = h5py.File(res_filename, 'r')
@@ -949,3 +1020,641 @@ class CalibrateOrbit:
         gnv_orbit[index, 1:] = kin_orbit[index, 1:]
 
         return gnv_orbit
+
+    def keepGlobal(self, N, L):
+        N_ll = N[0:9, 0:9]
+        N_lg = N[0:9, 9:]
+        N_gl = N[9:, 0:9]
+        N_gg = N[9:, 9:]
+
+        l_l = L[0:9]
+        l_g = L[9:]
+
+        M_n = np.linalg.lstsq(N_ll, N_lg, rcond=None)[0]
+        M_l = np.linalg.lstsq(N_ll, l_l, rcond=None)[0]
+
+        N_G = N_gg - N_gl @ M_n
+        N_l = l_g - N_gl @ M_l
+
+        return N_G, N_l
+
+    def GLS(self):
+        '''get orbit obs'''
+        orbit_path = self.__solver_config.PostOrbit + '/' + self.__date_span[0] + '-' + self.__date_span[1]
+        kbrr_path = self.__solver_config.PostKBRR + '/' + self.__date_span[0] + '-' + self.__date_span[1]
+        self.lagNum = int(self.__interface_config.arc_length * 3600 / self.__interface_config.sr_target)
+
+        kbrr = []
+        orbit_a = []
+        orbit_b = []
+
+        # acov_a_x = np.zeros((self.lagNum,))
+        # acov_a_y = np.zeros((self.lagNum,))
+        # acov_a_z = np.zeros((self.lagNum,))
+        # acov_b_x = np.zeros((self.lagNum,))
+        # acov_b_y = np.zeros((self.lagNum,))
+        # acov_b_z = np.zeros((self.lagNum,))
+        # acov_kbrr = np.zeros((self.lagNum,))
+        for i in tqdm(self.__arclist, desc='Solve Orbit and KBRR Cov: '):
+        # for i in tqdm((0, 1), desc='Solve Orbit and KBRR Cov: '):
+            postOrbitname_a = orbit_path + '/Orbit_' + str(i) + 'A.hdf5'
+            postOrbitname_b = orbit_path + '/Orbit_' + str(i) + 'B.hdf5'
+            kbrrname = kbrr_path + '/' + SSTObserve.RangeRate.name + '_' + str(i) + '.hdf5'
+
+            postOrbith5_a = h5py.File(postOrbitname_a, "r")
+            postOrbith5_b = h5py.File(postOrbitname_b, "r")
+            postKBRRh5 = h5py.File(kbrrname, "r")
+
+            res_orbit_a = postOrbith5_a['post_Orbit'][:]
+            res_orbit_b = postOrbith5_b['post_Orbit'][:]
+            res_kbrr = postKBRRh5['post_kbrr'][:]
+
+            # res_a = np.array(res_orbit_a).reshape((-1, 3))
+            # res_a_x = res_a[:, 0]
+            # res_a_y = res_a[:, 1]
+            # res_a_z = res_a[:, 2]
+            #
+            # res_b = np.array(res_orbit_b).reshape((-1, 3))
+            # res_b_x = res_b[:, 0]
+            # res_b_y = res_b[:, 1]
+            # res_b_z = res_b[:, 2]
+            #
+            # acov_a_x += self.estimate_acov(res_a_x, max_lag=len(res_a_x) - 1)
+            # acov_a_y += self.estimate_acov(res_a_y, max_lag=len(res_a_x) - 1)
+            # acov_a_z += self.estimate_acov(res_a_z, max_lag=len(res_a_x) - 1)
+            #
+            # acov_b_x += self.estimate_acov(res_b_x, max_lag=len(res_b_x) - 1)
+            # acov_b_y += self.estimate_acov(res_b_y, max_lag=len(res_a_x) - 1)
+            # acov_b_z += self.estimate_acov(res_b_z, max_lag=len(res_a_x) - 1)
+            #
+            # acov_kbrr += self.estimate_acov(res_kbrr, max_lag=len(res_kbrr) - 1)
+            orbit_a.extend(res_orbit_a)
+            orbit_b.extend(res_orbit_b)
+            kbrr.extend(res_kbrr)
+
+            postOrbith5_a.close()
+            postOrbith5_b.close()
+            postKBRRh5.close()
+
+        # acov_a_x = acov_a_x / len(self.__arclist)
+        # Sigma_a = self.getSigma6(acov_a_x, acov_a_y, acov_a_z)
+        # Sigma_b = self.getSigma6(acov_b_x, acov_b_y, acov_b_z)
+        # Sigma = self.getSigma5(acov_kbrr)
+
+        Sigma_a = self.getSigma2(res=orbit_a)
+        Sigma_b = self.getSigma2(res=orbit_b)
+        Sigma = self.getSigma(res=kbrr)
+
+        for i in tqdm(self.__arclist, desc='save Orbit and KBRR Cov: '):
+        # for i in tqdm((0, 1), desc='save Orbit and KBRR Cov: '):
+            kbrrname = kbrr_path + '/' + SSTObserve.RangeRate.name + '_' + str(i) + '.hdf5'
+            postOrbitname_a = orbit_path + '/Orbit_' + str(i) + 'A.hdf5'
+            postOrbitname_b = orbit_path + '/Orbit_' + str(i) + 'B.hdf5'
+
+            postOrbith5_a = h5py.File(postOrbitname_a, "r+")
+            postOrbith5_b = h5py.File(postOrbitname_b, "r+")
+            postKBRRh5 = h5py.File(kbrrname, "r+")
+
+            self.saveSigma1(Sigma_a, h5path=postOrbith5_a)
+            self.saveSigma1(Sigma_b, h5path=postOrbith5_b)
+            self.saveSigma1(Sigma, h5path=postKBRRh5)
+        pass
+
+    def getSigma(self, res):
+        n = len(res)
+        res = detrend(res, type="linear")
+        res -= res.mean()
+        # res = detrend(res)
+        # res -= np.mean(res)
+
+        # p_max = min(50, n // 10)
+        # p = self.pick_AR_order(res, p_max=p_max, ic='bic')
+        #
+        # phi, sigma2 = self.estimate_ARp(res, p)
+        # cov = self.AR_toeplitz_cov(phi, sigma2, n)
+
+        # res = detrend(res, type='linear')
+        acov = self.estimate_acov(res, max_lag=self.lagNum - 1)
+        # FFT
+        eps = max(acov[0] * 1e-3, 1e-16)
+        # eps = max(acov[0] * 1e-8, 1e-20)
+        # Step 1: DCT-I
+        S = dct(acov, type=1, norm='ortho')
+        # f = np.linspace(0, 1 / (2 * 5), len(S))
+        # plt.figure(figsize=(7, 4))
+        # plt.loglog(f[1:], S[1:], lw=1.5)
+        # plt.xlabel("Frequency [Hz]")
+        # plt.ylabel("PSD (variance)")
+        # plt.title("Noise PSD estimated via DCT-I")
+        # plt.grid(True)
+        # plt.axhline(eps, color='r', ls='--', label='eps')
+        # plt.legend()
+        # plt.tight_layout()
+        # plt.show()
+        # Step 2: clipping
+        S_clipped = np.maximum(S, eps)
+        # Step 3: inverse DCT-I
+        acov_corr = idct(S_clipped, type=1, norm='ortho')
+        Sigma = toeplitz(acov_corr)
+        return Sigma
+
+    def getSigma2(self, res):
+        res = np.array(res).reshape((-1, 3))
+        res_x = res[:, 0]
+        res_y = res[:, 1]
+        res_z = res[:, 2]
+
+        res_x = detrend(res_x, type="linear")
+        res_y = detrend(res_y, type="linear")
+        res_z = detrend(res_z, type="linear")
+
+        res_x -= res_x.mean()
+        res_y -= res_y.mean()
+        res_z -= res_z.mean()
+
+        acov_x = self.estimate_acov(res_x, max_lag=self.lagNum - 1)
+        acov_y = self.estimate_acov(res_y, max_lag=self.lagNum - 1)
+        acov_z = self.estimate_acov(res_z, max_lag=self.lagNum - 1)
+
+        # res = detrend(res)
+        # res -= np.mean(res)
+
+        # p_max = min(50, n // 10)
+        # p = self.pick_AR_order(res, p_max=p_max, ic='bic')
+        #
+        # phi, sigma2 = self.estimate_ARp(res, p)
+        # cov = self.AR_toeplitz_cov(phi, sigma2, n)
+
+        # res = detrend(res, type='linear')
+        # acov = self.estimate_acov(res_x, max_lag=4320)
+        # acov = self.estimate_acov(res, max_lag=(int(n - 1)))
+        # '''FFT'''
+        eps_x = max(acov_x[0] * 1e-5, 1e-11)
+        #
+        # # acov_full = self.psd_clip_autocov(acov, n, eps=eps)
+        #
+        # # Sigma = toeplitz(acov_full)
+        # '''正定化'''
+        # # Sigma += np.eye(n) * 1e-2
+        # # Sigma = self.nearest_pos_def(Sigma, eps_rel=1e-10)
+        #
+        # Step 1: DCT-I
+        S_x = dct(acov_x, type=1)
+        # f = np.linspace(0, 1/(2 * 5), len(S_x))
+        # plt.figure(figsize=(7, 4))
+        # plt.loglog(f[1:4320], S_x[1:], lw=1.5)
+        # plt.xlabel("Frequency [Hz]")
+        # plt.ylabel("PSD (variance)")
+        # plt.title("Noise PSD estimated via DCT-I")
+        # plt.grid(True)
+        # plt.axhline(eps_x, color='r', ls='--', label='eps')
+        # plt.tight_layout()
+        # plt.show()
+        # Step 2: clipping
+        S_clipped_x = np.maximum(S_x, eps_x)
+
+        # Step 3: inverse DCT-I
+        acov_corr_x = idct(S_clipped_x, type=1, norm=None)
+        # plt.plot(np.arange(len(acov_corr)), acov_corr)
+        # plt.show()
+        Sigma_x = toeplitz(acov_corr_x)
+
+        # '''FFT'''
+        eps_y = max(acov_y[0] * 1e-5, 1e-11)
+        S_y= dct(acov_y, type=1)
+        S_clipped_y = np.maximum(S_y, eps_y)
+        acov_corr_y = idct(S_clipped_y, type=1, norm=None)
+        Sigma_y = toeplitz(acov_corr_y)
+
+        # '''FFT'''
+        eps_z = max(acov_z[0] * 1e-5, 1e-11)
+        S_z = dct(acov_z, type=1)
+        S_clipped_z = np.maximum(S_z, eps_z)
+        acov_corr_z = idct(S_clipped_z, type=1, norm=None)
+        Sigma_z = toeplitz(acov_corr_z)
+
+        N = len(acov_x)
+        Sigma = np.zeros((3 * N, 3 * N))
+
+        for i in range(N):
+            for j in range(N):
+                Sigma[3 * i, 3 * j] = Sigma_x[i, j]
+                Sigma[3 * i + 1, 3 * j + 1] = Sigma_y[i, j]
+                Sigma[3 * i + 2, 3 * j + 2] = Sigma_z[i, j]
+
+        return Sigma
+
+
+        # return Sigma_x, Sigma_y, Sigma_z
+
+    def getSigma5(self, acov):
+        # FFT
+        eps = max(acov[0] * 1e-3, 1e-16)
+        # Step 1: DCT-I
+        S = dct(acov, type=1, norm='ortho')
+        f = np.linspace(0, 1 / (2 * 5), len(S))
+        plt.figure(figsize=(7, 4))
+        plt.loglog(f[1:], S[1:], lw=1.5)
+        plt.xlabel("Frequency [Hz]")
+        plt.ylabel("PSD (variance)")
+        plt.title("Noise PSD estimated via DCT-I")
+        plt.grid(True)
+        plt.axhline(eps, color='r', ls='--', label='eps')
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
+        # Step 2: clipping
+        S_clipped = np.maximum(S, eps)
+        # Step 3: inverse DCT-I
+        acov_corr = idct(S_clipped, type=1, norm='ortho')
+        Sigma = toeplitz(acov_corr)
+        return Sigma
+
+    def getSigma6(self, acov_x, acov_y, acov_z):
+
+        eps_x = max(acov_x[0] * 1e-5, 1e-11)
+        #
+        # # acov_full = self.psd_clip_autocov(acov, n, eps=eps)
+        #
+        # # Sigma = toeplitz(acov_full)
+        # '''正定化'''
+        # # Sigma += np.eye(n) * 1e-2
+        # # Sigma = self.nearest_pos_def(Sigma, eps_rel=1e-10)
+        #
+        # Step 1: DCT-I
+        S_x = dct(acov_x, type=1)
+        f = np.linspace(0, 1/(2 * 5), len(S_x))
+        plt.figure(figsize=(7, 4))
+        plt.loglog(f[1:4320], S_x[1:], lw=1.5)
+        plt.xlabel("Frequency [Hz]")
+        plt.ylabel("PSD (variance)")
+        plt.title("Noise PSD estimated via DCT-I")
+        plt.grid(True)
+        plt.axhline(eps_x, color='r', ls='--', label='eps')
+        plt.tight_layout()
+        plt.show()
+        # Step 2: clipping
+        S_clipped_x = np.maximum(S_x, eps_x)
+
+        # Step 3: inverse DCT-I
+        acov_corr_x = idct(S_clipped_x, type=1, norm=None)
+        # plt.plot(np.arange(len(acov_corr)), acov_corr)
+        # plt.show()
+        Sigma_x = toeplitz(acov_corr_x)
+
+        # '''FFT'''
+        eps_y = max(acov_y[0] * 1e-5, 1e-11)
+        S_y= dct(acov_y, type=1)
+        S_clipped_y = np.maximum(S_y, eps_y)
+        acov_corr_y = idct(S_clipped_y, type=1, norm=None)
+        Sigma_y = toeplitz(acov_corr_y)
+
+        # '''FFT'''
+        eps_z = max(acov_z[0] * 1e-5, 1e-11)
+        S_z = dct(acov_z, type=1)
+        S_clipped_z = np.maximum(S_z, eps_z)
+        acov_corr_z = idct(S_clipped_z, type=1, norm=None)
+        Sigma_z = toeplitz(acov_corr_z)
+
+        N = len(acov_x)
+        Sigma = np.zeros((3 * N, 3 * N))
+
+        for i in range(N):
+            for j in range(N):
+                Sigma[3 * i, 3 * j] = Sigma_x[i, j]
+                Sigma[3 * i + 1, 3 * j + 1] = Sigma_y[i, j]
+                Sigma[3 * i + 2, 3 * j + 2] = Sigma_z[i, j]
+
+        return Sigma
+
+
+        # return Sigma_x, Sigma_y, Sigma_z
+
+    def getSigma3(self, res):
+        res = np.array(res).reshape((-1, 3))
+        res_x = res[:, 0]
+        res_y = res[:, 1]
+        res_z = res[:, 2]
+
+        res_x = detrend(res_x, type="linear")
+        res_y = detrend(res_y, type="linear")
+        res_z = detrend(res_z, type="linear")
+
+        res_x -= res_x.mean()
+        res_y -= res_y.mean()
+        res_z -= res_z.mean()
+
+        acov_x = self.estimate_acov(res_x, max_lag=self.lagNum - 1)
+        acov_y = self.estimate_acov(res_y, max_lag=self.lagNum - 1)
+        acov_z = self.estimate_acov(res_z, max_lag=self.lagNum - 1)
+
+        Sigma_x = self.build_banded_toeplitz(acov_x, self.lagNum, self.lagNum)
+        Sigma_y = self.build_banded_toeplitz(acov_y, self.lagNum, self.lagNum)
+        Sigma_z = self.build_banded_toeplitz(acov_z, self.lagNum, self.lagNum)
+
+        return Sigma_x, Sigma_y, Sigma_z
+
+    def getSigma4(self, res):
+        n = len(res)
+        res = detrend(res)
+        # res = detrend(res)
+        # res -= np.mean(res)
+
+        # p_max = min(50, n // 10)
+        # p = self.pick_AR_order(res, p_max=p_max, ic='bic')
+        #
+        # phi, sigma2 = self.estimate_ARp(res, p)
+        # cov = self.AR_toeplitz_cov(phi, sigma2, n)
+
+        # res = detrend(res, type='linear')
+        acov = self.estimate_acov(res, max_lag=self.lagNum - 1)
+
+        Sigma = self.build_banded_toeplitz(acov, self.lagNum, 1080)
+
+        return Sigma
+
+    def estimate_acov(self, residuals, max_lag=50):
+        """
+        用残差估计自协函数（ACF），无偏估计版本。
+        """
+        residuals = np.asarray(residuals)
+        n = len(residuals)
+
+        acov = np.zeros(max_lag + 1)
+        for k in range(max_lag + 1):
+            acov[k] = np.dot(residuals[:n - k], residuals[k:]) / (n - k)
+        return acov
+        # n = len(residuals)
+        # x = residuals - np.mean(residuals)
+        # return np.array([np.dot(x[:n - k], x[k:]) / (n - k) for k in range(max_lag + 1)])
+
+    def nearest_pos_def(self, mat, eps_rel=1e-8):
+        # mat = 0.5 * (mat + mat.T)
+        # vals, vecs = eigh(mat)
+        # max_val = vals[-1] if vals.size > 0 else 0.0
+        # tol = eps_rel * max(1.0, max_val)
+        # vals_clipped = np.clip(vals, tol, None)
+        # mat_pd = (vecs @ np.diag(vals_clipped)) @ vecs.T
+        # Sigma_pd = mat + eps_rel * np.eye(mat.shape[0])
+        # return (mat_pd + mat_pd.T) / 2.0
+
+        n = mat.shape[0]
+
+        # 只提取最小的 k 个特征值
+        vals, vecs = eigsh(mat, k=20, which='SA')
+
+        min_val = np.min(vals)
+        if min_val > eps_rel:
+            return mat  # 已正定
+
+        # 修正负特征值
+        vals_clipped = np.maximum(vals, eps_rel)
+
+        # 只更新部分特征值贡献（低秩修补）
+        Sigma_fix = mat + vecs @ np.diag(vals_clipped - vals) @ vecs.T
+
+        return Sigma_fix
+
+    def psd_clip_autocov(self, acov, n_out=None, eps=1e-20):
+        """
+            Method A: FFT → PSD clipping → IFFT.
+            acov: length K+1  (estimated gamma(0..K))
+            n_out: desired size of autocov for Toeplitz (same as observation count n)
+            eps: lower bound of PSD to enforce strict positive definiteness
+            """
+        K = len(acov) - 1
+
+        # Step 1: Make FFT input symmetric: g = [gamma0, gamma1,...gammaK, 0,...,0, gammaK,...gamma1]
+        # Choose FFT length >= 2*K for good spectral resolution
+        m = int(2 ** np.ceil(np.log2(max(2 * (K + 1), 4 * n_out))))
+        g = np.zeros(m)
+        g[:K + 1] = acov
+        g[m - K:m] = acov[1:K+1][::-1]  # symmetry (exclude gamma0 to avoid double counting)
+
+        # Step 2: FFT -> PSD
+        S = np.fft.rfft(g)
+
+        S_real = np.real(S)
+
+        # Step 3: PSD clipping (key step)
+        S_clipped = np.maximum(S_real, eps)
+
+        # Step 4: inverse FFT
+        g_corr = np.fft.irfft(S_clipped).real
+
+        # Step 5: real autocov lags = 0..n_out-1
+        acov_corr = g_corr[:n_out]
+        return acov_corr
+
+    def taper_keep0_window(self, K, kind='hann'):
+        if kind == 'hann':
+            w = np.hanning(K + 1)
+        elif kind == 'exp':
+            k = np.arange(K + 1)
+            w = np.exp(-k / (K / 5.0))
+        else:
+            w = np.ones(K + 1)
+        w[0] = 1.0  # 关键：保留 gamma(0)
+        return w
+
+    def psd_clip_with_taper(self, acov, n_out,
+                            pad_factor=4,
+                            eps_rel=1e-10,
+                            freq_smooth=11,
+                            taper_kind='hann',
+                            renormalize=True):
+        # acov length = K+1
+        K = len(acov) - 1
+        if K < 1:
+            raise ValueError("acov too short")
+        gamma0 = float(acov[0])
+
+        # taper but keep gamma0
+        w = self.taper_keep0_window(K, kind=taper_kind)
+        acov_tap = acov * w
+
+        # choose FFT length m (power of 2)
+        m_candidate = max(2 * (K + 1), pad_factor * n_out)
+        m = 1 << int(np.ceil(np.log2(m_candidate)))
+
+        # construct symmetric padded g
+        g = np.zeros(m, dtype=float)
+        g[:K + 1] = acov_tap
+        if K >= 1:
+            g[m - K:m] = acov_tap[1:K + 1][::-1]
+
+        # rfft, smooth, clip
+        S = np.fft.rfft(g)
+        S_real = S.real
+        if freq_smooth and freq_smooth > 1:
+            S_smooth = uniform_filter1d(S_real, size=freq_smooth, mode='reflect')
+        else:
+            S_smooth = S_real
+
+        # eps relative to gamma0; if big negative excursions exist, lift scale
+        eps_floor = max(eps_rel * max(acov_tap[0], gamma0), 1e-18)
+        if S_smooth.min() < 0:
+            eps = max(eps_floor, -S_smooth.min() * 1.001)
+        else:
+            eps = eps_floor
+
+        S_clipped = np.maximum(S_smooth, eps)
+
+        # inverse
+        g_corr = np.fft.irfft(S_clipped, n=m).real
+        acov_corr = g_corr[:n_out].copy()
+
+        # optional renormalize to preserve gamma0
+        if renormalize:
+            if acov_corr[0] <= 0:
+                raise RuntimeError("acov_corr[0] <= 0 after clipping; increase eps_rel or freq_smooth")
+            acov_corr *= (gamma0 / acov_corr[0])
+
+        # diagnostics
+        Sigma = toeplitz(acov_corr[:n_out])
+        eigs = eigh(Sigma, eigvals_only=True)
+        diag = {
+            'm': m,
+            'gamma0_orig': gamma0,
+            'gamma0_tap': acov_tap[0],
+            'gamma0_corr': acov_corr[0],
+            'S_real_min': float(S_real.min()),
+            'S_smooth_min': float(S_smooth.min()),
+            'S_clipped_min': float(S_clipped.min()),
+            'Sigma_min_eig': float(eigs.min()),
+            'Sigma_cond': float(eigs.max() / max(eigs.min(), 1e-30)),
+            'eps_used': eps
+        }
+        return acov_corr, diag
+
+    # def estimate_ARp(self, res, p):
+    #     # 去均值
+    #     r = res - np.mean(res)
+    #     # Yule-Walker 估计 AR(p)
+    #     rho, sigma = yule_walker(r, order=p, method='mle')
+    #     return rho, sigma
+
+    def AR_toeplitz_cov(self, phi, sigma2, n):
+        p = len(phi)
+        # 用混合系统求自协
+        # Companion matrix
+        F = np.zeros((p, p))
+        F[0, :] = phi
+        F[1:, :-1] = np.eye(p - 1)
+
+        # 计算协方差前 p 项
+        gam = np.zeros(n)
+        # solve Lyapunov equation for gamma(0:p)
+        from numpy.linalg import solve
+
+        # 利用 Yule-Walker 取 gamma(0:p)
+        # gamma(0) = sigma^2 / (1 - sum(phi_i * psi_i))（通过 Y-W 已经获得）
+        # 用前 p 个自协构造初始向量
+        # 我们直接用求解 Lyapunov eq 的方法
+        Q = np.zeros((p, p))
+        Q[0, 0] = sigma2
+
+        # 解稳定 AR(p) 的协方差矩阵（离散 Lyapunov）
+
+        P = solve_discrete_lyapunov(F, Q)  # p×p
+
+        # 前 p 个自协
+        gam[:p] = P[0, :]
+
+        # 后续用递推
+        for k in range(p, n):
+            gam[k] = np.dot(phi, gam[k - p:k][::-1])
+
+        # 返回 Toeplitz
+        return toeplitz(gam[:n])
+
+    # def pick_AR_order(self, res, p_max=50, ic='bic'):
+    #     """
+    #         自动选择 AR 阶数
+    #         """
+    #     res = np.asarray(res)
+    #     aic_list = []
+    #     bic_list = []
+    #     orders = list(range(1, p_max + 1))
+    #     for p in orders:
+    #         try:
+    #             model = AutoReg(res, lags=p, old_names=False).fit()
+    #             aic_list.append(model.aic)
+    #             bic_list.append(model.bic)
+    #         except:
+    #             aic_list.append(np.inf)
+    #             bic_list.append(np.inf)
+    #     ic_list = aic_list if ic.lower().startswith('a') else bic_list
+    #     p_opt = orders[int(np.argmin(ic_list))]
+    #     return p_opt
+
+    def ar_to_acov(self, phi, sigma2, n_lags):
+        """
+            根据 AR 系数生成自协方差序列
+            phi: AR(p) 系数
+            sigma2: 白噪声方差
+            n_lags: 生成多少滞后
+            """
+        p = len(phi)
+        acov = np.zeros(n_lags)
+        acov[0] = sigma2 / (1 - np.sum(phi)) ** 2  # 零滞后
+        for k in range(1, n_lags):
+            # 用 AR 递推生成 acov[k]（简单近似）
+            acov[k] = np.dot(phi[:min(k, p)], acov[k - 1:k - p - 1:-1])
+        return acov
+
+    def build_banded_toeplitz(self, acov, N, K, eps_factor=1e-8):
+        """
+        acov       : 自协函数 γ(0..)
+        N          : 弧段长度（如 4320）
+        K          : 最大滞后（带宽）
+        eps_factor : nugget 强度
+        """
+        assert K < N
+        assert len(acov) >= K + 1
+
+        Sigma = np.zeros((N, N))
+
+        # 主对角 + K 条副对角
+        for k in range(K + 1):
+            val = acov[k]
+            if k == 0:
+                Sigma += np.diag(val * np.ones(N))
+            else:
+                Sigma += np.diag(val * np.ones(N - k), k)
+                Sigma += np.diag(val * np.ones(N - k), -k)
+
+        # 强制对称（数值安全）
+        Sigma = 0.5 * (Sigma + Sigma.T)
+
+        # 对角加载（nugget）
+        eps = eps_factor * acov[0]
+        Sigma += eps * np.eye(N)
+
+        return Sigma
+
+    def saveSigma1(self, Sigma, h5path):
+
+        if "Sigma" in h5path:
+            del h5path["Sigma"]
+        #
+        # if "Sigma_y" in h5path:
+        #     del h5path["Sigma_y"]
+        # #
+        # if "Sigma_z" in h5path:
+        #     del h5path["Sigma_z"]
+        #
+        # h5path.create_dataset("Sigma_x", data=Sigma_x)
+        # h5path.create_dataset("Sigma_y", data=Sigma_y)
+        h5path.create_dataset("Sigma", data=Sigma)
+        h5path.close()
+        return self
+
+    def saveSigma2(self, Sigma, h5path):
+
+        if "Sigma" in h5path:
+            del h5path["Sigma"]
+
+        h5path.create_dataset("Sigma", data=Sigma)
+        h5path.close()
+        return self

@@ -16,6 +16,7 @@ class GravimetryODE:
         self.__secDer = None
         self.__ParNum = 0
         self.__isSingle = True
+        self.Time = None
         self.ParameterConfig = None
         self.ODEConfig = None
         self._ArcLen = None
@@ -27,7 +28,6 @@ class GravimetryODE:
     def configure(self, ODEConfig: ODEConfig, ParameterConfig: ParameterConfig):
         self.ODEConfig = ODEConfig
         self.ParameterConfig = ParameterConfig
-
         '''config TransitionMatrix'''
         self.TransitionMatrixConfig = self.ParameterConfig.TransitionMatrix()
         self.TransitionMatrixConfig.__dict__.update(self.ParameterConfig.TransitionMatrixConfig.copy())
@@ -39,11 +39,17 @@ class GravimetryODE:
         self.StokesCoefficientsConfig.__dict__.update(self.ParameterConfig.StokesCoefficientsConfig.copy())
         return self
 
+    def setDataTime(self, times):
+        self.node = times
+        return self
+
     def setParNum(self):
         if self.TransitionMatrixConfig.isRequired:
             self.__ParNum += self.TransitionMatrixConfig.Parameter_Number
         if self.AccelerometerConfig.isRequired:
-            self.__ParNum += self.AccelerometerConfig.Parameter_Number
+            if self.AccelerometerConfig.isScale:
+                self.__ParNum += 9
+            self.__ParNum += self.node
         if self.StokesCoefficientsConfig.isRequired:
             self.__ParNum += self.StokesCoefficientsConfig.Parameter_Number
         return self
