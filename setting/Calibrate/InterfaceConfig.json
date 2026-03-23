@@ -1,8 +1,8 @@
 {
     "mission": "GRACE_RL03",
     "date_span": [
-        "2010-01-01",
-        "2010-01-31"
+        "2009-01-01",
+        "2009-01-31"
     ],
     "arcNo": 0,
     "sat": {
@@ -10,7 +10,6 @@
         "B": true
     },
     "date_delete": [],
-    "arc_delete": [],
     "include_payloads": {
         "ACC": true,
         "SCA": true,
@@ -28,7 +27,7 @@
         "SCA": 1,
         "KBR": 5,
         "GNV": 1,
-        "KinematicOrbit": 1,
+        "KinematicOrbit": 10,
         "LRI": 5
     },
     "sr_target": 5,
@@ -36,11 +35,11 @@
     "gapfix_quadra_mis_max": 21,
     "gapfix_cubic_mis_max": 80,
     "gapfix_cubic_int": 150,
-    "arc_length": 6,
-    "min_arcLen": 3,
+    "arc_length": 3,
+    "min_arcLen": 1,
     "OrbitConfig": {
-        "OutlierTimes": 3,
-        "OutlierLimit": 0.04
+        "OutlierTimes": 6,
+        "OutlierLimit": 0.10
     },
     "PathOfFilesConfig": {
         "payload_ACC": "../data/GRACE_RL02",

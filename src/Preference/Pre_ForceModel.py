@@ -187,6 +187,7 @@ class ForceModelConfig:
             self.EIGEN6_C4 = "../data/StaticGravityField/EIGEN6-C4.gfc"
             self.GOCO02s = "../data/StaticGravityField/GOCO02s.gfc"
             self.GGM05C = "../data/StaticGravityField/GGM05C.gfc"
+            self.GOCO06s = "../data/StaticGravityField/GOCO06s.gfc"
             self.PoleTide = "../data/poletide"
             self.LoverNumber = "../data/LoveNumber"
             self.poleTideModel = "desaiscopolecoef.txt"

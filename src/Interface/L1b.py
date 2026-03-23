@@ -9,6 +9,7 @@ from src.Frame.Frame import Frame
 from src.Preference.Pre_Interface import InterfaceConfig
 import pathlib as pathlib
 import sys
+import matplotlib.pyplot as plt
 
 
 class L1b:
@@ -114,6 +115,26 @@ class L1b:
                 KBR = np.vstack((KBR, res4))
 
         SCA = self._unique(SCA)
+
+        # plt.figure(figsize=(12, 6))
+        # plt.subplot(311)
+        # plt.title('{}-{}-{}'.format('ACC', sat.name, '2018-06'), fontsize=24)
+        # plt.plot(ACC[:, 0] - ACC[0, 0], ACC[:, 1], marker='o')
+        # plt.yticks(fontsize=18)
+        # plt.ylabel(r'$X/m$', fontsize=20)
+        #
+        # plt.subplot(312)
+        # plt.plot(ACC[:, 0] - ACC[0, 0], ACC[:, 2], marker='o')
+        # plt.yticks(fontsize=18)
+        # plt.ylabel(r'$Y/m$', fontsize=20)
+        #
+        # plt.subplot(313)
+        # plt.plot(ACC[:, 0] - ACC[0, 0], ACC[:, 3], marker='o')
+        # plt.xlabel('GPS Time', fontsize=20)
+        # plt.ylabel(r'$Z/m$', fontsize=20)
+        # plt.yticks(fontsize=18)
+        # plt.show()
+
         if sat == SatID.A:
             self._ACC_A = ACC
             self._SCA_A = SCA
@@ -827,7 +848,7 @@ class GRACE_FO_RL04(L1b):
         for i in range(NumOfAct):
             s = f.readline().split()
             '''time'''
-            ACT[i, 0] = s[0]
+            ACT[i, 0] = float(s[0])
             '''X'''
             ACT[i, 1] = s[2]
             '''Y'''
@@ -836,7 +857,7 @@ class GRACE_FO_RL04(L1b):
             ACT[i, 3] = s[4]
 
         f.close()
-        return ACT
+        return np.asarray(ACT, dtype=float)
 
     def _readSCA(self, date: str, sat: SatID):
         path = str(self.dir.joinpath(self._path_SCA, date.split('-')[0] + '-' + date.split('-')[1],
@@ -864,7 +885,7 @@ class GRACE_FO_RL04(L1b):
             if len(s) == 9:
                 SCAd = np.zeros(5)
                 '''time'''
-                SCAd[0] = s[0]
+                SCAd[0] = float(s[0])
                 '''cos(mu/2)'''
                 SCAd[1] = s[3]
                 '''I'''
@@ -894,7 +915,7 @@ class GRACE_FO_RL04(L1b):
         #     SCA[i, 4] = s[6]
         f.close()
 
-        return np.array(SCA)
+        return np.asarray(SCA, dtype=float)
 
     def _readKBR(self, date: str):
         path = str(self.dir.joinpath(self._path_KBR, date.split('-')[0] + '-' + date.split('-')[1],
@@ -923,7 +944,7 @@ class GRACE_FO_RL04(L1b):
             if len(s) == 16:
                 KBRd = np.zeros(4)
                 '''time'''
-                KBRd[0] = s[0]
+                KBRd[0] = float(s[0])
                 '''bias range + light_corr + ant_corr '''
                 KBRd[1] = float(s[1]) + float(s[5]) + float(s[8])
                 '''bias range-rate + light_corr + ant_corr '''
@@ -935,7 +956,7 @@ class GRACE_FO_RL04(L1b):
                 continue
         f.close()
 
-        return KBR
+        return np.asarray(KBR, dtype=float)
 
     def _readGNV(self, date: str, sat: SatID):
         """
@@ -981,7 +1002,7 @@ class GRACE_FO_RL04(L1b):
                     continue
 
                 '''time'''
-                GNVd[0] = s[0]
+                GNVd[0] = float(s[0])
                 GNVd[1:4] = s[3:6]
                 GNVd[4:7] = s[9:12]
 
@@ -1007,7 +1028,7 @@ class GRACE_FO_RL04(L1b):
                 continue
 
         f.close()
-        return np.array(GNV)
+        return np.asarray(GNV, dtype=float)
 
     # def _readACC(self, date: str, sat: SatID):
     #     path = str(self.dir.joinpath(self._path_ACC, 'ACC-' + date.split('-')[0] + '-' + date.split('-')[1],

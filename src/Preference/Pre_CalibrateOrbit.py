@@ -21,6 +21,7 @@ class CalibrateOrbitConfig:
             self.isGetGravityDesignMat = True
             self.isGetNEQ = True
             self.isGetSH = True
+            self.isGLS = True
 
     class ParallelControl:
         def __init__(self):

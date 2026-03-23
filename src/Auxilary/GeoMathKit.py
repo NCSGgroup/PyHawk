@@ -513,6 +513,7 @@ class GeoMathKit:
         :return: Normal equations related only to the global parameters （Nx = l）
         """
         # time
+        # print(obs[0])
         if p is None:
             p = np.eye(np.shape(dm_global.T)[-1])
         I = np.eye(np.shape(dm_global.T)[-1])
@@ -522,7 +523,7 @@ class GeoMathKit:
         Agw = solve_triangular(L, dm_global, lower=True)  # n x p
         Alw = solve_triangular(L, dm_local, lower=True)  # n x q
         lw = solve_triangular(L, obs, lower=True)
-
+        # print(lw[0])
         # B = dm_local
         # n = np.shape(B)[1]
         # Q, R = np.linalg.qr(B, mode='complete')
@@ -537,6 +538,37 @@ class GeoMathKit:
         A_T = A.T
 
         l = Q2_T @ lw
+
+        N = A_T @ A
+        L = A_T @ l
+
+        return N, L
+
+    @staticmethod
+    def keepGlobal_v2(dm_global: np.ndarray, dm_local: np.ndarray, obs: np.ndarray):
+        """
+        Ax + By = z
+        x--global parameter
+        y--local parameter
+        z--obs
+        Our aim: remove the local parameters and keep only the global parameters to be solved.
+        :param dm_global: design matrix for the global parameters
+        :param dm_local: design matrix for the local parameters
+        :param obs: observations
+        :return: Normal equations related only to the global parameters （Nx = l）
+        """
+        # Q1, R = np.linalg.qr(B, mode="complete")
+
+        I = np.eye(np.shape(dm_global.T)[-1])
+
+        Q1, R = np.linalg.qr(dm_local)
+        Q2 = I - Q1 @ Q1.T
+        Q2_T = Q2.T
+
+        A = Q2_T @ dm_global
+        A_T = A.T
+
+        l = Q2_T @ obs
 
         N = A_T @ A
         L = A_T @ l

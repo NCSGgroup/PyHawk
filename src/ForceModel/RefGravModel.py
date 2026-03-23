@@ -1,5 +1,5 @@
 from src.ForceModel.BaseGravCS import BaseGravCS
-from src.Interface.LoadSH import LoadSH, LoadGif48
+from src.Interface.LoadSH import LoadSH, LoadGif48, LoadGOCO06S
 from src.Preference.EnumType import StaticGravModel
 from src.Preference.Pre_ForceModel import ForceModelConfig
 
@@ -40,6 +40,8 @@ class RefGravModel(AbsRefGravModel):
             self.__staticModel = LoadGif48().load(self._pathConfig.GOCO02s)
         elif staticModel == StaticGravModel.GGM05C.name:
             self.__staticModel = LoadGif48().load(self._pathConfig.GGM05C)
+        elif staticModel == StaticGravModel.GOCO06S.name:
+            self.__staticModel = LoadGOCO06S().load(self._pathConfig.GOCO06s)
         return self
 
     def getStaticModel(self):
