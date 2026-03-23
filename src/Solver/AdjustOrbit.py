@@ -14,6 +14,7 @@ from src.Preference.Pre_AdjustOrbit import AdjustOrbitConfig
 from src.Preference.Pre_Interface import InterfaceConfig
 from src.Preference.Pre_Frame import FrameConfig
 import matplotlib.pyplot as plt
+from src.Auxilary.Outlier import Outlier
 import os
 os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
 
@@ -342,6 +343,9 @@ class AdjustOrbit:
         '''config Adjust path'''
         self.AdjustPath = AdjustOrbitConfig.PathOfFiles()
         self.AdjustPath.__dict__.update(AdjustOrbitConfig.PathOfFilesConfig.copy())
+        self._AdjustConfig = AdjustOrbitConfig.Orbit()
+        self._AdjustConfig.__dict__.update(AdjustOrbitConfig.OrbitConfig.copy())
+
         '''config ODE'''
         self.ODEConfig = ODEConfig
         '''config Force model'''
@@ -388,14 +392,13 @@ class AdjustOrbit:
         '''init acc'''
 
         for i in range(len(self._sat)):
-            ap = AccCaliPar_V3(rd=self._rd, sat=self._sat[i], arcNo=self._arcNo,
-                            accConfig=self.accConfig[i], adjustlength_x=self.X_AdjustLength,
-                               adjustlength_y=self.Y_AdjustLength, adjustlength_z=self.Z_AdjustLength)
-            # ap = AccCaliPar(rd=self._rd, sat=self._sat[i], arcNo=self._arcNo,
-            #                 accConfig=self.accConfig[i], adjustlength=self.AccAdjustLength)
-            # ac = Accelerometer(ap=ap, rd=self._rd)
-            # ac = Accelerometer_V2(ap=ap)
-            ac = Accelerometer_V3(ap=ap)
+            # ap = AccCaliPar_V3(rd=self._rd, sat=self._sat[i], arcNo=self._arcNo,
+            #                 accConfig=self.accConfig[i], adjustlength_x=self.X_AdjustLength,
+            #                    adjustlength_y=self.Y_AdjustLength, adjustlength_z=self.Z_AdjustLength)
+            ap = AccCaliPar(rd=self._rd, sat=self._sat[i], arcNo=self._arcNo,
+                            accConfig=self.accConfig[i], adjustlength=self.AccAdjustLength)
+            ac = Accelerometer_V2(ap=ap)
+            # ac = Accelerometer_V3(ap=ap)
             ac.get_and_save()
 
             self._ac[self._sat[i]] = ac
@@ -450,14 +453,15 @@ class AdjustOrbit:
 
             '''step 7: orbit integration once again'''
             self._ode_res = ode.propagate()
+            # if i == iteration - 1:
+            #     orbit_res = self._ode_res[1][:, :, 0] - self._obsGNV
+            #     index = Outlier(rms_times=self._AdjustConfig.OutlierTimes, upper_RMS=self._AdjustConfig.OutlierLimit).remove_V2(
+            #         self._ode_res[0], orbit_res[:, 0])
+            #     self._ode_res[0] = self._ode_res[0][index]
+            #     self._ode_res[1] = self._ode_res[1][index, :, :]
+            #     self._ode_res[2] = self._ode_res[2][index, :, :]
             self._save_StateVectors(self._ode_res)
 
-            if i == 0:
-                self.fisrtR = self._ode_res[1]
-            elif i == 1:
-                self.secondR = self._ode_res[1]
-            elif i == 2:
-                self.thirdR = self._ode_res[1]
         h5 = h5py.File(filename, 'r')
         self._endTime = h5['t'][:]
         self._endR = h5['r'][:]

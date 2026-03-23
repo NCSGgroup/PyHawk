@@ -80,3 +80,30 @@ class Outlier:
         index = np.array(index1) * np.array(index2) * np.array(index3)
 
         return index
+
+    def remove_V3(self, t: np.ndarray, data: np.ndarray):
+        """
+
+        :param t: epoch of the time-series [1-dim]
+        :param data: data to be filtered [1-dim]
+        :return:
+        """
+
+        leng = np.shape(t)[0]
+        index1 = list(np.ones(leng).astype(bool))
+        index2 = list(np.ones(leng).astype(bool))
+        index3 = list(np.ones(leng).astype(bool))
+
+        rms = GeoMathKit.rms(data)
+        if self.__upper_RMS is not None:
+            index1 = np.abs(data) < self.__upper_RMS
+
+        index2 = np.abs(data) < np.abs(rms) * self.__rms_times
+
+        if self.__upper_obs is not None:
+            index3 = data < self.__upper_obs
+
+        '''index of the inliers'''
+        index = np.array(index1) * np.array(index2) * np.array(index3)
+
+        return index

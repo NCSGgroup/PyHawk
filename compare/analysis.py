@@ -11,7 +11,7 @@ from src.Auxilary.GeoMathKit import GeoMathKit
 from src.Auxilary.LoveNumber import LoveNumber
 from src.ConvertFieldType.ConvertSHC import ConvertSHC
 from src.Preference.EnumType import FieldType
-from src.Interface.LoadSH import LoadGif48
+from src.Interface.LoadSH import LoadGif48, LoadGOCO06S
 import matplotlib
 from datetime import datetime
 import datetime
@@ -28,23 +28,22 @@ def GRACE(date):
     static_c, static_s = LoadGif48().load('../data/StaticGravityField/gif48.gfc').getCS(60)
     '''read hust'''
 
-    hust_filename = '../result/GLS/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600-non.gfc'
+    hust_filename = '../result/GLS/2009-01/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600-ols-1e11.gfc'
     hust_c, hust_s = LoadCSR().load(fileIn=hust_filename).getCS(Nmax=60)
     hust_c, hust_s = hust_c - static_c, hust_s - static_s
-    # hust_c, hust_s = hust_c - static_c, hust_s - static_s
     hust_c, hust_s = GeoMathKit.CS_1dTo2d(hust_c), GeoMathKit.CS_1dTo2d(hust_s)
     # '''read hust'''
-    hust_filename2 = '../result/GLS/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600.gfc'
+    hust_filename2 = '../result/GLS/2009-01/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600.gfc'
     hust_c2, hust_s2 = LoadCSR().load(fileIn=hust_filename2).getCS(Nmax=60)
     hust_c2, hust_s2 = hust_c2 - static_c, hust_s2 - static_s
     hust_c2, hust_s2 = GeoMathKit.CS_1dTo2d(hust_c2), GeoMathKit.CS_1dTo2d(hust_s2)
     '''read hust'''
-    hust_filename3 = '../result/xyz/fle/y-1.5h/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600.gfc'
+    hust_filename3 = '../result/GLS/2009-01/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600-ols-1e11.gfc'
     hust_c3, hust_s3 = LoadCSR().load(fileIn=hust_filename3).getCS(Nmax=60)
     hust_c3, hust_s3 = hust_c3 - static_c, hust_s3 - static_s
     hust_c3, hust_s3 = GeoMathKit.CS_1dTo2d(hust_c3), GeoMathKit.CS_1dTo2d(hust_s3)
     # '''read hust'''
-    hust_filename4 = '../result/xyz/fix/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600.gfc'
+    hust_filename4 = '../result/GLS/2009-01/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600-ols-1e11.gfc'
     hust_c4, hust_s4 = LoadCSR().load(fileIn=hust_filename4).getCS(Nmax=60)
     hust_c4, hust_s4 = hust_c4 - static_c, hust_s4 - static_s
     hust_c4, hust_s4 = GeoMathKit.CS_1dTo2d(hust_c4), GeoMathKit.CS_1dTo2d(hust_s4)
@@ -105,17 +104,18 @@ def GRACE(date):
     # gfz_05 = get_geoid_drgee_error(diff_c=gfz_05_c, diff_s=gfz_05_s)
     '''jpl'''
     jpl = get_geoid_drgee_error(diff_c=jpl_c, diff_s=jpl_s)
-    # plt.title('Geoid Degree', fontsize=30)
+
     matplotlib.rcParams.update({'font.size': 30})
     fig = plt.figure(figsize=(10, 8))
     # plt.style.use(['science'])
-    plt.plot(np.arange(2, 61, 1), hust[2:], color='green', linewidth=2.0, marker='', label='Non')
-    plt.plot(np.arange(2, 61, 1), hust2[2:], color='black', linewidth=2.0, marker='', label='GLS')
+    plt.title('%s' % date1, fontsize=30)
+    # plt.plot(np.arange(2, 61, 1), hust[2:], color='green', linewidth=2.0, marker='', label='PyHawk-gif48-ols')
+    plt.plot(np.arange(2, 61, 1), hust2[2:], color='black', linewidth=2.0, marker='', label='PyHawk-goco06s-ols')
     # plt.plot(np.arange(2, 61, 1), hust3[2:], color='red', linewidth=2.0, marker='', label='y-1.5h')
     # plt.plot(np.arange(2, 61, 1), hust4[2:], color='blue', linewidth=2.0, marker='', label='qr')
-    plt.plot(np.arange(2, 61, 1), csr[2:], color='indigo', marker='', linewidth=2.0,label='CSR 06')
+    plt.plot(np.arange(2, 61, 1), csr[2:], color='indigo', marker='', linewidth=2.0,label='CSR')
     plt.plot(np.arange(2, 61, 1), gfz[2:], color='#A53860', marker='', linewidth=2.0, label='GFZ')
-    # plt.plot(np.arange(2, 61, 1), jpl[2:], color='blue', marker='',linewidth=2.0, label='JPL')
+    plt.plot(np.arange(2, 61, 1), jpl[2:], color='blue', marker='',linewidth=2.0, label='JPL')
     # plt.plot(np.arange(2, 61, 1), csr_05[2:], color='blue', marker='', label='CSR 05')
     # plt.plot(np.arange(2, 61, 1), gfz_05[2:], color='blue', marker='H', label='GFZ 05')
     # plt.plot(np.arange(2, 61, 1), csr_e_l[2:], color='red', marker='s', label='CSR - HUST')
@@ -143,28 +143,28 @@ def GRACE_FO(date):
     date2 = convert_range(date, standard_to_compact)
 
     '''static model'''
-    static_c, static_s = LoadGif48().load('../data/StaticGravityField/gif48.gfc').getCS(60)
+    static_c, static_s = LoadGOCO06S().load('../data/StaticGravityField/GOCO06s.gfc').getCS(60)
     '''static model'''
-    static_c_GGM, static_s_GGM = LoadGif48().load('../data/StaticGravityField/GGM05C.gfc').getCS(60)
+    static_goco, static_goco = LoadGOCO06S().load('../data/StaticGravityField/GOCO06s.gfc').getCS(60)
     '''read hust'''
 
-    hust_filename = '../result/GLS/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600-non.gfc'
+    hust_filename = '../result/goco06s/goco/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600.gfc'
     hust_c, hust_s = LoadCSR().load(fileIn=hust_filename).getCS(Nmax=60)
     hust_c, hust_s = hust_c - static_c, hust_s - static_s
     # hust_c, hust_s = hust_c - static_c, hust_s - static_s
     hust_c, hust_s = GeoMathKit.CS_1dTo2d(hust_c), GeoMathKit.CS_1dTo2d(hust_s)
-    # '''read hust'''
-    hust_filename2 = '../result/GLS/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600.gfc'
+    '''read hust'''
+    hust_filename2 = '../result/goco06s/goco/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600-gls-1e10.gfc'
     hust_c2, hust_s2 = LoadCSR().load(fileIn=hust_filename2).getCS(Nmax=60)
     hust_c2, hust_s2 = hust_c2 - static_c, hust_s2 - static_s
     hust_c2, hust_s2 = GeoMathKit.CS_1dTo2d(hust_c2), GeoMathKit.CS_1dTo2d(hust_s2)
     '''read hust'''
-    hust_filename3 = '../result/GLS/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600.gfc'
+    hust_filename3 = '../result/GFO/2019-03-APM.gfc'
     hust_c3, hust_s3 = LoadCSR().load(fileIn=hust_filename3).getCS(Nmax=60)
-    hust_c3, hust_s3 = hust_c3 - static_c, hust_s3 - static_s
+    # hust_c3, hust_s3 = hust_c3 - static_c, hust_s3 - static_s
     hust_c3, hust_s3 = GeoMathKit.CS_1dTo2d(hust_c3), GeoMathKit.CS_1dTo2d(hust_s3)
     # '''read hust'''
-    hust_filename4 = '../result/GLS/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600.gfc'
+    hust_filename4 = '../result/KinCov/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600.gfc'
     hust_c4, hust_s4 = LoadCSR().load(fileIn=hust_filename4).getCS(Nmax=60)
     hust_c4, hust_s4 = hust_c4 - static_c, hust_s4 - static_s
     hust_c4, hust_s4 = GeoMathKit.CS_1dTo2d(hust_c4), GeoMathKit.CS_1dTo2d(hust_s4)
@@ -225,18 +225,19 @@ def GRACE_FO(date):
     # gfz_05 = get_geoid_drgee_error(diff_c=gfz_05_c, diff_s=gfz_05_s)
     '''jpl'''
     jpl = get_geoid_drgee_error(diff_c=jpl_c, diff_s=jpl_s)
-    # plt.title('Geoid Degree', fontsize=30)
+
     matplotlib.rcParams.update({'font.size': 30})
     fig = plt.figure(figsize=(10, 8))
     # plt.style.use(['science'])
-    # plt.plot(np.arange(2, 61, 1), hust[2:], color='green', linewidth=2.0, marker='', label='OLS')
-    plt.plot(np.arange(2, 61, 1), hust2[2:], color='black', linewidth=2.0, marker='', label='non')
-    plt.plot(np.arange(2, 61, 1), hust3[2:], color='red', linewidth=2.0, marker='', label='GLS')
-    # plt.plot(np.arange(2, 61, 1), hust4[2:], color='blue', linewidth=2.0, marker='', label='gif48')
-    plt.plot(np.arange(2, 61, 1), csr[2:], color='indigo', marker='', linewidth=2.0,label='CSR')
+    plt.title('%s' % date, fontsize=30)
+    plt.plot(np.arange(2, 61, 1), hust[2:], color='green', linewidth=2.0, marker='', label='PyHawk kbr-1.5h-10s')
+    # plt.plot(np.arange(2, 61, 1), hust2[2:], color='black', linewidth=2.0, marker='', label='PyHawk kbr-1.5h-5s')
+    plt.plot(np.arange(2, 61, 1), hust3[2:], color='red', linewidth=2.0, marker='', label='APM')
+    # plt.plot(np.arange(2, 61, 1), hust4[2:], color='blue', linewidth=2.0, marker='', label='PyHawk')
+    # plt.plot(np.arange(2, 61, 1), csr[2:], color='indigo', marker='', linewidth=2.0,label='CSR')
     plt.plot(np.arange(2, 61, 1), gfz[2:], color='#A53860', marker='', linewidth=2.0, label='GFZ')
-    plt.plot(np.arange(2, 61, 1), jpl[2:], color='blue', marker='',linewidth=2.0, label='JPL')
-
+    # plt.plot(np.arange(2, 61, 1), jpl[2:], color='blue', marker='',linewidth=2.0, label='JPL')
+    #
     plt.xlim(0, 60)
     plt.ylim(1e-4, 1e-2)
     plt.xticks(fontsize=28)
@@ -256,7 +257,7 @@ def drawTime(data1, data2):
     static_c, static_s = LoadGif48().load('../data/StaticGravityField/gif48.gfc').getCS(60)
     '''read hust'''
 
-    hust_filename = '../result/20250728/GRFO/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + data1 + '_GRAC_HUST_BA01_0600.gfc'
+    hust_filename = '../result/20250728/GRFO/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + data1 + '_GRAC_HUST_BA01_0600-gls.gfc'
     hust_c, hust_s = LoadCSR().load(fileIn=hust_filename).getCS(Nmax=60)
     hust_c, hust_s = hust_c - static_c, hust_s - static_s
     # hust_c, hust_s = hust_c - static_c, hust_s - static_s
@@ -787,25 +788,10 @@ def convert_range(date_range, converter):
 
 if __name__ == '__main__':
     # span1 = '2009-01-01_2009-01-31'
-    span1 = '2019-05-01_2019-05-31'
-    # span2 = '2021001-2021031'
-    # data_span = get_month_start_and_end_by_date_interval('2009-01-01', '2010-12-31')
-
-    # for i in range(len(data_span)):
-    #     span1 = data_span[i][0] + '-' + data_span[i][1]
-    #     span2 = datetransfor(data_span[i][0]) + '-' + datetransfor(data_span[i][1])
-    #     drawTime(data1=span1, data2=span2)
-    #     # GRACE_FO(data=span)
-    #     # GeoidGMT()
-    #     # drawPotentialError()
-    #     # drawEWH()
-    #     # drawMat()
-    #     # drawKBRR()
-    #     # drawMean()
+    span1 = '2019-03-01_2019-03-31'
     # GRACE(span1)
     GRACE_FO(span1)
-    # drawTime(data1=span1, data2=span2)
-    # subplotsGeoid()
+
     pass
 
 

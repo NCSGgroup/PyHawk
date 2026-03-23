@@ -181,6 +181,134 @@ class LoadGif48(LoadSH):
         self._sigmaS[(l * (l + 1) / 2 + m).astype(np.int64)] = sigmaS
 
 
+class LoadGOCO06S(LoadSH):
+    """
+    specified to read gif48 gravity fields. Plus, the file that formats the same as GIF48 can be read as well.
+    """
+
+    def __init__(self):
+        LoadSH.__init__(self)
+        # self.__sigmaC, self.__sigmaS = None, None
+        # self.__C, self.__S = None, None
+
+    def load(self, fileIn):
+        """
+        load gif48 fields
+        :param fileIn: gif48 file and its path
+        :return:
+        """
+
+        flag = 0
+
+        with open(fileIn) as f:
+            content = f.readlines()
+            pass
+
+        flag = self.__header_GOCO06S(content)
+
+        self.__read_GOCO06S(content[flag + 1:])
+
+        return self
+
+    def __header_GOCO06S(self, content: list):
+        """
+        Read and identify the header of the gif48 gravity fields file
+        :param content: content of the file
+        :return: the line of "end_of_header"
+        """
+
+        flag = 0
+
+        for i in range(len(content)):
+            value = content[i].split()
+            if len(value) == 0: continue
+
+            if value[0] == 'product_type':
+                self.product_type = value[1]
+            elif value[0] == 'modelname':
+                self.modelname = value[1]
+            elif value[0] == 'earth_gravity_constant':
+                self.GM = float(value[1])
+            elif value[0] == 'radius':
+                self.Radius = float(value[1])
+            elif value[0] == 'max_degree':
+                self.maxDegree = int(value[1])
+            elif value[0] == 'errors':
+                self.errors = value[1]
+            elif value[0] == 'norm':
+                self.norm = value[1]
+            elif value[0] == 'tide_system':
+                self.zero_tide = (value[1] == 'zero_tide')
+            elif value[0] == 'end_of_head':
+                flag = i
+                break
+
+        return flag
+
+    def __read_GOCO06S(self, content: list):
+
+        l, m, C, S, sigmaC, sigmaS = [], [], [], [], [], []
+
+        maxdeg = int(self.maxDegree)
+
+        stempC = np.zeros((maxdeg + 1, maxdeg + 1))
+        stempS = np.zeros((maxdeg + 1, maxdeg + 1))
+        stempsigmaC = np.zeros((maxdeg + 1, maxdeg + 1))
+        stempsigmaS = np.zeros((maxdeg + 1, maxdeg + 1))
+
+        for line in content:
+
+            value = line.split()
+            if len(value) == 0:
+                continue
+
+            key = value[0]
+
+            # 只读取 gfc / gfct
+            if key not in ("gfc", "gfct"):
+                continue
+
+            L = int(value[1])
+            M = int(value[2])
+
+            if L > maxdeg:
+                continue
+
+            stempC[L, M] = float(value[3].replace('D', 'E'))
+            stempS[L, M] = float(value[4].replace('D', 'E'))
+            stempsigmaC[L, M] = float(value[5].replace('D', 'E'))
+            stempsigmaS[L, M] = float(value[6].replace('D', 'E'))
+
+        for i in range(maxdeg + 1):
+            for j in range(i + 1):
+                l.append(i)
+                m.append(j)
+
+                C.append(stempC[i, j])
+                S.append(stempS[i, j])
+                sigmaC.append(stempsigmaC[i, j])
+                sigmaS.append(stempsigmaS[i, j])
+
+        l = np.array(l, dtype=np.int64)
+        m = np.array(m, dtype=np.int64)
+        C = np.array(C, dtype=np.float64)
+        S = np.array(S, dtype=np.float64)
+        sigmaC = np.array(sigmaC, dtype=np.float64)
+        sigmaS = np.array(sigmaS, dtype=np.float64)
+
+        index = (l * (l + 1) // 2 + m)
+
+        self._C = np.zeros(len(l))
+        self._S = np.zeros(len(l))
+        self._sigmaC = np.zeros(len(l))
+        self._sigmaS = np.zeros(len(l))
+
+        self._C[index] = C
+        self._S[index] = S
+        self._sigmaC[index] = sigmaC
+        self._sigmaS[index] = sigmaS
+
+
 class LoadAtmosTide(LoadSH):
     """
     This class is used to read stokes coefficients at given epoch from AOD product.

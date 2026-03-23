@@ -153,10 +153,12 @@ class RangeRate:
             arclist_obs.append(obs[index])
 
         '''Calibrate kbr arc by arc'''
+        pre_t, pre_residual = np.zeros(0), np.zeros(0)
         post_t, post_residual = np.zeros(0), np.zeros(0)
         dm_list = []
         for i in tqdm(range(len(arclist_t)), desc='SST rang-rate calibration: '):
             t, n, obs = arclist_t[i], arclist_n[i], arclist_obs[i]
+            pre_obs = arclist_obs[i]
             if len(t) == 0:
                 continue
             kf = FitSST(t, n, option=self.__kbr_fit)
@@ -168,10 +170,12 @@ class RangeRate:
                                 upper_obs=self.__upper_obs).remove(t, residual)
                 t = t[index]
                 dm = dm[index, :]
+                pre_obs = pre_obs[index]
                 obs = residual[index]
                 if any(index) == False:
                     break
 
+            pre_residual = np.append(pre_residual, pre_obs)
             post_t = np.append(post_t, t)
             post_residual = np.append(post_residual, obs)
             dm_list.append(dm)
@@ -181,7 +185,8 @@ class RangeRate:
         '''make a record'''
         h5 = self.__resh5
         h5.create_dataset('post_t', data=post_t)
-        h5.create_dataset('post_residual', data=post_residual)
+        h5.create_dataset('post_residual', data=pre_residual)
+        # h5.create_dataset('post_residual', data=post_residual)
         h5.create_dataset('pre_t', data=self.Time)
         h5.create_dataset('pre_residual', data=self.pre_residual())
         h5.create_dataset('design_matrix', data=design_matrix)

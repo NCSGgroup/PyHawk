@@ -31,7 +31,10 @@ class KinematicOrbit:
         pass
 
     def read_single_sat(self, sat: SatID):
-        KiOrbit = np.zeros((0, 4))
+        KiOrbit = np.zeros((0, 10))
+
+        if Payload.KinematicOrbit.name not in self._L1b.include_payloads:
+            return KiOrbit
 
         datelist = self._L1b.getDate()
         for i in trange(len(datelist), desc='Kinematic orbit reading for %s' % sat,
@@ -502,14 +505,17 @@ class KinematicOrbitV2(KinematicOrbit):
         # date_range = (round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 0, 0, 0))),
         #               round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 23, 59, 60 - self._L1b.sr_payload[Payload.GNV.name]))))
 
-        path = str(self.dir.joinpath(*[self._path_kinematic, str(IY), date.split('-')[0] + '-' + date.split('-')[1], 'Grace' +
-                                                str(sat.name) + '-kinematicOrbit-' + date, 'grace' +
-                                                str(sat.name) + '-kinOrb-' + date + '.txt']))
+        # path = str(self.dir.joinpath(*[self._path_kinematic, str(IY), date.split('-')[0] + '-' + date.split('-')[1], 'Grace' +
+        #                                         str(sat.name) + '-kinematicOrbit-' + date, 'grace' +
+        #                                         str(sat.name) + '-kinOrb-' + date + '.txt']))
+        path = str(self.dir.joinpath(*[self._path_kinematic, str(IY), date.split('-')[0] + '-' + date.split('-')[1],
+                   'GRACE-' + str(sat.value) + '_kinematicOrbit_' + date + '.txt']))
         res = None
         if not os.path.exists(path):
             return None
         try:
-            res = np.loadtxt(path, dtype=np.float64, comments='#', usecols=(0, 1, 2, 3))
+            # res = np.loadtxt(path, dtype=np.float64, comments='#', usecols=(0, 1, 2, 3))
+            res = np.genfromtxt(path, delimiter=None, dtype=np.float64, skip_header=6, usecols=(0, 1, 2, 3))
             if np.shape(res)[0] == 0:
                 return None
             res[:, 0] = np.round(Frame.mjd2sec(res[:, 0]))
@@ -517,6 +523,23 @@ class KinematicOrbitV2(KinematicOrbit):
             # lg.error(e)
             # print(path)
             return None
+
+        path2 = str(self.dir.joinpath(*[self._path_kinematic, str(IY), date.split('-')[0] + '-' + date.split('-')[1],
+                                        'GRACE-' + str(sat.value) + '_kinematicOrbitCovariance_' + date + '.txt']))
+        res2 = None
+        if not os.path.exists(path2):
+            return None
+        try:
+            # res = np.loadtxt(path, dtype=np.float64, comments='#', usecols=(0, 1, 2, 3))
+            res2 = np.genfromtxt(path2, delimiter=None, dtype=np.float64, skip_header=6)
+            if np.shape(res2)[0] == 0:
+                return None
+            res2[:, 0] = np.round(Frame.mjd2sec(res2[:, 0]))
+        except FileNotFoundError as e:
+            # lg.error(e)
+            # print(path)
+            return None
+        res = np.hstack((res, res2[:, 1:]))
 
         return res
 
@@ -557,6 +580,23 @@ class KinematicOrbitFO(KinematicOrbit):
             # lg.error(e)
             # print(path)
             return None
+
+        path2 = str(self.dir.joinpath(*[self._path_kinematic, str(IY), date.split('-')[0] + '-' + date.split('-')[1],
+                                       'GRACEFO-' + str(sat.value) + '_kinematicOrbitCovariance_' + date + '.txt']))
+        res2 = None
+        if not os.path.exists(path2):
+            return None
+        try:
+            # res = np.loadtxt(path, dtype=np.float64, comments='#', usecols=(0, 1, 2, 3))
+            res2 = np.genfromtxt(path2, delimiter=None, dtype=np.float64, skip_header=6)
+            if np.shape(res2)[0] == 0:
+                return None
+            res2[:, 0] = np.round(Frame.mjd2sec(res2[:, 0]))
+        except FileNotFoundError as e:
+            # lg.error(e)
+            # print(path)
+            return None
+        res = np.hstack((res, res2[:, 1:]))
 
         return res
 

@@ -23,8 +23,8 @@
     },
     "NonConservativeConfig": {
         "date_span": [
-            "2019-05-01",
-            "2019-05-31"
+            "2009-01-01",
+            "2009-01-31"
         ],
         "arcNo": 0,
         "sat": {
@@ -159,6 +159,7 @@
         "EIGEN6_C4": "../data/StaticGravityField/EIGEN6-C4.gfc",
         "GOCO02s": "../data/StaticGravityField/GOCO02s.gfc",
         "GGM05C": "../data/StaticGravityField/GGM05C.gfc",
+        "GOCO06s": "../data/StaticGravityField/GOCO06s.gfc",
         "PoleTide": "../data/poletide",
         "LoverNumber": "../data/LoveNumber",
         "poleTideModel": "desaiscopolecoef.txt",

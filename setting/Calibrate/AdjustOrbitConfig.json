@@ -1,7 +1,7 @@
 {
     "OrbitConfig": {
-        "OutlierTimes": 3,
-        "OutlierLimit": 1
+        "OutlierTimes": 6,
+        "OutlierLimit": 10
     },
     "RangeRateConfig": {
         "ParameterFitting": "biasC0C1_OneCPR",
