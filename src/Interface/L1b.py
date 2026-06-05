@@ -404,6 +404,7 @@ class GRACE_NEW_RL02(L1b):
     def _readACC(self, date: str, sat: SatID):
         path = str(self.dir.joinpath(self._path_ACC, date.split('-')[0] + '-' + date.split('-')[1],
                               'grace_1B_' + date + '_02', 'ACC1B_' + date + '_' + sat.name + '_02.dat'))
+
         try:
             f = open(path, 'rb')
         except FileNotFoundError as e:
@@ -599,8 +600,28 @@ class GRACE_RL03(L1b):
         pass
 
     def _readACC(self, date: str, sat: SatID):
-        path = str(self.dir.joinpath(self._path_ACC, date.split('-')[0] + '-' + date.split('-')[1],
-                              'grace_1B_' + date + '_02', 'ACC1B_' + date + '_' + sat.name + '_02.dat'))
+
+        path = None
+        if sat is SatID.A:
+            path = str(self.dir.joinpath(self._path_ACC, date.split('-')[0] + '-' + date.split('-')[1],
+                                         'grace_1B_' + date + '_02', 'ACC1B_' + date + '_' + sat.name + '_02.dat'))
+
+        elif sat is SatID.B:
+            acc_path = str(self.dir.joinpath(self._path_ACC, date.split('-')[0] + '-' + date.split('-')[1],
+                                         'grace_1B_' + date + '_02', 'ACC1B_' + date + '_' + sat.name + '_02.dat'))
+
+            act_path = str(self.dir.joinpath(self._path_ACC, 'grace_1B_' + date.split('-')[0] + '-' + date.split('-')[1] + '_03',
+                                         'ACT1B_' + date + '_' + sat.name + '_03.dat'))
+
+            if os.path.exists(acc_path) and self.has_valid_records(acc_path):
+                path = acc_path
+
+            elif os.path.exists(act_path) and self.has_valid_records(act_path):
+                path = act_path
+
+            else:
+                raise FileNotFoundError(f"No valid ACC or ACT data for {date} {sat}")
+
         st = date.split('-')
         IY, IM, ID = int(st[0]), int(st[1]), int(st[2])
         date_range = (round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 0, 0, 0))),
@@ -808,6 +829,31 @@ class GRACE_RL03(L1b):
 
         return np.array(GNV)
 
+    def has_valid_records(self, file_path):
+        NumOfData = None
+
+        with open(file_path, 'rb') as f:
+            while True:
+                r = f.readline()
+                if not r:
+                    break
+
+                content = r.decode(errors='ignore')  # 防止编码错误
+
+                key = content.split(':')[0].strip()
+
+                if key == 'NUMBER OF DATA RECORDS':
+                    try:
+                        NumOfData = int(content.split(':')[1])
+                    except:
+                        NumOfData = 0
+
+                if content.strip() == 'END OF HEADER':
+                    break
+
+        # 判断是否有效
+        return NumOfData is not None and NumOfData > 0
+
 
 class GRACE_FO_RL04(L1b):
 
@@ -818,17 +864,35 @@ class GRACE_FO_RL04(L1b):
 
     def _readACC(self, date: str, sat: SatID):
         path = None
-        path = str(self.dir.joinpath(self._path_ACC, date.split('-')[0] + '-' + date.split('-')[1],
-                                     'gracefo_1B_' + date + '_RL04.ascii.noLRI.tgz_files',
-                                     'ACT1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
-        # if sat is SatID.A:
-        #     path = str(self.dir.joinpath(self._path_ACC, date.split('-')[0] + '-' + date.split('-')[1],
-        #                                  'gracefo_1B_' + date + '_RL04.ascii.noLRI.tgz_files',
-        #                                  'ACT1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
-        # elif sat is SatID.B:
-        #     path = str(self.dir.joinpath(self._path_ACC, date.split('-')[0] + '-' + date.split('-')[1],
-        #                                 'gracefo_1B_' + date + '_RL04.ascii.ACX.tgz_files',
-        #                                 'ACH1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
+        # path = str(self.dir.joinpath(self._path_ACC, date.split('-')[0] + '-' + date.split('-')[1],
+        #                              'gracefo_1B_' + date + '_RL04.ascii.noLRI',
+        #                              'ACT1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
+        if sat is SatID.A:
+            path = str(self.dir.joinpath(self._path_ACC, date.split('-')[0] + '-' + date.split('-')[1],
+                                         'gracefo_1B_' + date + '_RL04.ascii.noLRI',
+                                         'ACT1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
+        elif sat is SatID.B:
+            # acc_path = str(self.dir.joinpath(self._path_ACC, date.split('-')[0] + '-' + date.split('-')[1],
+            #                              'gracefo_1B_' + date + '_RL04.ascii.noLRI',
+            #                              'ACT1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
+
+            acc_path = str(self.dir.joinpath(self._path_ACC, date.split('-')[0] + '-' + date.split('-')[1],
+                                        'gracefo_1B_' + date + '_RL04.ascii.ACX',
+                                        'ACH1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
+
+            act_path = str(self.dir.joinpath(self._path_ACC, date.split('-')[0] + '-' + date.split('-')[1],
+                                        'gracefo_1B_' + date + '_RL04.ascii.ACX',
+                                        'ACH1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
+
+            if os.path.exists(acc_path) and self.has_valid_records(acc_path):
+                path = acc_path
+
+            elif os.path.exists(act_path) and self.has_valid_records(act_path):
+                path = act_path
+
+            else:
+                raise FileNotFoundError(f"No valid ACC or ACT data for {date} {sat}")
+
         try:
             f = open(path, 'r')
         except FileNotFoundError as e:
@@ -861,7 +925,7 @@ class GRACE_FO_RL04(L1b):
 
     def _readSCA(self, date: str, sat: SatID):
         path = str(self.dir.joinpath(self._path_SCA, date.split('-')[0] + '-' + date.split('-')[1],
-                                     'gracefo_1B_' + date + '_RL04.ascii.noLRI.tgz_files',
+                                     'gracefo_1B_' + date + '_RL04.ascii.noLRI',
                                      'SCA1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
 
         try:
@@ -919,7 +983,7 @@ class GRACE_FO_RL04(L1b):
 
     def _readKBR(self, date: str):
         path = str(self.dir.joinpath(self._path_KBR, date.split('-')[0] + '-' + date.split('-')[1],
-                                     'gracefo_1B_' + date + '_RL04.ascii.noLRI.tgz_files',
+                                     'gracefo_1B_' + date + '_RL04.ascii.noLRI',
                                      'KBR1B_' + date + '_Y_04.txt'))
 
         try:
@@ -971,7 +1035,7 @@ class GRACE_FO_RL04(L1b):
         date_range = (round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 0, 0, 0))),
                       round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 23, 59, 60 - self.sr_payload[Payload.GNV.name]))))
         path = str(self.dir.joinpath(self._path_GNV, date.split('-')[0] + '-' + date.split('-')[1],
-                                     'gracefo_1B_' + date + '_RL04.ascii.noLRI.tgz_files',
+                                     'gracefo_1B_' + date + '_RL04.ascii.noLRI',
                                      'GNV1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
         try:
             f = open(path, 'r')
@@ -1030,68 +1094,78 @@ class GRACE_FO_RL04(L1b):
         f.close()
         return np.asarray(GNV, dtype=float)
 
-    # def _readACC(self, date: str, sat: SatID):
-    #     path = str(self.dir.joinpath(self._path_ACC, 'ACC-' + date.split('-')[0] + '-' + date.split('-')[1],
-    #                                  'ACT1B_' + date + '-' + chr(ord(sat.name) + 2) + '-01.bin'))
-    #
-    #     data = np.fromfile(path, dtype=np.float64)
-    #
-    #     ACT = np.array(data).reshape((-1, 4))
-    #
-    #     return ACT
+    def has_valid_records(self, file_path):
 
-    # def _readSCA(self, date: str, sat: SatID):
-    #     path = str(self.dir.joinpath(self._path_SCA, date.split('-')[0] + '-' + date.split('-')[1],
-    #                                  date,
-    #                                  'SCA1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
-    #     try:
-    #         f = open(path, 'r')
-    #     except FileNotFoundError as e:
-    #         # print(path)
-    #         return None
-    #
-    #     NumOfSCA = None
-    #     while True:
-    #         r = f.readline()
-    #         if r.split(':')[0].strip() == 'num_records':
-    #             NumOfSCA = int(r.split(':')[1])
-    #         if r.strip() == '# End of YAML header':
-    #             break
-    #
-    #     # SCA = np.zeros((NumOfSCA, 5))
-    #     # SCA = []
-    #     # for i in range(NumOfSCA):
-    #     #     s = f.readline().split()
-    #     #     if len(s) == 9:
-    #     #         SCAd = np.zeros(5)
-    #     #         '''time'''
-    #     #         SCAd[0] = s[0]
-    #     #         '''cos(mu/2)'''
-    #     #         SCAd[1] = s[3]
-    #     #         '''I'''
-    #     #         SCAd[2] = s[4]
-    #     #         '''J'''
-    #     #         SCAd[3] = s[5]
-    #     #         '''K'''
-    #     #         SCAd[4] = s[6]
-    #     #         SCA.append(SCAd)
-    #     #     else:
-    #     #         continue
-    #
-    #     SCA = np.zeros((NumOfSCA, 5))
-    #
-    #     for i in range(NumOfSCA):
-    #         s = f.readline().split()
-    #         '''time'''
-    #         SCA[i, 0] = float(s[0])
-    #         '''cos(mu/2)'''
-    #         SCA[i, 1] = s[3]
-    #         '''I'''
-    #         SCA[i, 2] = s[4]
-    #         '''J'''
-    #         SCA[i, 3] = s[5]
-    #         '''K'''
-    #         SCA[i, 4] = s[6]
-    #     f.close()
-    #
-    #     return SCA
+        try:
+
+            with open(file_path, 'r', errors='ignore') as f:
+
+                num_records = None
+
+                for i, line in enumerate(f):
+
+                    line_strip = line.strip()
+
+                    # ====================================================
+                    # YAML format
+                    # ====================================================
+
+                    if 'num_records:' in line_strip:
+
+                        try:
+
+                            num_records = int(
+                                line_strip.split(':')[-1].strip()
+                            )
+
+                        except:
+
+                            num_records = 0
+
+                    # ====================================================
+                    # Old ASCII format compatibility
+                    # ====================================================
+
+                    if 'NUMBER OF DATA RECORDS' in line_strip:
+
+                        try:
+
+                            num_records = int(
+                                line_strip.split(':')[-1].strip()
+                            )
+
+                        except:
+
+                            num_records = 0
+
+                    # ====================================================
+                    # Header end
+                    # ====================================================
+
+                    if (
+                            'END OF HEADER' in line_strip
+                            or '# End of YAML header' in line_strip
+                    ):
+                        break
+
+                    # 防止异常文件无限读取
+                    if i > 500:
+                        break
+
+            # ============================================================
+            # Final validation
+            # ============================================================
+
+            if num_records is not None:
+                return num_records > 0
+
+            # fallback:
+            # 文件非空即可认为有效
+            return os.path.getsize(file_path) > 0
+
+        except Exception as e:
+
+            print(f'WARNING: invalid file {file_path}')
+            print(e)
+
+            return False

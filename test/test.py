@@ -116,12 +116,35 @@ import h5py
 #     if key is ParaType.Accelerometer:
 #         print(ParaType.Accelerometer)
 
-filename = '../temp/CovarianceMatrix/2009-05-01-2009-05-31.hdf5'
+filename = '../data/GRACE_RL02/2009-01/grace_1B_2009-01-14_02/THR1B_2009-01-14_B_02.dat'
 
-h5 = h5py.File(filename, 'r')
-cov = h5['cov'][:]
-h5.close()
+import struct
+import numpy as np
 
-sigma = np.sqrt(np.diag(cov))
+# 跳过header
+with open(filename, "rb") as f:
 
-print(sigma)
+    # 找 END OF HEADER
+    while True:
+        line = f.readline()
+        if b"END OF HEADER" in line:
+            break
+
+    # binary data开始位置
+    pos = f.tell()
+
+    print("Binary starts at:", pos)
+
+    # 尝试读取第一个record
+    raw = f.read(179)
+
+    print(len(raw))
+
+# big-endian
+fmt = ">iicc14I14I14IB"
+
+print(struct.calcsize(fmt))
+
+record = struct.unpack(fmt, raw[:struct.calcsize(fmt)])
+
+print(record)

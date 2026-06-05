@@ -230,7 +230,11 @@ class FES2014(AbsOceanTide):
 
         # 361x6 matrix with doodson multipliers
         # 361 tides
-        doodson = np.loadtxt(fileDir + '/admittanceTides.txt', comments='#', dtype=str)
+        doodson = np.genfromtxt(
+            fileDir + '/admittanceTides.txt',
+            comments='#',
+            dtype=str
+        )
 
         for i in range(len(doodson)):
             self.__doodsonMatrix[i][0] = int(doodson[i][0], base=16) - 0

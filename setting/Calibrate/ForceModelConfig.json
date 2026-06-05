@@ -23,8 +23,8 @@
     },
     "NonConservativeConfig": {
         "date_span": [
-            "2009-01-01",
-            "2009-01-31"
+            "2023-02-01",
+            "2023-02-28"
         ],
         "arcNo": 0,
         "sat": {
@@ -64,10 +64,10 @@
             "L2": true,
             "T2": true,
             "S2": true,
-            "R2": true,
-            "T3": true,
-            "S3": true,
-            "R3": true
+            "R2": false,
+            "T3": false,
+            "S3": false,
+            "R3": false
         },
         "kind": "ATM",
         "Nmax": 180,
@@ -130,7 +130,7 @@
     "RefGravModelConfig": {
         "kind": 0,
         "Nmax": 180,
-        "StaticModel": "Gif48"
+        "StaticModel": "GOCO06S"
     },
     "RelativityConfig": {
         "GM_Sun": 1.32712442076e+20,

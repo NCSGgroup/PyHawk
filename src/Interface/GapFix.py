@@ -3,6 +3,8 @@ from scipy import interpolate
 from src.Interface.L1b import L1b as Level_1B
 from src.Preference.EnumType import Payload, SatID
 import datetime
+from datetime import timedelta
+
 from Quaternion import Quat, Quaternion
 
 
@@ -26,21 +28,33 @@ class GapFix:
 
     def fix_all(self):
 
-        if not self.__checkOverLap():
-            raise OSError
-
-        SCAgap_A, self.__SCA_A = self.__fix(Payload.SCA, SatID.A)
-        SCAgap_B, self.__SCA_B = self.__fix(Payload.SCA, SatID.B)
-        ACCgap_A, self.__ACC_A = self.__fix(Payload.ACC, SatID.A)
-        ACCgap_B, self.__ACC_B = self.__fix(Payload.ACC, SatID.B)
-
+        ACC_B = self.L1b.getData(Payload.ACC.name, SatID.B)
+        ACC_A = self.L1b.getData(Payload.ACC.name, SatID.A)
+        SCA_B = self.L1b.getData(Payload.SCA.name, SatID.B)
+        SCA_A = self.L1b.getData(Payload.SCA.name, SatID.A)
         KBR = self.L1b.getData(Payload.KBR.name, SatID.A)
         GNV_A = self.L1b.getData(Payload.GNV.name, SatID.A)
         GNV_B = self.L1b.getData(Payload.GNV.name, SatID.B)
 
-        KBRgap = self.__detect(KBR, Payload.KBR)
-        GNVgap_A = self.__detect(GNV_A, Payload.GNV)
-        GNVgap_B = self.__detect(GNV_B, Payload.GNV)
+        self.__ACC_B = self._fix_time_sequence(ACC_B)
+        self.__ACC_A = self._fix_time_sequence(ACC_A)
+        self.__SCA_B = self._fix_time_sequence(SCA_B)
+        self.__SCA_A = self._fix_time_sequence(SCA_A)
+        self.__KBR = self._fix_time_sequence(KBR)
+        self.__GNV_A = self._fix_time_sequence(GNV_A)
+        self.__GNV_B = self._fix_time_sequence(GNV_B)
+
+        # if not self.__checkOverLap():
+        #     print("WARNING: overlap detected, continue for debugging...")
+
+        SCAgap_A, self.__SCA_A = self.__fix(self.__SCA_A, Payload.SCA, SatID.A)
+        SCAgap_B, self.__SCA_B = self.__fix(self.__SCA_B, Payload.SCA, SatID.B)
+        ACCgap_A, self.__ACC_A = self.__fix(self.__ACC_A, Payload.ACC, SatID.A)
+        ACCgap_B, self.__ACC_B = self.__fix(self.__ACC_B, Payload.ACC, SatID.B)
+
+        KBRgap = self.__detect(self.__KBR, Payload.KBR)
+        GNVgap_A = self.__detect(self.__GNV_A, Payload.GNV)
+        GNVgap_B = self.__detect(self.__GNV_B, Payload.GNV)
 
         self.__gap['SCA-A'] = SCAgap_A
         self.__gap['SCA-B'] = SCAgap_B
@@ -60,7 +74,7 @@ class GapFix:
         :return: a tuple (data, gapinfo)
         """
         if type == Payload.KBR.name:
-            return self.L1b.getData(Payload.KBR.name, SatID.A), self.__gap['KBR']
+            return self.__KBR, self.__gap['KBR']
         elif type == Payload.ACC.name:
             if sat == SatID.A:
                 return self.__ACC_A, self.__gap['ACC-A']
@@ -73,9 +87,9 @@ class GapFix:
                 return self.__SCA_B, self.__gap['SCA-B']
         elif type == Payload.GNV.name:
             if sat == SatID.A:
-                return self.L1b.getData(Payload.GNV.name, SatID.A), self.__gap['GNV-A']
+                return self.__GNV_A, self.__gap['GNV-A']
             else:
-                return self.L1b.getData(Payload.GNV.name, SatID.B), self.__gap['GNV-B']
+                return self.__GNV_B, self.__gap['GNV-B']
 
     def getDate(self):
         return self.L1b.getDate()
@@ -124,9 +138,7 @@ class GapFix:
 
         return self
 
-    def __fix(self, type: Payload, sat: SatID):
-
-        data = self.L1b.getData(type.name, sat)
+    def __fix(self, data, type: Payload, sat: SatID):
         gaplist = self.__detect(data, type)
 
         print('\n===============================================')
@@ -178,22 +190,34 @@ class GapFix:
         return gaplist, data
 
     def __checkOverLap(self):
-
         for term in self.L1b.include_payloads:
             for sat in SatID:
-                if sat == SatID.B and (term == Payload.KBR.name or term == Payload.LRI.name):
+                if sat == SatID.B and term in (Payload.KBR.name, Payload.LRI.name):
                     continue
 
                 data = self.L1b.getData(term, sat)
-                time = data[:, 0]
-                diff = time[1:] - time[0:-1]
+                if data is None or len(data) < 2:
+                    continue
 
-                if (diff > 0).all():
-                    pass
-                else:
-                    time2 = time[1:]
-                    # logger.error('Data has overlaps for %s and %s, '
-                    #              'please check GPS time: %s' % (term, sat, time2[diff <= 0]))
+                time = data[:, 0]
+                diff = np.diff(time)
+
+                if not (diff > 0).all():
+                    bad_idx = np.where(diff <= 0)[0]
+
+                    print("Overlap detected!")
+                    print("Payload:", term)
+                    print("Satellite:", sat)
+
+                    for i in bad_idx[:5]:  # 只打印前5个
+                        t1 = self.gps2datetime(time[i])
+                        t2 = self.gps2datetime(time[i + 1])
+
+                        print(f"Problem segment:")
+                        print(f"  t[i]   = {time[i]} -> {t1}")
+                        print(f"  t[i+1] = {time[i + 1]} -> {t2}")
+                        print(f"  diff   = {diff[i]}")
+
                     return False
 
         return True
@@ -392,3 +416,16 @@ class GapFix:
                     final = np.vstack((final, data[gap_next['rl']:gaplist[i + 2]['lr'] + 1, :]))
 
         return final
+
+    def gps2datetime(self, gps_seconds):
+        GPS_EPOCH = datetime.datetime(1980, 1, 6)
+        return GPS_EPOCH + timedelta(seconds=float(gps_seconds))
+
+    def _fix_time_sequence(self, data):
+        time = data[:, 0]
+        diff = np.diff(time)
+
+        mask = diff > 0
+        mask = np.insert(mask, 0, True)
+
+        return data[mask]

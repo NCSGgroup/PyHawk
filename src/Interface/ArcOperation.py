@@ -47,7 +47,6 @@ class ArcSelect:
         # KiOrbB = self.__outlier(GNV_B, KiOrbB)
         # -------------------------arc divide--------------------------------------
         timelist = [ACC_A[:, 0].copy(), ACC_B[:, 0].copy(), SCA_A[:, 0].copy(), SCA_B[:, 0].copy()]
-
         self.__divide2(timelist)
         self.__discardArcs()
 
@@ -144,8 +143,8 @@ class ArcSelect:
         commonTime = set(timelist[0].astype(np.int64))
         for i in range(1, len(timelist)):
             commonTime = commonTime & set(timelist[i].astype(np.int64))
-
         commonTime = np.array(list(commonTime))
+        print("common:", np.shape(commonTime))
         commonTime.sort()
         commonTime = commonTime[commonTime % stepsize == 0]
 

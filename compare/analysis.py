@@ -16,6 +16,7 @@ import matplotlib
 from datetime import datetime
 import datetime
 import calendar
+import re
 plt.rcParams['font.sans-serif']=['Microsoft YaHei']         #指定默认字体（因为matplotlib默认为英文字体，汉字会使其乱码）
 plt.rcParams['axes.unicode_minus']=False    #可显示‘-’负号
 
@@ -23,27 +24,25 @@ plt.rcParams['axes.unicode_minus']=False    #可显示‘-’负号
 def GRACE(date):
     date1 = date.replace('_', '-')
     date2 = convert_range(date, standard_to_compact)
-
     '''static model'''
     static_c, static_s = LoadGif48().load('../data/StaticGravityField/gif48.gfc').getCS(60)
     '''read hust'''
-
-    hust_filename = '../result/GLS/2009-01/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600-ols-1e11.gfc'
+    hust_filename = '../result/gracegls/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600.gfc'
     hust_c, hust_s = LoadCSR().load(fileIn=hust_filename).getCS(Nmax=60)
     hust_c, hust_s = hust_c - static_c, hust_s - static_s
     hust_c, hust_s = GeoMathKit.CS_1dTo2d(hust_c), GeoMathKit.CS_1dTo2d(hust_s)
     # '''read hust'''
-    hust_filename2 = '../result/GLS/2009-01/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600.gfc'
+    hust_filename2 = '../result/gracegls/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600.gfc'
     hust_c2, hust_s2 = LoadCSR().load(fileIn=hust_filename2).getCS(Nmax=60)
     hust_c2, hust_s2 = hust_c2 - static_c, hust_s2 - static_s
     hust_c2, hust_s2 = GeoMathKit.CS_1dTo2d(hust_c2), GeoMathKit.CS_1dTo2d(hust_s2)
     '''read hust'''
-    hust_filename3 = '../result/GLS/2009-01/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600-ols-1e11.gfc'
+    hust_filename3 = '../result/grace_v2/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600.gfc'
     hust_c3, hust_s3 = LoadCSR().load(fileIn=hust_filename3).getCS(Nmax=60)
     hust_c3, hust_s3 = hust_c3 - static_c, hust_s3 - static_s
     hust_c3, hust_s3 = GeoMathKit.CS_1dTo2d(hust_c3), GeoMathKit.CS_1dTo2d(hust_s3)
     # '''read hust'''
-    hust_filename4 = '../result/GLS/2009-01/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600-ols-1e11.gfc'
+    hust_filename4 = '../result/grace_v2/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600.gfc'
     hust_c4, hust_s4 = LoadCSR().load(fileIn=hust_filename4).getCS(Nmax=60)
     hust_c4, hust_s4 = hust_c4 - static_c, hust_s4 - static_s
     hust_c4, hust_s4 = GeoMathKit.CS_1dTo2d(hust_c4), GeoMathKit.CS_1dTo2d(hust_s4)
@@ -109,9 +108,9 @@ def GRACE(date):
     fig = plt.figure(figsize=(10, 8))
     # plt.style.use(['science'])
     plt.title('%s' % date1, fontsize=30)
-    # plt.plot(np.arange(2, 61, 1), hust[2:], color='green', linewidth=2.0, marker='', label='PyHawk-gif48-ols')
-    plt.plot(np.arange(2, 61, 1), hust2[2:], color='black', linewidth=2.0, marker='', label='PyHawk-goco06s-ols')
-    # plt.plot(np.arange(2, 61, 1), hust3[2:], color='red', linewidth=2.0, marker='', label='y-1.5h')
+    plt.plot(np.arange(2, 61, 1), hust[2:], color='green', linewidth=2.0, marker='', label='PyHawk-ols-1.5h')
+    # plt.plot(np.arange(2, 61, 1), hust2[2:], color='black', linewidth=2.0, marker='', label='PyHawk-gls-1.5h')
+    # plt.plot(np.arange(2, 61, 1), hust3[2:], color='red', linewidth=2.0, marker='', label='PyHawk-GGM05C')
     # plt.plot(np.arange(2, 61, 1), hust4[2:], color='blue', linewidth=2.0, marker='', label='qr')
     plt.plot(np.arange(2, 61, 1), csr[2:], color='indigo', marker='', linewidth=2.0,label='CSR')
     plt.plot(np.arange(2, 61, 1), gfz[2:], color='#A53860', marker='', linewidth=2.0, label='GFZ')
@@ -133,7 +132,7 @@ def GRACE(date):
     plt.yscale("log")
     plt.legend(fontsize=20, loc=1)
     plt.grid(True, which='both', linestyle='-.')
-    # plt.savefig('../result/img/CRA_LICOM_v2/' + data1 + '.png')
+    plt.savefig('../result/grace_v2/' + date1 + '.png')
     plt.show()
     pass
 
@@ -148,13 +147,13 @@ def GRACE_FO(date):
     static_goco, static_goco = LoadGOCO06S().load('../data/StaticGravityField/GOCO06s.gfc').getCS(60)
     '''read hust'''
 
-    hust_filename = '../result/goco06s/goco/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600.gfc'
+    hust_filename = '../result/gracefo_v2/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600.gfc'
     hust_c, hust_s = LoadCSR().load(fileIn=hust_filename).getCS(Nmax=60)
     hust_c, hust_s = hust_c - static_c, hust_s - static_s
     # hust_c, hust_s = hust_c - static_c, hust_s - static_s
     hust_c, hust_s = GeoMathKit.CS_1dTo2d(hust_c), GeoMathKit.CS_1dTo2d(hust_s)
     '''read hust'''
-    hust_filename2 = '../result/goco06s/goco/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600-gls-1e10.gfc'
+    hust_filename2 = '../result/gracefogls/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600.gfc'
     hust_c2, hust_s2 = LoadCSR().load(fileIn=hust_filename2).getCS(Nmax=60)
     hust_c2, hust_s2 = hust_c2 - static_c, hust_s2 - static_s
     hust_c2, hust_s2 = GeoMathKit.CS_1dTo2d(hust_c2), GeoMathKit.CS_1dTo2d(hust_s2)
@@ -164,7 +163,7 @@ def GRACE_FO(date):
     # hust_c3, hust_s3 = hust_c3 - static_c, hust_s3 - static_s
     hust_c3, hust_s3 = GeoMathKit.CS_1dTo2d(hust_c3), GeoMathKit.CS_1dTo2d(hust_s3)
     # '''read hust'''
-    hust_filename4 = '../result/KinCov/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600.gfc'
+    hust_filename4 = '../result/gracefogls/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600.gfc'
     hust_c4, hust_s4 = LoadCSR().load(fileIn=hust_filename4).getCS(Nmax=60)
     hust_c4, hust_s4 = hust_c4 - static_c, hust_s4 - static_s
     hust_c4, hust_s4 = GeoMathKit.CS_1dTo2d(hust_c4), GeoMathKit.CS_1dTo2d(hust_s4)
@@ -174,7 +173,8 @@ def GRACE_FO(date):
     # csr_05_c, csr_05_s = csr_05_c - static_c, csr_05_s - static_s
     # csr_05_c, csr_05_s = GeoMathKit.CS_1dTo2d(csr_05_c), GeoMathKit.CS_1dTo2d(csr_05_s)
     '''read CSR'''
-    csr_filename = '../result/GFO/GSM-2_' + date2 + '_GRFO_UTCSR_BA01_0600.gfc'
+    csr_filename = '../result/GFO/GSM-2_' + date2 + '_GRFO_UTCSR_BA01_0603.gfc'
+    # csr_filename = '../result/GFO/AIUB_AIUB-GRACE-FO_rl02op_AIUB-GRACE-FO-rl02op_2025-12.gfc'
     csr_c, csr_s = LoadCSR().load(fileIn=csr_filename).getCS(Nmax=60)
     csr_c, csr_s = csr_c - static_c, csr_s - static_s
     csr_c, csr_s = GeoMathKit.CS_1dTo2d(csr_c), GeoMathKit.CS_1dTo2d(csr_s)
@@ -183,12 +183,14 @@ def GRACE_FO(date):
     # csr_e_l = get_drgee_rms(diff_c=csr_diff_c, diff_s=csr_diff_s)
     # csr_n_l = get_geoid_drgee_error(diff_c=csr_diff_c, diff_s=csr_diff_s)
     '''read GFZ'''
-    gfz_filename = '../result/GFO/GSM-2_' + date2 + '_GRFO_GFZOP_BA01_0600.gfc'
+    gfz_filename = '../result/GFO/GSM-2_' + date2 + '_GRFO_GFZOP_BA01_0603.gfc'
+    # gfz_filename = '../result/GFO/AIUB_AIUB-GRACE-FO_rl02op_AIUB-GRACE-FO-rl02op_2025-12.gfc'
     gfz_c, gfz_s = LoadCSR().load(fileIn=gfz_filename).getCS(Nmax=60)
     gfz_c, gfz_s = gfz_c - static_c, gfz_s - static_s
     gfz_c, gfz_s = GeoMathKit.CS_1dTo2d(gfz_c), GeoMathKit.CS_1dTo2d(gfz_s)
     '''read JPL'''
-    jpl_filename = '../result/GFO/GSM-2_' + date2 + '_GRFO_JPLEM_BA01_0600.gfc'
+    jpl_filename = '../result/GFO/GSM-2_' + date2 + '_GRFO_JPLEM_BA01_0603.gfc'
+    # jpl_filename = '../result/GFO/AIUB_AIUB-GRACE-FO_rl02op_AIUB-GRACE-FO-rl02op_2025-12.gfc'
     jpl_c, jpl_s = LoadCSR().load(fileIn=jpl_filename).getCS(Nmax=60)
     jpl_c, jpl_s = jpl_c - static_c, jpl_s - static_s
     jpl_c, jpl_s = GeoMathKit.CS_1dTo2d(jpl_c), GeoMathKit.CS_1dTo2d(jpl_s)
@@ -230,14 +232,15 @@ def GRACE_FO(date):
     fig = plt.figure(figsize=(10, 8))
     # plt.style.use(['science'])
     plt.title('%s' % date, fontsize=30)
-    plt.plot(np.arange(2, 61, 1), hust[2:], color='green', linewidth=2.0, marker='', label='PyHawk kbr-1.5h-10s')
-    # plt.plot(np.arange(2, 61, 1), hust2[2:], color='black', linewidth=2.0, marker='', label='PyHawk kbr-1.5h-5s')
-    plt.plot(np.arange(2, 61, 1), hust3[2:], color='red', linewidth=2.0, marker='', label='APM')
+    # plt.title('GRACE-FO', fontsize=30)
+    plt.plot(np.arange(2, 61, 1), hust[2:], color="#1f77b4", linewidth=2.0, marker='', label='PyHawk')
+    # plt.plot(np.arange(2, 61, 1), hust2[2:], color='black', linewidth=2.0, marker='', label='PyHawk kbr 3h')
+    # plt.plot(np.arange(2, 61, 1), hust3[2:], color='red', linewidth=2.0, marker='', label='APM')
     # plt.plot(np.arange(2, 61, 1), hust4[2:], color='blue', linewidth=2.0, marker='', label='PyHawk')
-    # plt.plot(np.arange(2, 61, 1), csr[2:], color='indigo', marker='', linewidth=2.0,label='CSR')
+    plt.plot(np.arange(2, 61, 1), csr[2:], color='indigo', marker='', linewidth=2.0,label='CSR')
     plt.plot(np.arange(2, 61, 1), gfz[2:], color='#A53860', marker='', linewidth=2.0, label='GFZ')
-    # plt.plot(np.arange(2, 61, 1), jpl[2:], color='blue', marker='',linewidth=2.0, label='JPL')
-    #
+    plt.plot(np.arange(2, 61, 1), jpl[2:], color='blue', marker='',linewidth=2.0, label='JPL')
+
     plt.xlim(0, 60)
     plt.ylim(1e-4, 1e-2)
     plt.xticks(fontsize=28)
@@ -247,7 +250,7 @@ def GRACE_FO(date):
     plt.yscale("log")
     plt.legend(fontsize=20, loc=1)
     plt.grid(True, which='both', linestyle='-.')
-    # plt.savefig('../result/img/CRA_LICOM_v2/' + data1 + '.png')
+    # plt.savefig('../result/gracefogls/' + date1 + '.png')
     plt.show()
     pass
 
@@ -786,12 +789,124 @@ def convert_range(date_range, converter):
     return f"{converter(start)}-{converter(end)}"
 
 
+
+def extract_and_format_date(filename):
+    # 提取两个日期
+    match = re.search(r'(\d{4}-\d{2}-\d{2})-(\d{4}-\d{2}-\d{2})', filename)
+
+    if match:
+        start_date = match.group(1)
+        end_date = match.group(2)
+
+        # 拼装成你需要的格式
+        return f"{start_date}_{end_date}"
+
+    return None
+
+
+def batch_process(folder):
+    files = sorted([f for f in os.listdir(folder) if f.endswith('.gfc')])
+
+    for file in files:
+        file_path = os.path.join(folder, file)
+
+        # ✅ 提取完整时间段
+        timerange = extract_and_format_date(file)
+        if timerange is None:
+            print(f"Skip (no date): {file}")
+            continue
+
+        print(f"Processing: {file}")
+        print(f"Time range: {timerange}")
+
+        GRACE(timerange)
+
+def iter_gfc_files(folder):
+    for file in os.listdir(folder):
+        if file.endswith('.gfc'):
+            yield os.path.join(folder, file)
+
+
+def year_mean(folder, GFZ, JPL, CSR):
+    PyHawk_C, PyHawk_S = np.zeros((61, 61)), np.zeros((61, 61))
+    GFZ_C, GFZ_S = np.zeros((61, 61)), np.zeros((61, 61))
+    JPL_C, JPL_S = np.zeros((61, 61)), np.zeros((61, 61))
+    CSR_C, CSR_S = np.zeros((61, 61)), np.zeros((61, 61))
+    static_c, static_s = LoadGif48().load('../data/StaticGravityField/gif48.gfc').getCS(60)
+    for file_path in iter_gfc_files(folder):
+        '''read hust'''
+        hust_c, hust_s = LoadCSR().load(fileIn=file_path).getCS(Nmax=60)
+        hust_c, hust_s = hust_c - static_c, hust_s - static_s
+        hust_c, hust_s = GeoMathKit.CS_1dTo2d(hust_c), GeoMathKit.CS_1dTo2d(hust_s)
+        PyHawk_C += hust_c
+        PyHawk_S += hust_s
+    for file_path in iter_gfc_files(GFZ):
+        '''read hust'''
+        hust_c, hust_s = LoadCSR().load(fileIn=file_path).getCS(Nmax=60)
+        hust_c, hust_s = hust_c - static_c, hust_s - static_s
+        hust_c, hust_s = GeoMathKit.CS_1dTo2d(hust_c), GeoMathKit.CS_1dTo2d(hust_s)
+        GFZ_C += hust_c
+        GFZ_S += hust_s
+    for file_path in iter_gfc_files(JPL):
+        '''read hust'''
+        hust_c, hust_s = LoadCSR().load(fileIn=file_path).getCS(Nmax=60)
+        hust_c, hust_s = hust_c - static_c, hust_s - static_s
+        hust_c, hust_s = GeoMathKit.CS_1dTo2d(hust_c), GeoMathKit.CS_1dTo2d(hust_s)
+        JPL_C += hust_c
+        JPL_S += hust_s
+    for file_path in iter_gfc_files(CSR):
+        '''read hust'''
+        hust_c, hust_s = LoadCSR().load(fileIn=file_path).getCS(Nmax=60)
+        hust_c, hust_s = hust_c - static_c, hust_s - static_s
+        hust_c, hust_s = GeoMathKit.CS_1dTo2d(hust_c), GeoMathKit.CS_1dTo2d(hust_s)
+        CSR_C += hust_c
+        CSR_S += hust_s
+    PyHawk_C, PyHawk_S = PyHawk_C / 11, PyHawk_S / 11
+    GFZ_C, GFZ_S = GFZ_C / 11, GFZ_S / 11
+    JPL_C, JPL_S = JPL_C / 11, JPL_S / 11
+    CSR_C, CSR_S = CSR_C / 11, CSR_S / 11
+    PyHawk = get_geoid_drgee_error(diff_c=PyHawk_C, diff_s=PyHawk_S)
+    GFZ = get_geoid_drgee_error(diff_c=GFZ_C, diff_s=GFZ_S)
+    JPL = get_geoid_drgee_error(diff_c=JPL_C, diff_s=JPL_S)
+    CSR = get_geoid_drgee_error(diff_c=CSR_C, diff_s=CSR_S)
+    matplotlib.rcParams.update({'font.size': 30})
+    fig = plt.figure(figsize=(10, 8))
+    # plt.style.use(['science'])
+    plt.title('GRACE (2003)', fontsize=30),
+    plt.plot(np.arange(2, 61, 1), PyHawk[2:], color="#1f77b4", linewidth=3.0, marker='', label='PyHawk')
+    plt.plot(np.arange(2, 61, 1), GFZ[2:], color="black",  marker='', linewidth=3.0,label='GFZ')
+    plt.plot(np.arange(2, 61, 1), JPL[2:], color="#2ca02c", marker='', linewidth=3.0, label='JPL')
+    plt.plot(np.arange(2, 61, 1), CSR[2:], color="#d62728",  marker='',linewidth=3.0, label='CSR')
+    # plt.plot(np.arange(2, 61, 1), csr_05[2:], color='blue', marker='', label='CSR 05')
+    # plt.plot(np.arange(2, 61, 1), gfz_05[2:], color='blue', marker='H', label='GFZ 05')
+    # plt.plot(np.arange(2, 61, 1), csr_e_l[2:], color='red', marker='s', label='CSR - HUST')
+    # plt.plot(np.arange(2, 61, 1), gfz_e_l[2:], color='blue', marker='p', label='GFZ - HUST')
+    # plt.plot(np.arange(2, 61, 1), jpl_e_l[2:], color='green', marker='P', label='JPL - HUST')
+    # plt.plot(np.arange(2, 61, 1), csr_gfz_e_l[2:], color='black', marker='*', label='GFZ - CSR')
+    # plt.plot(np.arange(2, 61, 1), csr_jpl_e_l[2:], color='indigo', marker='h', label='JPL - CSR')
+    # plt.plot(np.arange(2, 61, 1), gfz_jpl_e_l[2:], color='tan', marker='H', label='JPL - GFZ')
+    plt.xlim(0, 60)
+    plt.ylim(2e-5, 4e-2)
+    plt.xticks(fontsize=28)
+    plt.yticks(fontsize=28)
+    plt.xlabel('Degree', fontsize=28)
+    plt.ylabel('Degree geoid height [m]', fontsize=28)
+    plt.yscale("log")
+    plt.legend(fontsize=20, loc=1)
+    plt.grid(True, which='both', linestyle='-.')
+    # plt.savefig('../result/gracegls/' + date1 + '.png')
+    plt.show()
+
+
 if __name__ == '__main__':
-    # span1 = '2009-01-01_2009-01-31'
-    span1 = '2019-03-01_2019-03-31'
+    # span1 = '2016-08-08_2016-09-03'
+    span1 = '2021-01-01_2021-01-31'
     # GRACE(span1)
     GRACE_FO(span1)
-
+    # batch_process("../result/grace_v2")
+    # year_mean("../result/gracegls/2003","../result/gracegls/2003/GFZ",
+    #           "../result/gracegls/2003/JPL","../result/gracegls/2003/CSR")
     pass
+
 
 

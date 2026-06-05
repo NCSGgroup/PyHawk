@@ -383,22 +383,19 @@ class AdjustOrbit:
         if not os.path.exists(self._res_dir):
             os.makedirs(self._res_dir, exist_ok=True)
 
-        res_filename = self._res_dir + '/' + str(self._arcNo) + '_' + self._satName + '.hdf5'
-        self._res_h5 = h5py.File(res_filename, 'w')
-
         """step 1: combine the SCA and ACC data to obtain the non-conservative force as well as dadp arc by arc"""
         self._rd = ArcData(interfaceConfig=self._InterfaceConfig)
 
         '''init acc'''
 
         for i in range(len(self._sat)):
-            # ap = AccCaliPar_V3(rd=self._rd, sat=self._sat[i], arcNo=self._arcNo,
-            #                 accConfig=self.accConfig[i], adjustlength_x=self.X_AdjustLength,
-            #                    adjustlength_y=self.Y_AdjustLength, adjustlength_z=self.Z_AdjustLength)
-            ap = AccCaliPar(rd=self._rd, sat=self._sat[i], arcNo=self._arcNo,
-                            accConfig=self.accConfig[i], adjustlength=self.AccAdjustLength)
-            ac = Accelerometer_V2(ap=ap)
-            # ac = Accelerometer_V3(ap=ap)
+            ap = AccCaliPar_V3(rd=self._rd, sat=self._sat[i], arcNo=self._arcNo,
+                            accConfig=self.accConfig[i], adjustlength_x=self.X_AdjustLength,
+                               adjustlength_y=self.Y_AdjustLength, adjustlength_z=self.Z_AdjustLength)
+            # ap = AccCaliPar(rd=self._rd, sat=self._sat[i], arcNo=self._arcNo,
+            #                 accConfig=self.accConfig[i], adjustlength=self.AccAdjustLength)
+            # ac = Accelerometer_V2(ap=ap)
+            ac = Accelerometer_V3(ap=ap)
             ac.get_and_save()
 
             self._ac[self._sat[i]] = ac
@@ -426,10 +423,10 @@ class AdjustOrbit:
         self._ode_res = ode.propagate()
         self._save_StateVectors(self._ode_res)
         filename = self._state_dir + '/' + str(self._arcNo) + '_' + self._satName + '.hdf5'
-        h5 = h5py.File(filename, 'r')
-        self._initTime = h5['t'][:]
-        self._initR = h5['r'][:]
-        h5.close()
+        with h5py.File(filename, 'r') as h5:
+            self._initTime = h5['t'][:]
+            self._initR = h5['r'][:]
+
         '''step 2: orbit adjustment'''
         orbit_init = np.hstack((self._startPos, self._startVel))
         """TODO"""
@@ -462,33 +459,33 @@ class AdjustOrbit:
             #     self._ode_res[2] = self._ode_res[2][index, :, :]
             self._save_StateVectors(self._ode_res)
 
-        h5 = h5py.File(filename, 'r')
-        self._endTime = h5['t'][:]
-        self._endR = h5['r'][:]
-        h5.close()
-        self._res_h5.close()
+        with h5py.File(filename, 'r') as h5:
+            self._endTime = h5['t'][:]
+            self._endR = h5['r'][:]
+
         return self
 
     def __updateIniValue(self, iniOrbit: np.ndarray, iniAcc: np.ndarray):
         res = self._res
-        h5 = self._res_h5
 
-        key = self.TransitionMatrixConfig
-        if key.isRequired:
-            iniOrbit += res[:, 0:key.Parameter_Number]
-            if self.ParameterConfig.TransitionMatrix.__name__ in h5:
-                h5[self.ParameterConfig.TransitionMatrix.__name__][()] = iniOrbit
-            else:
-                h5.create_dataset(self.ParameterConfig.TransitionMatrix.__name__, data=iniOrbit)
+        res_filename = self._res_dir + '/' + str(self._arcNo) + '_' + self._satName + '.hdf5'
+        with h5py.File(res_filename, 'w') as h5:
+            key = self.TransitionMatrixConfig
+            if key.isRequired:
+                iniOrbit += res[:, 0:key.Parameter_Number]
+                if self.ParameterConfig.TransitionMatrix.__name__ in h5:
+                    h5[self.ParameterConfig.TransitionMatrix.__name__][()] = iniOrbit
+                else:
+                    h5.create_dataset(self.ParameterConfig.TransitionMatrix.__name__, data=iniOrbit)
 
-        key = self.AccelerometerConfig
-        if key.isRequired:
-            left = self.TransitionMatrixConfig.Parameter_Number
-            iniAcc += res[:, left:]
-            if self.ParameterConfig.Accelerometer.__name__ in h5:
-                h5[self.ParameterConfig.Accelerometer.__name__][()] = iniAcc
-            else:
-                h5.create_dataset(self.ParameterConfig.Accelerometer.__name__, data=iniAcc)
+            key = self.AccelerometerConfig
+            if key.isRequired:
+                left = self.TransitionMatrixConfig.Parameter_Number
+                iniAcc += res[:, left:]
+                if self.ParameterConfig.Accelerometer.__name__ in h5:
+                    h5[self.ParameterConfig.Accelerometer.__name__][()] = iniAcc
+                else:
+                    h5.create_dataset(self.ParameterConfig.Accelerometer.__name__, data=iniAcc)
         return iniOrbit, iniAcc
 
     def __adjust(self,Time, StateVectors: np.ndarray, isGNV: bool, refOrbit: np.ndarray = None):
@@ -531,13 +528,14 @@ class AdjustOrbit:
 
     def _save_StateVectors(self, state):
         res_dir = self._state_dir
+        os.makedirs(res_dir, exist_ok=True)
+
         res_filename = res_dir + '/' + str(self._arcNo) + '_' + self._satName + '.hdf5'
         # print(res_filename)
-        h5 = h5py.File(res_filename, 'w')
-        h5.create_dataset('t', data=state[0])
-        h5.create_dataset('r', data=state[1])
-        h5.create_dataset('v', data=state[2])
-        h5.close()
+        with h5py.File(res_filename, 'w') as h5:
+            h5.create_dataset('t', data=state[0])
+            h5.create_dataset('r', data=state[1])
+            h5.create_dataset('v', data=state[2])
         pass
 
     def _setInitState(self):
