@@ -42,7 +42,7 @@ class GravityNEQperArc:
         self._AdjustPathConfig = None
         self._InterfaceConfig = None
         self._rd = None
-
+        self.use_sigma = False
         self._sat = [key for key, value in sat.items() if value]
 
         for sat in self._sat:
@@ -85,19 +85,21 @@ class GravityNEQperArc:
         # self.__saveData = h5py.File(res_filename, 'w')
         return self
 
-    def get_neq(self):
+    def get_neq(self, use_sigma=False):
         """
         three steps to acquire the normal equations. Assure the 'configure' is called before.
         :return:
         """
+        self.use_sigma = use_sigma
+
         res_dir = self._solverConfig.DesignMatrixTemp + '/' + self.__date_span[0] + '_' + self.__date_span[1]
         res_filename = res_dir + '/Orbit_' + str(self.__arcNo) + '_' + self._satName + '.hdf5'
-        h5 = h5py.File(res_filename, 'r')
-        self.__orbit_nominal = h5['r'][()]
-        self.__t_nominal = h5['t'][()]
-        self.__local_r = h5['local_r'][()]
-        self.__global_r = h5['global_r'][()]
-        h5.close()
+
+        with h5py.File(res_filename, 'r') as h5:
+            self.__orbit_nominal = h5['r'][()]
+            self.__t_nominal = h5['t'][()]
+            self.__local_r = h5['local_r'][()]
+            self.__global_r = h5['global_r'][()]
 
         # state_dir = pathlib.Path(Pre_AdjustOrbit.PathOfFiles.StateVectorDataTemp). \
         #     joinpath(self.__date_span[0] + '_' + self.__date_span[1])
@@ -105,15 +107,15 @@ class GravityNEQperArc:
         # h5 = h5py.File(state_filename, 'r')
         # self.__orbit_nominal = h5['r'][()][:, :, 0]
         # h5.close()
-        saveData = h5py.File(self.res_filename, 'w')
-        for i in tqdm(range(3), desc='Build normal equations: '):
-            if i == 0:
-                self.get_neq_orbit(SatID.A, saveData)
-            elif i == 1:
-                self.get_neq_orbit(SatID.B, saveData)
-            elif i == 2:
-                self.get_neq_range_rate(saveData)
-        saveData.close()
+        with h5py.File(self.res_filename, 'w') as saveData:
+            for i in tqdm(range(3), desc='Build normal equations: '):
+                if i == 0:
+                    self.get_neq_orbit(SatID.A, saveData)
+                elif i == 1:
+                    self.get_neq_orbit(SatID.B, saveData)
+                elif i == 2:
+                    self.get_neq_range_rate(saveData)
+
         return self
 
     def get_neq_orbit(self, sat: SatID, saveData):
@@ -121,6 +123,7 @@ class GravityNEQperArc:
         get Normal Equations for the orbit only
         :return:
         """
+        sigma = None
         if sat == SatID.A:
             config = self.__config['satA']
             orbit_nominal = self.__orbit_nominal[:, 0:3]
@@ -161,6 +164,54 @@ class GravityNEQperArc:
         local_r = local_r[new_index, :, :]
         global_r = global_r[new_index, :, :]
         # orbit_obs = orbit_obs[new_index, :]
+        # with h5py.File(("orbit_" + sat.name + '_' + str(self.__arcNo) + '.h5'), "w") as f:
+        #     f.create_dataset("global_r", data=global_r)
+        #     f.create_dataset("local_r", data=local_r)
+        #     f.create_dataset("obs", data=obs)
+
+        sigmafilename = sgima_path + '/Orbit_' + str(self.__arcNo) + str(sat.name) + '.hdf5'
+        if self.use_sigma and os.path.exists(sigmafilename):
+            with h5py.File(sigmafilename, 'r') as sigmah5:
+                if "Sigma" in sigmah5:
+                    sigma = sigmah5['Sigma'][:]
+                    sigma_time = sigmah5['time'][:].astype(np.int64)
+
+                    sigma_index = [
+                        list(sigma_time).index(x)
+                        for x in int_t_obs
+                        if x in sigma_time
+                    ]
+                    sigma_index = np.array(sigma_index)
+
+                    # index = np.array(new_index)
+
+                    max_epoch = sigma.shape[0] // 3
+
+                    valid_epoch = sigma_index < max_epoch
+
+                    # 同步裁剪所有数据
+                    sigma_index = sigma_index[valid_epoch]
+
+                    orbit_obs = orbit_obs[valid_epoch, :]
+                    orbit_nominal = orbit_nominal[valid_epoch, :]
+
+                    local_r = local_r[valid_epoch, :, :]
+                    global_r = global_r[valid_epoch, :, :]
+
+                    # ============================================================
+                    # Build idx
+                    # ============================================================
+
+                    idx = np.empty(3 * len(sigma_index), dtype=int)
+
+                    idx[0::3] = 3 * sigma_index
+                    idx[1::3] = 3 * sigma_index + 1
+                    idx[2::3] = 3 * sigma_index + 2
+
+                    sigma = sigma[np.ix_(idx, idx)]
+                    # sigma_y = sigma_y[np.ix_(index, index)]
+                    # sigma_z = sigma_z[np.ix_(index, index)]
+
         '''Expanding the observations'''
         obs = orbit_obs[:, 1:] - orbit_nominal
 
@@ -174,39 +225,35 @@ class GravityNEQperArc:
         local_r = local_r.reshape((-1, n_local))
         global_r = global_r.reshape((-1, n_global))
 
-        # with h5py.File(("orbit_" + sat.name + '_' + str(self.__arcNo) + '.h5'), "w") as f:
-        #     f.create_dataset("global_r", data=global_r)
-        #     f.create_dataset("local_r", data=local_r)
-        #     f.create_dataset("obs", data=obs)
-        sigmafilename = sgima_path + '/Orbit_' + str(self.__arcNo) + str(sat.name) + '.hdf5'
-        if os.path.exists(sigmafilename):
-            sigmah5 = h5py.File(sigmafilename, "r")
-            if "Sigma" in sigmah5:
-                sigma = sigmah5['Sigma'][:]
-                # sigma_y = sigmah5['Sigma_y'][:]
-                # sigma_z = sigmah5['Sigma_z'][:]
+        N, l = GeoMathKit.keepGlobal(dm_global=global_r, dm_local=local_r, obs=obs, p=sigma)
+        # =========================
+        # 🚨 强制防御（终极版）
+        # =========================
+        valid = True
 
-                index = np.array(new_index)
+        if N is None or l is None:
+            print("N/l is None")
+            valid = False
 
-                idx = np.empty(3*len(index), dtype=int)
-                idx[0::3] = 3 * index + 0
-                idx[1::3] = 3 * index + 1
-                idx[2::3] = 3 * index + 2
+        elif not isinstance(N, np.ndarray) or not isinstance(l, np.ndarray):
+            print("N/l not ndarray")
+            valid = False
 
-                sigma = sigma[np.ix_(idx, idx)]
-                # sigma_y = sigma_y[np.ix_(index, index)]
-                # sigma_z = sigma_z[np.ix_(index, index)]
+        elif N.size == 0 or l.size == 0:
+            print("N/l empty")
+            valid = False
 
-                N, l = GeoMathKit.keepGlobal(dm_global=global_r, dm_local=local_r,
-                                             obs=obs, p=sigma)
-            else:
-                N, l = GeoMathKit.keepGlobal(dm_global=global_r, dm_local=local_r, obs=obs, p=None)
-            sigmah5.close()
-        else:
-            N, l = GeoMathKit.keepGlobal(dm_global=global_r, dm_local=local_r, obs=obs, p=None)
+        elif np.isnan(N).any() or np.isnan(l).any():
+            print("NaN in N/l")
+            valid = False
 
-        saveData.create_dataset('Orbit_N_%1s' % sat.name, data=N)
-        saveData.create_dataset('Orbit_l_%1s' % sat.name, data=l)
+        if not valid:
+            print(f"Skip saving: {SSTObserve.RangeRate.name}")
+            return
+
+        if valid:
+            saveData.create_dataset('Orbit_N_%1s' % sat.name, data=N)
+            saveData.create_dataset('Orbit_l_%1s' % sat.name, data=l)
         pass
 
     def get_neq_orbit_V2(self, sat: SatID):
@@ -289,19 +336,17 @@ class GravityNEQperArc:
 
         dm_dir = self._AdjustPathConfig.RangeRateTemp + '/' + self.__date_span[0] + '_' + self.__date_span[1]
         res_filename = dm_dir + '/' + SSTObserve.RangeRate.name + '_' + str(self.__arcNo) + '.hdf5'
-        h5 = h5py.File(res_filename, 'r')
-        t_obs = h5['post_t'][()]
-        obs = h5['post_residual'][()]
-        local_dm_empirical = h5['design_matrix'][()]
-        h5.close()
+        with h5py.File(res_filename, 'r') as h5:
+            t_obs = h5['post_t'][()]
+            obs = h5['post_residual'][()]
+            local_dm_empirical = h5['design_matrix'][()]
 
         dm_dir = self._solverConfig.DesignMatrixTemp + '/' + self.__date_span[0] + '_' + self.__date_span[1]
         res_filename = dm_dir + '/' + SSTObserve.RangeRate.name + '_' + str(self.__arcNo) + '.hdf5'
-        h5 = h5py.File(res_filename, 'r')
-        t_dm = h5['t'][()]
-        global_dm = h5['global'][()]
-        local_dm = h5['local'][()]
-        h5.close()
+        with h5py.File(res_filename, 'r') as h5:
+            t_dm = h5['t'][()]
+            global_dm = h5['global'][()]
+            local_dm = h5['local'][()]
 
         int_t_obs = t_obs.astype(np.int64)
         int_t_dm = t_dm.astype(np.int64)
@@ -316,30 +361,58 @@ class GravityNEQperArc:
         if config.CalibrateEmpiricalParameters:
             local_dm = np.concatenate((local_dm_empirical, local_dm), axis=1)
         
-        # with h5py.File(("kbrr_" + str(self.__arcNo) + '.h5'), "w") as f:
-        #     f.create_dataset("global_dm", data=global_dm)
-        #     f.create_dataset("local_dm", data=local_dm)
-        #     f.create_dataset("obs", data=obs)
-        obs = obs.reshape((-1, 1))
+        sigma = None
 
         sigmafilename = sgima_path + '/' + SSTObserve.RangeRate.name + '_' + str(self.__arcNo) + '.hdf5'
-        if os.path.exists(sigmafilename):
-            sigmah5 = h5py.File(sigmafilename, "r")
-            if "Sigma" in sigmah5:
-                index = np.array(new_index, dtype=int)
+        if self.use_sigma and os.path.exists(sigmafilename):
+            with h5py.File(sigmafilename, 'r') as sigmah5:
+                if "Sigma" in sigmah5:
+                    sigma = sigmah5['Sigma'][:]
+                    sigma_time = sigmah5['time'][:]
 
-                sigma = sigmah5['Sigma'][:]
-                sigma = sigma[np.ix_(index, index)]
+                    common_mask = np.isin(t_dm, sigma_time)
 
-                N, l = GeoMathKit.keepGlobal(dm_global=global_dm, dm_local=local_dm, obs=obs, p=sigma)
-            else:
-                N, l = GeoMathKit.keepGlobal(dm_global=global_dm, dm_local=local_dm, obs=obs, p=None)
-            sigmah5.close()
-        else:
-            N, l = GeoMathKit.keepGlobal(dm_global=global_dm, dm_local=local_dm, obs=obs, p=None)
+                    obs = obs[common_mask]
+                    global_dm = global_dm[common_mask, :]
+                    local_dm = local_dm[common_mask, :]
 
-        saveData.create_dataset('%s_N' % SSTObserve.RangeRate.name, data=N)
-        saveData.create_dataset('%s_l' % SSTObserve.RangeRate.name, data=l)
+                    sigma_index = np.array([
+                        np.where(sigma_time == t)[0][0]
+                        for t in t_dm[common_mask]
+                    ], dtype=np.int64)
+
+                    sigma = sigma[np.ix_(sigma_index, sigma_index)]
+
+        obs = obs.reshape((-1, 1))
+        N, l = GeoMathKit.keepGlobal(dm_global=global_dm, dm_local=local_dm, obs=obs, p=sigma)
+            # =========================
+            # 🚨 强制防御（终极版）
+            # =========================
+        valid = True
+
+        if N is None or l is None:
+            print("N/l is None")
+            valid = False
+
+        elif not isinstance(N, np.ndarray) or not isinstance(l, np.ndarray):
+            print("N/l not ndarray")
+            valid = False
+
+        elif N.size == 0 or l.size == 0:
+            print("N/l empty")
+            valid = False
+
+        elif np.isnan(N).any() or np.isnan(l).any():
+            print("NaN in N/l")
+            valid = False
+
+        if not valid:
+            print(f"Skip saving: {SSTObserve.RangeRate.name}")
+            return
+
+        if valid:
+            saveData.create_dataset('%s_N' % SSTObserve.RangeRate.name, data=N)
+            saveData.create_dataset('%s_l' % SSTObserve.RangeRate.name, data=l)
 
         pass
 
@@ -531,30 +604,21 @@ class GravityNEQperArc_v2:
         """
         res_dir = self._solverConfig.DesignMatrixTemp + '/' + self.__date_span[0] + '_' + self.__date_span[1]
         res_filename = res_dir + '/Orbit_' + str(self.__arcNo) + '_' + self._satName + '.hdf5'
-        h5 = h5py.File(res_filename, 'r')
-        self.__orbit_nominal = h5['r'][()]
-        self.__t_nominal = h5['t'][()]
-        self.__local_r = h5['local_r'][()]
-        self.__global_r = h5['global_r'][()]
-        h5.close()
+        with h5py.File(res_filename, 'r') as h5:
+            self.__orbit_nominal = h5['r'][()]
+            self.__t_nominal = h5['t'][()]
+            self.__local_r = h5['local_r'][()]
+            self.__global_r = h5['global_r'][()]
 
-        # state_dir = pathlib.Path(Pre_AdjustOrbit.PathOfFiles.StateVectorDataTemp). \
-        #     joinpath(self.__date_span[0] + '_' + self.__date_span[1])
-        # state_filename = state_dir.joinpath(str(self.__arcNo) + '_' + self._satName + '.hdf5')
-        # h5 = h5py.File(state_filename, 'r')
-        # self.__orbit_nominal = h5['r'][()][:, :, 0]
-        # h5.close()
-        saveData = h5py.File(self.res_filename, 'w')
-        designData = h5py.File(res_filename, 'r+')
-        for i in tqdm(range(3), desc='Build normal equations: '):
-            if i == 0:
-                self.get_neq_orbit(SatID.A, saveData, designData)
-            elif i == 1:
-                self.get_neq_orbit(SatID.B, saveData, designData)
-            elif i == 2:
-                self.get_neq_range_rate(saveData)
-        saveData.close()
-        designData.close()
+        with h5py.File(self.res_filename, 'w') as saveData, \
+                h5py.File(res_filename, 'r+') as designData:
+            for i in tqdm(range(3), desc='Build normal equations: '):
+                if i == 0:
+                    self.get_neq_orbit(SatID.A, saveData, designData)
+                elif i == 1:
+                    self.get_neq_orbit(SatID.B, saveData, designData)
+                elif i == 2:
+                    self.get_neq_range_rate(saveData)
         return self
 
     def get_neq_orbit(self, sat: SatID, saveData, designData):
@@ -661,19 +725,17 @@ class GravityNEQperArc_v2:
 
         dm_dir = self._AdjustPathConfig.RangeRateTemp + '/' + self.__date_span[0] + '_' + self.__date_span[1]
         res_filename = dm_dir + '/' + SSTObserve.RangeRate.name + '_' + str(self.__arcNo) + '.hdf5'
-        h5 = h5py.File(res_filename, 'r')
-        t_obs = h5['post_t'][()]
-        obs = h5['post_residual'][()]
-        local_dm_empirical = h5['design_matrix'][()]
-        h5.close()
+        with h5py.File(res_filename, 'r') as h5:
+            t_obs = h5['post_t'][()]
+            obs = h5['post_residual'][()]
+            local_dm_empirical = h5['design_matrix'][()]
 
         dm_dir = self._solverConfig.DesignMatrixTemp + '/' + self.__date_span[0] + '_' + self.__date_span[1]
         res_filename = dm_dir + '/' + SSTObserve.RangeRate.name + '_' + str(self.__arcNo) + '.hdf5'
-        h5 = h5py.File(res_filename, 'r')
-        t_dm = h5['t'][()]
-        global_dm = h5['global'][()]
-        local_dm = h5['local'][()]
-        h5.close()
+        with h5py.File(res_filename, 'r') as h5:
+            t_dm = h5['t'][()]
+            global_dm = h5['global'][()]
+            local_dm = h5['local'][()]
 
         int_t_obs = t_obs.astype(np.int64)
         int_t_dm = t_dm.astype(np.int64)
@@ -701,24 +763,23 @@ class GravityNEQperArc_v2:
         Alw = solve_triangular(L, local_dm, lower=True)  # n x q
         lw = solve_triangular(L, obs, lower=True)
 
-        designkbrr = h5py.File(res_filename, 'r+')
-        if '%s_t' % SSTObserve.RangeRate.name in designkbrr:
-            del designkbrr['%s_t' % SSTObserve.RangeRate.name]
-        if 'newindex' in designkbrr:
-            del designkbrr['newindex']
-        if '%s_global' % SSTObserve.RangeRate.name in designkbrr:
-            del designkbrr['%s_global' % SSTObserve.RangeRate.name]
-        if '%s_local' % SSTObserve.RangeRate.name in designkbrr:
-            del designkbrr['%s_local' % SSTObserve.RangeRate.name]
-        if '%s_obs' % SSTObserve.RangeRate.name in designkbrr:
-            del designkbrr['%s_obs' % SSTObserve.RangeRate.name]
+        with h5py.File(res_filename, 'r+') as designkbrr:
+            if '%s_t' % SSTObserve.RangeRate.name in designkbrr:
+                del designkbrr['%s_t' % SSTObserve.RangeRate.name]
+            if 'newindex' in designkbrr:
+                del designkbrr['newindex']
+            if '%s_global' % SSTObserve.RangeRate.name in designkbrr:
+                del designkbrr['%s_global' % SSTObserve.RangeRate.name]
+            if '%s_local' % SSTObserve.RangeRate.name in designkbrr:
+                del designkbrr['%s_local' % SSTObserve.RangeRate.name]
+            if '%s_obs' % SSTObserve.RangeRate.name in designkbrr:
+                del designkbrr['%s_obs' % SSTObserve.RangeRate.name]
 
-        designkbrr.create_dataset('%s_t' % SSTObserve.RangeRate.name, data=t_dm)
-        designkbrr.create_dataset('newindex', data=new_index)
-        designkbrr.create_dataset('%s_global' % SSTObserve.RangeRate.name, data=Agw)
-        designkbrr.create_dataset('%s_local' % SSTObserve.RangeRate.name, data=Alw)
-        designkbrr.create_dataset('%s_obs' % SSTObserve.RangeRate.name, data=lw)
-        designkbrr.close()
+            designkbrr.create_dataset('%s_t' % SSTObserve.RangeRate.name, data=t_dm)
+            designkbrr.create_dataset('newindex', data=new_index)
+            designkbrr.create_dataset('%s_global' % SSTObserve.RangeRate.name, data=Agw)
+            designkbrr.create_dataset('%s_local' % SSTObserve.RangeRate.name, data=Alw)
+            designkbrr.create_dataset('%s_obs' % SSTObserve.RangeRate.name, data=lw)
 
         N, l = GeoMathKit.keepGlobal_v2(dm_global=Agw, dm_local=Alw, obs=lw)
 
@@ -921,17 +982,17 @@ class GravityNEQperArc_v3:
         # h5 = h5py.File(state_filename, 'r')
         # self.__orbit_nominal = h5['r'][()][:, :, 0]
         # h5.close()
-        saveData = h5py.File(self.res_filename, 'w')
-        designData = h5py.File(res_filename, 'r+')
-        for i in tqdm(range(3), desc='Build normal equations: '):
-            if i == 0:
-                self.get_neq_orbit(SatID.A, saveData, designData)
-            elif i == 1:
-                self.get_neq_orbit(SatID.B, saveData, designData)
-            elif i == 2:
-                self.get_neq_range_rate(saveData)
-        saveData.close()
-        designData.close()
+
+        with h5py.File(self.res_filename, 'w') as saveData, \
+            h5py.File(res_filename, 'r+') as designData:
+            for i in tqdm(range(3), desc='Build normal equations: '):
+                if i == 0:
+                    self.get_neq_orbit(SatID.A, saveData, designData)
+                elif i == 1:
+                    self.get_neq_orbit(SatID.B, saveData, designData)
+                elif i == 2:
+                    self.get_neq_range_rate(saveData)
+
         return self
 
     def get_neq_orbit(self, sat: SatID, saveData, designData):
@@ -982,6 +1043,7 @@ class GravityNEQperArc_v3:
         sigma = sigma[np.ix_(idx, idx)]
 
         '''Cholesky白化'''
+        sigma = np.eye(np.shape(global_r.T)[-1])
         L = cholesky(sigma, lower=True)
         Agw = solve_triangular(L, global_r, lower=True)  # n x p
         Alw = solve_triangular(L, local_r, lower=True)  # n x q
@@ -1020,37 +1082,36 @@ class GravityNEQperArc_v3:
         dm_dir = self._solverConfig.DesignMatrixTemp + '/' + self.__date_span[0] + '_' + self.__date_span[1]
         res_filename = dm_dir + '/' + SSTObserve.RangeRate.name + '_' + str(self.__arcNo) + '.hdf5'
 
-        designData = h5py.File(res_filename, 'r+')
-        t_dm = designData['t'][()]
-        new_index = designData['newindex'][()]
-        global_dm = designData['%s_global' % SSTObserve.RangeRate.name][()]
-        local_dm = designData['%s_local' % SSTObserve.RangeRate.name][()]
-        obs = designData['%s_obs' % SSTObserve.RangeRate.name][()]
+        with h5py.File(res_filename, 'r+') as designData:
 
-        sigmafilename = sgima_path + '/' + SSTObserve.RangeRate.name + '_' + str(self.__arcNo) + '.hdf5'
-        sigmah5 = h5py.File(sigmafilename, "r")
-        index = np.array(new_index, dtype=int)
-        sigma = sigmah5['Sigma'][:]
-        sigma = sigma[np.ix_(index, index)]
-        '''Cholesky白化'''
+            t_dm = designData['t'][()]
+            new_index = designData['newindex'][()]
+            global_dm = designData['%s_global' % SSTObserve.RangeRate.name][()]
+            local_dm = designData['%s_local' % SSTObserve.RangeRate.name][()]
+            obs = designData['%s_obs' % SSTObserve.RangeRate.name][()]
 
-        L = cholesky(sigma, lower=True)
-        Agw = solve_triangular(L, global_dm, lower=True)  # n x p
-        Alw = solve_triangular(L, local_dm, lower=True)  # n x q
-        lw = solve_triangular(L, obs, lower=True)
+            sigmafilename = sgima_path + '/' + SSTObserve.RangeRate.name + '_' + str(self.__arcNo) + '.hdf5'
+            sigmah5 = h5py.File(sigmafilename, "r")
+            index = np.array(new_index, dtype=int)
+            sigma = sigmah5['Sigma'][:]
+            sigma = sigma[np.ix_(index, index)]
+            '''Cholesky白化'''
 
-        if '%s_global' % SSTObserve.RangeRate.name in designData:
-            del designData['%s_global' % SSTObserve.RangeRate.name]
-        if '%s_local' % SSTObserve.RangeRate.name in designData:
-            del designData['%s_local' % SSTObserve.RangeRate.name]
-        if '%s_obs' % SSTObserve.RangeRate.name in designData:
-            del designData['%s_obs' % SSTObserve.RangeRate.name]
+            L = cholesky(sigma, lower=True)
+            Agw = solve_triangular(L, global_dm, lower=True)  # n x p
+            Alw = solve_triangular(L, local_dm, lower=True)  # n x q
+            lw = solve_triangular(L, obs, lower=True)
 
-        designData.create_dataset('%s_global' % SSTObserve.RangeRate.name, data=Agw)
-        designData.create_dataset('%s_local' % SSTObserve.RangeRate.name, data=Alw)
-        designData.create_dataset('%s_obs' % SSTObserve.RangeRate.name, data=lw)
+            if '%s_global' % SSTObserve.RangeRate.name in designData:
+                del designData['%s_global' % SSTObserve.RangeRate.name]
+            if '%s_local' % SSTObserve.RangeRate.name in designData:
+                del designData['%s_local' % SSTObserve.RangeRate.name]
+            if '%s_obs' % SSTObserve.RangeRate.name in designData:
+                del designData['%s_obs' % SSTObserve.RangeRate.name]
 
-        designData.close()
+            designData.create_dataset('%s_global' % SSTObserve.RangeRate.name, data=Agw)
+            designData.create_dataset('%s_local' % SSTObserve.RangeRate.name, data=Alw)
+            designData.create_dataset('%s_obs' % SSTObserve.RangeRate.name, data=lw)
 
         N, l = GeoMathKit.keepGlobal_v2(dm_global=Agw, dm_local=Alw, obs=lw)
 

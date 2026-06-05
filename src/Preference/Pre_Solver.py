@@ -6,6 +6,7 @@ class SolverConfig:
     def __init__(self):
         self.SSTOption = SSTObserve.RangeRate.name
         self.OrbitKinFactor = 1e11
+        self.OrbitFre = 8
         self.DesignMatrixTemp = "../temp/DesignMatrixSH"
         self.CovarianceMatrix = "../temp/CovarianceMatrix"
         self.PostParameter = "../temp/PostParameter"

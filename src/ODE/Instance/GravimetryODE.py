@@ -49,7 +49,8 @@ class GravimetryODE:
         if self.AccelerometerConfig.isRequired:
             if self.AccelerometerConfig.isScale:
                 self.__ParNum += 9
-            self.__ParNum += self.node
+            # self.__ParNum += self.node
+            self.__ParNum += self.AccelerometerConfig.Parameter_Number
         if self.StokesCoefficientsConfig.isRequired:
             self.__ParNum += self.StokesCoefficientsConfig.Parameter_Number
         return self

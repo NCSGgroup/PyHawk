@@ -41,7 +41,7 @@ import multiprocessing
 import json
 from datetime import datetime
 from src.Auxilary.Outlier import Outlier
-from src.Preference.EnumType import Payload, SatID, SSTObserve
+from src.Preference.EnumType import Payload, SatID, SSTObserve, StaticGravModel
 from scipy.signal import butter, filtfilt
 from scipy import signal
 from scipy.linalg import toeplitz, cholesky, eigh, solve_triangular
@@ -213,7 +213,7 @@ class CalibrateOrbit:
         if isNEQ:
             self.makeLog(stepName='NEQ', process=GetNEQProcess)
             pool = multiprocessing.Pool(processes=GetNEQProcess)
-            pool.map(self._NEQ, self.__arclist)
+            pool.map(self._NEQ, [(q, False) for q in self.__arclist])
             # pool.map(self._NEQ, (0, 1))
             pool.close()
             pool.join()
@@ -226,7 +226,7 @@ class CalibrateOrbit:
             self.GLS()
             self.makeLog(stepName='NEQ', process=GetNEQProcess)
             pool = multiprocessing.Pool(processes=GetNEQProcess)
-            pool.map(self._NEQ, self.__arclist)
+            pool.map(self._NEQ, [(q, True) for q in self.__arclist])
             pool.close()
             pool.join()
             self.makeLog(stepName='SH', process=1)
@@ -303,11 +303,12 @@ class CalibrateOrbit:
         dm.get_sst_design_matrix()
         pass
 
-    def _NEQ(self, q):
+    def _NEQ(self, args):
         '''setp 8: get NEQ'''
+        q, use_sigma = args
         neq = GravityNEQperArc(arcNo=q, date_span=self.__date_span, sat=self.__sat)
         neq.configure(solverConfig=self.__solver_config, NEQConfig=self.__neq_config,
-                      AdjustOrbitConfig=self.__adjust_config, InterfaceConfig=self.__interface_config).get_neq()
+                      AdjustOrbitConfig=self.__adjust_config, InterfaceConfig=self.__interface_config).get_neq(use_sigma=use_sigma)
         pass
 
     def _NEQ_v3(self, q):
@@ -331,6 +332,21 @@ class CalibrateOrbit:
         '''config force model path'''
         force_model_path_config = self.__force_model_config.PathOfFiles()
         force_model_path_config.__dict__.update(self.__force_model_config.PathOfFilesConfig.copy())
+        '''config force model'''
+        RefGravModelConfig = self.__force_model_config.RefGravModel()
+        RefGravModelConfig.__dict__.update(self.__force_model_config.RefGravModelConfig.copy())
+        staticModel = RefGravModelConfig.StaticModel
+
+        if staticModel == StaticGravModel.Gif48.name:
+            self.__staticModel = LoadGif48().load(force_model_path_config.Gif48)
+        elif staticModel == StaticGravModel.EIGEN6_C4.name:
+            self.__staticModel = LoadGif48().load(force_model_path_config.EIGEN6_C4)
+        elif staticModel == StaticGravModel.GOCO02s.name:
+            self.__staticModel = LoadGif48().load(force_model_path_config.GOCO02s)
+        elif staticModel == StaticGravModel.GGM05C.name:
+            self.__staticModel = LoadGif48().load(force_model_path_config.GGM05C)
+        elif staticModel == StaticGravModel.GOCO06S.name:
+            self.__staticModel = LoadGOCO06S().load(force_model_path_config.GOCO06s)
 
         res_dir1 = neq_path_config.NormalEqTemp + '/' +\
                   interface_config.date_span[0] + '_' + interface_config.date_span[1]
@@ -358,9 +374,23 @@ class CalibrateOrbit:
         # for i in tqdm((0, 1), desc='Solve normal equations: '):
             res_filename1 = res_dir1 + '/' + str(i) + '.hdf5'
             h51 = h5py.File(res_filename1, 'r')
-            Orbit_N_A = h51['Orbit_N_A'][:]
-            Orbit_N_B = h51['Orbit_N_B'][:]
-            RangeRate_N = h51['RangeRate_N'][:]
+            try:
+                RangeRate_N = h51['RangeRate_N'][:]
+            except KeyError:
+                print(" Missing dataset: RangeRate_N → skip")
+                continue
+
+            try:
+                Orbit_N_A = h51['Orbit_N_A'][:]
+            except KeyError:
+                print(" Missing dataset: RangeRate_N → skip")
+                continue
+
+            try:
+                Orbit_N_B = h51['Orbit_N_B'][:]
+            except KeyError:
+                print(" Missing dataset: RangeRate_N → skip")
+                continue
 
             Orbit_l_A = h51['Orbit_l_A'][:]
             Orbit_l_B = h51['Orbit_l_B'][:]
@@ -396,6 +426,22 @@ class CalibrateOrbit:
             # LMatrix2 = LMatrix2 + (h52['Orbit_l_A'][:] + h52['Orbit_l_B'][:]) + h52['RangeRate_l'][:].reshape(
             #     (parameter_number, 1)) * OrbitKinFactor
             # h52.close()
+        savefile = res_dir1 + '/NormalEquation.hdf5'
+        with h5py.File(savefile, 'w') as h5:
+
+            h5.create_dataset(
+                'NMatrix',
+                data=NMatrix1
+            )
+
+            h5.create_dataset(
+                'LMatrix',
+                data=LMatrix1
+            )
+
+            # 一些辅助信息
+            h5.attrs['parameter_number'] = parameter_number
+            h5.attrs['OrbitKinFactor'] = OrbitKinFactor
 
         cs = np.linalg.lstsq(NMatrix1, LMatrix1[:, 0], rcond=None)[0]
         self.cs=cs
@@ -414,8 +460,7 @@ class CalibrateOrbit:
         c, s = sort.invert(cs)
         sigmaC , sigmaS = sort.invert(sigma)
 
-        # static_c, static_s = LoadGif48().load(force_model_path_config.Gif48).getCS(stokes_coefficients_config.MaxDegree)
-        static_c, static_s = LoadGOCO06S().load(force_model_path_config.GOCO06s).getCS(stokes_coefficients_config.MaxDegree)
+        static_c, static_s = self.__staticModel.getCS(stokes_coefficients_config.MaxDegree)
 
         C, S = c + static_c, s + static_s
 
@@ -513,7 +558,7 @@ class CalibrateOrbit:
         plt.title('KBRR-RMS-{}-{}'.format(self.__date_span[0], self.__date_span[-1]), fontsize=24)
         plt.plot(np.arange(len(post_RMS)), [i * 1000000 for i in post_RMS], marker='o', label="arc RMS")
         plt.yticks(fontsize=18)
-        plt.ylim(0.1, 0.5)
+        plt.ylim(0.1, 2)
         plt.ylabel(r'$X/um$', fontsize=20)
         plt.legend(loc='upper right', fontsize=20)
         plt.savefig('../result/img/KBRR-{}-{}.png'.format(self.__date_span[0], self.__date_span[-1]))
@@ -972,100 +1017,6 @@ class CalibrateOrbit:
 
         pass
 
-    def re_calculate_cs(self):
-        '''orbit and kbrr factor'''
-        OrbitKinFactor = int(self.__solver_config.OrbitKinFactor)
-        neq_path_config = self.__neq_config.PathOfFiles()
-        neq_path_config.__dict__.update(self.__neq_config.PathOfFilesConfig.copy())
-        interface_config = self.__interface_config
-        stokes_coefficients_config = self.__design_parameter_config.StokesCoefficients()
-        stokes_coefficients_config.__dict__.update(self.__design_parameter_config.StokesCoefficientsConfig.copy())
-        '''config force model path'''
-        force_model_path_config = self.__force_model_config.PathOfFiles()
-        force_model_path_config.__dict__.update(self.__force_model_config.PathOfFilesConfig.copy())
-
-        res_dir = neq_path_config.NormalEqTemp + '/' +\
-                  interface_config.date_span[0] + '_' + interface_config.date_span[1]
-        result_name = neq_path_config.ResultCS + '/' + \
-                      interface_config.date_span[0] + '_' + interface_config.date_span[1] + '.hdf5'
-
-        parameter_number = stokes_coefficients_config.Parameter_Number
-        NMatrix = np.zeros((parameter_number, parameter_number))
-        LMatrix = np.zeros((parameter_number, 1))
-        date_span = interface_config.date_span
-
-        self.n = interface_config.arc_length * 3600 / interface_config.sr_target * 3
-        self.p = parameter_number
-
-        PostKBRR_path = self.__solver_config.PostKBRR + '/' + self.__date_span[0] + '-' + self.__date_span[1] + '/'
-        PostOrbit_path = self.__solver_config.PostOrbit + '/' + self.__date_span[0] + '-' + self.__date_span[1] + '/'
-
-        for i in tqdm(self.__arclist, desc='Re Solve normal equations: '):
-            PostKBRR_name = PostKBRR_path + 'RangeRate_' + str(i) + '.hdf5'
-            resA_name = PostOrbit_path + 'Orbit_' + str(i) + 'A.hdf5'
-            resB_name = PostOrbit_path + 'Orbit_' + str(i) + 'B.hdf5'
-
-            PostKBRR_h5 = h5py.File(PostKBRR_name, 'r')
-            post_kbrr = PostKBRR_h5['post_kbrr'][:]
-            kbrr = self.__rms(post_kbrr)
-
-            resA_name_h5 = h5py.File(resA_name, 'r')
-            post_Orbit_A = resA_name_h5['post_Orbit'][:]
-            leo_A = self.__rms(post_Orbit_A) * 10
-            # leo_A = 0.02
-
-            resB_name_h5 = h5py.File(resB_name, 'r')
-            post_Orbit_B = resB_name_h5['post_Orbit'][:]
-            leo_B = self.__rms(post_Orbit_B) * 10
-            # leo_B = 0.02
-
-            res_filename = res_dir + '/' + str(i) + '.hdf5'
-            h5 = h5py.File(res_filename, 'r')
-            NMatrix = NMatrix + (1 / (leo_A ** 2) * h5['Orbit_N_A'][:] + 1 / (kbrr ** 2) * h5['RangeRate_N'][:]
-                                 + 1 / (leo_B ** 2) * h5['Orbit_N_B'][:])
-
-            LMatrix = LMatrix + (1 / (leo_A ** 2) * h5['Orbit_l_A'][:] + 1 / (leo_B ** 2) * h5['Orbit_l_B'][:]
-                                 + 1 / (kbrr ** 2) * h5['RangeRate_l'][:].reshape((parameter_number, 1)))
-
-            h5.close()
-            PostKBRR_h5.close()
-            resA_name_h5.close()
-            resB_name_h5.close()
-
-        cs = np.linalg.lstsq(NMatrix, LMatrix[:, 0], rcond=None)[0]
-
-        sigma = self.getLocalPar(solverConfig=self.__solver_config, N=NMatrix)
-        # QA, RA = np.linalg.qr(NMatrix)
-        # cs = np.linalg.inv(RA).dot(QA.T).dot(LMatrix[:, 0])
-
-        # cs = []
-        # with open('../result/dcs.txt', 'r') as file:
-        #     lines = file.readlines()
-        #     # 创建一个列表来存储转换后的浮点数
-        #     for line in lines:
-        #         try:
-        #             number = float(line.strip())
-        #             cs.append(number)
-        #         except ValueError:
-        #             print(f"无法将'{line.strip()}'转换为浮点数")
-
-        sort = SortCS(method=stokes_coefficients_config.SortMethod,
-                      degree_max=stokes_coefficients_config.MaxDegree,
-                      degree_min=stokes_coefficients_config.MinDegree)
-        c, s = sort.invert(cs)
-        sigmaC , sigmaS = sort.invert(sigma)
-
-        static_c, static_s = LoadGif48().load(force_model_path_config.Gif48).getCS(stokes_coefficients_config.MaxDegree)
-
-        C, S = c + static_c, s + static_s
-
-        format = FormatWrite().configure(filedir=neq_path_config.ResultCS,
-                                         data=date_span, degree=stokes_coefficients_config.MaxDegree,
-                                         c=C, s=S, sigmaC=sigmaC, sigmaS=sigmaS)
-        format.unfiltered()
-
-        pass
-
     def kin_obs_outlier(self, kin_orbit, sat, arc):
         self._AdjustConfig = self.__adjust_config.Orbit()
         self._AdjustConfig.__dict__.update(self.__adjust_config.OrbitConfig.copy())
@@ -1149,9 +1100,9 @@ class CalibrateOrbit:
             postOrbith5_b.close()
             postKBRRh5.close()
 
-        Sigma_a = self.getOrbitSigma(time=time_a, res=orbit_a)
-        Sigma_b = self.getOrbitSigma(time=time_b, res=orbit_b)
         Sigma = self.getKBRRSigma(time=time_kbrr, res=kbrr)
+        Sigma_a = self.getOrbitSigma2(time=time_a, res=orbit_a)
+        Sigma_b = self.getOrbitSigma2(time=time_b, res=orbit_b)
 
         for i in tqdm(self.__arclist, desc='save Orbit and KBRR Cov: '):
             kbrrname = kbrr_path + '/' + SSTObserve.RangeRate.name + '_' + str(i) + '.hdf5'
@@ -1162,139 +1113,80 @@ class CalibrateOrbit:
             postOrbith5_b = h5py.File(postOrbitname_b, "r+")
             postKBRRh5 = h5py.File(kbrrname, "r+")
 
-            self.saveSigma1(Sigma_a, h5path=postOrbith5_a)
-            self.saveSigma1(Sigma_b, h5path=postOrbith5_b)
-            self.saveSigma1(Sigma, h5path=postKBRRh5)
+            time_kbr = postKBRRh5['time'][:]
+            time_orbit_a = postOrbith5_a['time'][:]
+            time_orbit_b = postOrbith5_b['time'][:]
+
+            res_orbit_a = postOrbith5_a['post_Orbit'][:]
+            res_orbit_b = postOrbith5_b['post_Orbit'][:]
+
+            self.saveSigma1(Sigma_a, time_orbit_a, h5path=postOrbith5_a)
+            self.saveSigma1(Sigma_b, time_orbit_b, h5path=postOrbith5_b)
+            self.saveSigma1(Sigma, time_kbr, h5path=postKBRRh5)
         pass
 
-    # def GLS(self):
-    #     '''get orbit obs'''
-    #     orbit_path = self.__solver_config.PostOrbit + '/' + self.__date_span[0] + '-' + self.__date_span[1]
-    #     kbrr_path = self.__solver_config.PostKBRR + '/' + self.__date_span[0] + '-' + self.__date_span[1]
-    #     self.lagNum = int(self.__interface_config.arc_length * 3600 / self.__interface_config.sr_target)
-    #     # self.lagNum = int(121)
-    #     acov_a_x = np.zeros((self.lagNum,))
-    #     acov_a_y = np.zeros((self.lagNum,))
-    #     acov_a_z = np.zeros((self.lagNum,))
-    #     acov_b_x = np.zeros((self.lagNum,))
-    #     acov_b_y = np.zeros((self.lagNum,))
-    #     acov_b_z = np.zeros((self.lagNum,))
-    #     acov_kbrr = np.zeros((self.lagNum,))
-    #     time_a = []
-    #     time_b = []
-    #     time_kbrr = []
-    #     index_a = 0
-    #     index_b = 0
-    #     index_kbrr = 0
-    #     for i in tqdm(self.__arclist, desc='Solve Orbit and KBRR Cov: '):
-    #         postOrbitname_a = orbit_path + '/Orbit_' + str(i) + 'A.hdf5'
-    #         postOrbitname_b = orbit_path + '/Orbit_' + str(i) + 'B.hdf5'
-    #         kbrrname = kbrr_path + '/' + SSTObserve.RangeRate.name + '_' + str(i) + '.hdf5'
-    #
-    #         postOrbith5_a = h5py.File(postOrbitname_a, "r")
-    #         postOrbith5_b = h5py.File(postOrbitname_b, "r")
-    #         postKBRRh5 = h5py.File(kbrrname, "r")
-    #
-    #         time_orbit_a = postOrbith5_a['time'][:]
-    #         time_orbit_b = postOrbith5_b['time'][:]
-    #         time_kbr = postKBRRh5['time'][:]
-    #
-    #         res_orbit_a = postOrbith5_a['post_Orbit'][:]
-    #         res_orbit_b = postOrbith5_b['post_Orbit'][:]
-    #         res_kbrr = postKBRRh5['post_kbrr'][:]
-    #
-    #         res_a = np.array(res_orbit_a).reshape((-1, 3))
-    #         res_a_x = res_a[:, 0]
-    #         res_a_y = res_a[:, 1]
-    #         res_a_z = res_a[:, 2]
-    #
-    #         res_a_x = res_a_x - np.mean(res_a_x)
-    #         res_a_x = signal.detrend(res_a_x, type='linear')
-    #         res_a_y = res_a_y - np.mean(res_a_y)
-    #         res_a_y = signal.detrend(res_a_y, type='linear')
-    #         res_a_z = res_a_z - np.mean(res_a_z)
-    #         res_a_z = signal.detrend(res_a_z, type='linear')
-    #
-    #         res_b = np.array(res_orbit_b).reshape((-1, 3))
-    #         res_b_x = res_b[:, 0]
-    #         res_b_y = res_b[:, 1]
-    #         res_b_z = res_b[:, 2]
-    #
-    #         res_b_x = res_b_x - np.mean(res_b_x)
-    #         res_b_x = signal.detrend(res_b_x, type='linear')
-    #         res_b_y = res_b_y - np.mean(res_b_y)
-    #         res_b_y = signal.detrend(res_b_y, type='linear')
-    #         res_b_z = res_b_z - np.mean(res_b_z)
-    #         res_b_z = signal.detrend(res_b_z, type='linear')
-    #
-    #         res_kbrr = res_kbrr - np.mean(res_kbrr)
-    #         res_kbrr = signal.detrend(res_kbrr, type='linear')
-    #
-    #         if np.shape(res_a)[0] >= self.lagNum:
-    #             acov_a_x += self.estimate_acov(res_a_x, max_lag=self.lagNum - 1)
-    #             acov_a_y += self.estimate_acov(res_a_y, max_lag=self.lagNum - 1)
-    #             acov_a_z += self.estimate_acov(res_a_z, max_lag=self.lagNum - 1)
-    #
-    #             index_a += 1
-    #
-    #         if np.shape(res_b)[0] >= self.lagNum:
-    #             acov_b_x += self.estimate_acov(res_b_x, max_lag=self.lagNum - 1)
-    #             acov_b_y += self.estimate_acov(res_b_y, max_lag=self.lagNum - 1)
-    #             acov_b_z += self.estimate_acov(res_b_z, max_lag=self.lagNum - 1)
-    #             index_b += 1
-    #
-    #         if len(res_kbrr) >= self.lagNum:
-    #             res_x = np.asarray(res_kbrr)
-    #             time = np.asarray(time_kbr)
-    #             dt = 5
-    #             t0 = time[0]
-    #
-    #             # 映射为整数采样点
-    #             idx = np.round((time - t0) / dt).astype(np.int64)
-    #
-    #             # 构建稀疏等间隔序列
-    #             L = idx.max() + 1
-    #             x = np.zeros(L)
-    #             mask = np.zeros(L)
-    #             x[idx] = res_x
-    #             mask[idx] = 1.0
-    #
-    #             acov, _ = self.estimate_acov_by_lag(x=x, mask=mask, max_lag=self.lagNum - 1)
-    #
-    #             acov_kbrr += acov
-    #             # acov_kbrr += self.estimate_acov(res_kbrr, max_lag=self.lagNum - 1)
-    #             index_kbrr += 1
-    #
-    #         postOrbith5_a.close()
-    #         postOrbith5_b.close()
-    #         postKBRRh5.close()
-    #
-    #     acov_a_x = acov_a_x / index_a
-    #     acov_a_y = acov_a_y / index_a
-    #     acov_a_z = acov_a_z / index_a
-    #     acov_b_x = acov_b_x / index_b
-    #     acov_b_y = acov_b_y / index_b
-    #     acov_b_z = acov_b_z / index_b
-    #     acov_kbrr = acov_kbrr / index_kbrr
-    #
-    #     Sigma_a = self.getSigma6(acov_a_x, acov_a_y, acov_a_z)
-    #     Sigma_b = self.getSigma6(acov_b_x, acov_b_y, acov_b_z)
-    #     Sigma = self.getSigma5(acov_kbrr)
-    #
-    #     for i in tqdm(self.__arclist, desc='save Orbit and KBRR Cov: '):
-    #     # for i in tqdm((0, 1), desc='save Orbit and KBRR Cov: '):
-    #         kbrrname = kbrr_path + '/' + SSTObserve.RangeRate.name + '_' + str(i) + '.hdf5'
-    #         postOrbitname_a = orbit_path + '/Orbit_' + str(i) + 'A.hdf5'
-    #         postOrbitname_b = orbit_path + '/Orbit_' + str(i) + 'B.hdf5'
-    #
-    #         postOrbith5_a = h5py.File(postOrbitname_a, "r+")
-    #         postOrbith5_b = h5py.File(postOrbitname_b, "r+")
-    #         postKBRRh5 = h5py.File(kbrrname, "r+")
-    #
-    #         self.saveSigma1(Sigma_a, h5path=postOrbith5_a)
-    #         self.saveSigma1(Sigma_b, h5path=postOrbith5_b)
-    #         self.saveSigma1(Sigma, h5path=postKBRRh5)
-    #     pass
+    def GLS_full(self):
+        '''get orbit obs'''
+        orbit_path = self.__solver_config.PostOrbit + '/' + self.__date_span[0] + '-' + self.__date_span[1]
+        kbrr_path = self.__solver_config.PostKBRR + '/' + self.__date_span[0] + '-' + self.__date_span[1]
+        self.lagNum = int(self.__interface_config.arc_length * 3600 / self.__interface_config.sr_target)
+
+        kbrr = []
+        orbit_a = []
+        orbit_b = []
+        time_a = []
+        time_b = []
+        time_kbrr = []
+        for i in tqdm(self.__arclist, desc='Solve Orbit and KBRR Cov: '):
+            postOrbitname_a = orbit_path + '/Orbit_' + str(i) + 'A.hdf5'
+            postOrbitname_b = orbit_path + '/Orbit_' + str(i) + 'B.hdf5'
+            kbrrname = kbrr_path + '/' + SSTObserve.RangeRate.name + '_' + str(i) + '.hdf5'
+
+            postOrbith5_a = h5py.File(postOrbitname_a, "r")
+            postOrbith5_b = h5py.File(postOrbitname_b, "r")
+            postKBRRh5 = h5py.File(kbrrname, "r")
+
+            time_orbit_a = postOrbith5_a['time'][:]
+            time_orbit_b = postOrbith5_b['time'][:]
+            time_kbr = postKBRRh5['time'][:]
+
+            res_orbit_a = postOrbith5_a['post_Orbit'][:]
+            res_orbit_b = postOrbith5_b['post_Orbit'][:]
+            res_kbrr = postKBRRh5['post_kbrr'][:]
+
+            time_a.extend(time_orbit_a)
+            time_b.extend(time_orbit_b)
+            time_kbrr.extend(time_kbr)
+
+            orbit_a.extend(res_orbit_a)
+            orbit_b.extend(res_orbit_b)
+            kbrr.extend(res_kbrr)
+
+            postOrbith5_a.close()
+            postOrbith5_b.close()
+            postKBRRh5.close()
+
+        Sigma = self.getKBRRSigma(time=time_kbrr, res=kbrr)
+        Sigma_a = self.getOrbitSigma(time=time_a, res=orbit_a)
+        Sigma_b = self.getOrbitSigma(time=time_b, res=orbit_b)
+
+        for i in tqdm(self.__arclist, desc='save Orbit and KBRR Cov: '):
+            kbrrname = kbrr_path + '/' + SSTObserve.RangeRate.name + '_' + str(i) + '.hdf5'
+            postOrbitname_a = orbit_path + '/Orbit_' + str(i) + 'A.hdf5'
+            postOrbitname_b = orbit_path + '/Orbit_' + str(i) + 'B.hdf5'
+
+            postOrbith5_a = h5py.File(postOrbitname_a, "r+")
+            postOrbith5_b = h5py.File(postOrbitname_b, "r+")
+            postKBRRh5 = h5py.File(kbrrname, "r+")
+
+            time_kbr = postKBRRh5['time'][:]
+            time_orbit_a = postOrbith5_a['time'][:]
+            time_orbit_b = postOrbith5_b['time'][:]
+
+            self.saveSigma1(Sigma_a, time_orbit_a, h5path=postOrbith5_a)
+            self.saveSigma1(Sigma_b, time_orbit_b, h5path=postOrbith5_b)
+            self.saveSigma1(Sigma, time_kbr, h5path=postKBRRh5)
+        pass
 
     def getSigma(self, time, res):
         n = len(res)
@@ -1730,7 +1622,7 @@ class CalibrateOrbit:
         # acov_x = self.estimate_acov(res_x, max_lag=self.lagNum - 1)
         # time = np.asarray(time)
 
-        Sigma_x, Sigma_y, Sigma_z = self.cal_toeplitz_cov(time, res_x, res_y, res_z, dt=10)
+        Sigma_x, Sigma_y, Sigma_z = self.cal_toeplitz_cov(time, res_x, res_y, res_z, dt=int(self.__solver_config.OrbitFre))
         # Sigma_x2, Sigma_y2, Sigma_z2 = self.cal_toeplitz_cov(time, res_x, res_y, res_z, dt=5)
 
         # Sigma_x = (Sigma_x1 + Sigma_x2) / 2
@@ -1745,6 +1637,46 @@ class CalibrateOrbit:
                 Sigma[3 * i, 3 * j] = Sigma_x[i, j]
                 Sigma[3 * i + 1, 3 * j + 1] = Sigma_y[i, j]
                 Sigma[3 * i + 2, 3 * j + 2] = Sigma_z[i, j]
+
+        return Sigma
+        # return Sigma_x, Sigma_y, Sigma_z
+
+    def getOrbitSigma2(self, time, res):
+        res = np.array(res).reshape((-1, 3))
+        res_x = res[:, 0]
+        res_y = res[:, 1]
+        res_z = res[:, 2]
+
+        # ===== 2️⃣ 计算 RMS =====
+        rms_x = np.sqrt(np.mean(res_x ** 2))
+        rms_y = np.sqrt(np.mean(res_y ** 2))
+        rms_z = np.sqrt(np.mean(res_z ** 2))
+
+        # print("RMS:", rms_x, rms_y, rms_z)
+
+        # ===== 3️⃣ 正确的维度 =====
+        N = self.lagNum
+
+        # ===== 4️⃣ 构造 σ² I =====
+        eps = 1e-12  # 防止退化
+
+        scale = 3  # 经验值
+
+        # S_x = (scale * rms_x) ** 2 * np.eye(N)
+        # S_y = (scale * rms_y) ** 2 * np.eye(N)
+        # S_z = (scale * rms_z) ** 2 * np.eye(N)
+
+        S_x = 0.0004 * np.eye(N) + eps
+        S_y = 0.0004 * np.eye(N) + eps
+        S_z = 0.0004 * np.eye(N) + eps
+
+        Sigma = np.zeros((3 * N, 3 * N))
+
+        for i in range(N):
+            for j in range(N):
+                Sigma[3 * i, 3 * j] = S_x[i, j]
+                Sigma[3 * i + 1, 3 * j + 1] = S_y[i, j]
+                Sigma[3 * i + 2, 3 * j + 2] = S_z[i, j]
 
         return Sigma
         # return Sigma_x, Sigma_y, Sigma_z
@@ -1859,10 +1791,12 @@ class CalibrateOrbit:
 
         return Sigma
 
-    def saveSigma1(self, Sigma, h5path):
+    def saveSigma1(self, Sigma, time, h5path):
 
         if "Sigma" in h5path:
             del h5path["Sigma"]
+        if "time" in h5path:
+            del h5path["time"]
         #
         # if "Sigma_y" in h5path:
         #     del h5path["Sigma_y"]
@@ -1872,6 +1806,7 @@ class CalibrateOrbit:
         #
         # h5path.create_dataset("Sigma_x", data=Sigma_x)
         # h5path.create_dataset("Sigma_y", data=Sigma_y)
+        h5path.create_dataset("time", data=time)
         h5path.create_dataset("Sigma", data=Sigma)
         h5path.close()
         return self

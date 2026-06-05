@@ -119,15 +119,15 @@ class GravityDesignMat:
         res_dir = self._res + '/' + self.__data_span[0] + '_' + self.__data_span[1]
         res_filename = res_dir + '/Orbit_' + str(self._arcNo) + '_' + self._satName + '.hdf5'
 
-        h5 = h5py.File(res_filename, 'w')
-        h5.create_dataset('t', data=DM_orbit['t'])
-        h5.create_dataset('r', data=r)
-        h5.create_dataset('v', data=v)
-        h5.create_dataset('local_r', data=local_r)
-        h5.create_dataset('global_r', data=global_r)
-        h5.create_dataset('local_v', data=local_v)
-        h5.create_dataset('global_v', data=global_v)
-        h5.close()
+        with h5py.File(res_filename, 'w') as h5:
+            h5.create_dataset('t', data=DM_orbit['t'])
+            h5.create_dataset('r', data=r)
+            h5.create_dataset('v', data=v)
+            h5.create_dataset('local_r', data=local_r)
+            h5.create_dataset('global_r', data=global_r)
+            h5.create_dataset('local_v', data=local_v)
+            h5.create_dataset('global_v', data=global_v)
+
         pass
 
     def get_sst_design_matrix(self):
@@ -224,11 +224,11 @@ class GravityDesignMat:
         '''make a record'''
         res_dir = self._res + '/' + self.__data_span[0] + '_' + self.__data_span[1]
         res_filename = res_dir + '/' + SSTObserve.RangeRate.name + '_' + str(self._arcNo) + '.hdf5'
-        h5 = h5py.File(res_filename, 'w')
-        h5.create_dataset('t', data=DM_orbit['t'][:])
-        h5.create_dataset('local', data=np.concatenate((local_1[:, 0, :], local_2[:, 0, :]), axis=1))
-        h5.create_dataset('global', data=Global)
-        h5.close()
+        with h5py.File(res_filename, 'w') as h5:
+            h5.create_dataset('t', data=DM_orbit['t'][:])
+            h5.create_dataset('local', data=np.concatenate((local_1[:, 0, :], local_2[:, 0, :]), axis=1))
+            h5.create_dataset('global', data=Global)
+
         pass
 
     def __getRangeAccDM(self):
@@ -242,11 +242,12 @@ class GravityDesignMat:
         orbit = {}
         res_dir = self._res + '/' + self.__data_span[0] + '_' + self.__data_span[1]
         res_filename = res_dir + '/' + str(self._arcNo) + '_' + self._satName + '.hdf5'
-        h5 = h5py.File(res_filename, 'r')
-        orbit['r'] = h5['r'][()]
-        orbit['v'] = h5['v'][()]
-        orbit['t'] = h5['t'][()]
-        h5.close()
+
+        with h5py.File(res_filename, 'r') as h5:
+            orbit['r'] = h5['r'][()]
+            orbit['v'] = h5['v'][()]
+            orbit['t'] = h5['t'][()]
+
         return orbit
 
     def __design_fit(self, obs, n, node):

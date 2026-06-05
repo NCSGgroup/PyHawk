@@ -185,8 +185,8 @@ class RangeRate:
         '''make a record'''
         h5 = self.__resh5
         h5.create_dataset('post_t', data=post_t)
-        h5.create_dataset('post_residual', data=pre_residual)
-        # h5.create_dataset('post_residual', data=post_residual)
+        # h5.create_dataset('post_residual', data=pre_residual)
+        h5.create_dataset('post_residual', data=post_residual)
         h5.create_dataset('pre_t', data=self.Time)
         h5.create_dataset('pre_residual', data=self.pre_residual())
         h5.create_dataset('design_matrix', data=design_matrix)

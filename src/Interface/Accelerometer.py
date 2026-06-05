@@ -10,7 +10,6 @@ from src.Interface.ArcOperation import ArcData
 from src.Preference.Pre_Accelerometer import AccelerometerConfig
 
 
-
 class AccCaliPar:
     def __init__(self, rd: ArcData, sat, arcNo, accConfig:AccelerometerConfig, adjustlength):
         self.rd = rd

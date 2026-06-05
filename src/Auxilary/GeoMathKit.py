@@ -514,12 +514,15 @@ class GeoMathKit:
         """
         # time
         # print(obs[0])
-        if p is None:
-            p = np.eye(np.shape(dm_global.T)[-1])
-        I = np.eye(np.shape(dm_global.T)[-1])
+        if dm_global.shape[0] == 0:
+            print("Empty observation block, skip this arc")
+            return None, None
 
+        if p is None:
+            p = np.eye(dm_global.shape[0])  # n_obs × n_obs
         '''Cholesky白化'''
         L = cholesky(p, lower=True)
+
         Agw = solve_triangular(L, dm_global, lower=True)  # n x p
         Alw = solve_triangular(L, dm_local, lower=True)  # n x q
         lw = solve_triangular(L, obs, lower=True)
@@ -530,8 +533,10 @@ class GeoMathKit:
         # Q2 = Q[:, n:]
 
         # Q1, R = np.linalg.qr(B, mode="complete")
-        Q1, R = np.linalg.qr(Alw)
-        Q2 = I - Q1 @ Q1.T
+        Q, R = np.linalg.qr(Alw, mode='complete')
+        n = Alw.shape[1]
+        Q2 = Q[:, n:]
+
         Q2_T = Q2.T
 
         A = Q2_T @ Agw
