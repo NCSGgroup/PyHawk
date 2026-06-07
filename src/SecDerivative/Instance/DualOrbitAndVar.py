@@ -51,21 +51,38 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
         time_A = GNVA[:, 0]
         time_B = GNVB[:, 0]
 
-        if len(time_A) != len(time_B):
-            self.__ArcLen = len(time_B) if len(time_A) > len(time_B) else len(time_A)
-            self.Time = time_B if len(time_A) > len(time_B) else time_A
-        else:
-            self.__ArcLen = len(time_B)
-            self.Time = time_B
-            # self.__ArcLen = len(time_A)
-            commonTime = set(time_A.astype(np.int64))
-            commonTime = commonTime & set(time_B.astype(np.int64))
-            commonTime = np.array(list(commonTime))
-            commonTime.sort()
-            index1 = [list(time_A).index(x) for x in commonTime]
-            index2 = [list(time_B).index(x) for x in commonTime]
-            GNVA = GNVA[index1, :]
-            GNVB = GNVB[index2, :]
+        time_A_i = time_A.astype(np.int64)
+        time_B_i = time_B.astype(np.int64)
+
+        commonTime = np.intersect1d(time_A_i, time_B_i)
+
+        idxA = np.searchsorted(time_A_i, commonTime)
+        idxB = np.searchsorted(time_B_i, commonTime)
+
+        GNVA = GNVA[idxA, :]
+        GNVB = GNVB[idxB, :]
+
+        self.Time = commonTime.astype(GNVA[:, 0].dtype)
+        self.__ArcLen = len(commonTime)
+        self.__commonTime = commonTime
+
+        assert len(commonTime) > 5, "Common GNV time points are insufficient."
+
+        # if len(time_A) != len(time_B):
+        #     self.__ArcLen = len(time_B) if len(time_A) > len(time_B) else len(time_A)
+        #     self.Time = time_B if len(time_A) > len(time_B) else time_A
+        # else:
+        #     self.__ArcLen = len(time_B)
+        #     self.Time = time_B
+        #     # self.__ArcLen = len(time_A)
+        #     commonTime = set(time_A.astype(np.int64))
+        #     commonTime = commonTime & set(time_B.astype(np.int64))
+        #     commonTime = np.array(list(commonTime))
+        #     commonTime.sort()
+        #     index1 = [list(time_A).index(x) for x in commonTime]
+        #     index2 = [list(time_B).index(x) for x in commonTime]
+        #     GNVA = GNVA[index1, :]
+        #     GNVB = GNVB[index2, :]
 
         '''divide x layer'''
         self.node_x = self.divideLayer(self.adjustlength_x)
@@ -149,11 +166,19 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
         #
         # print('3 Cost time: %s ms' % ((Ti.time() - begin) * 1000))0
 
-        bool1, bool2 = True, True
+        bool1, bool2, bool3, bool4 = True, True, True, True
         if arA is None:
             bool1 = False
         if apA is None:
             bool2 = False
+
+        if arB is None:
+            bool3 = False
+        if apB is None:
+            bool4 = False
+
+        assert apA is None or apA.shape[0] == 3
+        assert apB is None or apB.shape[0] == 3
 
         '''calculate the second order differentials'''
         diff2ndA = MatrixVarEqn.VarEq2ndOrder(PhirSr[0:3], PhivSv[0:3], arA, apA, accA,
@@ -163,8 +188,8 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
 
         diff2ndB = MatrixVarEqn.VarEq2ndOrder(PhirSr[3:6], PhivSv[3:6], arB, apB, accB,
                                        isIncludeStateVec=True,
-                                       isIncludeTransitionMatrix=bool1,
-                                       isIncludeSensitivityMatrix=bool2)
+                                       isIncludeTransitionMatrix=bool3,
+                                       isIncludeSensitivityMatrix=bool4)
 
         return np.vstack((diff2ndA, diff2ndB))
 

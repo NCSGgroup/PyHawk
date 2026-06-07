@@ -64,7 +64,7 @@ class MatrixVarEqn:
             '''Sensitivity matrix, [6*np]'''
             S = PhiS[index:].reshape((6, -1))
             dimS = np.shape(S)
-            dfdp = np.vstack(np.zeros((3, dimS[1])), ap)
+            dfdp = np.vstack((np.zeros((3, dimS[1])), ap))
             if not isIncludeTransitionMatrix:
                 a = np.hstack((np.zeros((3, 3)), np.eye(3)))
                 '''da/dr, da/dv'''
@@ -159,6 +159,16 @@ class MatrixVarEqn:
 
         if isIncludeSensitivityMatrix:
             Sr = PhirSr[:, 7:]
+
+            if ap is None:
+                raise ValueError("Sensitivity matrix is enabled, but ap is None.")
+
+            if Sr.shape[1] != ap.shape[1]:
+                raise ValueError(
+                    f"VarEq dimension mismatch: Sr={Sr.shape}, ap={ap.shape}. "
+                    "Check Accelerometer Parameter_Number, isScale, and dadp.shape[2]."
+                )
+
             if isIncludeTransitionMatrix:
                 Srp = np.matmul(ar, Sr) + ap
             else:

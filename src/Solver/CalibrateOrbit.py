@@ -105,7 +105,7 @@ class CalibrateOrbit:
         self.__force_model_config.__dict__ = fmDict
 
         self.__parameter_config = ParameterConfig()
-        Parameter = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/ParameterConfig.json'), 'r'))
+        Parameter = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/OrbitFitParameterConfig.json'), 'r'))
         self.__parameter_config.__dict__ = Parameter
 
         self.__solver_config = SolverConfig()
@@ -129,7 +129,7 @@ class CalibrateOrbit:
         self.__interface_config.__dict__ = interfaceDict
 
         self.__design_parameter_config = ParameterConfig()
-        designParameter = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/DesignParameterConfig.json'), 'r'))
+        designParameter = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/GravityDesignParameterConfig.json'), 'r'))
         self.__design_parameter_config.__dict__ = designParameter
 
         self.__frame_config = FrameConfig()

@@ -69,10 +69,12 @@ class NonConByAcc(AbsNonConservative):
             self.__idx = np.abs(time.getGPS_from_epoch2000 - self.__time).argmin()
             return self
         else:
-            a = self.__time[0] - err
-            b = self.__time[-1] + err
-            print(time.getGPS_from_epoch2000, 'ACC instrument does not cover the given time ')
-            return None
+
+            raise ValueError(
+                f"ACC time out of range: t={time.getGPS_from_epoch2000}, "
+                f"range=({self.__time[0]}, {self.__time[-1]}), "
+                f"sat={self.sat}, arc={self._arcNo}"
+            )
 
     def getAcceleration(self):
         """
