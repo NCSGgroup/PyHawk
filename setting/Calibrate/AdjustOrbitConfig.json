@@ -1,20 +1,21 @@
 {
     "OrbitConfig": {
-        "OutlierTimes": 6,
-        "OutlierLimit": 10
+        "OutlierTimes": 3,
+        "OutlierLimit": 1
     },
     "RangeRateConfig": {
         "ParameterFitting": "biasC0C1_OneCPR",
         "OutlierTimes": 6,
-        "OutlierRMS": 6e-06,
-        "OutlierObs": 6,
-        "ArcLength": 3,
+        "OutlierRMS": 7e-07,
+        "OutlierObs": 7e-07,
+        "ArcLength": 1.5,
         "Iterations": 3
     },
     "PathOfFilesConfig": {
         "StateVectorDataTemp": "../temp/StateVector",
         "OrbitAdjustResTemp": "../temp/OrbitAdjustment",
         "RangeRateTemp": "../temp/RangeRate",
-        "FilteredRangeRateTemp": "../temp/RangeRate"
+        "LGDTemp": "../temp/LGD",
+        "FilteredRangeRateTemp": "../temp/FilteredRangeRate"
     }
 }

@@ -83,7 +83,7 @@ def demo():
     fmDict = json.load(open('../setting/Calibrate/ForceModelConfig.json', 'r'))
     fmConfig.__dict__ = fmDict
     parameterConfig = ParameterConfig()
-    Parameter = json.load(open('../setting/Calibrate/ParameterConfig.json', 'r'))
+    Parameter = json.load(open('../setting/Calibrate/OrbitFitParameterConfig.json', 'r'))
     parameterConfig.__dict__ = Parameter
     solverConfig = SolverConfig()
     solverDict = json.load(open('../setting/Calibrate/SolverConfig.json', 'r'))
@@ -147,7 +147,7 @@ def demo1(start, end):
     solverDict = json.load(open('../setting/Calibrate/SolverConfig.json', 'r'))
     solverConfig.__dict__ = solverDict
     parameterConfig = ParameterConfig()
-    Parameter = json.load(open('../setting/Calibrate/ParameterConfig.json', 'r'))
+    Parameter = json.load(open('../setting/Calibrate/OrbitFitParameterConfig.json', 'r'))
     parameterConfig.__dict__ = Parameter
     # """step 5: init AdjustOrbit"""
     # for i in range(start, end):

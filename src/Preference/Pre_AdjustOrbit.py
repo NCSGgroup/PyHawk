@@ -28,6 +28,7 @@ class AdjustOrbitConfig:
             self.StateVectorDataTemp = "../temp/StateVector"
             self.OrbitAdjustResTemp = "../temp/OrbitAdjustment"
             self.RangeRateTemp = "../temp/RangeRate"
+            self.LGDTemp = "../temp/LGD"
             self.FilteredRangeRateTemp = "../temp/FilteredRangeRate"
 
 

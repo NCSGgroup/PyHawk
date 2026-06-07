@@ -18,6 +18,7 @@ class CalibrateOrbitConfig:
             self.isPreprocess = True
             self.isAdjustOrbit = True
             self.isAdjustKBRR = True
+            self.isGetLGD = True
             self.isGetGravityDesignMat = True
             self.isGetNEQ = True
             self.isGetSH = True

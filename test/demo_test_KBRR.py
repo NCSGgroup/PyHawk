@@ -60,7 +60,7 @@ def AODRL06():
     solverDict = json.load(open('../setting/Calibrate/SolverConfig.json', 'r'))
     solverConfig.__dict__ = solverDict
     parameterConfig = ParameterConfig()
-    Parameter = json.load(open('../setting/Calibrate/ParameterConfig.json', 'r'))
+    Parameter = json.load(open('../setting/Calibrate/OrbitFitParameterConfig.json', 'r'))
     parameterConfig.__dict__ = Parameter
     """step 5: init AdjustOrbit"""
     for i in range(0, arcLen):

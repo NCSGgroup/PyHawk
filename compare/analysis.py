@@ -900,7 +900,7 @@ def year_mean(folder, GFZ, JPL, CSR):
 
 if __name__ == '__main__':
     # span1 = '2016-08-08_2016-09-03'
-    span1 = '2021-01-01_2021-01-31'
+    span1 = '2020-09-01_2020-09-30'
     # GRACE(span1)
     GRACE_FO(span1)
     # batch_process("../result/grace_v2")

@@ -56,7 +56,7 @@ class demo_1:
         self.__force_model_config.__dict__ = fmDict
 
         self.__parameter_config = ParameterConfig()
-        Parameter = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/ParameterConfig.json'), 'r'))
+        Parameter = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/OrbitFitParameterConfig.json'), 'r'))
         self.__parameter_config.__dict__ = Parameter
 
         self.__adjust_config = AdjustOrbitConfig()

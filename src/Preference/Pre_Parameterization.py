@@ -38,7 +38,7 @@ class ParameterConfig:
 def class_to_json():
     Obj1 = ParameterConfig()
     tc_dict = Obj1.__dict__
-    with open('../../setting/Calibrate/ParameterConfig.json', 'w') as f:
+    with open('../../setting/Calibrate/OrbitFitParameterConfig.json', 'w') as f:
         json.dump(tc_dict, f, indent=4)
 
 

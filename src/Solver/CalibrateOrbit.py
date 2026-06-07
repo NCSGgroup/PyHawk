@@ -56,6 +56,7 @@ from scipy.interpolate import interp1d
 from scipy import interpolate
 from scipy.ndimage import gaussian_filter1d
 from numpy.fft import rfft, irfft
+from src.Solver.LGD import ComputeLGD
 
 
 class CalibrateOrbit:
@@ -105,7 +106,7 @@ class CalibrateOrbit:
         self.__force_model_config.__dict__ = fmDict
 
         self.__parameter_config = ParameterConfig()
-        Parameter = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/ParameterConfig.json'), 'r'))
+        Parameter = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/OrbitFitParameterConfig.json'), 'r'))
         self.__parameter_config.__dict__ = Parameter
 
         self.__solver_config = SolverConfig()
@@ -129,7 +130,7 @@ class CalibrateOrbit:
         self.__interface_config.__dict__ = interfaceDict
 
         self.__design_parameter_config = ParameterConfig()
-        designParameter = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/DesignParameterConfig.json'), 'r'))
+        designParameter = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/GravityDesignParameterConfig.json'), 'r'))
         self.__design_parameter_config.__dict__ = designParameter
 
         self.__frame_config = FrameConfig()
@@ -165,6 +166,7 @@ class CalibrateOrbit:
         isPreprocess = StepControl.isPreprocess
         isAdjustOrbit = StepControl.isAdjustOrbit
         isAdjustKBRR = StepControl.isAdjustKBRR
+        isGetLGD = StepControl.isGetLGD
         isGravityDesignMat = StepControl.isGetGravityDesignMat
         isNEQ = StepControl.isGetNEQ
         isSH = StepControl.isGetSH
@@ -201,7 +203,18 @@ class CalibrateOrbit:
             pool.close()
             pool.join()
         self.__saveKBRRRMS()
-            # self.butter_low_filter()
+        if isGetLGD:
+            if isGetLGD:
+                self.makeLog(stepName='LGD', process=AdjustKBRRProcess)
+                pool = multiprocessing.Pool(
+                    processes=AdjustKBRRProcess
+                )
+                pool.map(
+                    self._computeLGD,
+                    self.__arclist
+                )
+                pool.close()
+                pool.join()
         if isGravityDesignMat:
             self.makeLog(stepName='gravityDesignMat', process=GetGravityDesignMatProcess)
             # for i in np.arange(0, 10, 1):
@@ -289,6 +302,23 @@ class CalibrateOrbit:
                      ParameterConfig=self.__parameter_config, FrameConfig=self.__frame_config,
                      ODEConfig=self.__ode_config)
         RR.calibrate()
+        pass
+
+    def _computeLGD(self, arcNo):
+        ComputeLGD(
+            arcNo=arcNo,
+            date_span=self.__date_span
+        ).configure(
+            AdjustOrbitConfig=self.__adjust_config,
+            InterfaceConfig=self.__interface_config,
+            FrameConfig=self.__frame_config,
+            f_low=0.9e-3,
+            f_high=11.0e-3,
+            filter_order=3,
+            gap_threshold=20.0,
+            min_segment_length=300
+        ).compute()
+
         pass
 
     def _gravityDesignMat(self, k):
