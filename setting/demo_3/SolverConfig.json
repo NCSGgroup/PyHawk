@@ -1,5 +1,10 @@
 {
     "SSTOption": "RangeRate",
     "OrbitKinFactor": 1e11,
-    "DesignMatrixTemp": "../temp/DesignMatrixSH"
+    "OrbitFre": 8,
+    "DesignMatrixTemp": "../temp/DesignMatrixSH",
+    "CovarianceMatrix": "../temp/CovarianceMatrix",
+    "PostParameter": "../temp/PostParameter",
+    "PostKBRR": "../temp/PostKBRR",
+    "PostOrbit": "../temp/PostOrbit"
 }
