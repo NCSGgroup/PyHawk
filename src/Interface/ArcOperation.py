@@ -33,20 +33,33 @@ class ArcSelect:
     def unpackArcs(self):
 
         # ------------------------loading data----------------------------------
-        ACC_A = self.__gf.getData(Payload.ACC.name, SatID.A)[0]
-        ACC_B = self.__gf.getData(Payload.ACC.name, SatID.B)[0]
-        SCA_A = self.__gf.getData(Payload.SCA.name, SatID.A)[0]
-        SCA_B = self.__gf.getData(Payload.SCA.name, SatID.B)[0]
-        GNV_A = self.__gf.getData(Payload.GNV.name, SatID.A)[0]
-        GNV_B = self.__gf.getData(Payload.GNV.name, SatID.B)[0]
-        KBR = self.__gf.getData(Payload.KBR.name, SatID.A)[0]
+        ACC_A = self.__get_gapfixed_data(Payload.ACC, SatID.A)
+        ACC_B = self.__get_gapfixed_data(Payload.ACC, SatID.B)
+        SCA_A = self.__get_gapfixed_data(Payload.SCA, SatID.A)
+        SCA_B = self.__get_gapfixed_data(Payload.SCA, SatID.B)
+        GNV_A = self.__get_gapfixed_data(Payload.GNV, SatID.A)
+        GNV_B = self.__get_gapfixed_data(Payload.GNV, SatID.B)
+        KBR = self.__get_gapfixed_data(Payload.KBR, SatID.A)
+        LRI = self.__get_gapfixed_data(Payload.LRI, SatID.A)
         KiOrbA = self.__gf.L1b.getData(Payload.KinematicOrbit.name, SatID.A)
         KiOrbB = self.__gf.L1b.getData(Payload.KinematicOrbit.name, SatID.B)
         # ------------------------outlier kinOrbit data----------------------------------
         # KiOrbA = self.__outlier(GNV_A, KiOrbA)
         # KiOrbB = self.__outlier(GNV_B, KiOrbB)
         # -------------------------arc divide--------------------------------------
-        timelist = [ACC_A[:, 0].copy(), ACC_B[:, 0].copy(), SCA_A[:, 0].copy(), SCA_B[:, 0].copy()]
+        timelist = [
+            ACC_A[:, 0].copy(),
+            ACC_B[:, 0].copy(),
+            SCA_A[:, 0].copy(),
+            SCA_B[:, 0].copy(),
+        ]
+
+        if Payload.GNV.name in self.__gf.L1b.include_payloads:
+            if GNV_A is not None and len(GNV_A) != 0:
+                timelist.append(GNV_A[:, 0].copy())
+            if GNV_B is not None and len(GNV_B) != 0:
+                timelist.append(GNV_B[:, 0].copy())
+
         self.__divide2(timelist)
         self.__discardArcs()
 
@@ -69,12 +82,25 @@ class ArcSelect:
         if Payload.KinematicOrbit.name in self.__gf.L1b.include_payloads:
             self.__unpack(data=KiOrbA, sat=SatID.A, Gr=Payload.KinematicOrbit)
             self.__unpack(data=KiOrbB, sat=SatID.B, Gr=Payload.KinematicOrbit)
+        if Payload.LRI.name in self.__gf.L1b.include_payloads:
+            self.__unpack(LRI, Payload.LRI, SatID.A)
 
         self.__h5py.close()
-        if Payload.LRI.name in self.__gf.L1b.include_payloads:
-            pass
-
         return self
+
+    def __get_gapfixed_data(
+            self,
+            payload: Payload,
+            sat: SatID):
+        res = self.__gf.getData(payload.name, sat)
+
+        if res is None:
+            return None
+
+        if isinstance(res, tuple):
+            return res[0]
+
+        return res
 
     def __divide1(self, timelist):
         """
@@ -199,18 +225,49 @@ class ArcSelect:
         arcs = self.__arcs
         name = Gr.name + '_' + sat.name
 
+        if data is None or len(data) == 0:
+            for i, arc in enumerate(tqdm(arcs, desc='Arc unpacking for ' + name), 0):
+                self.__h5py.create_dataset(name + '_arc' + str(i), data=np.zeros((0, 4)))
+            return
+
         rmsx = self.rms(data[:, 1])
         for i, arc in enumerate(tqdm(arcs, desc='Arc unpacking for ' + name), 0):
-            time = data[:, 0].astype(np.int64)
-            x1 = data[time >= arc[0], :]
-            time = x1[:, 0].astype(np.int64)
-            x1 = x1[time <= arc[-1], :]
-            time = x1[:, 0].astype(np.int64)
-            '''resample to make data consistent'''
-            x1 = x1[time % self.__sr_target == 0, :]
+            if Gr == Payload.LRI:
+                x1 = self.__resample_lri(data=data, arc=arc)
+            else:
+                time = data[:, 0].astype(np.int64)
+                x1 = data[time >= arc[0], :]
+                time = x1[:, 0].astype(np.int64)
+                x1 = x1[time <= arc[-1], :]
+                time = x1[:, 0].astype(np.int64)
+                '''resample to make data consistent'''
+                x1 = x1[time % self.__sr_target == 0, :]
             self.__h5py.create_dataset(name + '_arc' + str(i), data=x1)
 
         pass
+
+    def __resample_lri(self, data, arc):
+        """
+        LRI1B is sampled at 0.5 Hz, while the dynamic pipeline usually works on
+        sr_target epochs. Interpolate LRI to the arc time grid.
+        """
+        if data is None or len(data) == 0:
+            return np.zeros((0, 4))
+
+        time = data[:, 0].astype(np.float64)
+        target_time = arc.astype(np.float64)
+        valid = (target_time >= time[0]) & (target_time <= time[-1])
+        target_time = target_time[valid]
+
+        if len(target_time) == 0:
+            return np.zeros((0, data.shape[1]))
+
+        out = np.zeros((len(target_time), data.shape[1]))
+        out[:, 0] = target_time
+        for col in range(1, data.shape[1]):
+            out[:, col] = np.interp(target_time, time, data[:, col])
+
+        return out
 
     def getArcs(self):
         return self.__arcs
@@ -255,16 +312,51 @@ class ArcSelect:
                 info = ''
                 GNVA = rd.getData(arc=i, kind=Payload.GNV, sat=SatID.A)
                 GNVB = rd.getData(arc=i, kind=Payload.GNV, sat=SatID.B)
-                kbrr = rd.getData(arc=i, kind=Payload.KBR, sat=SatID.A)
-                if len(GNVB) != len(GNVA):
+                sst_kind = Payload.LRI if Payload.LRI.name in self.__gf.L1b.include_payloads else Payload.KBR
+                sst_data = rd.getData(arc=i, kind=sst_kind, sat=SatID.A)
+                common_gnv = self.__common_time(
+                    GNVA,
+                    GNVB
+                )
+                min_gnv_epochs = int(
+                    self.__min_arcLen
+                    *
+                    3600
+                    /
+                    self.__sr_target
+                )
+
+                if len(common_gnv) < min_gnv_epochs:
                     state = False
-                    info = 'length GNVA != GNVB'
-                if len(kbrr) == 0:
+                    info = (
+                        'insufficient common GNV epochs: '
+                        'A=%d B=%d common=%d min=%d'
+                        % (
+                            len(GNVA),
+                            len(GNVB),
+                            len(common_gnv),
+                            min_gnv_epochs
+                        )
+                    )
+                if len(sst_data) == 0:
                     state = False
-                    info = 'kbrr is None'
+                    info = sst_kind.name + ' is None'
                 f.write('Arc NO: %s %s ----- %s;\n' % (i, state, info))
                 i += 1
         pass
+
+    @staticmethod
+    def __common_time(data_a, data_b):
+        if data_a is None or data_b is None:
+            return np.zeros(0, dtype=np.int64)
+
+        if len(data_a) == 0 or len(data_b) == 0:
+            return np.zeros(0, dtype=np.int64)
+
+        return np.intersect1d(
+            data_a[:, 0].astype(np.int64),
+            data_b[:, 0].astype(np.int64)
+        )
 
     def rms(self, x: np.ndarray):
         """

@@ -8,6 +8,8 @@ class CalibrateOrbitConfig:
         self.MissionConfig = self.Mission().__dict__
         self.StepControlConfig = self.StepControl().__dict__
         self.ParallelControlConfig = self.ParallelControl().__dict__
+        self.GLSIterationConfig = self.GLSIteration().__dict__
+        self.LGDConfig = self.LGD().__dict__
 
     class Mission:
         def __init__(self):
@@ -31,6 +33,32 @@ class CalibrateOrbitConfig:
             self.GetGravityDesignMatProcess = 15
             self.GetNEQProcess = 50
 
+    class GLSIteration:
+        def __init__(self):
+            self.MaxIteration = 5
+            self.MinIteration = 2
+            self.RelativeTolerance = 1e-3
+            self.AbsoluteTolerance = 1e-15
+
+    class LGD:
+        def __init__(self):
+            self.Method = "RangeRateDerivative"
+            self.ReferenceKBRAPayload = "KBR"
+            self.ReferenceKBRAAllowVelocityFallback = False
+            self.FLowHz = 1.0e-3
+            self.FHighHz = None
+            self.FilterOrder = 6
+            self.GapThreshold = 20.0
+            self.MinSegmentLength = 300
+            self.KBRRPreprocessEnable = True
+            self.KBRRDespikeEnable = True
+            self.KBRRDespikeWindow = 121
+            self.KBRRDespikeSigma = 6.0
+            self.KBRRRemoveLowFrequency = True
+            self.KBRRTrendDegree = 2
+            self.KBRRCPRPeriod = 5400.0
+            self.KBRRCPRHarmonics = 2
+            self.SegmentEdgeTrimSeconds = 60.0
 
 def demo2():
     Obj1 = CalibrateOrbitConfig()

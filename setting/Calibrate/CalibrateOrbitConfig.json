@@ -3,19 +3,44 @@
         "mission": "GRACE_FO_RL04"
     },
     "StepControlConfig": {
-        "isPreprocess": true,
-        "isAdjustOrbit": true,
-        "isAdjustKBRR": true,
+        "isPreprocess": false,
+        "isAdjustOrbit": false,
+        "isAdjustKBRR": false,
         "isGetLGD": true,
-        "isGetGravityDesignMat": true,
-        "isGetNEQ": true,
-        "isGetSH": true,
-        "isGLS": true
+        "isGetGravityDesignMat": false,
+        "isGetNEQ": false,
+        "isGetSH": false,
+        "isGLS": false
     },
     "ParallelControlConfig": {
-        "AdjustOrbitProcess": 50,
-        "AdjustKBRRProcess": 50,
+        "AdjustOrbitProcess": 30,
+        "AdjustKBRRProcess": 30,
         "GetGravityDesignMatProcess": 15,
-        "GetNEQProcess": 50
+        "GetNEQProcess": 15
+    },
+    "GLSIterationConfig": {
+        "MaxIteration": 1,
+        "MinIteration": 1,
+        "RelativeTolerance": 0.001,
+        "AbsoluteTolerance": 1e-15
+    },
+    "LGDConfig": {
+        "Method": "RangeRateDerivative",
+        "ReferenceKBRAPayload": "KBR",
+        "ReferenceKBRAAllowVelocityFallback": false,
+        "FHighHz": 0.01,
+        "FLowHz": 0.001,
+        "FilterOrder": 6,
+        "GapThreshold": 240.0,
+        "MinSegmentLength": 300,
+        "KBRRPreprocessEnable": false,
+        "KBRRDespikeEnable": true,
+        "KBRRDespikeWindow": 121,
+        "KBRRDespikeSigma": 7.0,
+        "KBRRRemoveLowFrequency": false,
+        "KBRRTrendDegree": 0,
+        "KBRRCPRPeriod": 5400.0,
+        "KBRRCPRHarmonics": 0,
+        "SegmentEdgeTrimSeconds": 30.0
     }
 }

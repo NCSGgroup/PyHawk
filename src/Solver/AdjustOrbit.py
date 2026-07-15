@@ -330,6 +330,8 @@ class AdjustOrbit:
         self.AccAdjustLength = None
         self.AdjustPath = None
         self._commonTime = None
+        self._accParNum = 0
+        self._accParNumBySat = {}
 
     def configure(self, SerDer, arcNo, AdjustOrbitConfig:AdjustOrbitConfig,
                   ODEConfig:ODEConfig, FMConfig: ForceModelConfig,
@@ -400,6 +402,10 @@ class AdjustOrbit:
 
             self._ac[self._sat[i]] = ac
             self._ap[self._sat[i]] = ap
+            self._accParNumBySat[self._sat[i]] = len(ap.getPar())
+
+        if self._accParNumBySat:
+            self._accParNum = max(self._accParNumBySat.values())
 
         """step 3: instance second Derivative"""
         self._secDer = SerDer(self._fr, self._rd).configures \
@@ -420,6 +426,7 @@ class AdjustOrbit:
         # assert iteration >= 2
         ode = self._ode
         '''step 1: orbit integration and save data'''
+        self._clear_acc_history()
         self._ode_res = ode.propagate()
         self._save_StateVectors(self._ode_res)
         filename = self._state_dir + '/' + str(self._arcNo) + '_' + self._satName + '.hdf5'
@@ -430,7 +437,10 @@ class AdjustOrbit:
         '''step 2: orbit adjustment'''
         orbit_init = np.hstack((self._startPos, self._startVel))
         """TODO"""
-        acc_init = np.vstack((self._ap[self._sat[0]].getPar(), self._ap[self._sat[1]].getPar()))
+        acc_init = np.zeros((len(self._sat), self._accParNum), dtype=float)
+        for j, sat in enumerate(self._sat):
+            par = self._ap[sat].getPar()
+            acc_init[j, :len(par)] = par
         '''step 3: start iteration'''
         for i in range(iteration):
             '''make the adjustment'''
@@ -440,7 +450,9 @@ class AdjustOrbit:
 
             '''step 4: update accelerometer'''
             for j in range(len(self._sat)):
-                self._ac[self._sat[j]].updatePar(paralist=acc_ini[j]).get_and_save()
+                sat = self._sat[j]
+                par_num = self._accParNumBySat[sat]
+                self._ac[sat].updatePar(paralist=acc_ini[j, :par_num]).get_and_save()
 
             '''step 5: update force model'''
             self._secDer.reConfigure()
@@ -449,6 +461,7 @@ class AdjustOrbit:
             ode.setInitial(self._startTime, r_ini, v_ini)
 
             '''step 7: orbit integration once again'''
+            self._clear_acc_history()
             self._ode_res = ode.propagate()
             # if i == iteration - 1:
             #     orbit_res = self._ode_res[1][:, :, 0] - self._obsGNV
@@ -526,17 +539,86 @@ class AdjustOrbit:
 
         return self
 
+    def _clear_acc_history(self):
+        if hasattr(self._secDer, 'clearAccHistory'):
+            self._secDer.clearAccHistory()
+
     def _save_StateVectors(self, state):
         res_dir = self._state_dir
         os.makedirs(res_dir, exist_ok=True)
 
         res_filename = res_dir + '/' + str(self._arcNo) + '_' + self._satName + '.hdf5'
+        state_time = np.asarray(state[0], dtype=float).reshape(-1)
         # print(res_filename)
         with h5py.File(res_filename, 'w') as h5:
             h5.create_dataset('t', data=state[0])
             h5.create_dataset('r', data=state[1])
             h5.create_dataset('v', data=state[2])
+            self.__save_acceleration_history(h5, state_time)
         pass
+
+    def __save_acceleration_history(self, h5, state_time):
+        if not hasattr(self._secDer, 'getAccWithTime'):
+            return
+
+        acc_time, accA, accB = self._secDer.getAccWithTime()
+        accA = self.__align_acceleration_history(state_time, acc_time, accA)
+        accB = self.__align_acceleration_history(state_time, acc_time, accB)
+        if accA is None or accB is None:
+            return
+
+        h5.create_dataset('acc_time', data=state_time)
+        h5.create_dataset('accA', data=accA)
+        h5.create_dataset('accB', data=accB)
+        h5.attrs['acc_source'] = 'total force-model acceleration from secDerivative'
+        h5.attrs['acc_frame'] = 'GCRS/inertial frame used by orbit integration'
+        h5.attrs['acc_alignment'] = 'deduplicated derivative evaluations interpolated to saved state-vector epochs'
+
+    @staticmethod
+    def __align_acceleration_history(state_time, acc_time, acc):
+        state_time = np.asarray(state_time, dtype=float).reshape(-1)
+        acc_time = np.asarray(acc_time, dtype=float).reshape(-1)
+        acc = np.asarray(acc, dtype=float)
+
+        if len(state_time) == 0 or len(acc_time) == 0 or acc.size == 0:
+            return None
+
+        acc = np.squeeze(acc)
+        if acc.ndim == 1:
+            if acc.size % 3 != 0:
+                return None
+            acc = acc.reshape((-1, 3))
+        if acc.ndim != 2 or acc.shape[1] != 3:
+            return None
+
+        count = min(len(acc_time), len(acc))
+        acc_time = acc_time[:count]
+        acc = acc[:count]
+
+        finite = np.isfinite(acc_time) & np.all(np.isfinite(acc), axis=1)
+        acc_time = acc_time[finite]
+        acc = acc[finite]
+        if len(acc_time) == 0:
+            return None
+
+        order = np.argsort(acc_time)
+        acc_time = acc_time[order]
+        acc = acc[order]
+
+        rounded_time = np.round(acc_time, 9)
+        _, last_reversed = np.unique(rounded_time[::-1], return_index=True)
+        keep = len(rounded_time) - 1 - last_reversed
+        keep = np.sort(keep)
+        acc_time = acc_time[keep]
+        acc = acc[keep]
+
+        if len(acc_time) == 1:
+            return np.repeat(acc[:1], len(state_time), axis=0)
+
+        return np.column_stack([
+            np.interp(state_time, acc_time, acc[:, i])
+            for i in range(3)
+        ])
 
     def _setInitState(self):
 

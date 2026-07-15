@@ -380,7 +380,7 @@ class GravityNEQperArc:
                         np.where(sigma_time == t)[0][0]
                         for t in t_dm[common_mask]
                     ], dtype=np.int64)
-
+                    
                     sigma_index = sigma_index.astype(np.int64)
                     sigma = sigma[np.ix_(sigma_index, sigma_index)]
 

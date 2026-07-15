@@ -1,8 +1,16 @@
 import h5py
 import json
 import os
+import re
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parents[1]
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
 from src.Preference.Pre_Parameterization import ParameterConfig
 from src.Preference.Pre_ForceModel import ForceModelConfig
 from src.Interface.LoadSH import LoadCSR
@@ -14,11 +22,6 @@ from src.Preference.EnumType import FieldType
 from src.Interface.LoadSH import LoadGif48, LoadGOCO06S
 import matplotlib
 from datetime import datetime
-import datetime
-import calendar
-import re
-plt.rcParams['font.sans-serif']=['Microsoft YaHei']         #指定默认字体（因为matplotlib默认为英文字体，汉字会使其乱码）
-plt.rcParams['axes.unicode_minus']=False    #可显示‘-’负号
 
 
 def GRACE(date):
@@ -27,12 +30,12 @@ def GRACE(date):
     '''static model'''
     static_c, static_s = LoadGif48().load('../data/StaticGravityField/gif48.gfc').getCS(60)
     '''read hust'''
-    hust_filename = '../result/gracegls/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600.gfc'
+    hust_filename = '../result/grace_v2/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600.gfc'
     hust_c, hust_s = LoadCSR().load(fileIn=hust_filename).getCS(Nmax=60)
     hust_c, hust_s = hust_c - static_c, hust_s - static_s
     hust_c, hust_s = GeoMathKit.CS_1dTo2d(hust_c), GeoMathKit.CS_1dTo2d(hust_s)
     # '''read hust'''
-    hust_filename2 = '../result/gracegls/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600.gfc'
+    hust_filename2 = '../result/grace_v2/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600.gfc'
     hust_c2, hust_s2 = LoadCSR().load(fileIn=hust_filename2).getCS(Nmax=60)
     hust_c2, hust_s2 = hust_c2 - static_c, hust_s2 - static_s
     hust_c2, hust_s2 = GeoMathKit.CS_1dTo2d(hust_c2), GeoMathKit.CS_1dTo2d(hust_s2)
@@ -108,9 +111,9 @@ def GRACE(date):
     fig = plt.figure(figsize=(10, 8))
     # plt.style.use(['science'])
     plt.title('%s' % date1, fontsize=30)
-    plt.plot(np.arange(2, 61, 1), hust[2:], color='green', linewidth=2.0, marker='', label='PyHawk-ols-1.5h')
+    plt.plot(np.arange(2, 61, 1), hust[2:], color='green', linewidth=2.0, marker='', label='PyHawk-v1')
     # plt.plot(np.arange(2, 61, 1), hust2[2:], color='black', linewidth=2.0, marker='', label='PyHawk-gls-1.5h')
-    # plt.plot(np.arange(2, 61, 1), hust3[2:], color='red', linewidth=2.0, marker='', label='PyHawk-GGM05C')
+    # plt.plot(np.arange(2, 61, 1), hust3[2:], color='red', linewidth=2.0, marker='', label='PyHawk-v2')
     # plt.plot(np.arange(2, 61, 1), hust4[2:], color='blue', linewidth=2.0, marker='', label='qr')
     plt.plot(np.arange(2, 61, 1), csr[2:], color='indigo', marker='', linewidth=2.0,label='CSR')
     plt.plot(np.arange(2, 61, 1), gfz[2:], color='#A53860', marker='', linewidth=2.0, label='GFZ')
@@ -132,13 +135,14 @@ def GRACE(date):
     plt.yscale("log")
     plt.legend(fontsize=20, loc=1)
     plt.grid(True, which='both', linestyle='-.')
-    plt.savefig('../result/grace_v2/' + date1 + '.png')
+    # plt.savefig('../result/grace_v2/' + date1 + '.png')
     plt.show()
     pass
 
 
 def GRACE_FO(date):
     date1 = date.replace('_', '-')
+    # date2 = date1
     date2 = convert_range(date, standard_to_compact)
 
     '''static model'''
@@ -147,13 +151,13 @@ def GRACE_FO(date):
     static_goco, static_goco = LoadGOCO06S().load('../data/StaticGravityField/GOCO06s.gfc').getCS(60)
     '''read hust'''
 
-    hust_filename = '../result/gracefo_v2/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600.gfc'
+    hust_filename = '../result/gracefogls/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600.gfc'
     hust_c, hust_s = LoadCSR().load(fileIn=hust_filename).getCS(Nmax=60)
     hust_c, hust_s = hust_c - static_c, hust_s - static_s
     # hust_c, hust_s = hust_c - static_c, hust_s - static_s
     hust_c, hust_s = GeoMathKit.CS_1dTo2d(hust_c), GeoMathKit.CS_1dTo2d(hust_s)
     '''read hust'''
-    hust_filename2 = '../result/gracefogls/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600.gfc'
+    hust_filename2 = '../result/gracefo_v3/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600.gfc'
     hust_c2, hust_s2 = LoadCSR().load(fileIn=hust_filename2).getCS(Nmax=60)
     hust_c2, hust_s2 = hust_c2 - static_c, hust_s2 - static_s
     hust_c2, hust_s2 = GeoMathKit.CS_1dTo2d(hust_c2), GeoMathKit.CS_1dTo2d(hust_s2)
@@ -233,10 +237,10 @@ def GRACE_FO(date):
     # plt.style.use(['science'])
     plt.title('%s' % date, fontsize=30)
     # plt.title('GRACE-FO', fontsize=30)
-    plt.plot(np.arange(2, 61, 1), hust[2:], color="#1f77b4", linewidth=2.0, marker='', label='PyHawk')
+    plt.plot(np.arange(2, 61, 1), hust[2:], color="#1f77b4", linewidth=2.0, marker='', label='PyHawk kbr 6h')
     # plt.plot(np.arange(2, 61, 1), hust2[2:], color='black', linewidth=2.0, marker='', label='PyHawk kbr 3h')
     # plt.plot(np.arange(2, 61, 1), hust3[2:], color='red', linewidth=2.0, marker='', label='APM')
-    # plt.plot(np.arange(2, 61, 1), hust4[2:], color='blue', linewidth=2.0, marker='', label='PyHawk')
+    # plt.plot(np.arange(2, 61, 1), hust4[2:], color='blue', linewidth=2.0, marker='', label=_degree_curve_label('PyHawk', title))
     plt.plot(np.arange(2, 61, 1), csr[2:], color='indigo', marker='', linewidth=2.0,label='CSR')
     plt.plot(np.arange(2, 61, 1), gfz[2:], color='#A53860', marker='', linewidth=2.0, label='GFZ')
     plt.plot(np.arange(2, 61, 1), jpl[2:], color='blue', marker='',linewidth=2.0, label='JPL')
@@ -357,9 +361,9 @@ def drawTime(data1, data2):
     # plt.plot(np.arange(2, 61, 1), hust2[2:], color='black', linewidth=2.0, marker='', label='non')
     # plt.plot(np.arange(2, 61, 1), hust3[2:], color='red', linewidth=2.0, marker='', label='6hacc')
     # plt.plot(np.arange(2, 61, 1), hust4[2:], color='blue', linewidth=2.0, marker='', label='0.003')
-    # plt.plot(np.arange(2, 61, 1), csr[2:], color='indigo', marker='', linewidth=2.0,label='CSR')
-    plt.plot(np.arange(2, 61, 1), gfz[2:], color='#A53860', marker='', linewidth=2.0, label='GFZ')
-    # plt.plot(np.arange(2, 61, 1), jpl[2:], color='blue', marker='',linewidth=2.0, label='JPL')
+    # plt.plot(np.arange(2, 61, 1), csr[2:], color='indigo', marker='', linewidth=2.0,label=_degree_curve_label('CSR', title))
+    plt.plot(np.arange(2, 61, 1), gfz[2:], color='#A53860', marker='', linewidth=2.0, label=_degree_curve_label('GFZ', title))
+    # plt.plot(np.arange(2, 61, 1), jpl[2:], color='blue', marker='',linewidth=2.0, label=_degree_curve_label('JPL', title))
     # plt.plot(np.arange(2, 61, 1), csr_05[2:], color='indigo', marker='h', label='CSR 05')
     # plt.plot(np.arange(2, 61, 1), gfz_05[2:], color='blue', marker='H', label='GFZ 05')
     # plt.plot(np.arange(2, 61, 1), csr_e_l[2:], color='red', marker='s', label='CSR - HUST')
@@ -369,7 +373,7 @@ def drawTime(data1, data2):
     # plt.plot(np.arange(2, 61, 1), csr_jpl_e_l[2:], color='indigo', marker='h', label='JPL - CSR')
     # plt.plot(np.arange(2, 61, 1), gfz_jpl_e_l[2:], color='tan', marker='H', label='JPL - GFZ')
     plt.xlim(0, 60)
-    plt.ylim(1e-5, 1e-2)
+    plt.ylim(1e-4, 1e-2)
     plt.xticks(fontsize=28)
     plt.yticks(fontsize=28)
     plt.xlabel('Degree', fontsize=28)
@@ -533,248 +537,104 @@ config = {
 matplotlib.rcParams.update(config)
 
 
-def drawMean():
+def drawMean(year):
     '''static model'''
-    static_c, static_s = LoadGif48().load('../data/StaticGravityField/gif48.gfc').getCS(60)
+    static_c, static_s = LoadGOCO06S().load('../data/StaticGravityField/GOCO06s.gfc').getCS(60)
     '''read hust'''
-    filenamelist = os.listdir(r'../result/SH/mean/AOD')
+    filenamelist = os.listdir(r'../result/hawk_rl01/gracefo/'+year+'/hawk')
     hust_c, hust_s = 0, 0
     i = 0
+    degree_sum = np.zeros(61)
     for filename in filenamelist:
-        hust_filename = '../result/SH/mean/AOD/' + filename
+        hust_filename = '../result/hawk_rl01/gracefo/'+year+'/hawk/'+ filename
         c, s = LoadCSR().load(fileIn=hust_filename).getCS(Nmax=60)
-        hust_c += c
-        hust_s += s
+        c -= static_c
+        s -= static_s
+
+        c, s = GeoMathKit.CS_1dTo2d(c), GeoMathKit.CS_1dTo2d(s)
+
+        degree_curve = get_geoid_drgee_error(diff_c=c, diff_s=s)
+        degree_sum += degree_curve
+
         i += 1
-    hust_c = hust_c / i
-    hust_s = hust_s / i
-    hust_c, hust_s = hust_c - static_c, hust_s - static_s
-    hust_c, hust_s = GeoMathKit.CS_1dTo2d(hust_c), GeoMathKit.CS_1dTo2d(hust_s)
+
+    hust = degree_sum / i
+
     '''read CSR'''
-    filenamelist = os.listdir(r'../result/SH/mean/CRA')
-    cra_c, cra_s = 0, 0
-    j = 0
-    for filename in filenamelist:
-        cra_filename = '../result/SH/mean/CRA/' + filename
-        c, s = LoadCSR().load(fileIn=cra_filename).getCS(Nmax=60)
-        cra_c += c
-        cra_s += s
-        j += 1
-    cra_c = cra_c / j
-    cra_s = cra_s / j
-    cra_c, cra_s = cra_c - static_c, cra_s - static_s
-    cra_c, cra_s = GeoMathKit.CS_1dTo2d(cra_c), GeoMathKit.CS_1dTo2d(cra_s)
-    # csr_diff_c = hust_c - csr_c
-    # csr_diff_s = hust_s - csr_s
-    # csr_e_l = get_drgee_rms(diff_c=csr_diff_c, diff_s=csr_diff_s)
-    # csr_n_l = get_geoid_drgee_error(diff_c=csr_diff_c, diff_s=csr_diff_s)
-    '''read CSR'''
-    filenamelist = os.listdir(r'../result/SH/mean/CSR')
+    filenamelist = os.listdir(r'../result/hawk_rl01/gracefo/'+year+'/CSR')
     csr_c, csr_s = 0, 0
     j = 0
+    degree_sum = np.zeros(61)
     for filename in filenamelist:
-        csr_filename = '../result/SH/mean/CSR/' + filename
+        csr_filename = '../result/hawk_rl01/gracefo/'+year+'/csr/'+ filename
         c, s = LoadCSR().load(fileIn=csr_filename).getCS(Nmax=60)
-        csr_c += c
-        csr_s += s
+        c, s = c - static_c, s - static_s
+        c, s = GeoMathKit.CS_1dTo2d(c), GeoMathKit.CS_1dTo2d(s)
+
+        degree_curve = get_geoid_drgee_error(diff_c=c, diff_s=s)
+        degree_sum += degree_curve
         j += 1
-    csr_c = csr_c / j
-    csr_s = csr_s / j
-    csr_c, csr_s = csr_c - static_c, csr_s - static_s
-    csr_c, csr_s = GeoMathKit.CS_1dTo2d(csr_c), GeoMathKit.CS_1dTo2d(csr_s)
+
+    csr = degree_sum / j
+
     '''read GFZ'''
-    filenamelist = os.listdir(r'../result/SH/mean/GFZ')
+    filenamelist = os.listdir(r'../result/hawk_rl01/gracefo/'+year+'/GFZ')
     gfz_c, gfz_s = 0, 0
+    k = 0
+    degree_sum = np.zeros(61)
     for filename in filenamelist:
-        gfz_filename = '../result/SH/mean/GFZ/' + filename
+        gfz_filename = '../result/hawk_rl01/gracefo/'+year+'/GFZ/' + filename
         c, s = LoadCSR().load(fileIn=gfz_filename).getCS(Nmax=60)
-        gfz_c += c
-        gfz_s += s
-    gfz_c = gfz_c / 60
-    gfz_s = gfz_s / 60
-    gfz_c, gfz_s = gfz_c - static_c, gfz_s - static_s
-    gfz_c, gfz_s = GeoMathKit.CS_1dTo2d(gfz_c), GeoMathKit.CS_1dTo2d(gfz_s)
+        c, s = c - static_c, s - static_s
+        c, s = GeoMathKit.CS_1dTo2d(c), GeoMathKit.CS_1dTo2d(s)
+        degree_curve = get_geoid_drgee_error(diff_c=c, diff_s=s)
+        degree_sum += degree_curve
+
+        k += 1
+
+    gfz = degree_sum / k
     '''read JPL'''
-    filenamelist = os.listdir(r'../result/SH/mean/JPL')
+    filenamelist = os.listdir(r'../result/hawk_rl01/gracefo/'+year+'/JPL')
     jpl_c, jpl_s = 0, 0
+    q = 0
+    degree_sum = np.zeros(61)
     for filename in filenamelist:
-        jpl_filename = '../result/SH/mean/JPL/' + filename
-        c, s = LoadCSR().load(fileIn=jpl_filename).getCS(Nmax=60)
-        jpl_c += c
-        jpl_s += s
-    jpl_c = jpl_c / 60
-    jpl_s = jpl_s / 60
-    jpl_c, jpl_s = jpl_c - static_c, jpl_s - static_s
-    jpl_c, jpl_s = GeoMathKit.CS_1dTo2d(jpl_c), GeoMathKit.CS_1dTo2d(jpl_s)
-    # jpl_diff_c = hust_c - jpl_c
-    # jpl_diff_s = hust_s - jpl_s
-    # jpl_e_l = get_drgee_rms(diff_c=jpl_diff_c, diff_s=jpl_diff_s)
-    # jpl_n_l = get_geoid_drgee_error(diff_c=jpl_diff_c, diff_s=jpl_diff_s)
-    # '''csr and gfz'''
-    # csr_gfz_diff_c = gfz_c - csr_c
-    # csr_gfz_diff_s = gfz_s - csr_s
-    # csr_gfz_e_l = get_drgee_rms(diff_c=csr_gfz_diff_c, diff_s=csr_gfz_diff_s)
-    # '''csr and jpl'''
-    # csr_jpl_diff_c = jpl_c - csr_c
-    # csr_jpl_diff_s = jpl_s - csr_s
-    # csr_jpl_e_l = get_drgee_rms(diff_c=csr_jpl_diff_c, diff_s=csr_jpl_diff_s)
-    # '''gfz and jpl'''
-    # gfz_jpl_diff_c = gfz_c - jpl_c
-    # gfz_jpl_diff_s = gfz_s - jpl_s
-    # gfz_jpl_e_l = get_drgee_rms(diff_c=gfz_jpl_diff_c, diff_s=gfz_jpl_diff_s)
+        jpl_filename = '../result/hawk_rl01/gracefo/'+year+'/JPL/' + filename
+        jpl_c, jpl_s = LoadCSR().load(fileIn=jpl_filename).getCS(Nmax=60)
+        jpl_c, jpl_s = jpl_c - static_c, jpl_s - static_s
+        jpl_c, jpl_s = GeoMathKit.CS_1dTo2d(jpl_c), GeoMathKit.CS_1dTo2d(jpl_s)
+
+        degree_curve = get_geoid_drgee_error(diff_c=jpl_c, diff_s=jpl_s)
+        degree_sum += degree_curve
+        q += 1
+
+    jpl = degree_sum / q
     '''hust'''
-    hust = get_geoid_drgee_error(diff_c=hust_c, diff_s=hust_s)
-    '''cra'''
-    cra = get_geoid_drgee_error(diff_c=cra_c, diff_s=cra_s)
+    # hust = get_geoid_drgee_error(diff_c=hust_c, diff_s=hust_s)
     '''csr'''
-    csr = get_geoid_drgee_error(diff_c=csr_c, diff_s=csr_s)
+    # csr = get_geoid_drgee_error(diff_c=csr_c, diff_s=csr_s)
     '''gfz'''
-    gfz = get_geoid_drgee_error(diff_c=gfz_c, diff_s=gfz_s)
+    # gfz = get_geoid_drgee_error(diff_c=gfz_c, diff_s=gfz_s)
     '''jpl'''
-    jpl = get_geoid_drgee_error(diff_c=jpl_c, diff_s=jpl_s)
-    # plt.title('Geoid Degree', fontsize=30)
+    # jpl = get_geoid_drgee_error(diff_c=jpl_c, diff_s=jpl_s)
+    plt.title('GRACE-FO(' + year + ')', fontsize=30)
     # matplotlib.rcParams.update({'font.size': 30})
     # plt.style.use(['science'])
-    plt.plot(np.arange(2, 61, 1), hust[2:], color='green', linewidth=2.0, marker='', label='AOD')
-    # plt.plot(np.arange(2, 61, 1), cra[2:], color='red', marker='', linewidth=2.0, label='CRA')
-    plt.plot(np.arange(2, 61, 1), gfz[2:], color='black', marker='', linewidth=2.0, label='GFZ')
-    plt.plot(np.arange(2, 61, 1), jpl[2:], color='blue', marker='', linewidth=2.0, label='JPL')
-    plt.plot(np.arange(2, 61, 1), csr[2:], color='red', marker='', linewidth=2.0, label='CSR')
+
+    plt.plot(np.arange(2, 61, 1), hust[2:], color='green', linewidth=3.0, marker='', label='Hawk RL01')
+    plt.plot(np.arange(2, 61, 1), gfz[2:], color='black', marker='', linewidth=3.0, label='GFZ RL06')
+    plt.plot(np.arange(2, 61, 1), jpl[2:], color='blue', marker='', linewidth=3.0, label='JPL RL06')
+    plt.plot(np.arange(2, 61, 1), csr[2:], color='red', marker='', linewidth=3.0, label='CSR RL06')
     plt.xlim(0, 60)
-    plt.ylim(1e-5, 1e-2)
+    plt.ylim(1e-5, 1e-1)
     plt.xticks(fontsize=28)
     plt.yticks(fontsize=28)
     plt.xlabel('Degree', fontsize=28)
     plt.ylabel('Degree geoid height [m]', fontsize=28)
     plt.yscale("log")
-    plt.legend(fontsize=26, loc=1)
+    plt.legend(fontsize=20, loc=1)
     plt.grid(True, which='both', linestyle='-.')
     plt.show()
-
-
-def get_month_start_and_end_by_date_interval(start_date, end_date):
-    """
-    获取指定时间段内每个月的起止时间参数列表
-    :param start_date: 起始时间 --> str
-    :param end_date: 结束时间 --> str
-    :return: date_range_list -->list [{'2019-10-01': ['2019-10-01', '2019-10-31']}, ...}]
-
-    """
-    date_range_list = []
-    start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d')
-    end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d')
-    # 计算开始日期的当月起止日期
-    start_month_first = datetime.datetime(year=start_date.year, month=start_date.month, day=1).date()
-    start_month_last = datetime.datetime(year=start_date.year, month=start_date.month,
-                                         day=calendar.monthrange(start_date.year, start_date.month)[1]).date()
-    date_range_list.append([start_month_first.strftime('%Y-%m-%d'),start_month_last.strftime('%Y-%m-%d')])
-
-    # 计算结束日期的当月起止日期
-    end_month_first = datetime.datetime(year=end_date.year, month=end_date.month, day=1).date()
-    end_month_last = datetime.datetime(year=end_date.year, month=end_date.month,
-                                       day=calendar.monthrange(end_date.year, end_date.month)[1]).date()
-
-    while True:
-        # 下个月开始日期
-        next_month_start = datetime.datetime(year=start_date.year, month=start_date.month,
-                                             day=calendar.monthrange(start_date.year, start_date.month)[
-                                                 1]).date() + datetime.timedelta(days=1)
-        next_month_end = datetime.datetime(year=next_month_start.year, month=next_month_start.month,
-                                           day=calendar.monthrange(next_month_start.year, next_month_start.month)[
-                                               1]).date()
-        if next_month_start < end_month_first:
-            date_range_list.append([next_month_start.strftime('%Y-%m-%d'),next_month_end.strftime('%Y-%m-%d')])
-            start_date = next_month_start
-        else:
-            break
-    # 避免传入的起止日期在同一月导致数据重复
-    temp_dict = [end_month_first.strftime('%Y-%m-%d'), end_month_last.strftime('%Y-%m-%d')]
-    if temp_dict not in date_range_list:
-        date_range_list.append(temp_dict)
-    return date_range_list
-
-
-def datetransfor(ymd):
-    y, m, d = map(int, ymd.split("-"))
-    date = datetime.datetime(y, m, d)
-    day_delta = date - datetime.datetime(y, 1, 1) + datetime.timedelta(1)
-    yday = str(y) + str(day_delta.days).rjust(3, "0")
-    return yday
-
-
-def subplotsGeoid():
-    matplotlib.rcParams.update({'font.size': 26})
-    plt.style.use(['science'])
-    fig, ax = plt.subplots(3, 4, figsize=(14, 9.6), sharex=True, sharey=True)
-    data_span = get_month_start_and_end_by_date_interval('2007-01-01', '2007-12-31')
-    '''static model'''
-    static_c, static_s = LoadGif48().load('../data/StaticGravityField/gif48.gfc').getCS(60)
-    for i in range(len(data_span)):
-        data1 = data_span[i][0] + '-' + data_span[i][1]
-        data2 = datetransfor(data_span[i][0]) + '-' + datetransfor(data_span[i][1])
-        month = data_span[i][0].split('-')[0] + '-' + data_span[i][0].split('-')[1]
-        plt.subplot(3, 4, i+1)
-        '''read hust'''
-        hust_filename = '../result/SH/2007/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + data1 + '_GRAC_HUST_BA01_0600.gfc'
-        hust_c, hust_s = LoadCSR().load(fileIn=hust_filename).getCS(Nmax=60)
-        hust_c, hust_s = hust_c - static_c, hust_s - static_s
-        hust_c, hust_s = GeoMathKit.CS_1dTo2d(hust_c), GeoMathKit.CS_1dTo2d(hust_s)
-        '''read CSR'''
-        csr_filename = '../result/SH/CSR/GSM-2_' + data2 + '_GRAC_UTCSR_BA01_0600.gfc'
-        csr_c, csr_s = LoadCSR().load(fileIn=csr_filename).getCS(Nmax=60)
-        csr_c, csr_s = csr_c - static_c, csr_s - static_s
-        csr_c, csr_s = GeoMathKit.CS_1dTo2d(csr_c), GeoMathKit.CS_1dTo2d(csr_s)
-        '''read GFZ'''
-        gfz_filename = '../result/SH/GFZ/GSM-2_' + data2 + '_GRAC_GFZOP_BA01_0600.gfc'
-        gfz_c, gfz_s = LoadCSR().load(fileIn=gfz_filename).getCS(Nmax=60)
-        gfz_c, gfz_s = gfz_c - static_c, gfz_s - static_s
-        gfz_c, gfz_s = GeoMathKit.CS_1dTo2d(gfz_c), GeoMathKit.CS_1dTo2d(gfz_s)
-        '''read JPL'''
-        jpl_filename = '../result/SH/JPL/GSM-2_' + data2 + '_GRAC_JPLEM_BA01_0600.gfc'
-        jpl_c, jpl_s = LoadCSR().load(fileIn=jpl_filename).getCS(Nmax=60)
-        jpl_c, jpl_s = jpl_c - static_c, jpl_s - static_s
-        jpl_c, jpl_s = GeoMathKit.CS_1dTo2d(jpl_c), GeoMathKit.CS_1dTo2d(jpl_s)
-        hust = get_geoid_drgee_error(diff_c=hust_c, diff_s=hust_s)
-        csr = get_geoid_drgee_error(diff_c=csr_c, diff_s=csr_s)
-        gfz = get_geoid_drgee_error(diff_c=gfz_c, diff_s=gfz_s)
-        jpl = get_geoid_drgee_error(diff_c=jpl_c, diff_s=jpl_s)
-        plt.style.use(['science'])
-        plt.yscale("log")
-        plt.title(month, fontsize=22)
-        plt.plot(np.arange(2, 61, 1), hust[2:], color='green', linewidth=2.0, marker='', label='PyHawk')
-        plt.plot(np.arange(2, 61, 1), csr[2:], color='red', marker='', linewidth=2.0, label='CSR')
-        plt.plot(np.arange(2, 61, 1), gfz[2:], color='black', marker='', linewidth=2.0, label='GFZ')
-        plt.plot(np.arange(2, 61, 1), jpl[2:], color='blue', marker='', linewidth=2.0, label='JPL')
-        plt.xlim(0, 60)
-        plt.xticks([0, 10, 20, 30, 40, 50, 60], ['0', '10', '20', '30', '40', '50', '60'], fontsize=20)
-        plt.ylim(1e-5, 1e-2)
-        plt.yticks([1e-5, 1e-4, 1e-3, 1e-2], [r'$\mathrm{1e}^{-5}$', r'$\mathrm{1e}^{-4}$',
-                                              r'$\mathrm{1e}^{-3}$', r'$\mathrm{1e}^{-2}$'], fontsize=20)
-        border = plt.gca()
-        border.spines['top'].set_linewidth(1)  # 设置顶部边框线宽度为2
-        border.spines['right'].set_linewidth(1)  # 设置右侧边框线宽度为2
-        border.spines['bottom'].set_linewidth(1)  # 设置底部边框线宽度为2
-        border.spines['left'].set_linewidth(1)  # 设置左侧边框线宽度为2
-        if i == 9:
-
-            leg = plt.legend(ncol=5, bbox_to_anchor=(0.9, -0.27), loc='upper center', frameon=True)
-            for line in leg.get_lines():
-                line.set_linewidth(4.0)
-        if i == 4:
-            plt.ylabel('Degree geoid height [m]', fontsize=28)
-        # plt.legend(fontsize=26, loc=1)
-        plt.grid(True, which='both', linestyle='-.')
-    fig.text(0.508, 0.085, 'Degree', fontsize=24)
-    # plt.xlabel('Degree', fontsize=24, horizontalalignment='right')
-    plt.subplots_adjust(left=0.09, right=0.981, top=0.94, bottom=0.15, wspace=0.1, hspace=0.27)
-    plt.savefig('../result/img/2007/sh.png')
-    plt.show()
-
-
-    pass
-
-
-from datetime import datetime, timedelta
 
 
 def standard_to_compact(date_str):
@@ -789,104 +649,103 @@ def convert_range(date_range, converter):
     return f"{converter(start)}-{converter(end)}"
 
 
+CLASSIFIED_EXCLUDE_YEAR_MONTHS = {
+    (2020, 1),
+}
 
-def extract_and_format_date(filename):
-    # 提取两个日期
-    match = re.search(r'(\d{4}-\d{2}-\d{2})-(\d{4}-\d{2}-\d{2})', filename)
 
-    if match:
-        start_date = match.group(1)
-        end_date = match.group(2)
+def _compact_to_standard(date_str):
+    return datetime.strptime(date_str, "%Y%j").strftime("%Y-%m-%d")
 
-        # 拼装成你需要的格式
-        return f"{start_date}_{end_date}"
+
+def _classified_date_range(file_in):
+    name = Path(file_in).name
+    match = re.search(r'GSM-2_(\d{4}-\d{2}-\d{2})[-_](\d{4}-\d{2}-\d{2})_', name)
+    if match is not None:
+        return f"{match.group(1)}_{match.group(2)}"
+
+    match = re.search(r'GSM-2_(\d{7})-(\d{7})_', name)
+    if match is not None:
+        return f"{_compact_to_standard(match.group(1))}_{_compact_to_standard(match.group(2))}"
 
     return None
 
 
-def batch_process(folder):
-    files = sorted([f for f in os.listdir(folder) if f.endswith('.gfc')])
-
-    for file in files:
-        file_path = os.path.join(folder, file)
-
-        # ✅ 提取完整时间段
-        timerange = extract_and_format_date(file)
-        if timerange is None:
-            print(f"Skip (no date): {file}")
-            continue
-
-        print(f"Processing: {file}")
-        print(f"Time range: {timerange}")
-
-        GRACE(timerange)
-
-def iter_gfc_files(folder):
-    for file in os.listdir(folder):
-        if file.endswith('.gfc'):
-            yield os.path.join(folder, file)
+def _classified_static_model(mission, nmax=60):
+    if mission == 'gracefo':
+        static_file = BASE_DIR / 'data' / 'StaticGravityField' / 'GOCO06s.gfc'
+        return LoadGOCO06S().load(str(static_file)).getCS(nmax)
+    if mission == 'grace':
+        static_file = BASE_DIR / 'data' / 'StaticGravityField' / 'gif48.gfc'
+        return LoadGif48().load(str(static_file)).getCS(nmax)
+    raise ValueError(f"Unsupported mission: {mission}")
 
 
-def year_mean(folder, GFZ, JPL, CSR):
-    PyHawk_C, PyHawk_S = np.zeros((61, 61)), np.zeros((61, 61))
-    GFZ_C, GFZ_S = np.zeros((61, 61)), np.zeros((61, 61))
-    JPL_C, JPL_S = np.zeros((61, 61)), np.zeros((61, 61))
-    CSR_C, CSR_S = np.zeros((61, 61)), np.zeros((61, 61))
-    static_c, static_s = LoadGif48().load('../data/StaticGravityField/gif48.gfc').getCS(60)
-    for file_path in iter_gfc_files(folder):
-        '''read hust'''
-        hust_c, hust_s = LoadCSR().load(fileIn=file_path).getCS(Nmax=60)
-        hust_c, hust_s = hust_c - static_c, hust_s - static_s
-        hust_c, hust_s = GeoMathKit.CS_1dTo2d(hust_c), GeoMathKit.CS_1dTo2d(hust_s)
-        PyHawk_C += hust_c
-        PyHawk_S += hust_s
-    for file_path in iter_gfc_files(GFZ):
-        '''read hust'''
-        hust_c, hust_s = LoadCSR().load(fileIn=file_path).getCS(Nmax=60)
-        hust_c, hust_s = hust_c - static_c, hust_s - static_s
-        hust_c, hust_s = GeoMathKit.CS_1dTo2d(hust_c), GeoMathKit.CS_1dTo2d(hust_s)
-        GFZ_C += hust_c
-        GFZ_S += hust_s
-    for file_path in iter_gfc_files(JPL):
-        '''read hust'''
-        hust_c, hust_s = LoadCSR().load(fileIn=file_path).getCS(Nmax=60)
-        hust_c, hust_s = hust_c - static_c, hust_s - static_s
-        hust_c, hust_s = GeoMathKit.CS_1dTo2d(hust_c), GeoMathKit.CS_1dTo2d(hust_s)
-        JPL_C += hust_c
-        JPL_S += hust_s
-    for file_path in iter_gfc_files(CSR):
-        '''read hust'''
-        hust_c, hust_s = LoadCSR().load(fileIn=file_path).getCS(Nmax=60)
-        hust_c, hust_s = hust_c - static_c, hust_s - static_s
-        hust_c, hust_s = GeoMathKit.CS_1dTo2d(hust_c), GeoMathKit.CS_1dTo2d(hust_s)
-        CSR_C += hust_c
-        CSR_S += hust_s
-    PyHawk_C, PyHawk_S = PyHawk_C / 11, PyHawk_S / 11
-    GFZ_C, GFZ_S = GFZ_C / 11, GFZ_S / 11
-    JPL_C, JPL_S = JPL_C / 11, JPL_S / 11
-    CSR_C, CSR_S = CSR_C / 11, CSR_S / 11
-    PyHawk = get_geoid_drgee_error(diff_c=PyHawk_C, diff_s=PyHawk_S)
-    GFZ = get_geoid_drgee_error(diff_c=GFZ_C, diff_s=GFZ_S)
-    JPL = get_geoid_drgee_error(diff_c=JPL_C, diff_s=JPL_S)
-    CSR = get_geoid_drgee_error(diff_c=CSR_C, diff_s=CSR_S)
-    matplotlib.rcParams.update({'font.size': 30})
+def _classified_root(mission):
+    if mission not in ('grace', 'gracefo'):
+        raise ValueError(f"Unsupported mission: {mission}")
+    return BASE_DIR / 'result' / 'hawk_rl01' / mission
+
+
+def _classified_year_month(date_range):
+    start = datetime.strptime(date_range.split('_')[0], "%Y-%m-%d")
+    return start.year, start.month
+
+
+def _classified_is_excluded(date_range, exclude_year_months=None):
+    exclude_year_months = CLASSIFIED_EXCLUDE_YEAR_MONTHS if exclude_year_months is None else set(exclude_year_months)
+    return _classified_year_month(date_range) in exclude_year_months
+
+
+def _classified_file_index(year_dir, center):
+    folder = Path(year_dir) / center
+    index = {}
+    if not folder.exists():
+        return index
+    for file_in in sorted(folder.glob('*.gfc')):
+        date_range = _classified_date_range(file_in)
+        if date_range is not None:
+            index[date_range] = file_in
+    return index
+
+
+def _classified_average_coefficients(files, nmax=60):
+    c_sum, s_sum = None, None
+    count = 0
+    for file_in in files:
+        c, s = LoadCSR().load(fileIn=str(file_in)).getCS(Nmax=nmax)
+        if c_sum is None:
+            c_sum = np.zeros_like(c)
+            s_sum = np.zeros_like(s)
+        c_sum += c
+        s_sum += s
+        count += 1
+    if count == 0:
+        raise ValueError("No files were selected for annual mean")
+    return c_sum / count, s_sum / count
+
+
+def _classified_curve_labels(mission):
+    release = 'RL06.3' if mission == 'gracefo' else 'RL06'
+    return {
+        'hawk': 'Hawk RL01',
+        'gfz': f'GFZ {release}',
+        'jpl': f'JPL {release}',
+        'csr': f'CSR {release}',
+    }
+
+
+def _plot_classified_annual_curves(degree_curves, mission, year, out_file, show=False):
+    labels = _classified_curve_labels(mission)
+    mission_label = 'GRACE-FO' if mission == 'gracefo' else 'GRACE'
     fig = plt.figure(figsize=(10, 8))
-    # plt.style.use(['science'])
-    plt.title('GRACE (2003)', fontsize=30),
-    plt.plot(np.arange(2, 61, 1), PyHawk[2:], color="#1f77b4", linewidth=3.0, marker='', label='PyHawk')
-    plt.plot(np.arange(2, 61, 1), GFZ[2:], color="black",  marker='', linewidth=3.0,label='GFZ')
-    plt.plot(np.arange(2, 61, 1), JPL[2:], color="#2ca02c", marker='', linewidth=3.0, label='JPL')
-    plt.plot(np.arange(2, 61, 1), CSR[2:], color="#d62728",  marker='',linewidth=3.0, label='CSR')
-    # plt.plot(np.arange(2, 61, 1), csr_05[2:], color='blue', marker='', label='CSR 05')
-    # plt.plot(np.arange(2, 61, 1), gfz_05[2:], color='blue', marker='H', label='GFZ 05')
-    # plt.plot(np.arange(2, 61, 1), csr_e_l[2:], color='red', marker='s', label='CSR - HUST')
-    # plt.plot(np.arange(2, 61, 1), gfz_e_l[2:], color='blue', marker='p', label='GFZ - HUST')
-    # plt.plot(np.arange(2, 61, 1), jpl_e_l[2:], color='green', marker='P', label='JPL - HUST')
-    # plt.plot(np.arange(2, 61, 1), csr_gfz_e_l[2:], color='black', marker='*', label='GFZ - CSR')
-    # plt.plot(np.arange(2, 61, 1), csr_jpl_e_l[2:], color='indigo', marker='h', label='JPL - CSR')
-    # plt.plot(np.arange(2, 61, 1), gfz_jpl_e_l[2:], color='tan', marker='H', label='JPL - GFZ')
+    plt.title(f'{mission_label} ({year})', fontsize=30)
+    plt.plot(np.arange(2, 61, 1), degree_curves['hawk'][2:], color='green', linewidth=3.0, marker='', label=labels['hawk'])
+    plt.plot(np.arange(2, 61, 1), degree_curves['gfz'][2:], color='black', marker='', linewidth=3.0, label=labels['gfz'])
+    plt.plot(np.arange(2, 61, 1), degree_curves['jpl'][2:], color='blue', marker='', linewidth=3.0, label=labels['jpl'])
+    plt.plot(np.arange(2, 61, 1), degree_curves['csr'][2:], color='red', marker='', linewidth=3.0, label=labels['csr'])
     plt.xlim(0, 60)
-    plt.ylim(2e-5, 4e-2)
+    plt.ylim(1e-5, 1e-1)
     plt.xticks(fontsize=28)
     plt.yticks(fontsize=28)
     plt.xlabel('Degree', fontsize=28)
@@ -894,19 +753,151 @@ def year_mean(folder, GFZ, JPL, CSR):
     plt.yscale("log")
     plt.legend(fontsize=20, loc=1)
     plt.grid(True, which='both', linestyle='-.')
-    # plt.savefig('../result/gracegls/' + date1 + '.png')
-    plt.show()
+    fig.tight_layout()
+    plt.savefig(out_file, dpi=300)
+    if show:
+        plt.show()
+    else:
+        plt.close(fig)
+
+
+def draw_classified_annual_mean(mission, year, out_dir=None, exclude_year_months=None, nmax=60):
+    root = _classified_root(mission)
+    year_dir = root / str(year)
+    out_dir = Path(out_dir) if out_dir is not None else root
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    indexes = {center: _classified_file_index(year_dir, center) for center in ('hawk', 'csr', 'gfz', 'jpl')}
+    common_ranges = set(indexes['hawk'])
+    for center in ('csr', 'gfz', 'jpl'):
+        common_ranges &= set(indexes[center])
+    used_ranges = [date_range for date_range in sorted(common_ranges)
+                   if not _classified_is_excluded(date_range, exclude_year_months)]
+    if not used_ranges:
+        raise ValueError(f"No common months for {mission} {year}")
+
+    static_c, static_s = _classified_static_model(mission, nmax=nmax)
+    degree_curves = {}
+    for center in ('hawk', 'csr', 'gfz', 'jpl'):
+        degree_sum = np.zeros(nmax + 1)
+        for date_range in used_ranges:
+            file_in = indexes[center][date_range]
+            c, s = LoadCSR().load(fileIn=str(file_in)).getCS(Nmax=nmax)
+            c, s = c - static_c, s - static_s
+            c_2d, s_2d = GeoMathKit.CS_1dTo2d(c), GeoMathKit.CS_1dTo2d(s)
+            degree_sum += get_geoid_drgee_error(diff_c=c_2d, diff_s=s_2d)
+        degree_curves[center] = degree_sum / len(used_ranges)
+
+    stem = f'annual_mean_degree_{mission}_{year}'
+    png_file = out_dir / f'{stem}.png'
+    csv_file = out_dir / f'{stem}.csv'
+    npz_file = out_dir / f'annual_mean_field_{mission}_{year}.npz'
+
+    _plot_classified_annual_curves(degree_curves, mission, year, png_file, show=False)
+    rows = np.column_stack((
+        np.arange(0, nmax + 1, 1),
+        degree_curves['hawk'],
+        degree_curves['csr'],
+        degree_curves['gfz'],
+        degree_curves['jpl'],
+    ))
+    np.savetxt(csv_file, rows, delimiter=',', header='degree,Hawk,CSR,GFZ,JPL', comments='')
+    np.savez(
+        npz_file,
+        date_ranges=np.array(used_ranges, dtype='U32'),
+        month_count=len(used_ranges),
+        degree=np.arange(0, nmax + 1, 1),
+        Hawk_degree=degree_curves['hawk'],
+        CSR_degree=degree_curves['csr'],
+        GFZ_degree=degree_curves['gfz'],
+        JPL_degree=degree_curves['jpl'],
+    )
+    print(f"[{mission} {year}] used {len(used_ranges)} month(s)")
+    return {'mission': mission, 'year': year, 'used': used_ranges, 'png': png_file, 'csv': csv_file, 'npz': npz_file}
+
+
+def draw_classified_annual_4year(mission, years, out_dir=None, nmax=60):
+    root = _classified_root(mission)
+    out_dir = Path(out_dir) if out_dir is not None else root
+    labels = _classified_curve_labels(mission)
+    mission_label = 'GRACE-FO' if mission == 'gracefo' else 'GRACE'
+    fig, axes = plt.subplots(2, 2, figsize=(20, 16), sharex=False, sharey=False)
+    axes = axes.ravel()
+    for ax, year in zip(axes, years):
+        csv_file = out_dir / f'annual_mean_degree_{mission}_{year}.csv'
+        data = np.loadtxt(csv_file, delimiter=',', skiprows=1)
+        degree = data[:, 0]
+        curves = {
+            'hawk': data[:, 1],
+            'csr': data[:, 2],
+            'gfz': data[:, 3],
+            'jpl': data[:, 4],
+        }
+        ax.plot(degree[2:], curves['hawk'][2:], color='green', linewidth=3.0, marker='', label=labels['hawk'])
+        ax.plot(degree[2:], curves['gfz'][2:], color='black', marker='', linewidth=3.0, label=labels['gfz'])
+        ax.plot(degree[2:], curves['jpl'][2:], color='blue', marker='', linewidth=3.0, label=labels['jpl'])
+        ax.plot(degree[2:], curves['csr'][2:], color='red', linewidth=3.0, marker='', label=labels['csr'])
+        ax.set_title(f'{mission_label} ({year})', fontsize=30)
+        ax.set_xlim(0, nmax)
+        ax.set_ylim(1e-5, 1e-1)
+        ax.set_xlabel('Degree', fontsize=28)
+        ax.set_ylabel('Degree geoid height [m]', fontsize=28)
+        ax.set_yscale('log')
+        ax.tick_params(axis='both', labelsize=28)
+        ax.legend(fontsize=20, loc=1)
+        ax.grid(True, which='both', linestyle='-.')
+    for ax in axes[len(years):]:
+        ax.axis('off')
+    fig.tight_layout(pad=3.0, w_pad=3.0, h_pad=3.5)
+    out_file = out_dir / f'annual_mean_degree_{mission}_{years[0]}_{years[-1]}_4year_merged.png'
+    fig.savefig(out_file, dpi=300)
+    plt.close(fig)
+    print(f"wrote {out_file}")
+    return out_file
+
+
+def batch_classified_annual_means():
+    outputs = []
+    for mission in ('grace', 'gracefo'):
+        root = _classified_root(mission)
+        years = sorted(int(folder.name) for folder in root.iterdir()
+                       if folder.is_dir() and folder.name.isdigit())
+        mission_outputs = []
+        used_years = []
+        for year in years:
+            try:
+                item = draw_classified_annual_mean(mission, year, out_dir=root)
+            except ValueError as exc:
+                print(f"[{mission} {year}] skipped: {exc}")
+                continue
+            mission_outputs.append(item)
+            used_years.append(year)
+        for i in range(0, len(used_years), 4):
+            draw_classified_annual_4year(mission, used_years[i:i + 4], out_dir=root)
+        outputs.extend(mission_outputs)
+
+        audit_lines = []
+        for item in mission_outputs:
+            audit_lines.append(f"{item['year']}: month_count={len(item['used'])}; used={','.join(item['used'])}")
+        (root / 'annual_mean_audit.txt').write_text('\n'.join(audit_lines), encoding='utf-8')
+    return outputs
 
 
 if __name__ == '__main__':
-    # span1 = '2016-08-08_2016-09-03'
-    span1 = '2020-09-01_2020-09-30'
+
+    span1 = '2020-01-01_2020-01-31'
     # GRACE(span1)
     GRACE_FO(span1)
-    # batch_process("../result/grace_v2")
-    # year_mean("../result/gracegls/2003","../result/gracegls/2003/GFZ",
-    #           "../result/gracegls/2003/JPL","../result/gracegls/2003/CSR")
+
+    # drawMean('2019')
     pass
+
+
+
+
+
+
+
 
 
 

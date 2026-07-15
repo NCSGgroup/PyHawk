@@ -150,6 +150,7 @@ class ForceModelConfig:
             self.kind = 0
             self.Nmax = 180
             self.StaticModel = EnumType.StaticGravModel.Gif48.name
+            self.TimeVariableDate = None
 
     class Relativity:
         def __init__(self):

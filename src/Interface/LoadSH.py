@@ -2,6 +2,7 @@ import numpy as np
 import warnings
 from src.Preference.EnumType import TidesType, AODtype
 import os
+from datetime import datetime
 
 
 class LoadSH:
@@ -190,15 +191,18 @@ class LoadGOCO06S(LoadSH):
         LoadSH.__init__(self)
         # self.__sigmaC, self.__sigmaS = None, None
         # self.__C, self.__S = None, None
+        self.__epoch = None
 
-    def load(self, fileIn):
+    def load(self, fileIn, date=None):
         """
-        load gif48 fields
+        load GOCO06s fields
         :param fileIn: gif48 file and its path
+        :param date: None, YYYY-MM, YYYY-MM-DD, YYYYMMDD, or [start, end].
         :return:
         """
 
         flag = 0
+        self.__epoch = self.__parse_epoch(date)
 
         with open(fileIn) as f:
             content = f.readlines()
@@ -209,6 +213,37 @@ class LoadGOCO06S(LoadSH):
         self.__read_GOCO06S(content[flag + 1:])
 
         return self
+
+    def __parse_epoch(self, date):
+        if date is None:
+            return None
+
+        if isinstance(date, (list, tuple)) and len(date) == 2:
+            start = self.__parse_epoch(date[0])
+            end = self.__parse_epoch(date[1])
+            return start + (end - start) / 2
+
+        if isinstance(date, datetime):
+            return date
+
+        if isinstance(date, str):
+            text = date.strip()
+            if len(text) == 7:
+                start = datetime.strptime(text + "-01", "%Y-%m-%d")
+                if start.month == 12:
+                    end = datetime(start.year + 1, 1, 1)
+                else:
+                    end = datetime(start.year, start.month + 1, 1)
+                return start + (end - start) / 2
+            if len(text) == 8 and text.isdigit():
+                return datetime.strptime(text, "%Y%m%d")
+            return datetime.strptime(text, "%Y-%m-%d")
+
+        raise TypeError("Unsupported GOCO06s epoch: %r" % (date,))
+
+    @staticmethod
+    def __years_between(epoch, t0):
+        return (epoch - t0).total_seconds() / 86400.0 / 365.25
 
     def __header_GOCO06S(self, content: list):
         """
@@ -255,6 +290,9 @@ class LoadGOCO06S(LoadSH):
         stempS = np.zeros((maxdeg + 1, maxdeg + 1))
         stempsigmaC = np.zeros((maxdeg + 1, maxdeg + 1))
         stempsigmaS = np.zeros((maxdeg + 1, maxdeg + 1))
+        current_L = None
+        current_M = None
+        current_tau = None
 
         for line in content:
 
@@ -265,19 +303,46 @@ class LoadGOCO06S(LoadSH):
             key = value[0]
 
             # 只读取 gfc / gfct
-            if key not in ("gfc", "gfct"):
+            if key not in ("gfc", "gfct", "trnd", "acos", "asin"):
                 continue
 
-            L = int(value[1])
-            M = int(value[2])
+            if key in ("gfc", "gfct"):
+                L = int(value[1])
+                M = int(value[2])
 
-            if L > maxdeg:
+                if L > maxdeg:
+                    current_L = None
+                    current_M = None
+                    current_tau = None
+                    continue
+
+                stempC[L, M] = float(value[3].replace('D', 'E'))
+                stempS[L, M] = float(value[4].replace('D', 'E'))
+                stempsigmaC[L, M] = float(value[5].replace('D', 'E'))
+                stempsigmaS[L, M] = float(value[6].replace('D', 'E'))
+
+                current_L = L
+                current_M = M
+                current_tau = None
+                if key == "gfct" and self.__epoch is not None and len(value) >= 8:
+                    t0 = datetime.strptime(value[7], "%Y%m%d")
+                    current_tau = self.__years_between(self.__epoch, t0)
                 continue
 
-            stempC[L, M] = float(value[3].replace('D', 'E'))
-            stempS[L, M] = float(value[4].replace('D', 'E'))
-            stempsigmaC[L, M] = float(value[5].replace('D', 'E'))
-            stempsigmaS[L, M] = float(value[6].replace('D', 'E'))
+            if self.__epoch is None or current_L is None or current_tau is None:
+                continue
+
+            c = float(value[3].replace('D', 'E'))
+            s = float(value[4].replace('D', 'E'))
+            if key == "trnd":
+                factor = current_tau
+            else:
+                period = float(value[7].replace('D', 'E')) if len(value) >= 8 else 1.0
+                phase = 2.0 * np.pi * current_tau / period
+                factor = np.cos(phase) if key == "acos" else np.sin(phase)
+
+            stempC[current_L, current_M] += c * factor
+            stempS[current_L, current_M] += s * factor
 
         for i in range(maxdeg + 1):
             for j in range(i + 1):

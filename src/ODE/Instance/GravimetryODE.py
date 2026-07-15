@@ -17,6 +17,7 @@ class GravimetryODE:
         self.__ParNum = 0
         self.__isSingle = True
         self.Time = None
+        self.node = None
         self.ParameterConfig = None
         self.ODEConfig = None
         self._ArcLen = None
@@ -44,13 +45,16 @@ class GravimetryODE:
         return self
 
     def setParNum(self):
+        self.__ParNum = 0
         if self.TransitionMatrixConfig.isRequired:
             self.__ParNum += self.TransitionMatrixConfig.Parameter_Number
         if self.AccelerometerConfig.isRequired:
             if self.AccelerometerConfig.isScale:
                 self.__ParNum += 9
-            # self.__ParNum += self.node
-            self.__ParNum += self.AccelerometerConfig.Parameter_Number
+            if self.node is None:
+                self.__ParNum += self.AccelerometerConfig.Parameter_Number
+            else:
+                self.__ParNum += int(self.node)
         if self.StokesCoefficientsConfig.isRequired:
             self.__ParNum += self.StokesCoefficientsConfig.Parameter_Number
         return self

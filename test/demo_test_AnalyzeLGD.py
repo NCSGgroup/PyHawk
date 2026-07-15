@@ -2,6 +2,7 @@ import os
 import csv
 import h5py
 import pathlib
+import re
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -9,6 +10,8 @@ from datetime import datetime, timedelta
 
 import src.Frame.SOFA as sf
 from src.Preference import Pre_Constants
+from src.Interface.LoadSH import LoadGOCO06S
+from src.ForceModel.GravHar import PyGravHar, ClibGravHar
 
 
 class AnalyzeLGD:
@@ -67,6 +70,7 @@ class AnalyzeLGD:
             self.lgd_dir = self.lgd_dir_root
 
         self.data = None
+        self.reference_info = None
 
     # ============================================================
     # Basic loading
@@ -93,6 +97,10 @@ class AnalyzeLGD:
         lat_all = []
         lgd_all = []
         arc_all = []
+        pos_a_all = []
+        pos_b_all = []
+        los_all = []
+        geometry_all_available = True
 
         for file in files:
             arc_no = self._parse_arc_no(file)
@@ -109,6 +117,24 @@ class AnalyzeLGD:
                 lat = h5["lat"][:]
                 lgd = h5["lgd"][:]
 
+                has_geometry = (
+                    "pos_a_itrs" in h5
+                    and
+                    "pos_b_itrs" in h5
+                    and
+                    "los_itrs" in h5
+                )
+
+                if has_geometry:
+                    pos_a = h5["pos_a_itrs"][:]
+                    pos_b = h5["pos_b_itrs"][:]
+                    los = h5["los_itrs"][:]
+                else:
+                    pos_a = None
+                    pos_b = None
+                    los = None
+                    geometry_all_available = False
+
             time = np.asarray(time, dtype=np.float64).reshape(-1)
             lon = np.asarray(lon, dtype=np.float64).reshape(-1)
             lat = np.asarray(lat, dtype=np.float64).reshape(-1)
@@ -121,6 +147,17 @@ class AnalyzeLGD:
                     "Length mismatch in %s: time=%d, lon=%d, lat=%d, lgd=%d"
                     % (str(file), len(time), len(lon), len(lat), len(lgd))
                 )
+
+            if has_geometry:
+                if not (
+                    len(pos_a) == n
+                    and
+                    len(pos_b) == n
+                    and
+                    len(los) == n
+                ):
+                    geometry_all_available = False
+                    has_geometry = False
 
             valid = (
                 np.isfinite(time)
@@ -136,6 +173,18 @@ class AnalyzeLGD:
             lon_all.append(self._lon_to_180(lon[valid]))
             lat_all.append(lat[valid])
             lgd_all.append(lgd[valid])
+
+            if has_geometry:
+                pos_a_all.append(
+                    np.asarray(pos_a, dtype=np.float64)[valid]
+                )
+                pos_b_all.append(
+                    np.asarray(pos_b, dtype=np.float64)[valid]
+                )
+                los_all.append(
+                    np.asarray(los, dtype=np.float64)[valid]
+                )
+
             arc_all.append(
                 np.ones(np.sum(valid), dtype=np.int64) * int(arc_no)
             )
@@ -147,6 +196,15 @@ class AnalyzeLGD:
             "lgd": np.concatenate(lgd_all),
             "arcNo": np.concatenate(arc_all),
         }
+
+        if (
+            geometry_all_available
+            and
+            len(pos_a_all) == len(files)
+        ):
+            self.data["pos_a_itrs"] = np.concatenate(pos_a_all)
+            self.data["pos_b_itrs"] = np.concatenate(pos_b_all)
+            self.data["los_itrs"] = np.concatenate(los_all)
 
         index = np.argsort(self.data["time"])
 
@@ -241,13 +299,23 @@ class AnalyzeLGD:
             (d["lat"] <= lat_max)
         )
 
-        return {
+        region = {
             "time": d["time"][idx],
             "lon": lon[idx],
             "lat": d["lat"][idx],
             "lgd": d["lgd"][idx],
             "arcNo": d["arcNo"][idx],
         }
+
+        for key in [
+            "pos_a_itrs",
+            "pos_b_itrs",
+            "los_itrs"
+        ]:
+            if key in d:
+                region[key] = d[key][idx]
+
+        return region
 
     # ============================================================
     # Track summary
@@ -652,7 +720,15 @@ class AnalyzeLGD:
             clean_lgd=True,
             lgd_mad_threshold=8.0,
             lgd_abs_limit=None,
-            lgd_jump_limit=4.0):
+            lgd_jump_limit=4.0,
+            show_points=False,
+            scatter_only=False,
+            point_size=3.0,
+            point_alpha=0.75,
+            track_point_size=3.0,
+            track_point_alpha=0.75,
+            lgd_label="LGD [nm/s^2] + track offset",
+            lgd_title="(b) Along-track LGD"):
         """
         Plot ground tracks and along-track LGD curves by trackID.
 
@@ -700,13 +776,24 @@ class AnalyzeLGD:
                 if track is None:
                     continue
 
-                ax_map.plot(
-                    track["lon"],
-                    track["lat"],
-                    color=color,
-                    linewidth=linewidth,
-                    alpha=alpha
-                )
+                if not scatter_only:
+                    ax_map.plot(
+                        track["lon"],
+                        track["lat"],
+                        color=color,
+                        linewidth=linewidth,
+                        alpha=alpha
+                    )
+
+                if show_points or scatter_only:
+                    ax_map.scatter(
+                        track["lon"],
+                        track["lat"],
+                        color=color,
+                        s=track_point_size,
+                        alpha=track_point_alpha,
+                        linewidths=0
+                    )
 
         ax_map.axhline(
             lat_band[0],
@@ -760,27 +847,35 @@ class AnalyzeLGD:
                 lgd = track["lgd"] * 1e9
 
                 x = lgd + offset
+                x_line, lat_line = self._insert_nan_plot_breaks(
+                    x=x,
+                    y=lat,
+                    time=track["time"]
+                )
 
                 plotted_x.append(x)
 
                 # Important:
                 # Do NOT sort by latitude here.
                 # The track has already been sorted by time in _extract_track().
-                ax_lgd.plot(
-                    x,
-                    lat,
-                    color=color,
-                    linewidth=linewidth,
-                    alpha=alpha
-                )
+                if not scatter_only:
+                    ax_lgd.plot(
+                        x_line,
+                        lat_line,
+                        color=color,
+                        linewidth=linewidth,
+                        alpha=alpha
+                    )
 
-                ax_lgd.scatter(
-                    x,
-                    lat,
-                    color=color,
-                    s=3,
-                    alpha=0.55
-                )
+                if show_points or scatter_only:
+                    ax_lgd.scatter(
+                        x,
+                        lat,
+                        color=color,
+                        s=point_size,
+                        alpha=point_alpha,
+                        linewidths=0
+                    )
 
             label_text = "%d / %d" % (
                 pair["after_day"],
@@ -826,9 +921,9 @@ class AnalyzeLGD:
                     x_max
                 )
 
-        ax_lgd.set_xlabel("LGD [nm/s²] + track offset")
+        ax_lgd.set_xlabel(lgd_label)
         ax_lgd.set_ylabel("Latitude [deg]")
-        ax_lgd.set_title("(b) Along-track LGD", fontsize=13, pad=14)
+        ax_lgd.set_title(lgd_title, fontsize=13, pad=14)
         ax_lgd.grid(True, linewidth=0.4, alpha=0.35)
 
         ax_lgd.text(
@@ -851,8 +946,410 @@ class AnalyzeLGD:
                 save_fig,
                 bbox_inches="tight"
             )
+            plt.close(fig)
+        else:
+            plt.show()
 
-        plt.show()
+    # ============================================================
+    # Monthly reference field
+    # ============================================================
+
+    def subtract_reference_field_for_pairs(
+            self,
+            region,
+            pairs,
+            reference_gfc,
+            static_gfc=None,
+            degree=60,
+            altitude_m=500000.0,
+            separation_m=220000.0,
+            reference_sign=1.0,
+            static_gfc_date=None):
+        """
+        Subtract a monthly reference-field LGD from selected repeat tracks.
+
+        If the LGD files contain saved A/B satellite positions, the reference
+        LGD is evaluated at that geometry. Otherwise the routine falls back to
+        a midpoint-track approximation:
+
+            r_A/B ~= r_mid +/- 0.5 * separation * along_track_unit
+
+        The reference field is formed as:
+
+            reference_gfc - static_gfc
+
+        with degree 0 and 1 terms forced to zero. This keeps only the monthly
+        time-variable part relative to the static model used in orbit modeling.
+        """
+
+        self._check_region(region)
+
+        if "trackID" not in region:
+            raise KeyError(
+                "region has no trackID. Please call split_region_into_tracks() first."
+            )
+
+        if len(pairs) == 0:
+            raise ValueError("pairs is empty. Cannot subtract reference field.")
+
+        reference_gfc = pathlib.Path(reference_gfc)
+
+        if not reference_gfc.exists():
+            raise FileNotFoundError(
+                "Reference GFC not found: %s" % str(reference_gfc)
+            )
+
+        if static_gfc is not None:
+            static_gfc = pathlib.Path(static_gfc)
+
+            if not static_gfc.exists():
+                raise FileNotFoundError(
+                    "Static GFC not found: %s" % str(static_gfc)
+                )
+            if static_gfc_date is None and static_gfc.name.lower().startswith("goco06"):
+                static_gfc_date = self._infer_date_range_from_gfc(reference_gfc)
+
+        C, S, gm, radius = self._load_reference_coefficients(
+            reference_gfc=reference_gfc,
+            static_gfc=static_gfc,
+            degree=degree,
+            static_gfc_date=static_gfc_date
+        )
+
+        out = {}
+
+        for key in region:
+            out[key] = np.array(region[key], copy=True)
+
+        observed_lgd = np.asarray(out["lgd"], dtype=np.float64).copy()
+        reference_lgd = np.full_like(
+            observed_lgd,
+            np.nan,
+            dtype=np.float64
+        )
+
+        target_tracks = []
+
+        for pair in pairs:
+            target_tracks.append(pair["before_track"])
+            target_tracks.append(pair["after_track"])
+
+        target_tracks = sorted(set(target_tracks))
+
+        grav, gravity_backend = self._make_gravity_evaluator(
+            gm=gm,
+            radius=radius
+        )
+
+        has_saved_geometry = (
+            "pos_a_itrs" in out
+            and
+            "pos_b_itrs" in out
+            and
+            "los_itrs" in out
+        )
+
+        mode_used = (
+            "saved_satellite_geometry"
+            if has_saved_geometry
+            else
+            "midpoint_approximation"
+        )
+
+        for track_id in target_tracks:
+            idx = out["trackID"] == track_id
+
+            if np.sum(idx) < 3:
+                continue
+
+            if has_saved_geometry:
+                ref = self._compute_reference_lgd_geometry(
+                    pos_a_itrs=out["pos_a_itrs"][idx],
+                    pos_b_itrs=out["pos_b_itrs"][idx],
+                    los_itrs=out["los_itrs"][idx],
+                    grav=grav,
+                    C=C,
+                    S=S,
+                    reference_sign=reference_sign
+                )
+            else:
+                ref = self._compute_reference_lgd_midpoint(
+                    time=out["time"][idx],
+                    lon=out["lon"][idx],
+                    lat=out["lat"][idx],
+                    grav=grav,
+                    C=C,
+                    S=S,
+                    radius=radius,
+                    altitude_m=altitude_m,
+                    separation_m=separation_m,
+                    reference_sign=reference_sign
+                )
+
+            reference_lgd[idx] = ref
+
+        corrected = observed_lgd.copy()
+        valid_ref = np.isfinite(reference_lgd)
+        corrected[valid_ref] = observed_lgd[valid_ref] - reference_lgd[valid_ref]
+
+        out["lgd_observed"] = observed_lgd
+        out["lgd_reference"] = reference_lgd
+        out["lgd"] = corrected
+
+        self.reference_info = {
+            "reference_gfc": str(reference_gfc),
+            "static_gfc": None if static_gfc is None else str(static_gfc),
+            "degree": int(degree),
+            "altitude_m": float(altitude_m),
+            "separation_m": float(separation_m),
+            "reference_sign": float(reference_sign),
+            "static_gfc_date": static_gfc_date,
+            "mode": mode_used,
+            "gravity_backend": gravity_backend,
+            "n_corrected": int(np.sum(valid_ref)),
+        }
+
+        print(
+            "Reference field subtracted for %d samples using %s."
+            % (
+                self.reference_info["n_corrected"],
+                mode_used
+            )
+        )
+
+        return out
+
+    def _make_gravity_evaluator(
+            self,
+            gm,
+            radius):
+        try:
+            grav = ClibGravHar()
+            backend = "ClibGravHar"
+        except Exception:
+            grav = PyGravHar()
+            backend = "PyGravHar"
+
+        grav._GM = gm
+        grav._Radius = radius
+
+        return grav, backend
+
+    def _load_reference_coefficients(
+            self,
+            reference_gfc,
+            static_gfc,
+            degree,
+            static_gfc_date=None):
+        """
+        Load monthly-reference spherical harmonics.
+        """
+
+        reference_model = LoadGOCO06S().load(str(reference_gfc))
+        C_ref, S_ref = reference_model.getCS(degree)
+
+        if static_gfc is not None:
+            if static_gfc_date is None and static_gfc.name.lower().startswith("goco06"):
+                static_gfc_date = self._infer_date_range_from_gfc(reference_gfc)
+            static_model = LoadGOCO06S().load(str(static_gfc), date=static_gfc_date)
+            C_static, S_static = static_model.getCS(degree)
+            C = C_ref - C_static
+            S = S_ref - S_static
+        else:
+            C = C_ref.copy()
+            S = S_ref.copy()
+
+        for n in [0, 1]:
+            for m in range(n + 1):
+                index = int(n * (n + 1) / 2 + m)
+                C[index] = 0.0
+                S[index] = 0.0
+
+        return (
+            np.asarray(C, dtype=np.float64),
+            np.asarray(S, dtype=np.float64),
+            float(reference_model.GM),
+            float(reference_model.Radius)
+        )
+
+    @staticmethod
+    def _infer_date_range_from_gfc(file_path):
+        name = pathlib.Path(file_path).name
+        match = re.search(
+            r'(\d{4}-\d{2}-\d{2})[-_](\d{4}-\d{2}-\d{2})',
+            name
+        )
+        if match is not None:
+            return [match.group(1), match.group(2)]
+
+        match = re.search(r'(\d{7})-(\d{7})', name)
+        if match is not None:
+            start = datetime.strptime(match.group(1), "%Y%j").strftime("%Y-%m-%d")
+            end = datetime.strptime(match.group(2), "%Y%j").strftime("%Y-%m-%d")
+            return [start, end]
+
+        return None
+
+    def _compute_reference_lgd_midpoint(
+            self,
+            time,
+            lon,
+            lat,
+            grav,
+            C,
+            S,
+            radius,
+            altitude_m,
+            separation_m,
+            reference_sign):
+        """
+        Compute reference LGD from midpoint lon/lat using an along-track tangent.
+        """
+
+        time = np.asarray(time, dtype=np.float64)
+        lon = np.asarray(lon, dtype=np.float64)
+        lat = np.asarray(lat, dtype=np.float64)
+
+        order = np.argsort(time)
+        inv_order = np.empty_like(order)
+        inv_order[order] = np.arange(len(order))
+
+        lon_o = lon[order]
+        lat_o = lat[order]
+
+        pos_mid = self._spherical_to_cartesian(
+            lon_deg=lon_o,
+            lat_deg=lat_o,
+            radius_m=radius + altitude_m
+        )
+
+        tangent = np.gradient(
+            pos_mid,
+            axis=0
+        )
+
+        tangent_norm = np.linalg.norm(
+            tangent,
+            axis=1
+        )
+
+        valid = tangent_norm > 0
+        unit = np.full_like(
+            tangent,
+            np.nan,
+            dtype=np.float64
+        )
+        unit[valid] = tangent[valid] / tangent_norm[valid, None]
+
+        ref_sorted = np.full(
+            len(time),
+            np.nan,
+            dtype=np.float64
+        )
+
+        for i in range(len(time)):
+
+            if not np.isfinite(unit[i]).all():
+                continue
+
+            p_after = pos_mid[i] + 0.5 * separation_m * unit[i]
+            p_before = pos_mid[i] - 0.5 * separation_m * unit[i]
+
+            acc_after = grav.setPar(C, S, p_after).getAcceleration()
+            acc_before = grav.setPar(C, S, p_before).getAcceleration()
+
+            ref_sorted[i] = (
+                reference_sign
+                *
+                np.dot(
+                    acc_after - acc_before,
+                    unit[i]
+                )
+            )
+
+        return ref_sorted[inv_order]
+
+    def _compute_reference_lgd_geometry(
+            self,
+            pos_a_itrs,
+            pos_b_itrs,
+            los_itrs,
+            grav,
+            C,
+            S,
+            reference_sign):
+        """
+        Compute reference LGD from saved A/B ITRS positions.
+        """
+
+        pos_a_itrs = np.asarray(
+            pos_a_itrs,
+            dtype=np.float64
+        )
+        pos_b_itrs = np.asarray(
+            pos_b_itrs,
+            dtype=np.float64
+        )
+        los_itrs = np.asarray(
+            los_itrs,
+            dtype=np.float64
+        )
+
+        ref = np.full(
+            len(pos_a_itrs),
+            np.nan,
+            dtype=np.float64
+        )
+
+        for i in range(len(ref)):
+
+            if not (
+                np.isfinite(pos_a_itrs[i]).all()
+                and
+                np.isfinite(pos_b_itrs[i]).all()
+                and
+                np.isfinite(los_itrs[i]).all()
+            ):
+                continue
+
+            acc_a = grav.setPar(C, S, pos_a_itrs[i]).getAcceleration()
+            acc_b = grav.setPar(C, S, pos_b_itrs[i]).getAcceleration()
+
+            ref[i] = (
+                reference_sign
+                *
+                np.dot(
+                    acc_b - acc_a,
+                    los_itrs[i]
+                )
+            )
+
+        return ref
+
+    def _spherical_to_cartesian(
+            self,
+            lon_deg,
+            lat_deg,
+            radius_m):
+        """
+        Convert geocentric lon/lat/radius to Cartesian ITRS coordinates.
+        """
+
+        lon = np.radians(
+            np.asarray(lon_deg, dtype=np.float64)
+        )
+        lat = np.radians(
+            np.asarray(lat_deg, dtype=np.float64)
+        )
+        radius_m = float(radius_m)
+
+        cos_lat = np.cos(lat)
+
+        x = radius_m * cos_lat * np.cos(lon)
+        y = radius_m * cos_lat * np.sin(lon)
+        z = radius_m * np.sin(lat)
+
+        return np.vstack((x, y, z)).T
 
     def plot_single_tracks(
             self,
@@ -896,7 +1393,7 @@ class AnalyzeLGD:
             linewidth=0.8
         )
 
-        plt.xlabel("LGD [nm/s²]")
+        plt.xlabel("LGD [nm/s^2]")
         plt.ylabel("Latitude [deg]")
         plt.ylim(*lat_lim)
         plt.grid(True, linewidth=0.4, alpha=0.4)
@@ -959,17 +1456,32 @@ class AnalyzeLGD:
                 0.1
             )
 
-        after = self._extract_arc_track(
-            region=region,
-            arcNo=pair["after_arc"],
-            lat_lim=lat_lim
-        )
+        if "trackID" in region and "after_track" in pair and "before_track" in pair:
+            after = self._extract_track(
+                region=region,
+                trackID=pair["after_track"],
+                lat_lim=lat_lim,
+                clean_lgd=False
+            )
 
-        before = self._extract_arc_track(
-            region=region,
-            arcNo=pair["before_arc"],
-            lat_lim=lat_lim
-        )
+            before = self._extract_track(
+                region=region,
+                trackID=pair["before_track"],
+                lat_lim=lat_lim,
+                clean_lgd=False
+            )
+        else:
+            after = self._extract_arc_track(
+                region=region,
+                arcNo=pair["after_arc"],
+                lat_lim=lat_lim
+            )
+
+            before = self._extract_arc_track(
+                region=region,
+                arcNo=pair["before_arc"],
+                lat_lim=lat_lim
+            )
 
         if after is None or before is None:
             raise ValueError(
@@ -1029,7 +1541,7 @@ class AnalyzeLGD:
             linewidth=0.8
         )
 
-        plt.xlabel("ΔLGD [nm/s²]")
+        plt.xlabel("Delta LGD [nm/s^2]")
         plt.ylabel("Latitude [deg]")
         plt.ylim(*lat_lim)
         plt.title(
@@ -1310,6 +1822,66 @@ class AnalyzeLGD:
 
         return ((lon + 180.0) % 360.0) - 180.0
 
+    def _insert_nan_plot_breaks(
+            self,
+            x,
+            y,
+            time,
+            gap_factor=2.5,
+            min_gap_seconds=6.0,
+            max_y_jump=0.75,
+            max_x_jump=3.0):
+        """
+        Insert NaN separators so cleaned tracks are not connected across gaps.
+        """
+
+        x = np.asarray(x, dtype=np.float64)
+        y = np.asarray(y, dtype=np.float64)
+        time = np.asarray(time, dtype=np.float64)
+
+        if len(time) < 3:
+            return x, y
+
+        dt = np.diff(time)
+        dt_positive = dt[dt > 0]
+
+        if len(dt_positive) == 0:
+            return x, y
+
+        gap_threshold = max(
+            min_gap_seconds,
+            gap_factor * np.nanmedian(dt_positive)
+        )
+
+        bad_gap = dt > gap_threshold
+        bad_y_jump = np.abs(np.diff(y)) > max_y_jump
+        bad_x_jump = np.abs(np.diff(x)) > max_x_jump
+
+        break_points = np.where(
+            bad_gap
+            |
+            bad_y_jump
+            |
+            bad_x_jump
+        )[0] + 1
+
+        if len(break_points) == 0:
+            return x, y
+
+        x_plot = np.insert(
+            x,
+            break_points,
+            np.nan
+        )
+
+        y_plot = np.insert(
+            y,
+            break_points,
+            np.nan
+        )
+
+        return x_plot, y_plot
+
     # ============================================================
     # Time conversion
     # ============================================================
@@ -1408,6 +1980,18 @@ class AnalyzeLGD:
             "trackID": [],
         }
 
+        optional_keys = [
+            key for key in [
+                "pos_a_itrs",
+                "pos_b_itrs",
+                "los_itrs"
+            ]
+            if key in region
+        ]
+
+        for key in optional_keys:
+            out[key] = []
+
         track_id = 0
 
         for arc_no in np.unique(region["arcNo"]):
@@ -1418,6 +2002,13 @@ class AnalyzeLGD:
             lon = np.asarray(region["lon"][idx_arc], dtype=np.float64)
             lat = np.asarray(region["lat"][idx_arc], dtype=np.float64)
             lgd = np.asarray(region["lgd"][idx_arc], dtype=np.float64)
+            optional = {}
+
+            for key in optional_keys:
+                optional[key] = np.asarray(
+                    region[key][idx_arc],
+                    dtype=np.float64
+                )
 
             valid = (
                     np.isfinite(time)
@@ -1434,6 +2025,9 @@ class AnalyzeLGD:
             lat = lat[valid]
             lgd = lgd[valid]
 
+            for key in optional_keys:
+                optional[key] = optional[key][valid]
+
             if len(time) < min_points:
                 continue
 
@@ -1443,6 +2037,9 @@ class AnalyzeLGD:
             lon = lon[order]
             lat = lat[order]
             lgd = lgd[order]
+
+            for key in optional_keys:
+                optional[key] = optional[key][order]
 
             dt = np.diff(time)
 
@@ -1476,6 +2073,9 @@ class AnalyzeLGD:
                 out["trackID"].append(
                     np.ones(e - s, dtype=np.int64) * int(track_id)
                 )
+
+                for key in optional_keys:
+                    out[key].append(optional[key][s:e])
 
                 track_id += 1
 
@@ -1724,8 +2324,8 @@ class AnalyzeLGD:
 if __name__ == '__main__':
 
     analyzer = AnalyzeLGD(
-        lgd_dir="../temp/LGD",
-        date_span=["2021-03-06", "2021-03-23"]
+        lgd_dir="../temp/LGD/2021-03-01_2021-03-31-lri",
+        date_span=["2021-03-01", "2021-03-31"]
     ).load_all_arcs()
 
 
@@ -1773,6 +2373,21 @@ if __name__ == '__main__':
 
     analyzer.print_pairs(pairs)
 
+    region = analyzer.subtract_reference_field_for_pairs(
+        region=region,
+        pairs=pairs,
+        reference_gfc=(
+            "../temp/LGD/"
+            "HUST_HUST-Release-06_60x60_unfiltered_GSM-2_"
+            "2021-02-01-2021-02-28_GRAC_HUST_BA01_0600.gfc"
+        ),
+        static_gfc="../data/StaticGravityField/GOCO06s.gfc",
+        degree=60,
+        altitude_m=500000.0,
+        separation_m=220000.0,
+        reference_sign=1.0
+    )
+
     analyzer.diagnose_pairs_lgd(
         region=region,
         pairs=pairs,
@@ -1790,5 +2405,8 @@ if __name__ == '__main__':
         lgd_mad_threshold=6.0,
         lgd_abs_limit=8.0,
         lgd_jump_limit=3.0,
-        save_fig="../result/img/LGD_repeat_tracks_descending_clean.png"
+        show_points=False,
+        lgd_label="LGD anomaly [nm/s^2] + track offset",
+        lgd_title="(b) Along-track LGD anomaly",
+        save_fig="../result/img/LGD_LRI_repeat_tracks_descending_Feb2021ref.png"
     )

@@ -29,6 +29,7 @@ class RefGravModel(AbsRefGravModel):
         self._RefGravModelConfig.__dict__.update(self._FMConfig.RefGravModelConfig.copy())
         self.__kind = self._RefGravModelConfig.kind
         staticModel = self._RefGravModelConfig.StaticModel
+        time_variable_date = getattr(self._RefGravModelConfig, 'TimeVariableDate', None)
         '''config path'''
         self._pathConfig = self._FMConfig.PathOfFiles()
         self._pathConfig.__dict__.update(self._FMConfig.PathOfFilesConfig.copy())
@@ -41,7 +42,7 @@ class RefGravModel(AbsRefGravModel):
         elif staticModel == StaticGravModel.GGM05C.name:
             self.__staticModel = LoadGif48().load(self._pathConfig.GGM05C)
         elif staticModel == StaticGravModel.GOCO06S.name:
-            self.__staticModel = LoadGOCO06S().load(self._pathConfig.GOCO06s)
+            self.__staticModel = LoadGOCO06S().load(self._pathConfig.GOCO06s, date=time_variable_date)
         return self
 
     def getStaticModel(self):

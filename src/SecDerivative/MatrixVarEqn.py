@@ -159,8 +159,17 @@ class MatrixVarEqn:
 
         if isIncludeSensitivityMatrix:
             Sr = PhirSr[:, 7:]
+
             if ap is None:
                 raise ValueError("Sensitivity matrix is enabled, but ap is None.")
+
+            tmp = np.matmul(ar, Sr)
+            if tmp.shape != ap.shape:
+                raise ValueError(
+                    f"VarEq dimension mismatch: "
+                    f"ar={ar.shape}, Sr={Sr.shape}, ar@Sr={tmp.shape}, ap={ap.shape}. "
+                    f"This arc has inconsistent parameter dimension."
+                )
 
             if Sr.shape[1] != ap.shape[1]:
                 raise ValueError(
@@ -267,4 +276,3 @@ class MatrixVarEqn:
             iniV = np.hstack((iniV, np.zeros((3, paraNum))))
 
         return iniR, iniV
-

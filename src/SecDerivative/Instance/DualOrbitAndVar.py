@@ -1,7 +1,7 @@
 import numpy as np
 from src.SecDerivative.Common.Assemble2ndDerivative import Assemble2ndDerivative
 from src.Frame.Frame import Frame
-from src.Preference.EnumType import TimeFormat, Payload, SatID
+from src.Preference.EnumType import TimeFormat, Payload, SatID, ForceType
 from src.SecDerivative.VarEqn import VarEqn
 from src.SecDerivative.MatrixVarEqn import MatrixVarEqn
 from src.Interface.ArcOperation import ArcData
@@ -28,6 +28,7 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
 
         self.accA = []
         self.accB = []
+        self.accTime = []
 
     def configures(self, arc: int, FMConfig:ForceModelConfig, ParConfig:ParameterConfig, FrameConfig:FrameConfig):
         self._arc = arc
@@ -51,37 +52,42 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
         time_A = GNVA[:, 0]
         time_B = GNVB[:, 0]
 
-        time_A_i = time_A.astype(np.int64)
-        time_B_i = time_B.astype(np.int64)
-
-        commonTime = np.intersect1d(time_A_i, time_B_i)
-
-        idxA = np.searchsorted(time_A_i, commonTime)
-        idxB = np.searchsorted(time_B_i, commonTime)
-
-        GNVA = GNVA[idxA, :]
-        GNVB = GNVB[idxB, :]
-
-        self.Time = commonTime.astype(GNVA[:, 0].dtype)
-        self.__ArcLen = len(commonTime)
-        self.__commonTime = commonTime
-
-        assert len(commonTime) > 5, "Common GNV time points are insufficient."
-        # if len(time_A) != len(time_B):
-        #     self.__ArcLen = len(time_B) if len(time_A) > len(time_B) else len(time_A)
-        #     self.Time = time_B if len(time_A) > len(time_B) else time_A
-        # else:
-        #     self.__ArcLen = len(time_B)
-        #     self.Time = time_B
-        #     # self.__ArcLen = len(time_A)
-        #     commonTime = set(time_A.astype(np.int64))
-        #     commonTime = commonTime & set(time_B.astype(np.int64))
-        #     commonTime = np.array(list(commonTime))
-        #     commonTime.sort()
-        #     index1 = [list(time_A).index(x) for x in commonTime]
-        #     index2 = [list(time_B).index(x) for x in commonTime]
-        #     GNVA = GNVA[index1, :]
-        #     GNVB = GNVB[index2, :]
+        # time_A_i = time_A.astype(np.int64)
+        # time_B_i = time_B.astype(np.int64)
+        #
+        # commonTime = np.intersect1d(time_A_i, time_B_i)
+        #
+        # idxA = np.searchsorted(time_A_i, commonTime)
+        # idxB = np.searchsorted(time_B_i, commonTime)
+        #
+        # GNVA = GNVA[idxA, :]
+        # GNVB = GNVB[idxB, :]
+        #
+        # self.Time = commonTime.astype(GNVA[:, 0].dtype)
+        # self.__ArcLen = len(commonTime)
+        # self.__commonTime = commonTime
+        #
+        # if len(commonTime) <= 5:
+        #     raise ValueError(
+        #         "Common GNV time points are insufficient for arc %s: "
+        #         "A=%d, B=%d, common=%d"
+        #         % (self._arc, len(time_A), len(time_B), len(commonTime))
+        #     )
+        if len(time_A) != len(time_B):
+            self.__ArcLen = len(time_B) if len(time_A) > len(time_B) else len(time_A)
+            self.Time = time_B if len(time_A) > len(time_B) else time_A
+        else:
+            self.__ArcLen = len(time_B)
+            self.Time = time_B
+            # self.__ArcLen = len(time_A)
+            commonTime = set(time_A.astype(np.int64))
+            commonTime = commonTime & set(time_B.astype(np.int64))
+            commonTime = np.array(list(commonTime))
+            commonTime.sort()
+            index1 = [list(time_A).index(x) for x in commonTime]
+            index2 = [list(time_B).index(x) for x in commonTime]
+            GNVA = GNVA[index1, :]
+            GNVB = GNVB[index2, :]
 
         '''divide x layer'''
         self.node_x = self.divideLayer(self.adjustlength_x)
@@ -143,8 +149,9 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
 
         '''benchmark acc'''
 
-        self.accA.append(accA)
-        self.accB.append(accB)
+        self.accTime.append(float(t))
+        self.accA.append(accA.copy())
+        self.accB.append(accB.copy())
         '''Computation efficiency test'''
         '''Test Result: MOST COST TIME:'''
         '''1. Ocean Tide, 2. EOP correction, 3. Planets, 4.  '''
@@ -178,7 +185,8 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
 
         assert apA is None or apA.shape[0] == 3
         assert apB is None or apB.shape[0] == 3
-
+        apA = self.__matchDaDpWidth(apA, PhirSr[0:3], SatID.A)
+        apB = self.__matchDaDpWidth(apB, PhirSr[3:6], SatID.B)
         '''calculate the second order differentials'''
         diff2ndA = MatrixVarEqn.VarEq2ndOrder(PhirSr[0:3], PhivSv[0:3], arA, apA, accA,
                                        isIncludeStateVec=True,
@@ -197,6 +205,15 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
 
     def getacc(self):
         return self.accA, self.accB
+
+    def getAccWithTime(self):
+        return self.accTime, self.accA, self.accB
+
+    def clearAccHistory(self):
+        self.accTime = []
+        self.accA = []
+        self.accB = []
+        return self
 
     def divideLayer(self, adjustlength):
         node = [self.Time[0]]
@@ -218,4 +235,27 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
         return node
 
     def getTimes(self):
-        return self.node
+        par_num = self.node
+        for name, obj in self.ForceType.items():
+            if name.startswith(ForceType.NonConserveForce.name) and hasattr(obj, 'getParNum'):
+                par_num = max(par_num, obj.getParNum())
+        return par_num
+
+    def __matchDaDpWidth(self, ap, PhirSr, sat):
+        if ap is None:
+            return None
+
+        expected = PhirSr[:, 7:].shape[1]
+        actual = ap.shape[1]
+        if actual == expected:
+            return ap
+
+        if actual < expected and not self._StokesCoefficientsConfig.isRequired:
+            pad = np.zeros((ap.shape[0], expected - actual), dtype=ap.dtype)
+            return np.hstack((ap, pad))
+
+        raise ValueError(
+            "DaDp parameter dimension mismatch for arc %s sat %s: "
+            "dadp=%d, expected=%d. Check ACC/SCA arc length and parameterization."
+            % (self._arc, sat.name, actual, expected)
+        )

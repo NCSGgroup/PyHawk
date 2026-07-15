@@ -87,3 +87,6 @@ class NonConByAcc(AbsNonConservative):
         """
         return self.__dadp[self.__idx, :, :]
 
+    def getParNum(self):
+        return self.__dadp.shape[2]
+

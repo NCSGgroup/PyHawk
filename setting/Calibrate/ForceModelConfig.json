@@ -8,7 +8,7 @@
     "instance_GravHar": {
         "NonTide": "AODRL06",
         "PoleTide": "PoleTideIERS2010",
-        "OceanTide": "EOT11a",
+        "OceanTide": "FES2014",
         "AtmosphereTide": "AtmosAOD",
         "SolidEarthTide": "SolidTideIERS2010",
         "ReferenceModel": "RefGravModel"
@@ -23,8 +23,8 @@
     },
     "NonConservativeConfig": {
         "date_span": [
-            "2023-02-01",
-            "2023-02-28"
+            "2015-03-01",
+            "2015-03-31"
         ],
         "arcNo": 0,
         "sat": {
@@ -64,7 +64,7 @@
             "L2": true,
             "T2": true,
             "S2": true,
-            "R2": false,
+            "R2": true,
             "T3": false,
             "S3": false,
             "R3": false
@@ -130,7 +130,8 @@
     "RefGravModelConfig": {
         "kind": 0,
         "Nmax": 180,
-        "StaticModel": "GOCO06S"
+        "StaticModel": "GOCO06S",
+        "TimeVariableDate": "2021-02"
     },
     "RelativityConfig": {
         "GM_Sun": 1.32712442076e+20,
