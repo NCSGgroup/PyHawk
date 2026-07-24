@@ -885,7 +885,7 @@ def batch_classified_annual_means():
 
 if __name__ == '__main__':
 
-    span1 = '2020-03-01_2020-03-31'
+    span1 = '2025-03-01_2025-03-31'
     # GRACE(span1)
     GRACE_FO(span1)
 
