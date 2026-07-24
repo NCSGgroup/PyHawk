@@ -21,6 +21,10 @@ class AdjustOrbitConfig:
             self.OutlierObs = 7e-07
             self.ArcLength = 1.5
             self.Iterations = 3  # times
+            self.ArcOutlierEnabled = True
+            self.ArcOutlierSignificance = 0.01
+            self.ArcOutlierMaxFraction = 0.1
+            self.ArcOutlierMinArcs = 8
 
     class PathOfFiles:
         def __init__(self):
@@ -29,6 +33,9 @@ class AdjustOrbitConfig:
             self.OrbitAdjustResTemp = "../temp/OrbitAdjustment"
             self.RangeRateTemp = "../temp/RangeRate"
             self.FilteredRangeRateTemp = "../temp/FilteredRangeRate"
+            self.StandardKBRRTemp = "../temp/StandardKBRR"
+            self.LGDTemp = "../temp/LGD"
+            self.StandardLGDTemp = "../temp/StandardLGD"
 
 
 def class_to_json():

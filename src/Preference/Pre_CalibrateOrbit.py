@@ -39,6 +39,9 @@ class CalibrateOrbitConfig:
             self.MinIteration = 2
             self.RelativeTolerance = 1e-3
             self.AbsoluteTolerance = 1e-15
+            self.RandomSeed = 20240724
+            self.OrbitCovarianceMode = 'FixedDiagonal'
+            self.OrbitFixedDiagonal = 0.004
 
     class LGD:
         def __init__(self):

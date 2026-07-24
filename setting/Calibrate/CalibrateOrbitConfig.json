@@ -1,28 +1,31 @@
 {
     "MissionConfig": {
-        "mission": "GRACE_FO_RL04"
+        "mission": "GRACE_RL03"
     },
     "StepControlConfig": {
         "isPreprocess": false,
         "isAdjustOrbit": false,
-        "isAdjustKBRR": false,
+        "isAdjustKBRR": true,
         "isGetLGD": true,
-        "isGetGravityDesignMat": false,
-        "isGetNEQ": false,
-        "isGetSH": false,
+        "isGetGravityDesignMat": true,
+        "isGetNEQ": true,
+        "isGetSH": true,
         "isGLS": false
     },
     "ParallelControlConfig": {
-        "AdjustOrbitProcess": 30,
-        "AdjustKBRRProcess": 30,
-        "GetGravityDesignMatProcess": 15,
-        "GetNEQProcess": 15
+        "AdjustOrbitProcess": 20,
+        "AdjustKBRRProcess": 20,
+        "GetGravityDesignMatProcess": 10,
+        "GetNEQProcess": 10
     },
     "GLSIterationConfig": {
         "MaxIteration": 1,
         "MinIteration": 1,
         "RelativeTolerance": 0.001,
-        "AbsoluteTolerance": 1e-15
+        "AbsoluteTolerance": 1e-15,
+        "RandomSeed": 20240724,
+        "OrbitCovarianceMode": "EstimatedFull",
+        "OrbitFixedDiagonal": 0.004
     },
     "LGDConfig": {
         "Method": "RangeRateDerivative",

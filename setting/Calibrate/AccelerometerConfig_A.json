@@ -29,15 +29,15 @@
     },
     "cali_value": {
         "Scale": [
-            0.937,
+            0.959,
             0.0,
             0.0,
             0.0,
-            0.956,
+            0.952,
             0.0,
             0.0,
             0.0,
-            0.927
+            0.952
         ],
         "Bias_constant": [
             0.0,
@@ -55,5 +55,6 @@
             0.0
         ]
     },
-    "temp_non_conservative_data": "../temp/NonConservativeForce"
+    "temp_non_conservative_data": "../temp/NonConservativeForce",
+    "StandardACCTemp": "../temp/StandardACC"
 }

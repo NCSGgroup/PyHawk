@@ -6,6 +6,11 @@ from src.Preference.Pre_Solver import SolverConfig
 from src.Preference.Pre_AdjustOrbit import AdjustOrbitConfig
 from src.Preference.Pre_Interface import InterfaceConfig
 from src.Auxilary.Outlier import Outlier
+from src.Solver.CovarianceModel import (
+    load_covariance,
+    orbit_covariance_filename,
+    range_rate_covariance_filename,
+)
 from scipy.linalg import qr, toeplitz, cholesky, eigh, solve_triangular
 from scipy.sparse import block_diag
 import numpy as np
@@ -138,8 +143,6 @@ class GravityNEQperArc:
         if not config.IsRequired:
             return None
 
-        sgima_path = self._solverConfig.PostOrbit + '/' + self.__date_span[0] + '-' + self.__date_span[1]
-
         self._rd = ArcData(interfaceConfig=self._InterfaceConfig)
 
         if config.UseKinematicOrbit:
@@ -169,49 +172,13 @@ class GravityNEQperArc:
         #     f.create_dataset("local_r", data=local_r)
         #     f.create_dataset("obs", data=obs)
 
-        sigmafilename = sgima_path + '/Orbit_' + str(self.__arcNo) + str(sat.name) + '.hdf5'
-        if self.use_sigma and os.path.exists(sigmafilename):
-            with h5py.File(sigmafilename, 'r') as sigmah5:
-                if "Sigma" in sigmah5:
-                    sigma = sigmah5['Sigma'][:]
-                    sigma_time = sigmah5['time'][:].astype(np.int64)
-
-                    sigma_index = [
-                        list(sigma_time).index(x)
-                        for x in int_t_obs
-                        if x in sigma_time
-                    ]
-                    sigma_index = np.array(sigma_index)
-
-                    # index = np.array(new_index)
-
-                    max_epoch = sigma.shape[0] // 3
-
-                    valid_epoch = sigma_index < max_epoch
-
-                    # 同步裁剪所有数据
-                    sigma_index = sigma_index[valid_epoch]
-
-                    orbit_obs = orbit_obs[valid_epoch, :]
-                    orbit_nominal = orbit_nominal[valid_epoch, :]
-
-                    local_r = local_r[valid_epoch, :, :]
-                    global_r = global_r[valid_epoch, :, :]
-
-                    # ============================================================
-                    # Build idx
-                    # ============================================================
-
-                    idx = np.empty(3 * len(sigma_index), dtype=int)
-
-                    idx[0::3] = 3 * sigma_index
-                    idx[1::3] = 3 * sigma_index + 1
-                    idx[2::3] = 3 * sigma_index + 2
-
-                    sigma = sigma[np.ix_(idx, idx)]
-                    # sigma_y = sigma_y[np.ix_(index, index)]
-                    # sigma_z = sigma_z[np.ix_(index, index)]
-
+        sigmafilename = orbit_covariance_filename(
+            self._solverConfig.PostOrbit, self.__date_span, sat.name
+        )
+        if self.use_sigma:
+            sigma = load_covariance(
+                sigmafilename, t_nominal, components=3
+            )
         '''Expanding the observations'''
         obs = orbit_obs[:, 1:] - orbit_nominal
 
@@ -332,8 +299,6 @@ class GravityNEQperArc:
             return None
 
         assert config.measurement == SSTObserve.RangeRate.value, 'Range-rate is not allowed by user setting'
-        sgima_path = self._solverConfig.PostKBRR + '/' + self.__date_span[0] + '-' + self.__date_span[1]
-
         dm_dir = self._AdjustPathConfig.RangeRateTemp + '/' + self.__date_span[0] + '_' + self.__date_span[1]
         res_filename = dm_dir + '/' + SSTObserve.RangeRate.name + '_' + str(self.__arcNo) + '.hdf5'
         with h5py.File(res_filename, 'r') as h5:
@@ -363,27 +328,13 @@ class GravityNEQperArc:
         
         sigma = None
 
-        sigmafilename = sgima_path + '/' + SSTObserve.RangeRate.name + '_' + str(self.__arcNo) + '.hdf5'
-        if self.use_sigma and os.path.exists(sigmafilename):
-            with h5py.File(sigmafilename, 'r') as sigmah5:
-                if "Sigma" in sigmah5:
-                    sigma = sigmah5['Sigma'][:]
-                    sigma_time = sigmah5['time'][:]
-
-                    common_mask = np.isin(t_dm, sigma_time)
-
-                    obs = obs[common_mask]
-                    global_dm = global_dm[common_mask, :]
-                    local_dm = local_dm[common_mask, :]
-
-                    sigma_index = np.array([
-                        np.where(sigma_time == t)[0][0]
-                        for t in t_dm[common_mask]
-                    ], dtype=np.int64)
-                    
-                    sigma_index = sigma_index.astype(np.int64)
-                    sigma = sigma[np.ix_(sigma_index, sigma_index)]
-
+        sigmafilename = range_rate_covariance_filename(
+            self._solverConfig.PostKBRR, self.__date_span
+        )
+        if self.use_sigma:
+            sigma = load_covariance(
+                sigmafilename, t_dm, components=1
+            )
         obs = obs.reshape((-1, 1))
         N, l = GeoMathKit.keepGlobal(dm_global=global_dm, dm_local=local_dm, obs=obs, p=sigma)
             # =========================

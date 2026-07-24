@@ -5,6 +5,7 @@ from src.Interface.ArcOperation import ArcData
 import src.Preference.EnumType as EnumType
 from src.Auxilary.Outlier import Outlier
 from src.Auxilary.KeplerOrbitElements import OrbitalElements
+from src.Auxilary.StandardKBRR import StandardKBRR
 from tqdm import tqdm
 import numpy as np
 import scipy.linalg
@@ -66,6 +67,7 @@ class RangeRate:
         self.ParameterConfig = ParameterConfig
         """step 3: instance second Derivative"""
         rd = ArcData(interfaceConfig=self._InterfaceConfig)
+        self._rd = rd
 
         self._secDer = SerDer(self._fr, rd).configures\
             (arc=self.__arcNo, FMConfig=self.FMConfig,
@@ -122,32 +124,56 @@ class RangeRate:
         self.__resh5 = h5py.File(res_filename, "w")
         return self
 
+    @staticmethod
+    def _build_arc_nodes(time, arc_length, close_tolerance=1800,
+                         min_tail_points=100, end_margin=10):
+        """Build fitting intervals that cover every KBRR epoch.
+
+        A short final remainder is merged into the current interval.  In
+        particular, an input arc shorter than ``arc_length`` still produces
+        one fitting interval instead of an empty node list.
+        """
+        time = np.asarray(time)
+        if time.ndim != 1 or time.size == 0:
+            raise ValueError('KBRR time must be a non-empty one-dimensional array')
+        if not np.all(np.isfinite(time)):
+            raise ValueError('KBRR time contains non-finite values')
+        if np.any(np.diff(time) < 0):
+            raise ValueError('KBRR time must be sorted in ascending order')
+        if arc_length <= 0:
+            raise ValueError('KBRR fitting arc length must be positive')
+
+        nodes = [time[0]]
+        end_time = time[-1]
+        while True:
+            next_node = nodes[-1] + arc_length
+            if next_node >= end_time:
+                nodes.append(end_time + end_margin)
+                break
+
+            tail_points = np.count_nonzero(time >= next_node)
+            if (end_time - next_node <= close_tolerance or
+                    tail_points <= min_tail_points):
+                nodes.append(end_time + end_margin)
+                break
+
+            nodes.append(next_node)
+
+        return nodes
+
     def calibrate(self):
         obs = self.pre_residual()
 
         n = self.mean_motion_of_the_mid_point()
 
         '''divide arcs to Calibrate kbr individually'''
-        node = [self.Time[0]]
-        t1 = self.Time[0]
-        while True:
-            t2 = t1 + self.__kbr_arc
-            if np.fabs(t2 - self.Time[-1]) <= 0.5 * 3600:
-                '''difference less than 0.5 hour, end'''
-                node.append(t2)
-                break
-            elif len(self.Time[self.Time >= t2]) <= 100:
-                '''the rest points are too short, e.g., less than 100: include the rest into the last arc'''
-                node[-1] = self.Time[-1] + 10  # +10, a little bigger than the last point to ensure all is included
-                break
-            else:
-                node.append(t2)
-                t1 = t2
+        node = self._build_arc_nodes(self.Time, self.__kbr_arc)
 
         '''attribute data into each kbr arc'''
         arclist_t, arclist_n, arclist_obs = [], [], []
         for i in range(len(node) - 1):
-            index = (self.Time < node[i + 1]) * (self.Time >= node[i])
+            index = ((self.Time < node[i + 1]) &
+                     (self.Time >= node[i]))
             arclist_t.append(self.Time[index])
             arclist_n.append(n[index])
             arclist_obs.append(obs[index])
@@ -191,6 +217,41 @@ class RangeRate:
         h5.create_dataset('pre_residual', data=self.pre_residual())
         h5.create_dataset('design_matrix', data=design_matrix)
         h5.close()
+
+        output_directory = getattr(
+            self._PathfileConfig,
+            'StandardKBRRTemp',
+            StandardKBRR.output_directory(self._PathfileConfig.RangeRateTemp)
+        )
+        orbit_a = self._rd.getData(
+            arc=self.__arcNo,
+            kind=EnumType.Payload.GNV,
+            sat=EnumType.SatID.A
+        )[:, 0:4]
+        orbit_b = self._rd.getData(
+            arc=self.__arcNo,
+            kind=EnumType.Payload.GNV,
+            sat=EnumType.SatID.B
+        )[:, 0:4]
+        longitude, latitude, altitude = StandardKBRR.midpoint_coordinates(
+            gps_time=post_t,
+            orbit_a=orbit_a,
+            orbit_b=orbit_b,
+            frame=self._fr
+        )
+        StandardKBRR().configure(
+            filedir=output_directory,
+            date_span=self.__date_span,
+            stage='Pre',
+            mission=self._InterfaceConfig.mission
+        ).save_arc(
+            gps_time=post_t,
+            longitude=longitude,
+            latitude=latitude,
+            altitude=altitude,
+            range_rate=post_residual,
+            arc_no=self.__arcNo
+        )
         pass
 
     def pre_residual(self):

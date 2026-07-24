@@ -881,7 +881,7 @@ class GRACE_FO_RL04(L1b):
             #                             'ACH1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
 
             act_path = str(self.dir.joinpath(self._path_ACC, date.split('-')[0] + '-' + date.split('-')[1],
-                                        'gracefo_1B_' + date + '_RL04.ascii.ACX',
+                                        'gracefo_1B_' + date + '_RL04.ascii.ACX2',
                                         'ACH1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
 
             if os.path.exists(acc_path) and self.has_valid_records(acc_path):

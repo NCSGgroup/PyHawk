@@ -29,6 +29,7 @@ class NEQConfig:
     class PathOfFiles:
         def __init__(self):
             self.NormalEqTemp = "../temp/NEQ"
+            self.StandardNEQTemp = "../temp/StandardNEQ"
             self.ResultCS = "../result/SH"
 
 

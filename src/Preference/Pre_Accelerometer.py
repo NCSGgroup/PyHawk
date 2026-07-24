@@ -23,6 +23,7 @@ class AccelerometerConfig:
                            'Bias_quadratic': [0, 0, 0]
                            }
         self.temp_non_conservative_data = "../temp/NonConservativeForce"
+        self.StandardACCTemp = "../temp/StandardACC"
 
 
 def demo2():

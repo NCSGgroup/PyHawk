@@ -11,6 +11,7 @@ from src.Preference.EnumType import Payload, SatID
 from src.Frame.EOP import EOP
 from src.Frame.Frame import Frame
 from src.Auxilary.GeoMathKit import GeoMathKit
+from src.Auxilary.StandardLGD import StandardLGD
 
 
 class ComputeLGD:
@@ -100,6 +101,7 @@ class ComputeLGD:
 
         # Output directory
         self.__LGDTemp = "../temp/LGD"
+        self.__StandardLGDTemp = "../temp/StandardLGD"
         self.__sst_payload = "KBR"
 
     def configure(
@@ -155,6 +157,11 @@ class ComputeLGD:
             self.__PathfileConfig,
             "LGDTemp",
             self.__LGDTemp
+        )
+        self.__StandardLGDTemp = getattr(
+            self.__PathfileConfig,
+            "StandardLGDTemp",
+            self.__StandardLGDTemp
         )
 
         self.__rd = ArcData(
@@ -314,8 +321,26 @@ class ComputeLGD:
             "kbrr_filtered": kbrr_filtered[valid],
             "is_original_sample": is_original_sample[valid],
         }
+        result["altitude"] = StandardLGD.midpoint_altitude(
+            pos_a_itrs=result["pos_a_itrs"],
+            pos_b_itrs=result["pos_b_itrs"]
+        )
 
         self.__save_result(result)
+
+        StandardLGD().configure(
+            filedir=self.__StandardLGDTemp,
+            date_span=self.__date_span,
+            mission=self.__InterfaceConfig.mission
+        ).save_arc(
+            gps_time=result["time"],
+            longitude=result["lon"],
+            latitude=result["lat"],
+            altitude=result["altitude"],
+            lgd_full=result["lgd_unfiltered"],
+            lgd_band=result["lgd"],
+            arc_no=self.__arcNo
+        )
 
         return result
 
@@ -1248,6 +1273,11 @@ class ComputeLGD:
             h5.create_dataset(
                 "lat",
                 data=result["lat"]
+            )
+
+            h5.create_dataset(
+                "altitude",
+                data=result["altitude"]
             )
 
             h5.create_dataset(

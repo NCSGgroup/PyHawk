@@ -1,7 +1,7 @@
 {
     "SSTOption": "RangeRate",
     "OrbitKinFactor": 1e10,
-    "OrbitFre": 6,
+    "OrbitFre": 8,
     "DesignMatrixTemp": "../temp/DesignMatrixSH",
     "CovarianceMatrix": "../temp/CovarianceMatrix",
     "PostParameter": "../temp/PostParameter",

@@ -8,6 +8,7 @@ import pathlib as pathlib
 import src.Preference.Pre_Constants as Pre_Constants
 from src.Interface.ArcOperation import ArcData
 from src.Preference.Pre_Accelerometer import AccelerometerConfig
+from src.Auxilary.StandardACC import StandardACC
 
 
 class AccCaliPar:
@@ -887,6 +888,52 @@ class Accelerometer_V3:
     def get_acceleration_test(self):
         return self.__acc[:, 1:]
 
+    def get_bias(self):
+        """Return the evaluated accelerometer bias in GCRS for every epoch."""
+        bias_srf = np.zeros(shape=(np.shape(self.__acc)[0], 3), dtype=float)
+        index = 0
+        begin = 0
+        for time in self.t_x:
+            if len(time) == 0:
+                continue
+            dt = (time - time[0]) / 60
+            bias_srf[begin:begin + len(time), 0] = (
+                self.__bias[0][index]
+                + self.__bias[1][index] * dt
+                + self.__bias[2][index] * (dt ** 2)
+            )
+            index += 1
+            begin += len(time)
+
+        begin = 0
+        for time in self.t_y:
+            if len(time) == 0:
+                continue
+            dt = (time - time[0]) / 60
+            bias_srf[begin:begin + len(time), 1] = (
+                self.__bias[0][index]
+                + self.__bias[1][index] * dt
+                + self.__bias[2][index] * (dt ** 2)
+            )
+            index += 1
+            begin += len(time)
+
+        begin = 0
+        for time in self.t_z:
+            if len(time) == 0:
+                continue
+            dt = (time - time[0]) / 60
+            bias_srf[begin:begin + len(time), 2] = (
+                self.__bias[0][index]
+                + self.__bias[1][index] * dt
+                + self.__bias[2][index] * (dt ** 2)
+            )
+            index += 1
+            begin += len(time)
+
+        bias = self.__sca @ bias_srf[:, :, None]
+        return bias[:, :, 0]
+
     def get_du2p(self):
         """
         Derivative of acc with respect to the parameters such as bias & scale.
@@ -1052,6 +1099,28 @@ class Accelerometer_V3:
         wr.create_dataset('bias', data=self.__bias)
         wr.create_dataset('dadp', data=dadp)
         wr.close()
+
+        mission = self.__rd.InterfaceConfig.mission
+        output_directory = getattr(
+            self.__accConfig,
+            'StandardACCTemp',
+            getattr(
+                self.__accConfig,
+                'temp_standard_acc_data',
+                StandardACC.output_directory(self.__dataTemp)
+            )
+        )
+        StandardACC().configure(
+            filedir=output_directory,
+            date_span=date_span,
+            mission=mission
+        ).save_arc(
+            gps_time=time,
+            acceleration=acc,
+            bias=self.get_bias(),
+            satellite=sat,
+            arc_no=self.__arcNo
+        )
         pass
 
     def count_true(self, nested_list):

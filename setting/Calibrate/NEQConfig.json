@@ -16,6 +16,7 @@
     },
     "PathOfFilesConfig": {
         "NormalEqTemp": "../temp/NEQ",
+        "StandardNEQTemp": "../temp/StandardNEQ",
         "ResultCS": "../result/SH"
     }
 }

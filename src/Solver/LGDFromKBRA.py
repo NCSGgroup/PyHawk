@@ -11,6 +11,7 @@ from src.Frame.EOP import EOP
 from src.Frame.Frame import Frame
 from src.Interface.ArcOperation import ArcData
 from src.Preference.EnumType import Payload, SatID
+from src.Auxilary.StandardLGD import StandardLGD
 
 
 class ComputeLGDFromKBRA:
@@ -42,6 +43,7 @@ class ComputeLGDFromKBRA:
         self.__fr = None
 
         self.__LGDTemp = "../temp/LGD"
+        self.__StandardLGDTemp = "../temp/StandardLGD"
         self.__sst_payload = "KBR"
 
         # Han rr2lgd.f90 defaults.
@@ -114,6 +116,11 @@ class ComputeLGDFromKBRA:
                 self.__PathfileConfig,
                 "LGDTemp",
                 self.__LGDTemp
+            )
+            self.__StandardLGDTemp = getattr(
+                self.__PathfileConfig,
+                "StandardLGDTemp",
+                self.__StandardLGDTemp
             )
 
         if self.__InterfaceConfig is not None:
@@ -204,8 +211,27 @@ class ComputeLGDFromKBRA:
             result["pos_a_itrs"] = pos_a
             result["pos_b_itrs"] = pos_b
             result["los_itrs"] = los
+            result["altitude"] = StandardLGD.midpoint_altitude(
+                pos_a_itrs=pos_a,
+                pos_b_itrs=pos_b
+            )
 
         self.save_result(result, output_name=output_name)
+        if all(key in result for key in (
+                "lon", "lat", "altitude", "lgd_unfiltered", "lgd")):
+            StandardLGD().configure(
+                filedir=self.__StandardLGDTemp,
+                date_span=self.__date_span,
+                mission=self.__InterfaceConfig.mission
+            ).save_arc(
+                gps_time=result["time"],
+                longitude=result["lon"],
+                latitude=result["lat"],
+                altitude=result["altitude"],
+                lgd_full=result["lgd_unfiltered"],
+                lgd_band=result["lgd"],
+                arc_no=self.__arcNo
+            )
         return result
 
     def compute_from_hdf5(

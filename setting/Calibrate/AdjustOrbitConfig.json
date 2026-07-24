@@ -6,15 +6,22 @@
     "RangeRateConfig": {
         "ParameterFitting": "biasC0C1C2_OneCPR",
         "OutlierTimes": 6,
-        "OutlierRMS": 6e-06,
+        "OutlierRMS": 6e-05,
         "OutlierObs": 6,
-        "ArcLength": 3,
-        "Iterations": 3
+        "ArcLength": 6,
+        "Iterations": 5,
+        "ArcOutlierEnabled": true,
+        "ArcOutlierSignificance": 0.01,
+        "ArcOutlierMaxFraction": 0.1,
+        "ArcOutlierMinArcs": 8
     },
     "PathOfFilesConfig": {
         "StateVectorDataTemp": "../temp/StateVector",
         "OrbitAdjustResTemp": "../temp/OrbitAdjustment",
         "RangeRateTemp": "../temp/RangeRate",
-        "FilteredRangeRateTemp": "../temp/RangeRate"
+        "FilteredRangeRateTemp": "../temp/RangeRate",
+        "StandardKBRRTemp": "../temp/StandardKBRR",
+        "LGDTemp": "../temp/LGD",
+        "StandardLGDTemp": "../temp/StandardLGD"
     }
 }

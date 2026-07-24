@@ -39,7 +39,7 @@ from src.Interface.KinematicOrbit import KinematicOrbitV3, KinematicOrbitV2, Kin
 from src.Interface.GapFix import GapFix
 from src.Interface.ArcOperation import ArcSelect
 from src.Interface.L1b import GRACE_NEW_RL02, GRACE_OLD_RL02, GRACE_RL03, GRACE_FO_RL04
-from src.Auxilary.Format import FormatWrite
+from src.Auxilary.StandardSH import FormatWrite
 import multiprocessing
 import json
 from datetime import datetime

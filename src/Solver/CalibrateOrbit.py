@@ -19,6 +19,9 @@ from src.Solver.NEQ import GravityNEQperArc, GravityNEQperArc_v2, GravityNEQperA
 from src.Auxilary.SortCS import SortCS
 from src.Auxilary.GeoMathKit import GeoMathKit
 from src.Auxilary.StandardNEQ import StandardNEQ
+from src.Auxilary.StandardACC import StandardACC
+from src.Auxilary.StandardKBRR import StandardKBRR
+from src.Auxilary.StandardLGD import StandardLGD
 from src.Interface.LoadSH import LoadGif48,LoadGOCO06S
 from src.Preference.Pre_Accelerometer import AccelerometerConfig
 from src.Preference.Pre_Solver import SolverConfig
@@ -37,11 +40,12 @@ from src.Interface.KinematicOrbit import KinematicOrbitV3, KinematicOrbitV2, Kin
 from src.Interface.GapFix import GapFix
 from src.Interface.ArcOperation import ArcSelect
 from src.Interface.L1b import GRACE_NEW_RL02, GRACE_OLD_RL02, GRACE_RL03, GRACE_FO_RL04
-from src.Auxilary.Format import FormatWrite
+from src.Auxilary.StandardSH import StandardSH
+from src.Auxilary.StandardConfig import StandardConfig
 import multiprocessing
 import json
 from datetime import datetime
-from src.Auxilary.Outlier import Outlier
+from src.Auxilary.Outlier import Outlier, ArcOutlier
 from src.Preference.EnumType import Payload, SatID, SSTObserve, StaticGravModel
 from scipy.signal import butter, filtfilt
 from scipy import signal
@@ -59,6 +63,12 @@ from scipy.ndimage import gaussian_filter1d
 from numpy.fft import rfft, irfft
 from src.Solver.LGD import ComputeLGD
 from src.Solver.LGDFromKBRA import ComputeLGDFromKBRA
+from src.Solver.CovarianceModel import (
+    load_covariance,
+    orbit_covariance_filename,
+    range_rate_covariance_filename,
+    save_stationary_covariance,
+)
 
 
 class CalibrateOrbit:
@@ -84,65 +94,109 @@ class CalibrateOrbit:
         self.__arclist = []
         self.lagNum = None
         self.__lgd_config = None
+        self.__standard_config = None
+        self.__arc_path = None
+        self.__arcft_path = None
+        self.__kbrr_qc_records = []
+        self._gls_rng = np.random.default_rng(0)
         pass
 
-    def loadJson(self):
+    def loadJson(self, setting_directory=None):
+        if setting_directory is None:
+            setting_directory = os.path.join(
+                self.__parent_path, 'setting', 'Calibrate'
+            )
+        setting_directory = os.path.abspath(
+            os.fspath(setting_directory)
+        )
+
+        def load_setting(filename):
+            with open(
+                    os.path.join(setting_directory, filename),
+                    'r', encoding='utf-8') as file:
+                return json.load(file)
+
         self.__acc_config_A = AccelerometerConfig()
-        acc_A = json.load(open(os.path.join(self.__parent_path, 'setting/Calibrate/AccelerometerConfig_A.json'), 'r'))
-        self.__acc_config_A.__dict__ = acc_A
+        self.__acc_config_A.__dict__ = load_setting(
+            'AccelerometerConfig_A.json'
+        )
 
         self.__acc_config_B = AccelerometerConfig()
-        acc_B = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/AccelerometerConfig_B.json'), 'r'))
-        self.__acc_config_B.__dict__ = acc_B
+        self.__acc_config_B.__dict__ = load_setting(
+            'AccelerometerConfig_B.json'
+        )
 
         self.__design_acc_config_A = AccelerometerConfig()
-        designacc_A = json.load(open(os.path.join(self.__parent_path, 'setting/Calibrate/DesignAccelerometerConfig_A.json'), 'r'))
-        self.__design_acc_config_A.__dict__ = designacc_A
+        self.__design_acc_config_A.__dict__ = load_setting(
+            'DesignAccelerometerConfig_A.json'
+        )
 
         self.__design_acc_config_B = AccelerometerConfig()
-        designacc_B = json.load(
-            open(os.path.abspath(self.__parent_path + '/setting/Calibrate/DesignAccelerometerConfig_B.json'), 'r'))
-        self.__design_acc_config_B.__dict__ = designacc_B
+        self.__design_acc_config_B.__dict__ = load_setting(
+            'DesignAccelerometerConfig_B.json'
+        )
 
         self.__force_model_config = ForceModelConfig()
-        fmDict = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/ForceModelConfig.json'), 'r'))
-        self.__force_model_config.__dict__ = fmDict
+        self.__force_model_config.__dict__ = load_setting(
+            'ForceModelConfig.json'
+        )
 
         self.__parameter_config = ParameterConfig()
-        Parameter = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/OrbitFitParameterConfig.json'), 'r'))
-        self.__parameter_config.__dict__ = Parameter
+        self.__parameter_config.__dict__ = load_setting(
+            'OrbitFitParameterConfig.json'
+        )
 
         self.__solver_config = SolverConfig()
-        solverDict = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/SolverConfig.json'), 'r'))
-        self.__solver_config.__dict__ = solverDict
+        self.__solver_config.__dict__ = load_setting('SolverConfig.json')
 
         self.__ode_config = ODEConfig()
-        odeDict = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/ODEConfig.json'), 'r'))
-        self.__ode_config.__dict__ = odeDict
+        self.__ode_config.__dict__ = load_setting('ODEConfig.json')
 
         self.__neq_config = NEQConfig()
-        neqDict = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/NEQConfig.json'), 'r'))
-        self.__neq_config.__dict__ = neqDict
+        self.__neq_config.__dict__ = load_setting('NEQConfig.json')
 
         self.__adjust_config = AdjustOrbitConfig()
-        adjustOrbitDict = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/AdjustOrbitConfig.json'), 'r'))
-        self.__adjust_config.__dict__ = adjustOrbitDict
+        self.__adjust_config.__dict__ = load_setting(
+            'AdjustOrbitConfig.json'
+        )
 
         self.__interface_config = InterfaceConfig()
-        interfaceDict = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/InterfaceConfig.json'), 'r'))
-        self.__interface_config.__dict__ = interfaceDict
+        self.__interface_config.__dict__ = load_setting(
+            'InterfaceConfig.json'
+        )
 
         self.__design_parameter_config = ParameterConfig()
-        designParameter = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/GravityDesignParameterConfig.json'), 'r'))
-        self.__design_parameter_config.__dict__ = designParameter
+        self.__design_parameter_config.__dict__ = load_setting(
+            'GravityDesignParameterConfig.json'
+        )
 
         self.__frame_config = FrameConfig()
-        frame = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/FrameConfig.json'), 'r'))
-        self.__frame_config.__dict__ = frame
+        self.__frame_config.__dict__ = load_setting('FrameConfig.json')
 
         self.__calibrateOrbit_config = CalibrateOrbitConfig()
-        calibrateOrbit = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/CalibrateOrbitConfig.json'), 'r'))
-        self.__calibrateOrbit_config.__dict__ = calibrateOrbit
+        self.__calibrateOrbit_config.__dict__ = load_setting(
+            'CalibrateOrbitConfig.json'
+        )
+
+        neq_path_config = self.__neq_config.PathOfFiles()
+        neq_path_config.__dict__.update(
+            self.__neq_config.PathOfFilesConfig.copy()
+        )
+        stokes_config = self.__design_parameter_config.StokesCoefficients()
+        stokes_config.__dict__.update(
+            self.__design_parameter_config.StokesCoefficientsConfig.copy()
+        )
+        expected_sh_filename = StandardSH.product_filename(
+            data=self.__interface_config.date_span,
+            degree=stokes_config.MaxDegree,
+            mission=self.__interface_config.mission
+        )
+        expected_sh_path = pathlib.Path(neq_path_config.ResultCS).joinpath(
+            pathlib.Path(expected_sh_filename).stem,
+            expected_sh_filename
+        )
+        self.__standard_config = StandardConfig(setting_directory)
+        self.__standard_config.save(expected_sh_path)
         return self
 
     def run(self):
@@ -155,6 +209,8 @@ class CalibrateOrbit:
         self.__sat = interface_config.sat
         arc_path = pathlib.Path().joinpath(self.InterfacePathConfig.report_arc, self.__date_span[0]+'_'+self.__date_span[1]+'.txt')
         arcft_path = pathlib.Path().joinpath(self.InterfacePathConfig.report_arcft, self.__date_span[0]+'_'+self.__date_span[1]+'.txt')
+        self.__arc_path = arc_path
+        self.__arcft_path = arcft_path
         self.__arcLen = None
 
         '''get step and process control'''
@@ -200,32 +256,97 @@ class CalibrateOrbit:
         self.__arclist = self.getArcList(path=arcft_path)
         if isAdjustOrbit:
             self.makeLog(stepName='adjustOrbit', process=AdjustOrbitProcess)
+            standard_acc_writers = []
+            standard_acc_paths = set()
+            for acc_config in (self.__acc_config_A, self.__acc_config_B):
+                path = os.path.abspath(
+                    getattr(
+                        acc_config,
+                        'StandardACCTemp',
+                        getattr(
+                            acc_config,
+                            'temp_standard_acc_data',
+                            StandardACC.output_directory(
+                                acc_config.temp_non_conservative_data
+                            )
+                        )
+                    )
+                )
+                if path in standard_acc_paths:
+                    continue
+                standard_acc_paths.add(path)
+                writer = StandardACC().configure(
+                    filedir=path,
+                    date_span=self.__date_span,
+                    mission=MissionConfig.mission
+                )
+                writer.prepare(
+                    satellites=[key for key, value in self.__sat.items() if value]
+                )
+                standard_acc_writers.append(writer)
             pool = multiprocessing.Pool(processes=AdjustOrbitProcess)
             # for i in np.arange(0, 10, 1):
             #     self._adjustOrbit(i)
             pool.map(self._adjustOrbit, self.__arclist)
             pool.close()
             pool.join()
+            for writer in standard_acc_writers:
+                writer.finalize()
         self.__saveOrbitRMS()
+        standard_pre_kbrr = None
+        kbrr_input_arcs = list(self.__arclist)
         if isAdjustKBRR:
             self.makeLog(stepName='adjustKBRR', process=AdjustKBRRProcess)
+            adjust_path = self.__adjust_config.PathOfFiles()
+            adjust_path.__dict__.update(
+                self.__adjust_config.PathOfFilesConfig.copy()
+            )
+            standard_kbrr_directory = getattr(
+                adjust_path,
+                'StandardKBRRTemp',
+                StandardKBRR.output_directory(adjust_path.RangeRateTemp)
+            )
+            standard_pre_kbrr = StandardKBRR().configure(
+                filedir=standard_kbrr_directory,
+                date_span=self.__date_span,
+                stage='Pre',
+                mission=MissionConfig.mission
+            ).prepare()
             pool = multiprocessing.Pool(processes=AdjustKBRRProcess)
             pool.map(self._adjustKBRR, self.__arclist)
             pool.close()
             pool.join()
-        self.__saveKBRRRMS()
+        self.__arclist, rejected_kbrr_arcs = self.__screenKBRRArcs(
+            kbrr_input_arcs
+        )
+        if standard_pre_kbrr is not None and rejected_kbrr_arcs:
+            standard_pre_kbrr.discard_arcs(rejected_kbrr_arcs)
+        self.__saveKBRRRMS(arc_numbers=kbrr_input_arcs)
         if isGetLGD:
-            if isGetLGD:
-                self.makeLog(stepName='LGD', process=AdjustKBRRProcess)
-                pool = multiprocessing.Pool(
-                    processes=AdjustKBRRProcess
-                )
-                pool.map(
-                    self._computeLGD,
-                    self.__arclist
-                )
-                pool.close()
-                pool.join()
+            self.makeLog(stepName='LGD', process=AdjustKBRRProcess)
+            adjust_path = self.__adjust_config.PathOfFiles()
+            adjust_path.__dict__.update(
+                self.__adjust_config.PathOfFilesConfig.copy()
+            )
+            standard_lgd = StandardLGD().configure(
+                filedir=getattr(
+                    adjust_path,
+                    'StandardLGDTemp',
+                    '../temp/StandardLGD'
+                ),
+                date_span=self.__date_span,
+                mission=MissionConfig.mission
+            ).prepare()
+            pool = multiprocessing.Pool(
+                processes=AdjustKBRRProcess
+            )
+            pool.map(
+                self._computeLGD,
+                self.__arclist
+            )
+            pool.close()
+            pool.join()
+            standard_lgd.finalize()
         if isGravityDesignMat:
             self.makeLog(stepName='gravityDesignMat', process=GetGravityDesignMatProcess)
             # for i in np.arange(0, 10, 1):
@@ -251,6 +372,8 @@ class CalibrateOrbit:
                 process_count=GetNEQProcess,
                 iteration_config=GLSIteration
             )
+        if standard_pre_kbrr is not None:
+            standard_pre_kbrr.cleanup()
         # self.getSpaceKBRR()
         pass
 
@@ -385,7 +508,14 @@ class CalibrateOrbit:
 
     def _build_neq(self, use_sigma, process_count):
         args = [(arc, use_sigma) for arc in self.__arclist]
-        with multiprocessing.Pool(processes=process_count) as pool:
+        if process_count == 1:
+            for arg in args:
+                self._NEQ(arg)
+            return
+        # h5py is not fork-safe when the parent has opened HDF5 files.
+        # Spawn clean workers so each process opens its own files.
+        context = multiprocessing.get_context('spawn')
+        with context.Pool(processes=process_count) as pool:
             pool.map(self._NEQ, args)
 
     def _iterative_gls(self, process_count, iteration_config):
@@ -393,15 +523,39 @@ class CalibrateOrbit:
         min_iteration = max(1, int(iteration_config.MinIteration))
         relative_tolerance = float(iteration_config.RelativeTolerance)
         absolute_tolerance = float(iteration_config.AbsoluteTolerance)
+        orbit_covariance_mode = self._normalize_orbit_covariance_mode(
+            getattr(
+                iteration_config, 'OrbitCovarianceMode', 'FixedDiagonal'
+            )
+        )
+        orbit_fixed_diagonal = None
+        if orbit_covariance_mode == 'FixedDiagonal':
+            orbit_fixed_diagonal = float(
+                getattr(iteration_config, 'OrbitFixedDiagonal', 0.004)
+            )
+            if (not np.isfinite(orbit_fixed_diagonal) or
+                    orbit_fixed_diagonal <= 0.0):
+                raise ValueError(
+                    'OrbitFixedDiagonal must be finite and positive'
+                )
         previous_cs = None
+        random_seed = int(
+            getattr(iteration_config, 'RandomSeed', 20240724)
+        )
 
         for iteration in range(max_iteration):
             iteration_no = iteration + 1
             print('GLS iteration {}/{}'.format(iteration_no, max_iteration))
+            # Use a deterministic but iteration-specific stream so repeated
+            # runs are reproducible without filling every iteration identically.
+            self._gls_rng = np.random.default_rng(random_seed + iteration)
 
             # Build a stochastic model from the posterior residuals of the
             # previous solution, then rebuild the weighted normal equations.
-            self.GLS()
+            if orbit_covariance_mode == 'FixedDiagonal':
+                self.GLS(orbit_fixed_diagonal=orbit_fixed_diagonal)
+            else:
+                self.GLS_full()
             self._build_neq(use_sigma=True, process_count=process_count)
             current_cs = self.__calculate_cs(OrbitKinFactor=1, use_sigma=True)
 
@@ -433,6 +587,22 @@ class CalibrateOrbit:
         else:
             print('GLS reached the maximum of {} iterations'.format(max_iteration))
 
+    @staticmethod
+    def _normalize_orbit_covariance_mode(mode):
+        aliases = {
+            'fixeddiagonal': 'FixedDiagonal',
+            'diagonal': 'FixedDiagonal',
+            'estimatedfull': 'EstimatedFull',
+            'full': 'EstimatedFull'
+        }
+        key = str(mode).replace('_', '').replace('-', '').lower()
+        if key not in aliases:
+            raise ValueError(
+                'Unsupported OrbitCovarianceMode {!r}; expected '
+                'FixedDiagonal or EstimatedFull'.format(mode)
+            )
+        return aliases[key]
+
     def _NEQ_v3(self, q):
         '''setp 8: get NEQ'''
         neq = GravityNEQperArc_v3(arcNo=q, date_span=self.__date_span, sat=self.__sat)
@@ -459,17 +629,28 @@ class CalibrateOrbit:
         RefGravModelConfig.__dict__.update(self.__force_model_config.RefGravModelConfig.copy())
         staticModel = RefGravModelConfig.StaticModel
         time_variable_date = getattr(RefGravModelConfig, 'TimeVariableDate', None)
+        static_model_file = None
+        static_model_epoch = None
 
         if staticModel == StaticGravModel.Gif48.name:
-            self.__staticModel = LoadGif48().load(force_model_path_config.Gif48)
+            static_model_file = force_model_path_config.Gif48
+            self.__staticModel = LoadGif48().load(static_model_file)
         elif staticModel == StaticGravModel.EIGEN6_C4.name:
-            self.__staticModel = LoadGif48().load(force_model_path_config.EIGEN6_C4)
+            static_model_file = force_model_path_config.EIGEN6_C4
+            self.__staticModel = LoadGif48().load(static_model_file)
         elif staticModel == StaticGravModel.GOCO02s.name:
-            self.__staticModel = LoadGif48().load(force_model_path_config.GOCO02s)
+            static_model_file = force_model_path_config.GOCO02s
+            self.__staticModel = LoadGif48().load(static_model_file)
         elif staticModel == StaticGravModel.GGM05C.name:
-            self.__staticModel = LoadGif48().load(force_model_path_config.GGM05C)
+            static_model_file = force_model_path_config.GGM05C
+            self.__staticModel = LoadGif48().load(static_model_file)
         elif staticModel == StaticGravModel.GOCO06S.name:
-            self.__staticModel = LoadGOCO06S().load(force_model_path_config.GOCO06s, date=time_variable_date)
+            static_model_file = force_model_path_config.GOCO06s
+            static_model_epoch = time_variable_date
+            self.__staticModel = LoadGOCO06S().load(
+                static_model_file,
+                date=static_model_epoch
+            )
 
         res_dir1 = neq_path_config.NormalEqTemp + '/' +\
                   interface_config.date_span[0] + '_' + interface_config.date_span[1]
@@ -567,13 +748,19 @@ class CalibrateOrbit:
 
         scale_parameter_count = 18 if self.AccelerometerConfig.isScale else 0
         try:
+            standard_neq_directory = getattr(
+                neq_path_config,
+                'StandardNEQTemp',
+                '../temp/StandardNEQ'
+            )
             StandardNEQ().configure(
-                filedir=res_dir1,
+                filedir=standard_neq_directory,
                 date_span=date_span,
                 degree_max=stokes_coefficients_config.MaxDegree,
                 degree_min=stokes_coefficients_config.MinDegree,
                 sort_method=stokes_coefficients_config.SortMethod,
-                scale_parameter_count=scale_parameter_count
+                scale_parameter_count=scale_parameter_count,
+                apriori_model=self.__staticModel
             ).save(NMatrix=NMatrix1, LMatrix=LMatrix1)
         except Exception as e:
             print('Save standard NEQ failed: %s' % e)
@@ -581,17 +768,54 @@ class CalibrateOrbit:
         cs = np.linalg.lstsq(NMatrix1, LMatrix1[:, 0], rcond=None)[0]
         self.cs=cs
         # cs2 = np.linalg.lstsq(NMatrix2, LMatrix2[:, 0], rcond=None)[0]
-        if self.AccelerometerConfig.isScale:
-            scale = cs[0:18]
+        if scale_parameter_count:
+            scale = cs[:scale_parameter_count]
             print(scale)
-            cs = cs[18:]
+            cs = cs[scale_parameter_count:]
 
+        adjust_path = self.__adjust_config.PathOfFiles()
+        adjust_path.__dict__.update(
+            self.__adjust_config.PathOfFilesConfig.copy()
+        )
+        standard_kbrr_directory = getattr(
+            adjust_path,
+            'StandardKBRRTemp',
+            StandardKBRR.output_directory(adjust_path.RangeRateTemp)
+        )
+        standard_post_kbrr = StandardKBRR().configure(
+            filedir=standard_kbrr_directory,
+            date_span=self.__date_span,
+            stage='Post',
+            mission=self.__interface_config.mission
+        ).prepare()
         sigma = self.getLocalPar(
             solverConfig=self.__solver_config,
             N=NMatrix1,
             use_sigma=use_sigma
         )
+        standard_post_kbrr.finalize()
+        if scale_parameter_count:
+            sigma = sigma[scale_parameter_count:]
         # sigma = cs
+
+        gravity_parameter_count = (
+            (stokes_coefficients_config.MaxDegree + 1)
+            * (stokes_coefficients_config.MaxDegree + 2)
+            - stokes_coefficients_config.MinDegree
+            * (stokes_coefficients_config.MinDegree + 1)
+            - (stokes_coefficients_config.MaxDegree
+               - stokes_coefficients_config.MinDegree + 1)
+        )
+        if cs.size != gravity_parameter_count:
+            raise ValueError(
+                'Solved SH parameter count is %d; configuration requires %d'
+                % (cs.size, gravity_parameter_count)
+            )
+        if sigma.size != gravity_parameter_count:
+            raise ValueError(
+                'SH uncertainty count is %d; configuration requires %d'
+                % (sigma.size, gravity_parameter_count)
+            )
 
         sort = SortCS(method=stokes_coefficients_config.SortMethod,
                       degree_max=stokes_coefficients_config.MaxDegree,
@@ -603,10 +827,23 @@ class CalibrateOrbit:
 
         C, S = c + static_c, s + static_s
 
-        format = FormatWrite().configure(filedir=neq_path_config.ResultCS,
-                                         data=date_span, degree=stokes_coefficients_config.MaxDegree,
-                                         c=C, s=S, sigmaC=sigmaC, sigmaS=sigmaS)
-        format.unfiltered()
+        standard_sh_path = StandardSH().configure(
+            filedir=neq_path_config.ResultCS,
+            data=date_span,
+            degree=stokes_coefficients_config.MaxDegree,
+            c=C,
+            s=S,
+            sigmaC=sigmaC,
+            sigmaS=sigmaS,
+            mission=self.__interface_config.mission,
+            reference_model=self.__staticModel,
+            unused_days=getattr(self.__interface_config, 'date_delete', [])
+        ).unfiltered()
+        self.__standard_config.archive_quality_control(
+            spherical_harmonic_path=standard_sh_path,
+            arc_filter_path=self.__arcft_path,
+            arc_definition_path=self.__arc_path
+        )
 
         return self.cs.copy()
 
@@ -624,8 +861,8 @@ class CalibrateOrbit:
         RMSBZ = []
         for i in self.__arclist:
             res_filename = res_dir.joinpath(str(i) + '_AB.hdf5')
-            h5 = h5py.File(res_filename, 'r')
-            rAB = h5['r'][:]
+            with h5py.File(res_filename, 'r') as h5:
+                rAB = h5['r'][:]
             rA = rAB[:, 0:3, 0]
             rB = rAB[:, 3:6, 0]
             gnva = rd.getData(arc=i, kind=EnumType.Payload.GNV, sat='A')[:, 1:4]
@@ -680,26 +917,273 @@ class CalibrateOrbit:
         plt.clf()
         pass
 
-    def __saveKBRRRMS(self):
+    def __screenKBRRArcs(self, arc_numbers):
+        """Reject statistically high KBRR arcs relative to the current month."""
+        range_rate_config = self.__adjust_config.RangeRate()
+        range_rate_config.__dict__.update(
+            self.__adjust_config.RangeRateConfig.copy()
+        )
+        enabled = bool(getattr(
+            range_rate_config, 'ArcOutlierEnabled', True
+        ))
+        significance = float(getattr(
+            range_rate_config, 'ArcOutlierSignificance', 0.01
+        ))
+        max_fraction = float(getattr(
+            range_rate_config, 'ArcOutlierMaxFraction', 0.1
+        ))
+        min_arcs = int(getattr(
+            range_rate_config, 'ArcOutlierMinArcs', 8
+        ))
+
+        adjust_path = AdjustOrbitConfig.PathOfFiles()
+        adjust_path.__dict__.update(
+            self.__adjust_config.PathOfFilesConfig.copy()
+        )
+        res_dir = pathlib.Path(adjust_path.RangeRateTemp).joinpath(
+            self.__date_span[0] + '_' + self.__date_span[1]
+        )
+
+        records = []
+        metric_record_indices = []
+        metrics = []
+        for arc_number in arc_numbers:
+            path = res_dir.joinpath(
+                'RangeRate_' + str(arc_number) + '.hdf5'
+            )
+            record = {
+                'arc': int(arc_number),
+                'accepted': False,
+                'reason': 'missing_file',
+                'pre_count': 0,
+                'post_count': 0,
+                'completion_ratio': None,
+                'rms': None,
+                'robust_scale': None,
+                'quality_metric': None,
+                'esd_order': None,
+                'esd_statistic': None,
+                'esd_critical_value': None,
+                'path': str(path)
+            }
+            records.append(record)
+            if not path.exists():
+                continue
+
+            with h5py.File(path, 'r') as h5:
+                pre_count = (
+                    int(h5['pre_t'].shape[0]) if 'pre_t' in h5 else 0
+                )
+                residual = (
+                    np.asarray(h5['post_residual'][:], dtype=np.float64)
+                    if 'post_residual' in h5 else np.zeros(0)
+                )
+            record['pre_count'] = pre_count
+            record['post_count'] = int(residual.size)
+            if pre_count:
+                record['completion_ratio'] = (
+                    float(residual.size) / pre_count
+                )
+            if residual.size == 0:
+                record['reason'] = 'empty_post_residual'
+                continue
+            if not np.all(np.isfinite(residual)):
+                record['reason'] = 'nonfinite_post_residual'
+                continue
+
+            arc_rms = float(
+                np.linalg.norm(residual) / np.sqrt(residual.size)
+            )
+            robust_scale = float(
+                1.4826 * np.median(np.abs(residual))
+            )
+            record['rms'] = arc_rms
+            record['robust_scale'] = robust_scale
+            record['accepted'] = True
+            record['reason'] = 'accepted'
+
+            if arc_rms > 0 and robust_scale > 0:
+                quality_metric = float(
+                    np.sqrt(arc_rms * robust_scale)
+                )
+                record['quality_metric'] = quality_metric
+                metric_record_indices.append(len(records) - 1)
+                metrics.append(quality_metric)
+
+        diagnostics = {
+            'outlier_count': 0,
+            'candidate_indices': np.zeros(0, dtype=np.int64),
+            'statistics': np.zeros(0, dtype=np.float64),
+            'critical_values': np.zeros(0, dtype=np.float64)
+        }
+        if enabled and len(metrics) >= min_arcs:
+            rejected, diagnostics = ArcOutlier(
+                significance=significance,
+                max_fraction=max_fraction,
+                min_samples=min_arcs
+            ).detect(metrics)
+            for metric_index, is_rejected in enumerate(rejected):
+                if is_rejected:
+                    record = records[
+                        metric_record_indices[metric_index]
+                    ]
+                    record['accepted'] = False
+                    record['reason'] = 'monthly_upper_esd'
+
+            for order, metric_index in enumerate(
+                    diagnostics['candidate_indices']):
+                record = records[
+                    metric_record_indices[int(metric_index)]
+                ]
+                record['esd_order'] = order + 1
+                record['esd_statistic'] = float(
+                    diagnostics['statistics'][order]
+                )
+                record['esd_critical_value'] = float(
+                    diagnostics['critical_values'][order]
+                )
+
+        accepted_arcs = [
+            record['arc'] for record in records if record['accepted']
+        ]
+        rejected_arcs = [
+            record['arc'] for record in records if not record['accepted']
+        ]
+        self.__kbrr_qc_records = records
+        self.__writeKBRRArcQuality(
+            res_dir=res_dir,
+            records=records,
+            enabled=enabled,
+            significance=significance,
+            max_fraction=max_fraction,
+            min_arcs=min_arcs,
+            esd_outlier_count=int(diagnostics['outlier_count'])
+        )
+        print(
+            'KBRR arc quality control retained %d arcs and rejected %d: %s'
+            % (
+                len(accepted_arcs), len(rejected_arcs),
+                ', '.join(str(arc) for arc in rejected_arcs)
+            )
+        )
+        return accepted_arcs, rejected_arcs
+
+    def __writeKBRRArcQuality(self, res_dir, records, enabled,
+                              significance, max_fraction, min_arcs,
+                              esd_outlier_count):
+        """Persist arc decisions without deleting the residual datasets."""
+        os.makedirs(res_dir, exist_ok=True)
+        method = (
+            'one-sided generalized ESD on log(sqrt(RMS * robust_scale))'
+        )
+        for record in records:
+            path = pathlib.Path(record['path'])
+            if not path.exists():
+                continue
+            with h5py.File(path, 'r+') as h5:
+                h5.attrs['arc_qc_accepted'] = bool(record['accepted'])
+                h5.attrs['arc_qc_reason'] = record['reason']
+                h5.attrs['arc_qc_method'] = method
+                h5.attrs['arc_qc_rms'] = (
+                    np.nan if record['rms'] is None else record['rms']
+                )
+                h5.attrs['arc_qc_robust_scale'] = (
+                    np.nan if record['robust_scale'] is None
+                    else record['robust_scale']
+                )
+                h5.attrs['arc_qc_quality_metric'] = (
+                    np.nan if record['quality_metric'] is None
+                    else record['quality_metric']
+                )
+                h5.attrs['arc_qc_esd_statistic'] = (
+                    np.nan if record['esd_statistic'] is None
+                    else record['esd_statistic']
+                )
+                h5.attrs['arc_qc_esd_critical_value'] = (
+                    np.nan if record['esd_critical_value'] is None
+                    else record['esd_critical_value']
+                )
+
+        summary = {
+            'date_span': list(self.__date_span),
+            'created_utc': datetime.utcnow().strftime(
+                '%Y-%m-%dT%H:%M:%SZ'
+            ),
+            'method': method,
+            'enabled': enabled,
+            'significance': significance,
+            'max_outlier_fraction': max_fraction,
+            'minimum_monthly_arcs': min_arcs,
+            'esd_outlier_count': esd_outlier_count,
+            'accepted_arcs': [
+                record['arc'] for record in records
+                if record['accepted']
+            ],
+            'rejected_arcs': [
+                record['arc'] for record in records
+                if not record['accepted']
+            ],
+            'records': records
+        }
+        target = res_dir.joinpath('KBRR_ArcQuality.json')
+        temporary = pathlib.Path(str(target) + '.tmp')
+        with open(temporary, 'w', encoding='utf-8') as file:
+            json.dump(summary, file, indent=2, allow_nan=False)
+        os.replace(temporary, target)
+
+    def __saveKBRRRMS(self, arc_numbers=None):
         self.AdjustPath = AdjustOrbitConfig.PathOfFiles()
         self.AdjustPath.__dict__.update(self.__adjust_config.PathOfFilesConfig.copy())
 
         res_dir = pathlib.Path().joinpath(self.AdjustPath.RangeRateTemp, self.__date_span[0] + '_' + self.__date_span[1])
+        if arc_numbers is None:
+            arc_numbers = self.__arclist
+        plot_arcs = []
         post_RMS = []
-        for i in self.__arclist:
+        for i in arc_numbers:
+            plot_arcs.append(i)
+            rms = np.nan
             res_filename = res_dir.joinpath('RangeRate_' + str(i) + '.hdf5')
             if os.path.exists(res_filename):
-                h5 = h5py.File(res_filename, 'r')
-                if len(h5.keys()) != 0:
-                    postfit = h5['post_residual'][()]
-                    post_RMS.append(self.__rms(postfit))
+                with h5py.File(res_filename, 'r') as h5:
+                    if 'post_residual' in h5:
+                        postfit = h5['post_residual'][()]
+                        if postfit.size > 0 and np.all(np.isfinite(postfit)):
+                            rms = self.__rms(postfit)
+            post_RMS.append(rms)
+
+        arc_numbers = np.asarray(plot_arcs)
+        post_RMS = np.asarray(post_RMS) * 1e6
+        invalid = ~np.isfinite(post_RMS)
+        rejected_arc_numbers = {
+            record['arc'] for record in self.__kbrr_qc_records
+            if (not record['accepted']
+                and record['reason'] == 'monthly_upper_esd')
+        }
+        rejected = (
+            np.isin(arc_numbers, list(rejected_arc_numbers))
+            & ~invalid
+        )
         plt.figure(dpi=300, figsize=(16, 8))
         plt.title('KBRR-RMS-{}-{}'.format(self.__date_span[0], self.__date_span[-1]), fontsize=24)
-        plt.plot(np.arange(len(post_RMS)), [i * 1000000 for i in post_RMS], marker='o', label="arc RMS")
+        plt.plot(arc_numbers, post_RMS, marker='o', label="arc RMS")
+        if np.any(rejected):
+            plt.scatter(
+                arc_numbers[rejected], post_RMS[rejected],
+                marker='x', s=100, linewidths=2, color='red',
+                label='rejected arc'
+            )
+        if np.any(invalid):
+            plt.scatter(arc_numbers[invalid], np.zeros(np.count_nonzero(invalid)),
+                        marker='x', color='black',
+                        label='empty/missing arc')
         plt.yticks(fontsize=18)
-        plt.ylim(0.1, 2)
-        plt.ylabel(r'$X/um$', fontsize=20)
+        plt.xlabel('Arc number', fontsize=20)
+        plt.ylabel(r'Residual RMS [$\mathrm{\mu m/s}$]', fontsize=20)
         plt.legend(loc='upper right', fontsize=20)
+        plt.grid(ls='--')
+        plt.tight_layout()
+        os.makedirs('../result/img', exist_ok=True)
         plt.savefig('../result/img/KBRR-{}-{}.png'.format(self.__date_span[0], self.__date_span[-1]))
         plt.clf()
         pass
@@ -893,52 +1377,11 @@ class CalibrateOrbit:
 
     @staticmethod
     def _load_arc_covariance(filename, target_time, components=1):
-        if not os.path.exists(filename):
-            raise FileNotFoundError(
-                'GLS covariance file does not exist: {}'.format(filename)
-            )
-
-        with h5py.File(filename, 'r') as h5:
-            if 'Sigma' not in h5 or 'time' not in h5:
-                raise KeyError(
-                    'Sigma/time is missing from GLS covariance file: {}'.format(
-                        filename
-                    )
-                )
-            covariance_time = np.rint(h5['time'][:]).astype(np.int64)
-            target_time = np.rint(target_time).astype(np.int64)
-            time_to_index = {}
-            for index, epoch in enumerate(covariance_time):
-                time_to_index.setdefault(int(epoch), index)
-
-            missing = [int(epoch) for epoch in target_time
-                       if int(epoch) not in time_to_index]
-            if missing:
-                raise ValueError(
-                    '{} target epochs are absent from {}'.format(
-                        len(missing), filename
-                    )
-                )
-
-            epoch_index = np.array(
-                [time_to_index[int(epoch)] for epoch in target_time], dtype=int
-            )
-            if components == 1:
-                matrix_index = epoch_index
-            elif components == 3:
-                matrix_index = (
-                    components * epoch_index[:, None] + np.arange(components)
-                ).reshape(-1)
-            else:
-                raise ValueError('components must be either 1 or 3')
-
-            covariance = h5['Sigma']
-            if matrix_index.size and matrix_index.max() >= covariance.shape[0]:
-                raise ValueError(
-                    'Covariance dimensions are inconsistent with its time '
-                    'vector: {}'.format(filename)
-                )
-            return covariance[matrix_index, :][:, matrix_index]
+        return load_covariance(
+            filename=filename,
+            target_time=target_time,
+            components=components
+        )
 
     def getLocalPar(self, solverConfig, N, use_sigma=False):
         self._AdjustPathConfig = self.__adjust_config.PathOfFiles()
@@ -1034,10 +1477,10 @@ class CalibrateOrbit:
             fit_index = (
                 3 * epoch_index[:, None] + np.arange(3)
             ).reshape(-1)
-            covariance_name = (
-                self.__solver_config.PostOrbit + '/' +
-                self.__date_span[0] + '-' + self.__date_span[1] + '/' +
-                'Orbit_' + str(arcNo) + str(sat.name) + '.hdf5'
+            covariance_name = orbit_covariance_filename(
+                self.__solver_config.PostOrbit,
+                self.__date_span,
+                sat.name
             )
             covariance = self._load_arc_covariance(
                 covariance_name, t_nominal[fit_epoch], components=3
@@ -1145,10 +1588,9 @@ class CalibrateOrbit:
 
         covariance = None
         if use_sigma:
-            covariance_name = (
-                self.__solver_config.PostKBRR + '/' +
-                self.__date_span[0] + '-' + self.__date_span[1] + '/' +
-                SSTObserve.RangeRate.name + '_' + str(arcNo) + '.hdf5'
+            covariance_name = range_rate_covariance_filename(
+                self.__solver_config.PostKBRR,
+                self.__date_span
             )
             covariance = self._load_arc_covariance(
                 covariance_name, t_dm, components=1
@@ -1156,6 +1598,10 @@ class CalibrateOrbit:
 
         Local_par, kbrr_res = self._solve_local_parameters(
             global_dm, local_dm, obs, self.cs, covariance
+        )
+        scale_parameter_count = 18 if self.AccelerometerConfig.isScale else 0
+        geofit_kbrr = self._gravity_field_fit(
+            global_dm, self.cs, scale_parameter_count
         )
 
         res_path = self.__solver_config.PostKBRR + '/' + self.__date_span[0] + '-' + self.__date_span[1] + '/'
@@ -1167,8 +1613,71 @@ class CalibrateOrbit:
         h5.create_dataset('kbrr_par', data=Local_par)
         h5.create_dataset('time', data=t_dm)
         h5.create_dataset('post_kbrr', data=kbrr_res)
+        h5.create_dataset('geofit_kbrr', data=geofit_kbrr)
         h5.close()
+
+        standard_kbrr_directory = getattr(
+            self._AdjustPathConfig,
+            'StandardKBRRTemp',
+            StandardKBRR.output_directory(self._AdjustPathConfig.RangeRateTemp)
+        )
+        orbit_a = self._rd.getData(
+            arc=arcNo,
+            kind=Payload.GNV,
+            sat=SatID.A
+        )[:, 0:4]
+        orbit_b = self._rd.getData(
+            arc=arcNo,
+            kind=Payload.GNV,
+            sat=SatID.B
+        )[:, 0:4]
+        eop = EOP().configure(frameConfig=self.__frame_config).load()
+        frame = Frame(eop).configure(frameConfig=self.__frame_config)
+        longitude, latitude, altitude = StandardKBRR.midpoint_coordinates(
+            gps_time=t_dm,
+            orbit_a=orbit_a,
+            orbit_b=orbit_b,
+            frame=frame
+        )
+        for stage, range_rate in (
+                ('Pre', obs), ('Post', kbrr_res),
+                ('Geofit', geofit_kbrr)):
+            StandardKBRR().configure(
+                filedir=standard_kbrr_directory,
+                date_span=self.__date_span,
+                stage=stage,
+                mission=self.__interface_config.mission
+            ).save_arc(
+                gps_time=t_dm,
+                longitude=longitude,
+                latitude=latitude,
+                altitude=altitude,
+                range_rate=range_rate,
+                arc_no=arcNo
+            )
         pass
+
+    @staticmethod
+    def _gravity_field_fit(global_dm, global_parameters,
+                           scale_parameter_count=0):
+        """Return the KBRR contribution of spherical-harmonic parameters."""
+        design = np.asarray(global_dm, dtype=np.float64)
+        parameters = np.asarray(global_parameters, dtype=np.float64).reshape(-1)
+        scale_parameter_count = int(scale_parameter_count)
+        if design.ndim != 2 or design.shape[1] != parameters.size:
+            raise ValueError(
+                'Geofit dimensions are inconsistent: design={}, parameters={}'
+                .format(design.shape, parameters.shape)
+            )
+        if not 0 <= scale_parameter_count < parameters.size:
+            raise ValueError(
+                'Invalid scale parameter count for geofit: %d'
+                % scale_parameter_count
+            )
+        return (
+            design[:, scale_parameter_count:]
+            @ parameters[scale_parameter_count:]
+        )
 
     def savePostKbrr_V2(self, arcNo: int):
         '''get kbrr par'''
@@ -1356,7 +1865,7 @@ class CalibrateOrbit:
 
         return N_G, N_l
 
-    def GLS(self):
+    def GLS(self, orbit_fixed_diagonal=0.004):
         '''get orbit obs'''
         orbit_path = self.__solver_config.PostOrbit + '/' + self.__date_span[0] + '-' + self.__date_span[1]
         kbrr_path = self.__solver_config.PostKBRR + '/' + self.__date_span[0] + '-' + self.__date_span[1]
@@ -1392,25 +1901,29 @@ class CalibrateOrbit:
             orbit_b.extend(res_orbit_b)
             kbrr.extend(res_kbrr)
 
-        Sigma = self.getKBRRSigma(time=time_kbrr, res=kbrr)
-        Sigma_a = self.getOrbitSigma2(time=time_a, res=orbit_a)
-        Sigma_b = self.getOrbitSigma2(time=time_b, res=orbit_b)
-
-        for i in tqdm(self.__arclist, desc='save Orbit and KBRR Cov: '):
-            kbrrname = kbrr_path + '/' + SSTObserve.RangeRate.name + '_' + str(i) + '.hdf5'
-            postOrbitname_a = orbit_path + '/Orbit_' + str(i) + 'A.hdf5'
-            postOrbitname_b = orbit_path + '/Orbit_' + str(i) + 'B.hdf5'
-
-            with h5py.File(postOrbitname_a, "r+") as postOrbith5_a, \
-                    h5py.File(postOrbitname_b, "r+") as postOrbith5_b, \
-                    h5py.File(kbrrname, "r+") as postKBRRh5:
-                time_kbr = postKBRRh5['time'][:]
-                time_orbit_a = postOrbith5_a['time'][:]
-                time_orbit_b = postOrbith5_b['time'][:]
-
-                self.saveSigma1(Sigma_a, time_orbit_a, h5path=postOrbith5_a)
-                self.saveSigma1(Sigma_b, time_orbit_b, h5path=postOrbith5_b)
-                self.saveSigma1(Sigma, time_kbr, h5path=postKBRRh5)
+        kbrr_acov, kbrr_dt = self.getKBRRSigma(
+            time=time_kbrr, res=kbrr, return_autocovariance=True
+        )
+        save_stationary_covariance(
+            range_rate_covariance_filename(
+                self.__solver_config.PostKBRR, self.__date_span
+            ),
+            autocovariance=kbrr_acov,
+            sample_interval=kbrr_dt,
+            time_origin=float(np.min(time_kbrr))
+        )
+        save_stationary_covariance(
+            orbit_covariance_filename(
+                self.__solver_config.PostOrbit, self.__date_span, 'A'
+            ),
+            diagonal_value=orbit_fixed_diagonal
+        )
+        save_stationary_covariance(
+            orbit_covariance_filename(
+                self.__solver_config.PostOrbit, self.__date_span, 'B'
+            ),
+            diagonal_value=orbit_fixed_diagonal
+        )
         pass
 
     def GLS_full(self):
@@ -1449,25 +1962,42 @@ class CalibrateOrbit:
             orbit_b.extend(res_orbit_b)
             kbrr.extend(res_kbrr)
 
-        Sigma = self.getKBRRSigma(time=time_kbrr, res=kbrr)
-        Sigma_a = self.getOrbitSigma(time=time_a, res=orbit_a)
-        Sigma_b = self.getOrbitSigma(time=time_b, res=orbit_b)
+        kbrr_acov, kbrr_dt = self.getKBRRSigma(
+            time=time_kbrr, res=kbrr, return_autocovariance=True
+        )
+        orbit_acov_a, orbit_dt_a = self.getOrbitSigma(
+            time=time_a, res=orbit_a, return_autocovariance=True
+        )
+        orbit_acov_b, orbit_dt_b = self.getOrbitSigma(
+            time=time_b, res=orbit_b, return_autocovariance=True
+        )
 
-        for i in tqdm(self.__arclist, desc='save Orbit and KBRR Cov: '):
-            kbrrname = kbrr_path + '/' + SSTObserve.RangeRate.name + '_' + str(i) + '.hdf5'
-            postOrbitname_a = orbit_path + '/Orbit_' + str(i) + 'A.hdf5'
-            postOrbitname_b = orbit_path + '/Orbit_' + str(i) + 'B.hdf5'
-
-            with h5py.File(postOrbitname_a, "r+") as postOrbith5_a, \
-                    h5py.File(postOrbitname_b, "r+") as postOrbith5_b, \
-                    h5py.File(kbrrname, "r+") as postKBRRh5:
-                time_kbr = postKBRRh5['time'][:]
-                time_orbit_a = postOrbith5_a['time'][:]
-                time_orbit_b = postOrbith5_b['time'][:]
-
-                self.saveSigma1(Sigma_a, time_orbit_a, h5path=postOrbith5_a)
-                self.saveSigma1(Sigma_b, time_orbit_b, h5path=postOrbith5_b)
-                self.saveSigma1(Sigma, time_kbr, h5path=postKBRRh5)
+        save_stationary_covariance(
+            range_rate_covariance_filename(
+                self.__solver_config.PostKBRR, self.__date_span
+            ),
+            autocovariance=kbrr_acov,
+            sample_interval=kbrr_dt,
+            time_origin=float(np.min(time_kbrr))
+        )
+        save_stationary_covariance(
+            orbit_covariance_filename(
+                self.__solver_config.PostOrbit, self.__date_span, 'A'
+            ),
+            autocovariance=orbit_acov_a,
+            sample_interval=orbit_dt_a,
+            time_origin=float(np.min(time_a)),
+            allow_nearest_epoch=True
+        )
+        save_stationary_covariance(
+            orbit_covariance_filename(
+                self.__solver_config.PostOrbit, self.__date_span, 'B'
+            ),
+            autocovariance=orbit_acov_b,
+            sample_interval=orbit_dt_b,
+            time_origin=float(np.min(time_b)),
+            allow_nearest_epoch=True
+        )
         pass
 
     def getSigma(self, time, res):
@@ -1816,7 +2346,7 @@ class CalibrateOrbit:
 
         return Sigma
 
-    def getKBRRSigma(self, time, res):
+    def getKBRRSigma(self, time, res, return_autocovariance=False):
         n = len(res)
         res = np.array(res)
         res = detrend(res, type="linear")
@@ -1873,11 +2403,14 @@ class CalibrateOrbit:
         # Step 3: inverse DCT-I
         acov_corr = idct(S_clipped, type=1, norm=None)
         # acov_corr /= (2 * (len(acov) - 1))
+        if return_autocovariance:
+            lag_count = min(self.lagNum, len(acov_corr))
+            return acov_corr[:lag_count], sample_interval
         # Sigma = toeplitz(acov_corr)
         Sigma = self.toeplitz_cov_from_acov(acov_corr, self.lagNum)
         return Sigma
 
-    def getOrbitSigma(self, time, res):
+    def getOrbitSigma(self, time, res, return_autocovariance=False):
         res = np.array(res).reshape((-1, 3))
         res_x = res[:, 0]
         res_y = res[:, 1]
@@ -1905,7 +2438,15 @@ class CalibrateOrbit:
         # acov_x = self.estimate_acov(res_x, max_lag=self.lagNum - 1)
         # time = np.asarray(time)
 
-        Sigma_x, Sigma_y, Sigma_z = self.cal_toeplitz_cov(time, res_x, res_y, res_z, dt=int(self.__solver_config.OrbitFre))
+        sample_interval = float(self.__solver_config.OrbitFre)
+        covariance_result = self.cal_toeplitz_cov(
+            time, res_x, res_y, res_z,
+            dt=sample_interval,
+            return_autocovariance=return_autocovariance
+        )
+        if return_autocovariance:
+            return covariance_result
+        Sigma_x, Sigma_y, Sigma_z = covariance_result
         # Sigma_x2, Sigma_y2, Sigma_z2 = self.cal_toeplitz_cov(time, res_x, res_y, res_z, dt=5)
 
         # Sigma_x = (Sigma_x1 + Sigma_x2) / 2
@@ -1924,45 +2465,12 @@ class CalibrateOrbit:
         return Sigma
         # return Sigma_x, Sigma_y, Sigma_z
 
-    def getOrbitSigma2(self, time, res):
-        res = np.array(res).reshape((-1, 3))
-        res_x = res[:, 0]
-        res_y = res[:, 1]
-        res_z = res[:, 2]
-
-        # ===== 2️⃣ 计算 RMS =====
-        rms_x = np.sqrt(np.mean(res_x ** 2))
-        rms_y = np.sqrt(np.mean(res_y ** 2))
-        rms_z = np.sqrt(np.mean(res_z ** 2))
-
-        # print("RMS:", rms_x, rms_y, rms_z)
-
-        # ===== 3️⃣ 正确的维�?=====
-        N = self.lagNum
-
-        # ===== 4️⃣ 构�?σ² I =====
-        eps = 1e-12  # 防止退�?
-
-        scale = 3  # 经验�?
-
-        S_x = (scale * rms_x) ** 2 * np.eye(N)
-        S_y = (scale * rms_y) ** 2 * np.eye(N)
-        S_z = (scale * rms_z) ** 2 * np.eye(N)
-
-        # S_x = 0.0004 * np.eye(N) + eps
-        # S_y = 0.0004 * np.eye(N) + eps
-        # S_z = 0.0004 * np.eye(N) + eps
-
-        Sigma = np.zeros((3 * N, 3 * N))
-
-        for i in range(N):
-            for j in range(N):
-                Sigma[3 * i, 3 * j] = S_x[i, j]
-                Sigma[3 * i + 1, 3 * j + 1] = S_y[i, j]
-                Sigma[3 * i + 2, 3 * j + 2] = S_z[i, j]
-
-        return Sigma
-        # return Sigma_x, Sigma_y, Sigma_z
+    def getOrbitSigma2(self, time, res, diagonal_value=0.004):
+        """Return the configured fixed diagonal orbit covariance."""
+        diagonal_value = float(diagonal_value)
+        if not np.isfinite(diagonal_value) or diagonal_value <= 0.0:
+            raise ValueError('orbit covariance diagonal must be positive')
+        return diagonal_value * np.eye(3 * self.lagNum)
 
     def estimate_acov(self, residuals, max_lag=50):
         """
@@ -2253,7 +2761,7 @@ class CalibrateOrbit:
         C += eps * np.eye(gap_len)
 
         L = cholesky(C, lower=True)
-        z = np.random.randn(gap_len)
+        z = self._gls_rng.standard_normal(gap_len)
 
         return L @ z
 
@@ -2290,7 +2798,7 @@ class CalibrateOrbit:
         # 6. 填充每个 gap
         for gap_start, gap_end, gap_len in gaps:
             if gap_len > max_lag:
-                fill = np.random.normal(
+                fill = self._gls_rng.normal(
                     scale=np.sqrt(acov[0]),
                     size=gap_len
                 )
@@ -2360,7 +2868,9 @@ class CalibrateOrbit:
         df = f[1] - f[0]
 
         amp = np.sqrt(Pxx * df)
-        phase = np.random.uniform(0, 2 * np.pi, size=len(amp))
+        phase = self._gls_rng.uniform(
+            0, 2 * np.pi, size=len(amp)
+        )
 
         spectrum = amp * np.exp(1j * phase)
 
@@ -2655,7 +3165,9 @@ class CalibrateOrbit:
         idx = f >= 0
         return f[idx], np.real(S[idx])
 
-    def cal_toeplitz_cov(self, time, res_x, res_y, res_z, dt):
+    def cal_toeplitz_cov(
+            self, time, res_x, res_y, res_z, dt,
+            return_autocovariance=False):
         #
         t_uniform, res_filled_x = self.fill_gaps_with_interp_and_psd(
             np.array(time), res_x, dt
@@ -2681,18 +3193,33 @@ class CalibrateOrbit:
         S_clipped_x = np.maximum(S_x, eps_x)
         # Step 3: inverse DCT-I
         acov_corr_x = idct(S_clipped_x, type=1, norm=None)
-        Sigma_x = self.toeplitz_cov_from_acov(acov_corr_x, self.lagNum)
         # '''FFT'''
         eps_y = max(acov_y[0] * 1e-3, 1e-18)
         S_y = dct(acov_y, type=1, norm=None)
         S_clipped_y = np.maximum(S_y, eps_y)
         acov_corr_y = idct(S_clipped_y, type=1, norm=None)
-        Sigma_y = self.toeplitz_cov_from_acov(acov_corr_y, self.lagNum)
         # '''FFT'''
         eps_z = max(acov_z[0] * 1e-3, 1e-18)
         S_z = dct(acov_z, type=1, norm=None)
         S_clipped_z = np.maximum(S_z, eps_z)
         acov_corr_z = idct(S_clipped_z, type=1, norm=None)
+
+        if return_autocovariance:
+            lag_count = min(
+                self.lagNum,
+                len(acov_corr_x),
+                len(acov_corr_y),
+                len(acov_corr_z)
+            )
+            autocovariance = np.vstack((
+                acov_corr_x[:lag_count],
+                acov_corr_y[:lag_count],
+                acov_corr_z[:lag_count]
+            ))
+            return autocovariance, float(dt)
+
+        Sigma_x = self.toeplitz_cov_from_acov(acov_corr_x, self.lagNum)
+        Sigma_y = self.toeplitz_cov_from_acov(acov_corr_y, self.lagNum)
         Sigma_z = self.toeplitz_cov_from_acov(acov_corr_z, self.lagNum)
 
         return Sigma_x, Sigma_y, Sigma_z
