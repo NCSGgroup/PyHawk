@@ -1,7 +1,12 @@
 {
     "OrbitConfig": {
         "OutlierTimes": 6,
-        "OutlierLimit": 10
+        "OutlierLimit": 10,
+        "ArcOutlierEnabled": true,
+        "ArcOutlierSignificance": 0.01,
+        "ArcOutlierMaxFraction": 0.1,
+        "ArcOutlierMinArcs": 8,
+        "ArcOutlierTrimFraction": 0.01
     },
     "RangeRateConfig": {
         "ParameterFitting": "biasC0C1C2_OneCPR",
@@ -11,9 +16,14 @@
         "ArcLength": 6,
         "Iterations": 5,
         "ArcOutlierEnabled": true,
-        "ArcOutlierSignificance": 0.01,
+        "ArcOutlierSignificance": 0.05,
         "ArcOutlierMaxFraction": 0.1,
-        "ArcOutlierMinArcs": 8
+        "ArcOutlierMinArcs": 8,
+        "ArcOutlierMinCPRCycles": 1.5,
+        "EpochOutlierEnabled": true,
+        "EpochOutlierSignificance": 0.01,
+        "EpochOutlierMaxFraction": 0.02,
+        "EpochOutlierMinSamples": 20
     },
     "PathOfFilesConfig": {
         "StateVectorDataTemp": "../temp/StateVector",

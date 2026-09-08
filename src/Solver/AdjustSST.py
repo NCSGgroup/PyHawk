@@ -5,7 +5,6 @@ from src.Interface.ArcOperation import ArcData
 import src.Preference.EnumType as EnumType
 from src.Auxilary.Outlier import Outlier
 from src.Auxilary.KeplerOrbitElements import OrbitalElements
-from src.Auxilary.StandardKBRR import StandardKBRR
 from tqdm import tqdm
 import numpy as np
 import scipy.linalg
@@ -19,13 +18,18 @@ from src.Preference.Pre_Frame import FrameConfig
 from src.Preference.Pre_ForceModel import ForceModelConfig
 import matplotlib.pyplot as plt
 from scipy.signal import butter, filtfilt
-plt.rcParams['font.sans-serif']=['Microsoft YaHei']         #指定默认字体（因为matplotlib默认为英文字体，汉字会使其乱码）
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'DejaVu Sans']
 plt.rcParams['axes.unicode_minus']=False    #可显示‘-’负号
 
 import os
 
 
 class RangeRate:
+    _EMPIRICAL_STAGES = {
+        'pre': ('empirical_prefit_t', 'empirical_prefit_residual'),
+        'post': ('empirical_postfit_t', 'empirical_postfit_residual'),
+    }
+
     def __init__(self, arcNo: int, date_span):
         """init variable"""
         self.__rms_times = None
@@ -162,6 +166,13 @@ class RangeRate:
         return nodes
 
     def calibrate(self):
+        """Fit the arc-wise empirical KBRR model.
+
+        ``empirical pre-fit`` is the orbit-model KBRR residual before the
+        trend/1CPR fit. ``empirical post-fit`` is the residual after that fit.
+        These names are local to AdjustSST and are distinct from the final
+        gravity-field post-fit residual produced by CalibrateOrbit.
+        """
         obs = self.pre_residual()
 
         n = self.mean_motion_of_the_mid_point()
@@ -216,43 +227,83 @@ class RangeRate:
         h5.create_dataset('pre_t', data=self.Time)
         h5.create_dataset('pre_residual', data=self.pre_residual())
         h5.create_dataset('design_matrix', data=design_matrix)
+        h5.create_dataset('empirical_prefit_t', data=post_t)
+        h5.create_dataset('empirical_prefit_residual', data=pre_residual)
+        h5.create_dataset('empirical_postfit_t', data=post_t)
+        h5.create_dataset('empirical_postfit_residual', data=post_residual)
+        h5.attrs['residual_stage_semantics'] = (
+            'empirical pre-fit: before trend/1CPR fitting; '
+            'empirical post-fit: after trend/1CPR fitting; '
+            'not the spherical-harmonic gravity-field post-fit'
+        )
         h5.close()
 
-        output_directory = getattr(
-            self._PathfileConfig,
-            'StandardKBRRTemp',
-            StandardKBRR.output_directory(self._PathfileConfig.RangeRateTemp)
-        )
-        orbit_a = self._rd.getData(
-            arc=self.__arcNo,
-            kind=EnumType.Payload.GNV,
-            sat=EnumType.SatID.A
-        )[:, 0:4]
-        orbit_b = self._rd.getData(
-            arc=self.__arcNo,
-            kind=EnumType.Payload.GNV,
-            sat=EnumType.SatID.B
-        )[:, 0:4]
-        longitude, latitude, altitude = StandardKBRR.midpoint_coordinates(
-            gps_time=post_t,
-            orbit_a=orbit_a,
-            orbit_b=orbit_b,
-            frame=self._fr
-        )
-        StandardKBRR().configure(
-            filedir=output_directory,
-            date_span=self.__date_span,
-            stage='Pre',
-            mission=self._InterfaceConfig.mission
-        ).save_arc(
-            gps_time=post_t,
-            longitude=longitude,
-            latitude=latitude,
-            altitude=altitude,
-            range_rate=post_residual,
-            arc_no=self.__arcNo
-        )
         pass
+
+    @staticmethod
+    def _load_qc_epoch_mask(h5, size):
+        """Load the optional non-destructive epoch-QC selection mask."""
+        if 'arc_qc_epoch_keep' not in h5:
+            return np.ones(size, dtype=bool)
+        keep = np.asarray(h5['arc_qc_epoch_keep'][()], dtype=bool).reshape(-1)
+        if keep.size != size:
+            raise ValueError(
+                'arc_qc_epoch_keep length mismatch: %d vs %d'
+                % (keep.size, size)
+            )
+        return keep
+
+    @classmethod
+    def load_empirical_residual(cls, filename, stage='Pre', apply_qc=True):
+        """Load an aligned AdjustSST residual series and optional epoch QC."""
+        normalized = str(stage).strip().lower().replace('-', '')
+        if normalized == 'prefit':
+            normalized = 'pre'
+        elif normalized == 'postfit':
+            normalized = 'post'
+        if normalized not in cls._EMPIRICAL_STAGES:
+            raise ValueError(
+                "AdjustSST stage should be 'Pre' or 'Post', got %r" % stage
+            )
+
+        time_name, residual_name = cls._EMPIRICAL_STAGES[normalized]
+        with h5py.File(filename, 'r') as h5:
+            missing = [
+                name for name in (time_name, residual_name) if name not in h5
+            ]
+            if missing:
+                raise KeyError(
+                    '%s does not contain the AdjustSST %s interface: %s'
+                    % (filename, normalized, ', '.join(missing))
+                )
+            time = np.asarray(h5[time_name][()], dtype=np.float64)
+            residual = np.asarray(h5[residual_name][()], dtype=np.float64)
+            keep = (
+                cls._load_qc_epoch_mask(h5, time.size)
+                if apply_qc else np.ones(time.size, dtype=bool)
+            )
+
+        if time.shape != residual.shape:
+            raise ValueError(
+                'AdjustSST %s time/residual shape mismatch: %s vs %s'
+                % (normalized, time.shape, residual.shape)
+            )
+        return time[keep], residual[keep]
+
+    @classmethod
+    def load_empirical_design_matrix(cls, filename, apply_qc=True):
+        """Load the empirical design matrix aligned with post-fit epochs."""
+        with h5py.File(filename, 'r') as h5:
+            if 'design_matrix' not in h5:
+                raise KeyError('%s does not contain design_matrix' % filename)
+            matrix = np.asarray(h5['design_matrix'][()], dtype=np.float64)
+            if matrix.ndim != 2:
+                raise ValueError('design_matrix must be two-dimensional')
+            keep = (
+                cls._load_qc_epoch_mask(h5, matrix.shape[0])
+                if apply_qc else np.ones(matrix.shape[0], dtype=bool)
+            )
+        return matrix[keep, :]
 
     def pre_residual(self):
         diff_pos = self.__PosA - self.__PosB

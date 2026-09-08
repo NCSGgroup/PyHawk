@@ -45,7 +45,7 @@ from src.Auxilary.StandardConfig import StandardConfig
 import multiprocessing
 import json
 from datetime import datetime
-from src.Auxilary.Outlier import Outlier, ArcOutlier
+from src.Auxilary.Outlier import Outlier, ArcOutlier, EpochOutlier
 from src.Preference.EnumType import Payload, SatID, SSTObserve, StaticGravModel
 from scipy.signal import butter, filtfilt
 from scipy import signal
@@ -64,7 +64,9 @@ from numpy.fft import rfft, irfft
 from src.Solver.LGD import ComputeLGD
 from src.Solver.LGDFromKBRA import ComputeLGDFromKBRA
 from src.Solver.CovarianceModel import (
+    covariance_matrix_epoch_index,
     load_covariance,
+    normalize_covariance_epoch_mapping,
     orbit_covariance_filename,
     range_rate_covariance_filename,
     save_stationary_covariance,
@@ -97,8 +99,13 @@ class CalibrateOrbit:
         self.__standard_config = None
         self.__arc_path = None
         self.__arcft_path = None
+        self.__orbit_qc_records = []
         self.__kbrr_qc_records = []
+        self.__audit_config = {}
+        self.__audit_covariance_records = {}
+        self.__audit_neq_records = []
         self._gls_rng = np.random.default_rng(0)
+        self.__write_orbit_arc_quality = True
         pass
 
     def loadJson(self, setting_directory=None):
@@ -177,6 +184,11 @@ class CalibrateOrbit:
         self.__calibrateOrbit_config.__dict__ = load_setting(
             'CalibrateOrbitConfig.json'
         )
+        self.__audit_config = dict(getattr(
+            self.__calibrateOrbit_config,
+            'ExperimentAuditConfig',
+            {}
+        ) or {})
 
         neq_path_config = self.__neq_config.PathOfFiles()
         neq_path_config.__dict__.update(
@@ -198,6 +210,188 @@ class CalibrateOrbit:
         self.__standard_config = StandardConfig(setting_directory)
         self.__standard_config.save(expected_sh_path)
         return self
+
+    # ------------------------------------------------------------------
+    # Controlled-experiment audit outputs
+    # ------------------------------------------------------------------
+    def _audit_enabled(self, option=None):
+        if not bool(self.__audit_config.get('Enabled', False)):
+            return False
+        if option is None:
+            return True
+        return bool(self.__audit_config.get(option, False))
+
+    def _audit_root(self):
+        configured = self.__audit_config.get('OutputDirectory')
+        if configured:
+            root = pathlib.Path(os.fspath(configured))
+            if not root.is_absolute():
+                root = pathlib.Path.cwd().joinpath(root)
+        else:
+            root = pathlib.Path.cwd().joinpath('audit')
+        root.mkdir(parents=True, exist_ok=True)
+        return root
+
+    @staticmethod
+    def _audit_write_dataset(group, name, value, compression='gzip'):
+        if value is None:
+            return
+        array = np.asarray(value)
+        if array.dtype.kind in ('U', 'O'):
+            group.attrs[name] = json.dumps(
+                array.tolist(), ensure_ascii=False, default=str
+            )
+            return
+        kwargs = {}
+        if array.ndim > 0 and array.size > 0:
+            kwargs.update({'compression': compression, 'shuffle': True})
+        group.create_dataset(name, data=array, **kwargs)
+
+    def _audit_covariance_stage(
+            self, label, time, residual, sample_interval, mode,
+            processed_time=None, processed_residual=None,
+            pair_count=None, raw_acov=None):
+        """Cache compact covariance-estimation stages without changing math."""
+        if not self._audit_enabled('SaveCovarianceStages'):
+            return
+        record = self.__audit_covariance_records.setdefault(
+            str(label), {}
+        )
+        record.update({
+            'time': np.asarray(time, dtype=float),
+            'residual': np.asarray(residual, dtype=float),
+            'sample_interval': float(sample_interval),
+            'mode': str(mode),
+            'processed_time': None if processed_time is None else np.asarray(
+                processed_time, dtype=float
+            ),
+            'processed_residual': None if processed_residual is None else np.asarray(
+                processed_residual, dtype=float
+            ),
+            'pair_count': None if pair_count is None else np.asarray(
+                pair_count, dtype=float
+            ),
+            'raw_acov': None if raw_acov is None else np.asarray(
+                raw_acov, dtype=float
+            )
+        })
+
+    def _audit_covariance_positive_definite(
+            self, label, before, after, spectrum_before, spectrum_after,
+            floor, loading):
+        if not self._audit_enabled('SaveCovarianceStages'):
+            return
+        record = self.__audit_covariance_records.setdefault(
+            str(label), {}
+        )
+        record.update({
+            'acov_before_pd': np.asarray(before, dtype=float),
+            'acov_after_pd': np.asarray(after, dtype=float),
+            'spectrum_before': np.asarray(spectrum_before, dtype=float),
+            'spectrum_after': np.asarray(spectrum_after, dtype=float),
+            'spectral_floor': float(floor),
+            'diagonal_loading': float(loading)
+        })
+
+    def _flush_covariance_audit(self):
+        if not self._audit_enabled('SaveCovarianceStages'):
+            return
+        root = self._audit_root().joinpath('covariance')
+        root.mkdir(parents=True, exist_ok=True)
+        compression = self.__audit_config.get('Compression', 'gzip')
+        for label, record in self.__audit_covariance_records.items():
+            filename = root.joinpath(
+                ''.join(ch if ch.isalnum() or ch in '._-' else '_'
+                        for ch in str(label)) + '.hdf5'
+            )
+            with h5py.File(filename, 'w') as h5:
+                h5.attrs['label'] = str(label)
+                h5.attrs['mode'] = str(record.get('mode', 'unknown'))
+                h5.attrs['sample_interval'] = float(
+                    record.get('sample_interval', np.nan)
+                )
+                for key in (
+                        'time', 'residual', 'processed_time',
+                        'processed_residual', 'pair_count', 'raw_acov',
+                        'acov_before_pd', 'acov_after_pd',
+                        'spectrum_before', 'spectrum_after'):
+                    self._audit_write_dataset(
+                        h5, key, record.get(key), compression=compression
+                    )
+                for key in ('spectral_floor', 'diagonal_loading'):
+                    if key in record:
+                        h5.attrs[key] = float(record[key])
+                if 'acov_after_pd' in record:
+                    acov = record['acov_after_pd']
+                    h5.attrs['zero_lag_variance'] = float(acov[0])
+                    h5.attrs['lag_count'] = int(acov.size)
+                    h5.attrs['max_lag_seconds'] = float(
+                        (acov.size - 1) * float(
+                            record.get('sample_interval', np.nan)
+                        )
+                    )
+                h5.attrs['cholesky_checked'] = False
+        self.__audit_covariance_records.clear()
+
+    def _audit_save_normal_equations(
+            self, matrices, parameter_index, orbit_kin_factor):
+        if not self._audit_enabled('SaveObservationNormalEquations'):
+            return
+        root = self._audit_root().joinpath('normal_equations')
+        root.mkdir(parents=True, exist_ok=True)
+        filename = root.joinpath('monthly_by_observation.hdf5')
+        compression = self.__audit_config.get('Compression', 'gzip')
+        with h5py.File(filename, 'w') as h5:
+            h5.attrs['OrbitKinFactor'] = float(orbit_kin_factor)
+            for name, values in matrices.items():
+                group = h5.create_group(str(name))
+                self._audit_write_dataset(
+                    group, 'N', values[0], compression=compression
+                )
+                self._audit_write_dataset(
+                    group, 'L', values[1], compression=compression
+                )
+            self._audit_write_dataset(
+                h5, 'parameter_index', parameter_index, compression=compression
+            )
+        if self.__audit_neq_records:
+            csv_path = root.joinpath('arc_diagnostics.csv')
+            fields = sorted({
+                key for row in self.__audit_neq_records for key in row
+            })
+            with csv_path.open('w', encoding='utf-8', newline='') as stream:
+                import csv
+                writer = csv.DictWriter(stream, fieldnames=fields)
+                writer.writeheader()
+                writer.writerows(self.__audit_neq_records)
+        self.__audit_neq_records.clear()
+
+    def _audit_save_solution(
+            self, solution, covariance, sigma, normal_matrix, rhs,
+            parameter_index=None):
+        if not self._audit_enabled('SaveSolutionDiagnostics'):
+            return
+        root = self._audit_root().joinpath('solution')
+        root.mkdir(parents=True, exist_ok=True)
+        compression = self.__audit_config.get('Compression', 'gzip')
+        filename = root.joinpath('solution_diagnostics.hdf5')
+        with h5py.File(filename, 'w') as h5:
+            for name, value in (
+                    ('solution', solution), ('covariance', covariance),
+                    ('sigma', sigma), ('N', normal_matrix), ('L', rhs),
+                    ('parameter_index', parameter_index)):
+                self._audit_write_dataset(
+                    h5, name, value, compression=compression
+                )
+            try:
+                residual = normal_matrix @ solution - np.asarray(rhs).reshape(-1)
+                h5.create_dataset('NX_minus_L', data=residual)
+                h5.attrs['normal_equation_relative_residual'] = float(
+                    np.linalg.norm(residual) /
+                    max(np.linalg.norm(rhs), np.finfo(float).eps)
+                )
+            except Exception as error:
+                h5.attrs['residual_diagnostic_error'] = type(error).__name__
 
     def run(self):
         '''get arc number'''
@@ -229,6 +423,9 @@ class CalibrateOrbit:
         LGDConfig.__dict__.update(
             getattr(calibrateOrbit_config, 'LGDConfig', {}).copy()
         )
+        self.__write_orbit_arc_quality = bool(getattr(
+            GLSIteration, 'WriteOrbitArcQuality', True
+        ))
         self.__lgd_config = LGDConfig
         isPreprocess = StepControl.isPreprocess
         isAdjustOrbit = StepControl.isAdjustOrbit
@@ -292,35 +489,21 @@ class CalibrateOrbit:
             pool.join()
             for writer in standard_acc_writers:
                 writer.finalize()
-        self.__saveOrbitRMS()
-        standard_pre_kbrr = None
+        orbit_input_arcs = list(self.__arclist)
+        self.__arclist, _ = self.__screenOrbitArcs(
+            orbit_input_arcs
+        )
+        self.__saveOrbitRMS(arc_numbers=orbit_input_arcs)
         kbrr_input_arcs = list(self.__arclist)
         if isAdjustKBRR:
             self.makeLog(stepName='adjustKBRR', process=AdjustKBRRProcess)
-            adjust_path = self.__adjust_config.PathOfFiles()
-            adjust_path.__dict__.update(
-                self.__adjust_config.PathOfFilesConfig.copy()
-            )
-            standard_kbrr_directory = getattr(
-                adjust_path,
-                'StandardKBRRTemp',
-                StandardKBRR.output_directory(adjust_path.RangeRateTemp)
-            )
-            standard_pre_kbrr = StandardKBRR().configure(
-                filedir=standard_kbrr_directory,
-                date_span=self.__date_span,
-                stage='Pre',
-                mission=MissionConfig.mission
-            ).prepare()
             pool = multiprocessing.Pool(processes=AdjustKBRRProcess)
             pool.map(self._adjustKBRR, self.__arclist)
             pool.close()
             pool.join()
-        self.__arclist, rejected_kbrr_arcs = self.__screenKBRRArcs(
+        self.__arclist, _ = self.__screenKBRRArcs(
             kbrr_input_arcs
         )
-        if standard_pre_kbrr is not None and rejected_kbrr_arcs:
-            standard_pre_kbrr.discard_arcs(rejected_kbrr_arcs)
         self.__saveKBRRRMS(arc_numbers=kbrr_input_arcs)
         if isGetLGD:
             self.makeLog(stepName='LGD', process=AdjustKBRRProcess)
@@ -372,8 +555,6 @@ class CalibrateOrbit:
                 process_count=GetNEQProcess,
                 iteration_config=GLSIteration
             )
-        if standard_pre_kbrr is not None:
-            standard_pre_kbrr.cleanup()
         # self.getSpaceKBRR()
         pass
 
@@ -603,6 +784,119 @@ class CalibrateOrbit:
             )
         return aliases[key]
 
+    @staticmethod
+    def _normalize_covariance_gap_mode(mode):
+        aliases = {
+            'ignore': 'Ignore',
+            'mask': 'Mask',
+            'interpolatepsd': 'InterpolatePSD',
+            'interpolate': 'InterpolatePSD'
+        }
+        key = str(mode).replace('_', '').replace('-', '').lower()
+        if key not in aliases:
+            raise ValueError(
+                'Unsupported CovarianceGapMode {!r}; expected Ignore, '
+                'Mask, or InterpolatePSD'.format(mode)
+            )
+        return aliases[key]
+
+    @staticmethod
+    def _normalize_covariance_positive_definite_mode(mode):
+        aliases = {
+            'diagonalloading': 'DiagonalLoading',
+            'diagonal': 'DiagonalLoading',
+            'dctclip': 'DCTClip',
+            'dct': 'DCTClip'
+        }
+        key = str(mode).replace('_', '').replace('-', '').lower()
+        if key not in aliases:
+            raise ValueError(
+                'Unsupported CovariancePositiveDefiniteMode {!r}; expected '
+                'DiagonalLoading or DCTClip'.format(mode)
+            )
+        return aliases[key]
+
+    @staticmethod
+    def _normalize_covariance_epoch_mapping(mode):
+        return normalize_covariance_epoch_mapping(mode)
+
+    def _covariance_gap_mode(self):
+        solver_config = getattr(
+            self, '_CalibrateOrbit__solver_config', None
+        )
+        return self._normalize_covariance_gap_mode(
+            getattr(
+                solver_config,
+                'CovarianceGapMode',
+                'InterpolatePSD'
+            )
+        )
+
+    def _covariance_positive_definite_mode(self):
+        solver_config = getattr(
+            self, '_CalibrateOrbit__solver_config', None
+        )
+        return self._normalize_covariance_positive_definite_mode(
+            getattr(
+                solver_config,
+                'CovariancePositiveDefiniteMode',
+                'DCTClip'
+            )
+        )
+
+    def _covariance_epoch_mapping(self):
+        solver_config = getattr(
+            self, '_CalibrateOrbit__solver_config', None
+        )
+        return self._normalize_covariance_epoch_mapping(
+            getattr(
+                solver_config,
+                'CovarianceEpochMapping',
+                'LegacyIndex'
+            )
+        )
+
+    def _covariance_matrix_epoch_index(self, legacy_epoch_index):
+        return covariance_matrix_epoch_index(
+            self._covariance_epoch_mapping(), legacy_epoch_index
+        )
+
+    def _covariance_max_lag(
+            self, sample_interval, available_count, legacy_max_lag):
+        """Return a lag index while preserving the historical default.
+
+        When ``CovarianceMaxLagSeconds`` is unset, callers retain their
+        original lag behavior.  When set, the physical duration is converted
+        to an inclusive lag index on the covariance grid.
+        """
+
+        available_count = int(available_count)
+        if available_count <= 0:
+            raise ValueError('available covariance sample count must be positive')
+
+        solver_config = getattr(
+            self, '_CalibrateOrbit__solver_config', None
+        )
+        max_lag_seconds = getattr(
+            solver_config, 'CovarianceMaxLagSeconds', None
+        )
+        if max_lag_seconds is None:
+            return min(int(legacy_max_lag), available_count - 1)
+
+        sample_interval = float(sample_interval)
+        max_lag_seconds = float(max_lag_seconds)
+        if (
+                not np.isfinite(sample_interval) or sample_interval <= 0.0 or
+                not np.isfinite(max_lag_seconds) or max_lag_seconds <= 0.0):
+            raise ValueError(
+                'CovarianceMaxLagSeconds and covariance sample interval '
+                'must be finite and positive'
+            )
+        configured_max_lag = int(
+            np.floor(max_lag_seconds / sample_interval + 1.0e-12)
+        )
+        return min(configured_max_lag, available_count - 1)
+
     def _NEQ_v3(self, q):
         '''setp 8: get NEQ'''
         neq = GravityNEQperArc_v3(arcNo=q, date_span=self.__date_span, sat=self.__sat)
@@ -668,6 +962,12 @@ class CalibrateOrbit:
 
         NMatrix1 = np.zeros((parameter_number, parameter_number))
         LMatrix1 = np.zeros((parameter_number, 1))
+        audit_matrices = {
+            name: [
+                np.zeros_like(NMatrix1),
+                np.zeros_like(LMatrix1)
+            ] for name in ('GNV-A', 'GNV-B', 'KBRR')
+        }
 
         date_span = interface_config.date_span
 
@@ -699,6 +999,36 @@ class CalibrateOrbit:
             Orbit_l_A = h51['Orbit_l_A'][:]
             Orbit_l_B = h51['Orbit_l_B'][:]
             RangeRate_l = h51['RangeRate_l'][:]
+
+            # Keep a decomposed copy for the optional audit.  The production
+            # accumulator below remains the authoritative numerical path.
+            if self.AccelerometerConfig.isScale:
+                def add_audited_component(name, orbit_n, orbit_l,
+                                          range_n, range_l):
+                    target_n, target_l = audit_matrices[name]
+                    target_n[0:9, 0:9] += orbit_n[0:9, 0:9] + range_n[0:9, 0:9] * OrbitKinFactor
+                    target_n[0:9, 18:] += orbit_n[0:9, 9:] + range_n[0:9, 18:] * OrbitKinFactor
+                    target_n[9:18, 9:18] += range_n[9:18, 9:18] * OrbitKinFactor
+                    target_n[18:, 0:9] += orbit_n[9:, 0:9] + range_n[18:, 0:9] * OrbitKinFactor
+                    target_n[18:, 18:] += orbit_n[9:, 9:] + range_n[18:, 18:] * OrbitKinFactor
+                    target_l[0:9] += orbit_l[0:9] + range_l[0:9] * OrbitKinFactor
+                    target_l[18:] += orbit_l[9:] + range_l[18:] * OrbitKinFactor
+                add_audited_component('GNV-A', Orbit_N_A, Orbit_l_A,
+                                      np.zeros_like(RangeRate_N),
+                                      np.zeros_like(RangeRate_l))
+                add_audited_component('GNV-B', Orbit_N_B, Orbit_l_B,
+                                      np.zeros_like(RangeRate_N),
+                                      np.zeros_like(RangeRate_l))
+                add_audited_component('KBRR', np.zeros_like(Orbit_N_A),
+                                      np.zeros_like(Orbit_l_A),
+                                      RangeRate_N, RangeRate_l)
+            else:
+                audit_matrices['GNV-A'][0] += Orbit_N_A
+                audit_matrices['GNV-A'][1] += Orbit_l_A
+                audit_matrices['GNV-B'][0] += Orbit_N_B
+                audit_matrices['GNV-B'][1] += Orbit_l_B
+                audit_matrices['KBRR'][0] += RangeRate_N * OrbitKinFactor
+                audit_matrices['KBRR'][1] += RangeRate_l * OrbitKinFactor
             # if self.AccelerometerConfig.isScale:
                 # Orbit_N_A, Orbit_l_A = self.keepGlobal(Orbit_N_A, Orbit_l_A)
                 # Orbit_N_B, Orbit_l_B = self.keepGlobal(Orbit_N_B, Orbit_l_B)
@@ -765,6 +1095,18 @@ class CalibrateOrbit:
         except Exception as e:
             print('Save standard NEQ failed: %s' % e)
 
+        if self._audit_enabled('SaveObservationNormalEquations'):
+            audit_matrices['GNV'] = [
+                audit_matrices['GNV-A'][0] + audit_matrices['GNV-B'][0],
+                audit_matrices['GNV-A'][1] + audit_matrices['GNV-B'][1]
+            ]
+            audit_matrices['total'] = [NMatrix1, LMatrix1]
+            self._audit_save_normal_equations(
+                audit_matrices,
+                parameter_index=np.arange(parameter_number, dtype=np.int64),
+                orbit_kin_factor=OrbitKinFactor
+            )
+
         cs = np.linalg.lstsq(NMatrix1, LMatrix1[:, 0], rcond=None)[0]
         self.cs=cs
         # cs2 = np.linalg.lstsq(NMatrix2, LMatrix2[:, 0], rcond=None)[0]
@@ -782,7 +1124,7 @@ class CalibrateOrbit:
             'StandardKBRRTemp',
             StandardKBRR.output_directory(adjust_path.RangeRateTemp)
         )
-        standard_post_kbrr = StandardKBRR().configure(
+        standard_kbrr = StandardKBRR().configure(
             filedir=standard_kbrr_directory,
             date_span=self.__date_span,
             stage='Post',
@@ -793,7 +1135,7 @@ class CalibrateOrbit:
             N=NMatrix1,
             use_sigma=use_sigma
         )
-        standard_post_kbrr.finalize()
+        standard_kbrr.finalize()
         if scale_parameter_count:
             sigma = sigma[scale_parameter_count:]
         # sigma = cs
@@ -845,80 +1187,485 @@ class CalibrateOrbit:
             arc_definition_path=self.__arc_path
         )
 
+        if self._audit_enabled('SaveSolutionDiagnostics'):
+            covariance_path = pathlib.Path(
+                self.__solver_config.CovarianceMatrix
+            ).joinpath(
+                self.__date_span[0] + '-' + self.__date_span[1] + '.hdf5'
+            )
+            covariance_matrix = None
+            if covariance_path.exists():
+                with h5py.File(covariance_path, 'r') as covariance_h5:
+                    covariance_matrix = covariance_h5['cov'][:]
+            self._audit_save_solution(
+                solution=self.cs,
+                covariance=covariance_matrix,
+                sigma=sigma,
+                normal_matrix=NMatrix1,
+                rhs=LMatrix1,
+                parameter_index=np.arange(
+                    parameter_number, dtype=np.int64
+                )
+            )
+
         return self.cs.copy()
 
-    def __saveOrbitRMS(self):
-        self.AdjustPath = AdjustOrbitConfig.PathOfFiles()
-        self.AdjustPath.__dict__.update(self.__adjust_config.PathOfFilesConfig.copy())
-        res_dir = pathlib.Path().joinpath(self.AdjustPath.StateVectorDataTemp, self.__date_span[0] + '_' + self.__date_span[1])
-        interface_config = self.__interface_config
-        rd = ArcData(interfaceConfig=interface_config)
-        RMSAX = []
-        RMSAY = []
-        RMSAZ = []
-        RMSBX = []
-        RMSBY = []
-        RMSBZ = []
-        for i in self.__arclist:
-            res_filename = res_dir.joinpath(str(i) + '_AB.hdf5')
-            with h5py.File(res_filename, 'r') as h5:
-                rAB = h5['r'][:]
-            rA = rAB[:, 0:3, 0]
-            rB = rAB[:, 3:6, 0]
-            gnva = rd.getData(arc=i, kind=EnumType.Payload.GNV, sat='A')[:, 1:4]
-            gnvb = rd.getData(arc=i, kind=EnumType.Payload.GNV, sat='B')[:, 1:4]
+    @staticmethod
+    def _orbit_arc_statistics(residual, trim_fraction):
+        """Return scale-free arc-QC inputs and descriptive orbit residuals.
 
-            if np.shape(gnva) == np.shape(rA):
-                diff = gnva - rA
-                RMSAX.append(self.__rms(diff[:, 0]))
-                RMSAY.append(self.__rms(diff[:, 1]))
-                RMSAZ.append(self.__rms(diff[:, 2]))
+        The largest residual norms are trimmed only when constructing the
+        arc metric.  Axis RMS values remain untrimmed for diagnostic plots.
+        This prevents one isolated bad epoch from causing rejection of an
+        otherwise useful six-hour arc while retaining sensitivity to a
+        broad or whole-arc orbit-fit failure.
+        """
+        residual = np.asarray(residual, dtype=np.float64)
+        if residual.ndim != 2 or residual.shape[1] != 3:
+            raise ValueError('orbit residual must have three columns')
+        if residual.shape[0] < 3:
+            raise ValueError('orbit residual contains too few epochs')
+        if not np.all(np.isfinite(residual)):
+            raise ValueError('orbit residual contains non-finite values')
+        if not 0 <= trim_fraction < 0.5:
+            raise ValueError('orbit trim fraction must be in [0, 0.5)')
 
-            if np.shape(gnvb) == np.shape(rB):
-                diff = gnvb - rB
-                RMSBX.append(self.__rms(diff[:, 0]))
-                RMSBY.append(self.__rms(diff[:, 1]))
-                RMSBZ.append(self.__rms(diff[:, 2]))
+        norm_squared = np.sum(residual * residual, axis=1)
+        keep_count = max(
+            1, int(np.floor((1.0 - trim_fraction) * residual.shape[0]))
+        )
+        trimmed = np.partition(norm_squared, keep_count - 1)[:keep_count]
+        residual_norm = np.sqrt(norm_squared)
+        return {
+            'epoch_count': int(residual.shape[0]),
+            'rms_xyz': [
+                float(value)
+                for value in np.sqrt(np.mean(residual * residual, axis=0))
+            ],
+            'median_norm': float(np.median(residual_norm)),
+            'p95_norm': float(np.percentile(residual_norm, 95.0)),
+            'max_norm': float(np.max(residual_norm)),
+            'trimmed_rms': float(np.sqrt(np.mean(trimmed))),
+            'bias_norm': float(
+                np.linalg.norm(np.median(residual, axis=0))
+            ),
+            'esd_candidate_order': None,
+            'esd_statistic': None,
+            'esd_critical_value': None,
+            'upper_esd_rejected': False
+        }
 
-        # np.save('OrbitRMSY.npy', RMSX)
-        # np.save('OrbitRMSY.npy', RMSY)
-        # np.save('OrbitRMSZ.npy', RMSZ)
-        # X = np.load('OrbitRMSX.npy')
-        # Y = np.load('OrbitRMSY.npy')
-        # Z = np.load('OrbitRMSZ.npy')
-        self.__plotOrbitRMS(RMSAX, RMSAY, RMSAZ, 'A')
-        self.__plotOrbitRMS(RMSBX, RMSBY, RMSBZ, 'B')
+    def __screenOrbitArcs(self, arc_numbers):
+        """Reject broad orbit-fit failures before fitting KBRR.
 
-        pass
+        GRACE A and B are tested separately because a single-spacecraft
+        orbit fit can fail while the companion remains nominal.  The test is
+        a one-sided robust generalized ESD test on the logarithm of each
+        arc's 99%-trimmed three-dimensional residual RMS.  It therefore uses
+        the month's own residual distribution rather than a fixed metre or
+        millimetre threshold.
+        """
+        orbit_config = self.__adjust_config.Orbit()
+        orbit_config.__dict__.update(
+            self.__adjust_config.OrbitConfig.copy()
+        )
+        enabled = bool(getattr(
+            orbit_config, 'ArcOutlierEnabled', True
+        ))
+        significance = float(getattr(
+            orbit_config, 'ArcOutlierSignificance', 0.01
+        ))
+        max_fraction = float(getattr(
+            orbit_config, 'ArcOutlierMaxFraction', 0.1
+        ))
+        min_arcs = int(getattr(
+            orbit_config, 'ArcOutlierMinArcs', 8
+        ))
+        trim_fraction = float(getattr(
+            orbit_config, 'ArcOutlierTrimFraction', 0.01
+        ))
 
-    def __plotOrbitRMS(self,RMSX, RMSY, RMSZ, sat):
-        plt.figure(dpi=300, figsize=(16, 8))
-        plt.subplot(311)
-        plt.title('Orbit-RMS-{}-{}-{}'.format(sat, self.__date_span[0], self.__date_span[-1]), fontsize=24)
-        plt.plot(np.arange(len(RMSX)), [i * 1000 for i in RMSX], marker='o')
-        plt.yticks(fontsize=18)
-        plt.ylabel(r'$X/mm$', fontsize=20)
+        adjust_path = AdjustOrbitConfig.PathOfFiles()
+        adjust_path.__dict__.update(
+            self.__adjust_config.PathOfFilesConfig.copy()
+        )
+        state_dir = pathlib.Path(adjust_path.StateVectorDataTemp).joinpath(
+            self.__date_span[0] + '_' + self.__date_span[1]
+        )
+        raw_data = ArcData(interfaceConfig=self.__interface_config)
+        records = []
+        for arc_number in arc_numbers:
+            state_path = state_dir.joinpath(
+                str(arc_number) + '_AB.hdf5'
+            )
+            record = {
+                'arc': int(arc_number),
+                'accepted': False,
+                'reason': 'missing_state_vector',
+                'path': str(state_path),
+                'satellites': {}
+            }
+            records.append(record)
+            if not state_path.exists():
+                continue
 
-        plt.subplot(312)
-        plt.plot(np.arange(len(RMSY)), [i * 1000 for i in RMSY], marker='o')
-        plt.yticks(fontsize=18)
-        plt.ylabel(r'$Y/mm$', fontsize=20)
+            try:
+                with h5py.File(state_path, 'r') as h5:
+                    state_time = np.asarray(
+                        h5['t'][:], dtype=np.float64
+                    )
+                    state = np.asarray(
+                        h5['r'][:, :, 0], dtype=np.float64
+                    )
+            except (KeyError, OSError, ValueError) as error:
+                record['reason'] = (
+                    'invalid_state_vector:' + type(error).__name__
+                )
+                continue
+            if (
+                    state.ndim != 2 or state.shape[1] < 6
+                    or state.shape[0] != state_time.size
+                    or not np.all(np.isfinite(state_time))
+            ):
+                record['reason'] = 'invalid_state_vector_shape'
+                continue
 
-        plt.subplot(313)
-        plt.plot(np.arange(len(RMSZ)), [i * 1000 for i in RMSZ], marker='o')
-        plt.xlabel('arcNo', fontsize=20)
-        plt.ylabel(r'$Z/mm$', fontsize=20)
-        plt.yticks(fontsize=18)
+            record['accepted'] = True
+            record['reason'] = 'accepted'
+            for sat, column_start in (('A', 0), ('B', 3)):
+                try:
+                    gnv = np.asarray(
+                        raw_data.getData(
+                            arc=arc_number,
+                            kind=EnumType.Payload.GNV,
+                            sat=sat
+                        ),
+                        dtype=np.float64
+                    )
+                except (KeyError, OSError, ValueError) as error:
+                    record['accepted'] = False
+                    record['reason'] = (
+                        'invalid_GNV_%s:%s' % (sat, type(error).__name__)
+                    )
+                    break
+                if (
+                        gnv.ndim != 2 or gnv.shape[1] < 4
+                        or gnv.shape[0] != state.shape[0]
+                ):
+                    record['accepted'] = False
+                    record['reason'] = 'GNV_%s_state_shape_mismatch' % sat
+                    break
+                if not np.allclose(
+                        gnv[:, 0], state_time, rtol=0.0, atol=1.0e-6
+                ):
+                    record['accepted'] = False
+                    record['reason'] = 'GNV_%s_state_time_mismatch' % sat
+                    break
+                try:
+                    record['satellites'][sat] = (
+                        self._orbit_arc_statistics(
+                            gnv[:, 1:4]
+                            - state[:, column_start:column_start + 3],
+                            trim_fraction=trim_fraction
+                        )
+                    )
+                except ValueError as error:
+                    record['accepted'] = False
+                    record['reason'] = (
+                        'invalid_residual_%s:%s' % (sat, str(error))
+                    )
+                    break
 
-        if not os.path.exists('../result/img'):
-            os.mkdir('../result/img')
-        plt.savefig('../result/img/{}-{}-{}.png'.format(sat, self.__date_span[0], self.__date_span[-1]))
-        plt.grid(ls='--')
-        plt.clf()
-        pass
+        rejected_by_sat = {'A': 0, 'B': 0}
+        if enabled:
+            for sat in ('A', 'B'):
+                record_indices = [
+                    index for index, record in enumerate(records)
+                    if (
+                        record['accepted']
+                        and sat in record['satellites']
+                        and record['satellites'][sat]['trimmed_rms'] > 0
+                    )
+                ]
+                metrics = [
+                    records[index]['satellites'][sat]['trimmed_rms']
+                    for index in record_indices
+                ]
+                if len(metrics) < min_arcs:
+                    continue
+                rejected, diagnostics = ArcOutlier(
+                    significance=significance,
+                    max_fraction=max_fraction,
+                    min_samples=min_arcs
+                ).detect(metrics, tail='upper')
+                for order, metric_index in enumerate(
+                        diagnostics['candidate_indices']):
+                    metric_index = int(metric_index)
+                    statistics = records[
+                        record_indices[metric_index]
+                    ]['satellites'][sat]
+                    statistics['esd_candidate_order'] = order + 1
+                    statistics['esd_statistic'] = float(
+                        diagnostics['statistics'][order]
+                    )
+                    statistics['esd_critical_value'] = float(
+                        diagnostics['critical_values'][order]
+                    )
+                for metric_index in np.flatnonzero(rejected):
+                    record = records[record_indices[int(metric_index)]]
+                    record['accepted'] = False
+                    record['satellites'][sat][
+                        'upper_esd_rejected'
+                    ] = True
+                    reason = '%s_upper_esd' % sat
+                    record['reason'] = (
+                        reason if record['reason'] == 'accepted'
+                        else record['reason'] + ';' + reason
+                    )
+                    rejected_by_sat[sat] += 1
+
+        accepted_arcs = [
+            record['arc'] for record in records if record['accepted']
+        ]
+        rejected_arcs = [
+            record['arc'] for record in records if not record['accepted']
+        ]
+        self.__orbit_qc_records = records
+        self.__writeOrbitArcQuality(
+            state_dir=state_dir,
+            records=records,
+            enabled=enabled,
+            significance=significance,
+            max_fraction=max_fraction,
+            min_arcs=min_arcs,
+            trim_fraction=trim_fraction,
+            rejected_by_sat=rejected_by_sat
+        )
+        print(
+            'Orbit arc quality control retained %d arcs and rejected %d: %s'
+            % (
+                len(accepted_arcs), len(rejected_arcs),
+                ', '.join(str(arc) for arc in rejected_arcs)
+            )
+        )
+        return accepted_arcs, rejected_arcs
+
+    def __writeOrbitArcQuality(self, state_dir, records, enabled,
+                               significance, max_fraction, min_arcs,
+                               trim_fraction, rejected_by_sat):
+        """Persist orbit arc decisions alongside state-vector results."""
+        if not self.__write_orbit_arc_quality:
+            return
+        os.makedirs(state_dir, exist_ok=True)
+        method = (
+            'per-spacecraft upper-tail robust generalized ESD on log '
+            '99%-trimmed 3-D orbit-residual RMS; invalid or misaligned '
+            'state/GNV arcs rejected separately'
+        )
+        for record in records:
+            path = pathlib.Path(record['path'])
+            if not path.exists():
+                continue
+            with h5py.File(path, 'r+') as h5:
+                h5.attrs['orbit_qc_accepted'] = bool(record['accepted'])
+                h5.attrs['orbit_qc_reason'] = record['reason']
+                h5.attrs['orbit_qc_method'] = method
+                h5.attrs['orbit_qc_trim_fraction'] = trim_fraction
+                for sat, statistics in record['satellites'].items():
+                    prefix = 'orbit_qc_%s_' % sat
+                    h5.attrs[prefix + 'trimmed_rms'] = statistics[
+                        'trimmed_rms'
+                    ]
+                    h5.attrs[prefix + 'median_norm'] = statistics[
+                        'median_norm'
+                    ]
+                    h5.attrs[prefix + 'p95_norm'] = statistics[
+                        'p95_norm'
+                    ]
+                    h5.attrs[prefix + 'max_norm'] = statistics['max_norm']
+                    h5.attrs[prefix + 'bias_norm'] = statistics['bias_norm']
+                    h5.attrs[prefix + 'upper_esd_rejected'] = bool(
+                        statistics['upper_esd_rejected']
+                    )
+                    h5.attrs[prefix + 'esd_statistic'] = (
+                        np.nan if statistics['esd_statistic'] is None
+                        else statistics['esd_statistic']
+                    )
+                    h5.attrs[prefix + 'esd_critical_value'] = (
+                        np.nan
+                        if statistics['esd_critical_value'] is None
+                        else statistics['esd_critical_value']
+                    )
+
+        summary = {
+            'date_span': list(self.__date_span),
+            'created_utc': datetime.utcnow().strftime(
+                '%Y-%m-%dT%H:%M:%SZ'
+            ),
+            'method': method,
+            'enabled': enabled,
+            'significance': significance,
+            'max_outlier_fraction_per_spacecraft': max_fraction,
+            'minimum_monthly_arcs': min_arcs,
+            'trim_fraction': trim_fraction,
+            'rejected_by_spacecraft': rejected_by_sat,
+            'accepted_arcs': [
+                record['arc'] for record in records
+                if record['accepted']
+            ],
+            'rejected_arcs': [
+                record['arc'] for record in records
+                if not record['accepted']
+            ],
+            'records': records
+        }
+        target = state_dir.joinpath('Orbit_ArcQuality.json')
+        temporary = pathlib.Path(str(target) + '.tmp')
+        with open(temporary, 'w', encoding='utf-8') as file:
+            json.dump(summary, file, indent=2, allow_nan=False)
+        os.replace(temporary, target)
+
+    def __saveOrbitRMS(self, arc_numbers=None):
+        if arc_numbers is None:
+            arc_numbers = self.__arclist
+        records = {
+            record['arc']: record for record in self.__orbit_qc_records
+        }
+        rejected_arcs = {
+            record['arc'] for record in self.__orbit_qc_records
+            if not record['accepted']
+        }
+        for sat in ('A', 'B'):
+            rms_xyz = []
+            for arc in arc_numbers:
+                statistics = records.get(arc, {}).get(
+                    'satellites', {}
+                ).get(sat)
+                rms_xyz.append(
+                    [np.nan, np.nan, np.nan]
+                    if statistics is None else statistics['rms_xyz']
+                )
+            self.__plotOrbitRMS(
+                arc_numbers=np.asarray(arc_numbers, dtype=np.int64),
+                rms_xyz=np.asarray(rms_xyz, dtype=np.float64),
+                sat=sat,
+                rejected_arcs=rejected_arcs
+            )
+
+    def __plotOrbitRMS(self, arc_numbers, rms_xyz, sat, rejected_arcs):
+        figure, axes = plt.subplots(3, 1, dpi=300, figsize=(16, 8))
+        labels = ('X', 'Y', 'Z')
+        rejected = np.isin(arc_numbers, list(rejected_arcs))
+        for axis_index, axis in enumerate(axes):
+            values = rms_xyz[:, axis_index] * 1000.0
+            axis.plot(
+                arc_numbers, values, marker='o', label='arc RMS'
+            )
+            rejected_values = rejected & np.isfinite(values)
+            if np.any(rejected_values):
+                axis.scatter(
+                    arc_numbers[rejected_values],
+                    values[rejected_values],
+                    marker='x', color='red', s=70,
+                    label='rejected arc'
+                )
+            axis.set_ylabel('%s/mm' % labels[axis_index], fontsize=20)
+            axis.tick_params(axis='y', labelsize=18)
+            axis.grid(ls='--')
+        axes[0].set_title(
+            'Orbit-RMS-{}-{}-{}'.format(
+                sat, self.__date_span[0], self.__date_span[-1]
+            ),
+            fontsize=24
+        )
+        axes[0].legend(fontsize=14)
+        axes[-1].set_xlabel('arcNo', fontsize=20)
+        figure.tight_layout()
+        os.makedirs('../result/img', exist_ok=True)
+        figure.savefig(
+            '../result/img/{}-{}-{}.png'.format(
+                sat, self.__date_span[0], self.__date_span[-1]
+            )
+        )
+        plt.close(figure)
+
+    @staticmethod
+    def _local_kbrr_metric_baseline(arcs, metrics, neighbourhood):
+        """Return a robust local quality baseline for each valid arc.
+
+        The neighbourhood is measured in arc number, not array position, so
+        missing arcs do not make distant observations appear adjacent.
+        ``neighbourhood`` follows the configured minimum monthly sample size
+        and therefore scales with the processing setup rather than a residual
+        amplitude threshold.
+        """
+        arcs = np.asarray(arcs, dtype=np.int64).reshape(-1)
+        metrics = np.asarray(metrics, dtype=np.float64).reshape(-1)
+        if arcs.size != metrics.size:
+            raise ValueError('arc numbers and quality metrics must align')
+        if arcs.size == 0:
+            return metrics.copy()
+
+        baseline = np.empty(metrics.size, dtype=np.float64)
+        required_neighbours = min(3, max(0, metrics.size - 1))
+        fallback = float(np.median(metrics))
+        for index, arc in enumerate(arcs):
+            nearby = (
+                (np.abs(arcs - arc) <= neighbourhood)
+                & (arcs != arc)
+            )
+            values = metrics[nearby]
+            baseline[index] = (
+                float(np.median(values))
+                if values.size >= required_neighbours else fallback
+            )
+        return baseline
+
+    @staticmethod
+    def _kbrr_fit_cycles(design_matrix, fitting):
+        """Return the minimum 1CPR phase coverage among fitted sub-arcs.
+
+        The cosine/sine columns are already present in the saved empirical
+        design matrix, so this measures the actual fitted phase coverage and
+        does not assume a fixed GRACE orbital period.  ``None`` means that
+        the configured model has no supported 1CPR column layout.
+        """
+        layouts = {
+            'biasC0_OneCPR': (5, 1, 3),
+            'biasC0C1_OneCPR': (6, 2, 4),
+            'biasC0C1C2_OneCPR': (7, 3, 5),
+            'twice_biasC0C1_OneCPR': (8, 4, 6),
+            'twice_biasC0C1C2_OneCPR': (10, 6, 8),
+            'test': (10, 4, 7),
+            'biasC0C1C2C3_OneCPR': (10, 4, 7)
+        }
+        if fitting not in layouts:
+            return None
+        matrix = np.asarray(design_matrix, dtype=np.float64)
+        if matrix.ndim != 2 or matrix.shape[0] < 2:
+            return None
+
+        block_size, cosine_column, sine_column = layouts[fitting]
+        if matrix.shape[1] % block_size != 0:
+            return None
+        coverages = []
+        for column_start in range(0, matrix.shape[1], block_size):
+            cosine = matrix[:, column_start + cosine_column]
+            sine = matrix[:, column_start + sine_column]
+            valid = (
+                np.isfinite(cosine) & np.isfinite(sine)
+                & (np.hypot(cosine, sine) > 0.5)
+            )
+            if np.count_nonzero(valid) < 2:
+                continue
+            phase = np.unwrap(np.arctan2(sine[valid], cosine[valid]))
+            coverages.append(
+                float(np.ptp(phase) / (2.0 * np.pi))
+            )
+        return min(coverages) if coverages else None
 
     def __screenKBRRArcs(self, arc_numbers):
-        """Reject statistically high KBRR arcs relative to the current month."""
+        """Screen KBRR epochs and arcs using complementary robust evidence."""
         range_rate_config = self.__adjust_config.RangeRate()
         range_rate_config.__dict__.update(
             self.__adjust_config.RangeRateConfig.copy()
@@ -927,13 +1674,31 @@ class CalibrateOrbit:
             range_rate_config, 'ArcOutlierEnabled', True
         ))
         significance = float(getattr(
-            range_rate_config, 'ArcOutlierSignificance', 0.01
+            range_rate_config, 'ArcOutlierSignificance', 0.05
         ))
         max_fraction = float(getattr(
             range_rate_config, 'ArcOutlierMaxFraction', 0.1
         ))
         min_arcs = int(getattr(
             range_rate_config, 'ArcOutlierMinArcs', 8
+        ))
+        min_cpr_cycles = float(getattr(
+            range_rate_config, 'ArcOutlierMinCPRCycles', 1.5
+        ))
+        parameter_fitting = str(getattr(
+            range_rate_config, 'ParameterFitting', ''
+        ))
+        epoch_enabled = bool(getattr(
+            range_rate_config, 'EpochOutlierEnabled', True
+        ))
+        epoch_significance = float(getattr(
+            range_rate_config, 'EpochOutlierSignificance', 0.01
+        ))
+        epoch_max_fraction = float(getattr(
+            range_rate_config, 'EpochOutlierMaxFraction', 0.02
+        ))
+        epoch_min_samples = int(getattr(
+            range_rate_config, 'EpochOutlierMinSamples', 20
         ))
 
         adjust_path = AdjustOrbitConfig.PathOfFiles()
@@ -957,13 +1722,33 @@ class CalibrateOrbit:
                 'reason': 'missing_file',
                 'pre_count': 0,
                 'post_count': 0,
+                'qc_post_count': 0,
                 'completion_ratio': None,
+                'epoch_outlier_count': 0,
+                'epoch_outlier_fraction': 0.0,
+                'epoch_local_outlier_count': 0,
+                'epoch_outlier_gps_time': [],
+                'fit_cycles': None,
+                'fit_parameter_count': None,
+                'fit_degrees_of_freedom': None,
                 'rms': None,
                 'robust_scale': None,
                 'quality_metric': None,
+                'local_quality_baseline': None,
+                'relative_quality_metric': None,
                 'esd_order': None,
+                'esd_tail': None,
+                'esd_scope': None,
                 'esd_statistic': None,
                 'esd_critical_value': None,
+                'lower_esd_candidate': False,
+                'lower_esd_statistic': None,
+                'lower_esd_critical_value': None,
+                'cluster_upper_candidate': False,
+                'cluster_partner_arcs': [],
+                'cluster_quality_metric': None,
+                'cluster_esd_statistic': None,
+                'cluster_esd_critical_value': None,
                 'path': str(path)
             }
             records.append(record)
@@ -974,9 +1759,17 @@ class CalibrateOrbit:
                 pre_count = (
                     int(h5['pre_t'].shape[0]) if 'pre_t' in h5 else 0
                 )
+                post_time = (
+                    np.asarray(h5['post_t'][:], dtype=np.float64)
+                    if 'post_t' in h5 else np.zeros(0)
+                )
                 residual = (
                     np.asarray(h5['post_residual'][:], dtype=np.float64)
                     if 'post_residual' in h5 else np.zeros(0)
+                )
+                design_matrix = (
+                    np.asarray(h5['design_matrix'][:], dtype=np.float64)
+                    if 'design_matrix' in h5 else np.zeros((0, 0))
                 )
             record['pre_count'] = pre_count
             record['post_count'] = int(residual.size)
@@ -987,61 +1780,330 @@ class CalibrateOrbit:
             if residual.size == 0:
                 record['reason'] = 'empty_post_residual'
                 continue
-            if not np.all(np.isfinite(residual)):
+            if post_time.size != residual.size:
+                record['reason'] = 'post_time_residual_mismatch'
+                continue
+            if (
+                    not np.all(np.isfinite(residual))
+                    or not np.all(np.isfinite(post_time))
+            ):
                 record['reason'] = 'nonfinite_post_residual'
+                continue
+
+            epoch_keep = np.ones(residual.size, dtype=bool)
+            if epoch_enabled:
+                epoch_keep, epoch_diagnostics = EpochOutlier(
+                    significance=epoch_significance,
+                    max_fraction=epoch_max_fraction,
+                    min_samples=epoch_min_samples
+                ).detect(post_time, residual)
+                record['epoch_outlier_count'] = int(
+                    epoch_diagnostics['outlier_count']
+                )
+                record['epoch_local_outlier_count'] = int(
+                    epoch_diagnostics['local_outlier_count']
+                )
+                record['epoch_outlier_fraction'] = float(
+                    record['epoch_outlier_count'] / residual.size
+                )
+                record['epoch_outlier_gps_time'] = [
+                    float(value) for value in post_time[~epoch_keep]
+                ]
+            record['_epoch_keep'] = epoch_keep
+            if design_matrix.shape[0] == epoch_keep.size:
+                qc_design_matrix = design_matrix[epoch_keep, :]
+                record['fit_cycles'] = self._kbrr_fit_cycles(
+                    qc_design_matrix, parameter_fitting
+                )
+                fit_parameter_count = int(np.linalg.matrix_rank(
+                    qc_design_matrix
+                ))
+                record['fit_parameter_count'] = fit_parameter_count
+                record['fit_degrees_of_freedom'] = int(
+                    qc_design_matrix.shape[0] - fit_parameter_count
+                )
+            residual = residual[epoch_keep]
+            record['qc_post_count'] = int(residual.size)
+            if residual.size == 0:
+                record['reason'] = 'empty_after_epoch_qc'
                 continue
 
             arc_rms = float(
                 np.linalg.norm(residual) / np.sqrt(residual.size)
             )
+            residual_center = float(np.median(residual))
             robust_scale = float(
-                1.4826 * np.median(np.abs(residual))
+                1.4826 * np.median(
+                    np.abs(residual - residual_center)
+                )
             )
             record['rms'] = arc_rms
             record['robust_scale'] = robust_scale
             record['accepted'] = True
             record['reason'] = 'accepted'
 
-            if arc_rms > 0 and robust_scale > 0:
-                quality_metric = float(
-                    np.sqrt(arc_rms * robust_scale)
-                )
-                record['quality_metric'] = quality_metric
-                metric_record_indices.append(len(records) - 1)
-                metrics.append(quality_metric)
+            if arc_rms <= 0 or robust_scale <= 0:
+                record['accepted'] = False
+                record['reason'] = 'zero_quality_metric'
+                continue
 
-        diagnostics = {
+            quality_metric = float(np.sqrt(arc_rms * robust_scale))
+            record['quality_metric'] = quality_metric
+            # An exactly or under-determined empirical fit can reproduce a
+            # handful of observations with an artificially tiny residual.
+            # Reject it on the mathematical degrees of freedom, not on a
+            # completion-ratio threshold derived from a nearly degenerate
+            # monthly distribution.
+            fit_dof = record['fit_degrees_of_freedom']
+            if fit_dof is not None and fit_dof <= 0:
+                record['accepted'] = False
+                record['reason'] = 'underdetermined_fit'
+                continue
+            metric_record_indices.append(len(records) - 1)
+            metrics.append(quality_metric)
+
+        # Rebuild the ESD input after coverage screening.  Upper-tail quality
+        # is actionable directly; lower-tail quality requires independent
+        # evidence that the 1CPR fit lacks sufficient phase coverage.
+        metric_record_indices = []
+        metrics = []
+        for record_index, record in enumerate(records):
+            if (
+                    record['accepted']
+                    and record['quality_metric'] is not None
+                    and np.isfinite(record['quality_metric'])
+            ):
+                metric_record_indices.append(record_index)
+                metrics.append(record['quality_metric'])
+
+        # High metrics are tested globally and relative to a local baseline.
+        # A low metric is only actionable when two independent facts agree:
+        # it is a significant local lower-tail value and the fitted 1CPR
+        # model has insufficient phase coverage.  This preserves genuinely
+        # quiet full arcs and short arcs with adequate orbital coverage.
+        empty_diagnostics = {
             'outlier_count': 0,
             'candidate_indices': np.zeros(0, dtype=np.int64),
             'statistics': np.zeros(0, dtype=np.float64),
             'critical_values': np.zeros(0, dtype=np.float64)
         }
+        global_diagnostics = empty_diagnostics.copy()
+        local_diagnostics = empty_diagnostics.copy()
+        lower_diagnostics = empty_diagnostics.copy()
+        cluster_diagnostics = empty_diagnostics.copy()
+        global_rejected = np.zeros(len(metrics), dtype=bool)
+        local_rejected = np.zeros(len(metrics), dtype=bool)
+        cluster_rejected = np.zeros(len(metrics), dtype=bool)
+        short_lower_rejected = np.zeros(len(metrics), dtype=bool)
+        cluster_group_count = 0
         if enabled and len(metrics) >= min_arcs:
-            rejected, diagnostics = ArcOutlier(
+            global_rejected, global_diagnostics = ArcOutlier(
                 significance=significance,
                 max_fraction=max_fraction,
                 min_samples=min_arcs
-            ).detect(metrics)
-            for metric_index, is_rejected in enumerate(rejected):
-                if is_rejected:
-                    record = records[
-                        metric_record_indices[metric_index]
-                    ]
-                    record['accepted'] = False
-                    record['reason'] = 'monthly_upper_esd'
-
+            ).detect(metrics, tail='upper')
             for order, metric_index in enumerate(
-                    diagnostics['candidate_indices']):
+                    global_diagnostics['candidate_indices']):
                 record = records[
                     metric_record_indices[int(metric_index)]
                 ]
                 record['esd_order'] = order + 1
+                record['esd_tail'] = 'upper'
+                record['esd_scope'] = 'monthly'
                 record['esd_statistic'] = float(
-                    diagnostics['statistics'][order]
+                    global_diagnostics['statistics'][order]
                 )
                 record['esd_critical_value'] = float(
-                    diagnostics['critical_values'][order]
+                    global_diagnostics['critical_values'][order]
                 )
+
+            metric_arcs = [
+                records[record_index]['arc']
+                for record_index in metric_record_indices
+            ]
+            local_baseline = self._local_kbrr_metric_baseline(
+                metric_arcs, metrics, neighbourhood=min_arcs
+            )
+            relative_metric = np.asarray(metrics) / local_baseline
+            local_rejected, local_diagnostics = ArcOutlier(
+                significance=significance,
+                max_fraction=max_fraction,
+                min_samples=min_arcs
+            ).detect(relative_metric, tail='upper')
+            # Global and local tests are complementary evidence, not two
+            # independent quotas.  Keep their union within the configured
+            # monthly maximum fraction, selecting the local ESD candidates in
+            # their descending test order after globally bad arcs.
+            maximum_arc_outliers = max(
+                1, int(np.floor(len(metrics) * max_fraction))
+            )
+            local_budget = max(
+                0, maximum_arc_outliers - np.count_nonzero(global_rejected)
+            )
+            local_only = [
+                int(metric_index)
+                for metric_index in local_diagnostics['candidate_indices']
+                if (
+                    local_rejected[int(metric_index)]
+                    and not global_rejected[int(metric_index)]
+                )
+            ]
+            if len(local_only) > local_budget:
+                limited_local_rejected = np.zeros(
+                    len(metrics), dtype=bool
+                )
+                limited_local_rejected[
+                    local_only[:local_budget]
+                ] = True
+                local_rejected = limited_local_rejected
+            for metric_index, baseline in enumerate(local_baseline):
+                record = records[metric_record_indices[metric_index]]
+                record['local_quality_baseline'] = float(baseline)
+                record['relative_quality_metric'] = float(
+                    relative_metric[metric_index]
+                )
+
+            # A pair of neighbouring degraded arcs can be individually below
+            # the single-arc ESD critical value while jointly standing apart
+            # from the month (2016 arcs 72/73 are such a case).  Test the
+            # smaller member of every unresolved adjacent pair.  Using the
+            # minimum requires both arcs to be elevated and prevents an
+            # isolated extreme from dragging its normal neighbour into the
+            # rejection set.
+            pair_members = []
+            pair_metrics = []
+            resolved_upper = global_rejected | local_rejected
+            for metric_index in range(len(metrics) - 1):
+                if (
+                        metric_arcs[metric_index + 1]
+                        != metric_arcs[metric_index] + 1
+                ):
+                    continue
+                if (
+                        resolved_upper[metric_index]
+                        or resolved_upper[metric_index + 1]
+                ):
+                    continue
+                pair_members.append((metric_index, metric_index + 1))
+                pair_metrics.append(float(min(
+                    relative_metric[metric_index],
+                    relative_metric[metric_index + 1]
+                )))
+
+            if len(pair_metrics) >= min_arcs:
+                pair_rejected, cluster_diagnostics = ArcOutlier(
+                    significance=significance,
+                    max_fraction=max_fraction,
+                    min_samples=min_arcs
+                ).detect(pair_metrics, tail='upper')
+                cluster_budget = max(
+                    0,
+                    maximum_arc_outliers
+                    - np.count_nonzero(resolved_upper)
+                )
+                for order, pair_index in enumerate(
+                        cluster_diagnostics['candidate_indices']):
+                    pair_index = int(pair_index)
+                    if not pair_rejected[pair_index]:
+                        continue
+                    members = pair_members[pair_index]
+                    new_members = [
+                        index for index in members
+                        if not cluster_rejected[index]
+                    ]
+                    if len(new_members) > cluster_budget:
+                        continue
+                    cluster_group_count += 1
+                    cluster_budget -= len(new_members)
+                    member_arcs = [
+                        int(metric_arcs[index]) for index in members
+                    ]
+                    for index in members:
+                        cluster_rejected[index] = True
+                        record = records[metric_record_indices[index]]
+                        record['cluster_upper_candidate'] = True
+                        record['cluster_partner_arcs'] = [
+                            arc for arc in member_arcs
+                            if arc != record['arc']
+                        ]
+                        record['cluster_quality_metric'] = float(
+                            pair_metrics[pair_index]
+                        )
+                        record['cluster_esd_statistic'] = float(
+                            cluster_diagnostics['statistics'][order]
+                        )
+                        record['cluster_esd_critical_value'] = float(
+                            cluster_diagnostics['critical_values'][order]
+                        )
+
+            lower_candidates, lower_diagnostics = ArcOutlier(
+                significance=significance,
+                max_fraction=max_fraction,
+                min_samples=min_arcs
+            ).detect(relative_metric, tail='lower')
+            for order, metric_index in enumerate(
+                    lower_diagnostics['candidate_indices']):
+                metric_index = int(metric_index)
+                if not lower_candidates[metric_index]:
+                    continue
+                record = records[metric_record_indices[metric_index]]
+                record['lower_esd_candidate'] = True
+                record['lower_esd_statistic'] = float(
+                    lower_diagnostics['statistics'][order]
+                )
+                record['lower_esd_critical_value'] = float(
+                    lower_diagnostics['critical_values'][order]
+                )
+                fit_cycles = record['fit_cycles']
+                if (
+                        fit_cycles is not None
+                        and fit_cycles < min_cpr_cycles
+                ):
+                    short_lower_rejected[metric_index] = True
+
+            for metric_index, is_rejected in enumerate(global_rejected):
+                if is_rejected:
+                    record = records[metric_record_indices[metric_index]]
+                    record['accepted'] = False
+                    record['reason'] = 'monthly_upper_esd'
+
+            for metric_index, is_rejected in enumerate(local_rejected):
+                if is_rejected:
+                    record = records[metric_record_indices[metric_index]]
+                    if record['accepted']:
+                        record['accepted'] = False
+                        record['reason'] = 'local_upper_esd'
+
+            for metric_index, is_rejected in enumerate(cluster_rejected):
+                if is_rejected:
+                    record = records[metric_record_indices[metric_index]]
+                    if record['accepted']:
+                        record['accepted'] = False
+                        record['reason'] = 'cluster_upper_esd'
+
+            for metric_index, is_rejected in enumerate(
+                    short_lower_rejected):
+                if is_rejected:
+                    record = records[metric_record_indices[metric_index]]
+                    if record['accepted']:
+                        record['accepted'] = False
+                        record['reason'] = 'short_arc_lower_esd'
+
+            for order, metric_index in enumerate(
+                    local_diagnostics['candidate_indices']):
+                record = records[
+                    metric_record_indices[int(metric_index)]
+                ]
+                if not global_rejected[int(metric_index)]:
+                    record['esd_order'] = order + 1
+                    record['esd_tail'] = 'upper'
+                    record['esd_scope'] = 'local'
+                    record['esd_statistic'] = float(
+                        local_diagnostics['statistics'][order]
+                    )
+                    record['esd_critical_value'] = float(
+                        local_diagnostics['critical_values'][order]
+                    )
 
         accepted_arcs = [
             record['arc'] for record in records if record['accepted']
@@ -1057,7 +2119,25 @@ class CalibrateOrbit:
             significance=significance,
             max_fraction=max_fraction,
             min_arcs=min_arcs,
-            esd_outlier_count=int(diagnostics['outlier_count'])
+            min_cpr_cycles=min_cpr_cycles,
+            epoch_enabled=epoch_enabled,
+            epoch_significance=epoch_significance,
+            epoch_max_fraction=epoch_max_fraction,
+            epoch_min_samples=epoch_min_samples,
+            global_esd_outlier_count=int(
+                np.count_nonzero(global_rejected)
+            ),
+            local_esd_outlier_count=int(np.count_nonzero(local_rejected)),
+            cluster_esd_group_count=cluster_group_count,
+            cluster_esd_outlier_count=int(
+                np.count_nonzero(cluster_rejected)
+            ),
+            lower_esd_candidate_count=int(
+                lower_diagnostics['outlier_count']
+            ),
+            short_lower_esd_outlier_count=int(
+                np.count_nonzero(short_lower_rejected)
+            )
         )
         print(
             'KBRR arc quality control retained %d arcs and rejected %d: %s'
@@ -1070,20 +2150,79 @@ class CalibrateOrbit:
 
     def __writeKBRRArcQuality(self, res_dir, records, enabled,
                               significance, max_fraction, min_arcs,
-                              esd_outlier_count):
+                              min_cpr_cycles,
+                              epoch_enabled, epoch_significance,
+                              epoch_max_fraction, epoch_min_samples,
+                              global_esd_outlier_count,
+                              local_esd_outlier_count,
+                              cluster_esd_group_count,
+                              cluster_esd_outlier_count,
+                              lower_esd_candidate_count,
+                              short_lower_esd_outlier_count):
         """Persist arc decisions without deleting the residual datasets."""
         os.makedirs(res_dir, exist_ok=True)
         method = (
-            'one-sided generalized ESD on log(sqrt(RMS * robust_scale))'
+            'epoch local-innovation Bonferroni robust ESD; monthly/local '
+            'single-arc and adjacent-pair upper-tail robust generalized ESD; '
+            'local lower-tail ESD only when 1CPR phase coverage is '
+            'insufficient; non-positive empirical-fit degrees of freedom '
+            'screened separately'
         )
         for record in records:
             path = pathlib.Path(record['path'])
             if not path.exists():
                 continue
             with h5py.File(path, 'r+') as h5:
+                epoch_keep = record.get('_epoch_keep')
+                if 'arc_qc_epoch_keep' in h5:
+                    del h5['arc_qc_epoch_keep']
+                if 'arc_qc_epoch_outlier_gps_time' in h5:
+                    del h5['arc_qc_epoch_outlier_gps_time']
+                if epoch_keep is not None:
+                    h5.create_dataset(
+                        'arc_qc_epoch_keep',
+                        data=np.asarray(epoch_keep, dtype=np.bool_)
+                    )
+                    h5.create_dataset(
+                        'arc_qc_epoch_outlier_gps_time',
+                        data=np.asarray(
+                            record['epoch_outlier_gps_time'],
+                            dtype=np.float64
+                        )
+                    )
                 h5.attrs['arc_qc_accepted'] = bool(record['accepted'])
                 h5.attrs['arc_qc_reason'] = record['reason']
                 h5.attrs['arc_qc_method'] = method
+                h5.attrs['arc_qc_epoch_outlier_count'] = int(
+                    record['epoch_outlier_count']
+                )
+                h5.attrs['arc_qc_epoch_outlier_fraction'] = float(
+                    record['epoch_outlier_fraction']
+                )
+                h5.attrs['arc_qc_fit_cycles'] = (
+                    np.nan if record['fit_cycles'] is None
+                    else record['fit_cycles']
+                )
+                h5.attrs['arc_qc_fit_parameter_count'] = (
+                    -1 if record['fit_parameter_count'] is None
+                    else record['fit_parameter_count']
+                )
+                h5.attrs['arc_qc_fit_degrees_of_freedom'] = (
+                    -1 if record['fit_degrees_of_freedom'] is None
+                    else record['fit_degrees_of_freedom']
+                )
+                h5.attrs['arc_qc_lower_esd_candidate'] = bool(
+                    record['lower_esd_candidate']
+                )
+                h5.attrs['arc_qc_lower_esd_statistic'] = (
+                    np.nan if record['lower_esd_statistic'] is None
+                    else record['lower_esd_statistic']
+                )
+                h5.attrs['arc_qc_lower_esd_critical_value'] = (
+                    np.nan
+                    if record['lower_esd_critical_value'] is None
+                    else record['lower_esd_critical_value']
+                )
                 h5.attrs['arc_qc_rms'] = (
                     np.nan if record['rms'] is None else record['rms']
                 )
@@ -1103,6 +2242,29 @@ class CalibrateOrbit:
                     np.nan if record['esd_critical_value'] is None
                     else record['esd_critical_value']
                 )
+                h5.attrs['arc_qc_esd_tail'] = (
+                    '' if record['esd_tail'] is None
+                    else record['esd_tail']
+                )
+                h5.attrs['arc_qc_cluster_upper_candidate'] = bool(
+                    record['cluster_upper_candidate']
+                )
+                h5.attrs['arc_qc_cluster_partner_arcs'] = np.asarray(
+                    record['cluster_partner_arcs'], dtype=np.int64
+                )
+                h5.attrs['arc_qc_cluster_quality_metric'] = (
+                    np.nan if record['cluster_quality_metric'] is None
+                    else record['cluster_quality_metric']
+                )
+                h5.attrs['arc_qc_cluster_esd_statistic'] = (
+                    np.nan if record['cluster_esd_statistic'] is None
+                    else record['cluster_esd_statistic']
+                )
+                h5.attrs['arc_qc_cluster_esd_critical_value'] = (
+                    np.nan
+                    if record['cluster_esd_critical_value'] is None
+                    else record['cluster_esd_critical_value']
+                )
 
         summary = {
             'date_span': list(self.__date_span),
@@ -1113,8 +2275,52 @@ class CalibrateOrbit:
             'enabled': enabled,
             'significance': significance,
             'max_outlier_fraction': max_fraction,
+            'max_outlier_fraction_per_tail': max_fraction,
             'minimum_monthly_arcs': min_arcs,
-            'esd_outlier_count': esd_outlier_count,
+            'minimum_cpr_cycles': min_cpr_cycles,
+            'epoch_outlier_enabled': epoch_enabled,
+            'epoch_outlier_significance': epoch_significance,
+            'epoch_outlier_max_fraction': epoch_max_fraction,
+            'epoch_outlier_min_samples': epoch_min_samples,
+            'epoch_outlier_count': sum(
+                record['epoch_outlier_count'] for record in records
+            ),
+            'arc_esd_outlier_count': sum(
+                record['reason'] in (
+                    'monthly_upper_esd', 'local_upper_esd',
+                    'cluster_upper_esd', 'short_arc_lower_esd'
+                )
+                for record in records
+            ),
+            # Retain legacy names for downstream summary readers.
+            'esd_outlier_count': sum(
+                record['reason'] in (
+                    'monthly_upper_esd', 'local_upper_esd',
+                    'cluster_upper_esd', 'short_arc_lower_esd'
+                )
+                for record in records
+            ),
+            'lower_esd_candidate_count': lower_esd_candidate_count,
+            'lower_esd_outlier_count': short_lower_esd_outlier_count,
+            'upper_esd_outlier_count': sum(
+                record['reason'] in (
+                    'monthly_upper_esd', 'local_upper_esd',
+                    'cluster_upper_esd'
+                )
+                for record in records
+            ),
+            'global_upper_esd_outlier_count': global_esd_outlier_count,
+            'local_upper_esd_outlier_count': local_esd_outlier_count,
+            'cluster_upper_esd_group_count': cluster_esd_group_count,
+            'cluster_upper_esd_outlier_count': cluster_esd_outlier_count,
+            'coverage_collapse_count': sum(
+                record['reason'] == 'underdetermined_fit'
+                for record in records
+            ),
+            'underdetermined_fit_count': sum(
+                record['reason'] == 'underdetermined_fit'
+                for record in records
+            ),
             'accepted_arcs': [
                 record['arc'] for record in records
                 if record['accepted']
@@ -1123,7 +2329,13 @@ class CalibrateOrbit:
                 record['arc'] for record in records
                 if not record['accepted']
             ],
-            'records': records
+            'records': [
+                {
+                    key: value for key, value in record.items()
+                    if not key.startswith('_')
+                }
+                for record in records
+            ]
         }
         target = res_dir.joinpath('KBRR_ArcQuality.json')
         temporary = pathlib.Path(str(target) + '.tmp')
@@ -1145,11 +2357,11 @@ class CalibrateOrbit:
             rms = np.nan
             res_filename = res_dir.joinpath('RangeRate_' + str(i) + '.hdf5')
             if os.path.exists(res_filename):
-                with h5py.File(res_filename, 'r') as h5:
-                    if 'post_residual' in h5:
-                        postfit = h5['post_residual'][()]
-                        if postfit.size > 0 and np.all(np.isfinite(postfit)):
-                            rms = self.__rms(postfit)
+                _, postfit = RangeRate.load_empirical_residual(
+                    res_filename, stage='Post'
+                )
+                if postfit.size > 0 and np.all(np.isfinite(postfit)):
+                    rms = self.__rms(postfit)
             post_RMS.append(rms)
 
         arc_numbers = np.asarray(plot_arcs)
@@ -1157,8 +2369,7 @@ class CalibrateOrbit:
         invalid = ~np.isfinite(post_RMS)
         rejected_arc_numbers = {
             record['arc'] for record in self.__kbrr_qc_records
-            if (not record['accepted']
-                and record['reason'] == 'monthly_upper_esd')
+            if not record['accepted']
         }
         rejected = (
             np.isin(arc_numbers, list(rejected_arc_numbers))
@@ -1376,11 +2587,14 @@ class CalibrateOrbit:
         return local_parameters, residual
 
     @staticmethod
-    def _load_arc_covariance(filename, target_time, components=1):
+    def _load_arc_covariance(
+            filename, target_time, components=1,
+            matrix_epoch_index=None):
         return load_covariance(
             filename=filename,
             target_time=target_time,
-            components=components
+            components=components,
+            matrix_epoch_index=matrix_epoch_index
         )
 
     def getLocalPar(self, solverConfig, N, use_sigma=False):
@@ -1473,6 +2687,8 @@ class CalibrateOrbit:
         covariance = None
         if use_sigma:
             fit_epoch = np.rint(t_nominal).astype(np.int64) % 60 == 0
+            # Reproduce the old dense-Sigma principal submatrix using only
+            # its arc-sample indices.
             epoch_index = np.flatnonzero(fit_epoch)
             fit_index = (
                 3 * epoch_index[:, None] + np.arange(3)
@@ -1483,7 +2699,12 @@ class CalibrateOrbit:
                 sat.name
             )
             covariance = self._load_arc_covariance(
-                covariance_name, t_nominal[fit_epoch], components=3
+                covariance_name,
+                t_nominal[fit_epoch],
+                components=3,
+                matrix_epoch_index=self._covariance_matrix_epoch_index(
+                    epoch_index
+                )
             )
             Local, _ = self._solve_local_parameters(
                 global_r[fit_index, :], local_r[fit_index, :],
@@ -1558,11 +2779,23 @@ class CalibrateOrbit:
 
         dm_dir = self._AdjustPathConfig.RangeRateTemp + '/' + self.__date_span[0] + '_' + self.__date_span[1]
         res_filename = dm_dir + '/' + SSTObserve.RangeRate.name + '_' + str(arcNo) + '.hdf5'
-        h5 = h5py.File(res_filename, 'r')
-        t_obs = h5['post_t'][()]
-        obs = h5['post_residual'][()]
-        local_dm_empirical = h5['design_matrix'][()]
-        h5.close()
+        raw_time, raw_oc = RangeRate.load_empirical_residual(
+            res_filename, stage='Pre'
+        )
+        t_obs, obs = RangeRate.load_empirical_residual(
+            res_filename, stage='Post'
+        )
+        local_dm_empirical = RangeRate.load_empirical_design_matrix(
+            res_filename
+        )
+        if not np.array_equal(
+                np.round(raw_time, decimals=9),
+                np.round(t_obs, decimals=9)):
+            raise ValueError(
+                'AdjustSST raw O-C and empirical post-fit epochs differ '
+                'for arc %d: raw=%d, pre=%d'
+                % (arcNo, raw_time.size, t_obs.size)
+            )
 
         int_t_obs = t_obs.astype(np.int64)
         int_t_dm = t_dm.astype(np.int64)
@@ -1640,8 +2873,7 @@ class CalibrateOrbit:
             frame=frame
         )
         for stage, range_rate in (
-                ('Pre', obs), ('Post', kbrr_res),
-                ('Geofit', geofit_kbrr)):
+                ('Raw', raw_oc), ('Pre', obs), ('Post', kbrr_res)):
             StandardKBRR().configure(
                 filedir=standard_kbrr_directory,
                 date_span=self.__date_span,
@@ -1924,6 +3156,21 @@ class CalibrateOrbit:
             ),
             diagonal_value=orbit_fixed_diagonal
         )
+        if self._audit_enabled('SaveCovarianceStages'):
+            root = self._audit_root().joinpath('covariance')
+            root.mkdir(parents=True, exist_ok=True)
+            for satellite in ('A', 'B'):
+                filename = root.joinpath('Orbit_' + satellite + '.hdf5')
+                with h5py.File(filename, 'w') as h5:
+                    h5.attrs['label'] = 'Orbit_' + satellite
+                    h5.attrs['mode'] = 'FixedDiagonal'
+                    h5.attrs['estimation_used'] = False
+                    h5.attrs['diagonal_value'] = float(orbit_fixed_diagonal)
+                    h5.create_dataset(
+                        'fixed_diagonal_xyz',
+                        data=np.full(3, orbit_fixed_diagonal, dtype=float)
+                    )
+            self._flush_covariance_audit()
         pass
 
     def GLS_full(self):
@@ -1966,10 +3213,12 @@ class CalibrateOrbit:
             time=time_kbrr, res=kbrr, return_autocovariance=True
         )
         orbit_acov_a, orbit_dt_a = self.getOrbitSigma(
-            time=time_a, res=orbit_a, return_autocovariance=True
+            time=time_a, res=orbit_a, return_autocovariance=True,
+            audit_prefix='Orbit_A'
         )
         orbit_acov_b, orbit_dt_b = self.getOrbitSigma(
-            time=time_b, res=orbit_b, return_autocovariance=True
+            time=time_b, res=orbit_b, return_autocovariance=True,
+            audit_prefix='Orbit_B'
         )
 
         save_stationary_covariance(
@@ -1998,6 +3247,7 @@ class CalibrateOrbit:
             time_origin=float(np.min(time_b)),
             allow_nearest_epoch=True
         )
+        self._flush_covariance_audit()
         pass
 
     def getSigma(self, time, res):
@@ -2346,6 +3596,165 @@ class CalibrateOrbit:
 
         return Sigma
 
+    def _estimate_covariance_autocovariance(
+            self, time, residual, sample_interval, audit_label=None):
+        """Estimate autocovariance using the configured gap interpretation.
+
+        ``InterpolatePSD`` is the historical production path.  The other
+        modes are explicit experiment branches and do not alter that default.
+        """
+
+        time = np.asarray(time, dtype=float).reshape(-1)
+        residual = np.asarray(residual, dtype=float).reshape(-1)
+        if time.size != residual.size:
+            raise ValueError(
+                'covariance time and residual arrays must have equal length'
+            )
+        if time.size == 0:
+            raise ValueError('cannot estimate covariance from empty residuals')
+
+        mode = self._covariance_gap_mode()
+        if mode == 'InterpolatePSD':
+            uniform_time, residual_filled = self.fill_gaps_with_interp_and_psd(
+                time, residual, sample_interval
+            )
+            max_lag = self._covariance_max_lag(
+                sample_interval=sample_interval,
+                available_count=len(residual_filled),
+                legacy_max_lag=len(residual_filled) - 1
+            )
+            acov = self.estimate_acov_stable(
+                residual_filled,
+                max_lag=max_lag
+            )
+            if audit_label is not None:
+                raw = self._estimate_acov_unwindowed(
+                    residual_filled, max_lag
+                )
+                self._audit_covariance_stage(
+                    audit_label, time, residual, sample_interval, mode,
+                    processed_time=uniform_time,
+                    processed_residual=residual_filled,
+                    raw_acov=raw
+                )
+            return acov
+
+        # ``Ignore`` and ``Mask`` must use observations on the covariance
+        # grid.  Orbit residuals are stored at 5 s even when OrbitFre is
+        # 10 s; rounding every 5 s epoch onto a 10 s grid would both merge
+        # adjacent observations and could map the final epoch one past the
+        # allocated array.  Selecting exact grid epochs gives both branches
+        # the same sample interval while leaving their gap interpretation as
+        # the only experimental difference.
+        grid_coordinate = (
+            (time - float(np.min(time))) / float(sample_interval)
+        )
+        rounded_coordinate = np.rint(grid_coordinate)
+        on_grid = np.isclose(
+            grid_coordinate, rounded_coordinate,
+            rtol=0.0, atol=1.0e-9
+        )
+        if not np.any(on_grid):
+            raise ValueError(
+                'no covariance observations fall on the configured grid'
+            )
+        grid_time = time[on_grid]
+        grid_residual = residual[on_grid]
+
+        max_lag = self._covariance_max_lag(
+            sample_interval=sample_interval,
+            available_count=grid_residual.size,
+            legacy_max_lag=max(0, int(self.lagNum) - 1)
+        )
+        if mode == 'Ignore':
+            acov = self.estimate_acov_stable(
+                grid_residual, max_lag=max_lag
+            )
+            if audit_label is not None:
+                self._audit_covariance_stage(
+                    audit_label, time, residual, sample_interval, mode,
+                    processed_time=grid_time,
+                    processed_residual=grid_residual,
+                    pair_count=np.arange(acov.size, dtype=float),
+                    raw_acov=self._estimate_acov_unwindowed(
+                        grid_residual, max_lag
+                    )
+                )
+            return acov
+
+        _, autocovariance, pair_count = self.autocorr_with_gaps_fft(
+            grid_time,
+            grid_residual,
+            sample_interval,
+            max_lag=max_lag,
+            normalize=False
+        )
+        if audit_label is not None:
+            self._audit_covariance_stage(
+                audit_label, time, residual, sample_interval, mode,
+                processed_time=grid_time,
+                processed_residual=grid_residual,
+                pair_count=pair_count,
+                raw_acov=autocovariance
+            )
+        return autocovariance
+
+    @staticmethod
+    def _estimate_acov_unwindowed(residual, max_lag):
+        residual = np.asarray(residual, dtype=float).reshape(-1)
+        residual = residual - np.mean(residual)
+        max_lag = min(int(max_lag), residual.size - 1)
+        result = np.zeros(max_lag + 1, dtype=float)
+        for lag in range(max_lag + 1):
+            result[lag] = np.dot(
+                residual[:residual.size - lag],
+                residual[lag:]
+            ) / max(1, residual.size - lag)
+        return result
+
+    def _make_autocovariance_positive_definite(
+            self, autocovariance, floor_factor, audit_label=None):
+        """Apply the configured positive-definite treatment.
+
+        ``DCTClip`` is exactly the existing production operation.
+        ``DiagonalLoading`` raises the complete DCT-I spectrum by adding only
+        to lag zero, preserving the compact stationary Toeplitz form.
+        """
+
+        autocovariance = np.asarray(
+            autocovariance, dtype=float
+        ).reshape(-1)
+        if autocovariance.size == 0:
+            raise ValueError('autocovariance must not be empty')
+        if not np.isfinite(autocovariance).all():
+            raise ValueError('autocovariance contains NaN or infinity')
+
+        floor = max(
+            float(autocovariance[0]) * float(floor_factor),
+            1e-18
+        )
+        spectrum = dct(autocovariance, type=1, norm=None)
+        mode = self._covariance_positive_definite_mode()
+        if mode == 'DCTClip':
+            corrected = idct(
+                np.maximum(spectrum, floor), type=1, norm=None
+            )
+            loading = 0.0
+            corrected_spectrum = np.maximum(spectrum, floor)
+        else:
+            loading = max(
+                floor - float(np.min(spectrum)), 0.0
+            )
+            corrected = autocovariance.copy()
+            corrected[0] += loading
+            corrected_spectrum = dct(corrected, type=1, norm=None)
+        if audit_label is not None:
+            self._audit_covariance_positive_definite(
+                audit_label, autocovariance, corrected,
+                spectrum, corrected_spectrum, floor, loading
+            )
+        return corrected
+
     def getKBRRSigma(self, time, res, return_autocovariance=False):
         n = len(res)
         res = np.array(res)
@@ -2359,9 +3768,12 @@ class CalibrateOrbit:
         # plt.show()
 
         sample_interval = float(self.__interface_config.sr_target)
-        t_uniform, res_filled = self.fill_gaps_with_interp_and_psd(
-            np.array(time), res, sample_interval)
-        acov = self.estimate_acov_stable(res_filled, max_lag=len(res_filled) - 1)
+        acov = self._estimate_covariance_autocovariance(
+            time=np.array(time),
+            residual=res,
+            sample_interval=sample_interval,
+            audit_label='KBRR'
+        )
 
         # tau, acov, Npair = self.autocorr_with_gaps_fft(time, res, 5, max_lag=4320)
 
@@ -2374,15 +3786,13 @@ class CalibrateOrbit:
         # plt.grid()
         # plt.show()
         # FFT
-        eps = max(acov[0] * 1e-4, 1e-18)
-        # eps = max(acov[0] * 1e-8, 1e-20)
-        # Step 1: DCT-I
-        S = dct(acov, type=1, norm=None)
+        acov_corr = self._make_autocovariance_positive_definite(
+            acov, floor_factor=1e-4, audit_label='KBRR'
+        )
         #
         # k = np.arange(len(acov))
         # f = k / (2 * (len(acov) - 1) * 5)
-        # plt.loglog(f, S, label='PSD from acov (DCT)')
-        # plt.axhline(eps, color='r', ls='--', label='eps')
+        # plt.loglog(f, dct(acov, type=1), label='PSD from acov (DCT)')
         # plt.legend()
         # plt.grid()
         # plt.show()
@@ -2393,24 +3803,24 @@ class CalibrateOrbit:
         # plt.ylabel("PSD (variance)")
         # plt.title("Noise PSD estimated via DCT-I")
         # plt.grid(True)
-        # plt.axhline(eps, color='r', ls='--', label='eps')
         # plt.legend()
         # plt.tight_layout()
         # plt.show()
-        # Step 2: clipping
-        S_clipped = np.maximum(S, eps)
-
-        # Step 3: inverse DCT-I
-        acov_corr = idct(S_clipped, type=1, norm=None)
         # acov_corr /= (2 * (len(acov) - 1))
         if return_autocovariance:
-            lag_count = min(self.lagNum, len(acov_corr))
+            # ``lagNum`` is the number of sample intervals in an arc.  A
+            # stationary covariance must include both endpoint lags, i.e.
+            # gamma(0) through gamma(lagNum), so an inclusive 6 h / 5 s
+            # model has 4321 entries rather than 4320.
+            lag_count = min(self.lagNum + 1, len(acov_corr))
             return acov_corr[:lag_count], sample_interval
         # Sigma = toeplitz(acov_corr)
         Sigma = self.toeplitz_cov_from_acov(acov_corr, self.lagNum)
         return Sigma
 
-    def getOrbitSigma(self, time, res, return_autocovariance=False):
+    def getOrbitSigma(
+            self, time, res, return_autocovariance=False,
+            audit_prefix='Orbit'):
         res = np.array(res).reshape((-1, 3))
         res_x = res[:, 0]
         res_y = res[:, 1]
@@ -2442,7 +3852,8 @@ class CalibrateOrbit:
         covariance_result = self.cal_toeplitz_cov(
             time, res_x, res_y, res_z,
             dt=sample_interval,
-            return_autocovariance=return_autocovariance
+            return_autocovariance=return_autocovariance,
+            audit_prefix=audit_prefix
         )
         if return_autocovariance:
             return covariance_result
@@ -3068,10 +4479,9 @@ class CalibrateOrbit:
         # build uniform grid
         t0 = int(np.round(t.min()))
         t1 = int(np.round(t.max()))
-        N = int((t1 - t0) / dt) + 1
-
         # index mapping
         idx = ((t - t0) / dt).round().astype(int)
+        N = int(np.max(idx)) + 1
 
         x = np.zeros(N)
         m = np.zeros(N)
@@ -3167,46 +4577,37 @@ class CalibrateOrbit:
 
     def cal_toeplitz_cov(
             self, time, res_x, res_y, res_z, dt,
-            return_autocovariance=False):
-        #
-        t_uniform, res_filled_x = self.fill_gaps_with_interp_and_psd(
-            np.array(time), res_x, dt
+            return_autocovariance=False, audit_prefix='Orbit'):
+        time = np.array(time)
+        acov_x = self._estimate_covariance_autocovariance(
+            time, res_x, dt,
+            audit_label=str(audit_prefix) + '_X'
         )
-        acov_x = self.estimate_acov_stable(res_filled_x, max_lag=len(res_filled_x) - 1)
-
-        t_uniform, res_filled_y = self.fill_gaps_with_interp_and_psd(
-            np.array(time), res_y, dt
+        acov_y = self._estimate_covariance_autocovariance(
+            time, res_y, dt,
+            audit_label=str(audit_prefix) + '_Y'
         )
-        acov_y = self.estimate_acov_stable(res_filled_y, max_lag=len(res_filled_y) - 1)
-
-        t_uniform, res_filled_z = self.fill_gaps_with_interp_and_psd(
-            np.array(time), res_z, dt
+        acov_z = self._estimate_covariance_autocovariance(
+            time, res_z, dt,
+            audit_label=str(audit_prefix) + '_Z'
         )
-        acov_z = self.estimate_acov_stable(res_filled_z, max_lag=len(res_filled_z) - 1)
 
-        # '''FFT'''
-        eps_x = max(acov_x[0] * 1e-3, 1e-18)
-        # Step 1: DCT-I
-        S_x = dct(acov_x, type=1, norm=None)
-
-        # Step 2: clipping
-        S_clipped_x = np.maximum(S_x, eps_x)
-        # Step 3: inverse DCT-I
-        acov_corr_x = idct(S_clipped_x, type=1, norm=None)
-        # '''FFT'''
-        eps_y = max(acov_y[0] * 1e-3, 1e-18)
-        S_y = dct(acov_y, type=1, norm=None)
-        S_clipped_y = np.maximum(S_y, eps_y)
-        acov_corr_y = idct(S_clipped_y, type=1, norm=None)
-        # '''FFT'''
-        eps_z = max(acov_z[0] * 1e-3, 1e-18)
-        S_z = dct(acov_z, type=1, norm=None)
-        S_clipped_z = np.maximum(S_z, eps_z)
-        acov_corr_z = idct(S_clipped_z, type=1, norm=None)
+        acov_corr_x = self._make_autocovariance_positive_definite(
+            acov_x, floor_factor=1e-3,
+            audit_label=str(audit_prefix) + '_X'
+        )
+        acov_corr_y = self._make_autocovariance_positive_definite(
+            acov_y, floor_factor=1e-3,
+            audit_label=str(audit_prefix) + '_Y'
+        )
+        acov_corr_z = self._make_autocovariance_positive_definite(
+            acov_z, floor_factor=1e-3,
+            audit_label=str(audit_prefix) + '_Z'
+        )
 
         if return_autocovariance:
             lag_count = min(
-                self.lagNum,
+                self.lagNum + 1,
                 len(acov_corr_x),
                 len(acov_corr_y),
                 len(acov_corr_z)

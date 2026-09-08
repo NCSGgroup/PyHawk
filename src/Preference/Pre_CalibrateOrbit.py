@@ -10,6 +10,7 @@ class CalibrateOrbitConfig:
         self.ParallelControlConfig = self.ParallelControl().__dict__
         self.GLSIterationConfig = self.GLSIteration().__dict__
         self.LGDConfig = self.LGD().__dict__
+        self.ExperimentAuditConfig = self.ExperimentAudit().__dict__
 
     class Mission:
         def __init__(self):
@@ -42,6 +43,11 @@ class CalibrateOrbitConfig:
             self.RandomSeed = 20240724
             self.OrbitCovarianceMode = 'FixedDiagonal'
             self.OrbitFixedDiagonal = 0.004
+            # Shared state-vector HDF5 files are read-only inputs for child
+            # covariance cases.  Production keeps the historical write-on
+            # behavior; isolated child cases may disable it to avoid file
+            # locks when several cases run concurrently.
+            self.WriteOrbitArcQuality = True
 
     class LGD:
         def __init__(self):
@@ -62,6 +68,22 @@ class CalibrateOrbitConfig:
             self.KBRRCPRPeriod = 5400.0
             self.KBRRCPRHarmonics = 2
             self.SegmentEdgeTrimSeconds = 60.0
+
+    class ExperimentAudit:
+        """Optional, write-only audit outputs for controlled experiments.
+
+        The defaults are deliberately disabled so the production numerical
+        path and its storage footprint remain unchanged unless a case opts
+        in explicitly.
+        """
+        def __init__(self):
+            self.Enabled = False
+            self.OutputDirectory = None
+            self.SaveCovarianceStages = False
+            self.SaveObservationNormalEquations = False
+            self.SaveQRDiagnostics = False
+            self.SaveSolutionDiagnostics = False
+            self.Compression = "gzip"
 
 def demo2():
     Obj1 = CalibrateOrbitConfig()

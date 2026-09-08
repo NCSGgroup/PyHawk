@@ -6,7 +6,9 @@ from src.Preference.Pre_Solver import SolverConfig
 from src.Preference.Pre_AdjustOrbit import AdjustOrbitConfig
 from src.Preference.Pre_Interface import InterfaceConfig
 from src.Auxilary.Outlier import Outlier
+from src.Solver.AdjustSST import RangeRate
 from src.Solver.CovarianceModel import (
+    covariance_matrix_epoch_index,
     load_covariance,
     orbit_covariance_filename,
     range_rate_covariance_filename,
@@ -152,10 +154,13 @@ class GravityNEQperArc:
         else:
             orbit_obs = self._rd.getData(arc=self.__arcNo, kind=Payload.GNV, sat=sat)[:, 0:4]
         t_obs = orbit_obs[:, 0]
-        orbit_obs = orbit_obs[t_obs % 60 == 0, :]
+        # Preserve the legacy GLS selection: the 60 s rows are positions in
+        # the complete arc series, not epochs divided by OrbitFre.
+        covariance_epoch_index = np.flatnonzero(t_obs % 60 == 0)
+        orbit_obs = orbit_obs[covariance_epoch_index, :]
         # kin_obs = kin_orbit[t_obs % 60 == 0, 4:]
         # sigma = self.build_block_diag_matrix(kin_obs)
-        t_obs = t_obs[t_obs % 60 == 0]
+        t_obs = t_obs[covariance_epoch_index]
         '''for the orbit, only position (r) is needed for the inversion'''
         '''find the common'''
         int_t_obs = t_obs.astype(np.int64)
@@ -176,8 +181,19 @@ class GravityNEQperArc:
             self._solverConfig.PostOrbit, self.__date_span, sat.name
         )
         if self.use_sigma:
+            covariance_epoch_mapping = getattr(
+                self._solverConfig,
+                'CovarianceEpochMapping',
+                'LegacyIndex'
+            )
             sigma = load_covariance(
-                sigmafilename, t_nominal, components=3
+                sigmafilename,
+                t_nominal,
+                components=3,
+                matrix_epoch_index=covariance_matrix_epoch_index(
+                    covariance_epoch_mapping,
+                    covariance_epoch_index
+                )
             )
         '''Expanding the observations'''
         obs = orbit_obs[:, 1:] - orbit_nominal
@@ -301,10 +317,12 @@ class GravityNEQperArc:
         assert config.measurement == SSTObserve.RangeRate.value, 'Range-rate is not allowed by user setting'
         dm_dir = self._AdjustPathConfig.RangeRateTemp + '/' + self.__date_span[0] + '_' + self.__date_span[1]
         res_filename = dm_dir + '/' + SSTObserve.RangeRate.name + '_' + str(self.__arcNo) + '.hdf5'
-        with h5py.File(res_filename, 'r') as h5:
-            t_obs = h5['post_t'][()]
-            obs = h5['post_residual'][()]
-            local_dm_empirical = h5['design_matrix'][()]
+        t_obs, obs = RangeRate.load_empirical_residual(
+            res_filename, stage='Post'
+        )
+        local_dm_empirical = RangeRate.load_empirical_design_matrix(
+            res_filename
+        )
 
         dm_dir = self._solverConfig.DesignMatrixTemp + '/' + self.__date_span[0] + '_' + self.__date_span[1]
         res_filename = dm_dir + '/' + SSTObserve.RangeRate.name + '_' + str(self.__arcNo) + '.hdf5'
@@ -677,10 +695,12 @@ class GravityNEQperArc_v2:
 
         dm_dir = self._AdjustPathConfig.RangeRateTemp + '/' + self.__date_span[0] + '_' + self.__date_span[1]
         res_filename = dm_dir + '/' + SSTObserve.RangeRate.name + '_' + str(self.__arcNo) + '.hdf5'
-        with h5py.File(res_filename, 'r') as h5:
-            t_obs = h5['post_t'][()]
-            obs = h5['post_residual'][()]
-            local_dm_empirical = h5['design_matrix'][()]
+        t_obs, obs = RangeRate.load_empirical_residual(
+            res_filename, stage='Post'
+        )
+        local_dm_empirical = RangeRate.load_empirical_design_matrix(
+            res_filename
+        )
 
         dm_dir = self._solverConfig.DesignMatrixTemp + '/' + self.__date_span[0] + '_' + self.__date_span[1]
         res_filename = dm_dir + '/' + SSTObserve.RangeRate.name + '_' + str(self.__arcNo) + '.hdf5'

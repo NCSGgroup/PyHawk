@@ -12,6 +12,11 @@ class AdjustOrbitConfig:
         def __init__(self):
             self.OutlierTimes = 3
             self.OutlierLimit = 1
+            self.ArcOutlierEnabled = True
+            self.ArcOutlierSignificance = 0.01
+            self.ArcOutlierMaxFraction = 0.1
+            self.ArcOutlierMinArcs = 8
+            self.ArcOutlierTrimFraction = 0.01
 
     class RangeRate:
         def __init__(self):
@@ -22,9 +27,14 @@ class AdjustOrbitConfig:
             self.ArcLength = 1.5
             self.Iterations = 3  # times
             self.ArcOutlierEnabled = True
-            self.ArcOutlierSignificance = 0.01
+            self.ArcOutlierSignificance = 0.05
             self.ArcOutlierMaxFraction = 0.1
             self.ArcOutlierMinArcs = 8
+            self.ArcOutlierMinCPRCycles = 1.5
+            self.EpochOutlierEnabled = True
+            self.EpochOutlierSignificance = 0.01
+            self.EpochOutlierMaxFraction = 0.02
+            self.EpochOutlierMinSamples = 20
 
     class PathOfFiles:
         def __init__(self):

@@ -30,22 +30,22 @@ def GRACE(date):
     '''static model'''
     static_c, static_s = LoadGif48().load('../data/StaticGravityField/gif48.gfc').getCS(60)
     '''read hust'''
-    hust_filename = '../result/case-ESSD/Hawk_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_0100.gfc'
+    hust_filename = '../result/hawk_rl01/Hawk_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_0100.gfc'
     hust_c, hust_s = LoadCSR().load(fileIn=hust_filename).getCS(Nmax=60)
     hust_c, hust_s = hust_c - static_c, hust_s - static_s
     hust_c, hust_s = GeoMathKit.CS_1dTo2d(hust_c), GeoMathKit.CS_1dTo2d(hust_s)
     # '''read hust'''
-    hust_filename2 = '../result/case-ESSD/Hawk_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_0100.gfc'
+    hust_filename2 = '../result/hawk_rl01/Hawk_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_0100.gfc'
     hust_c2, hust_s2 = LoadCSR().load(fileIn=hust_filename2).getCS(Nmax=60)
     hust_c2, hust_s2 = hust_c2 - static_c, hust_s2 - static_s
     hust_c2, hust_s2 = GeoMathKit.CS_1dTo2d(hust_c2), GeoMathKit.CS_1dTo2d(hust_s2)
     '''read hust'''
-    hust_filename3 = '../result/grace_v3/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600.gfc'
+    hust_filename3 = '../result/hawk_rl01/Hawk_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_0100.gfc'
     hust_c3, hust_s3 = LoadCSR().load(fileIn=hust_filename3).getCS(Nmax=60)
     hust_c3, hust_s3 = hust_c3 - static_c, hust_s3 - static_s
     hust_c3, hust_s3 = GeoMathKit.CS_1dTo2d(hust_c3), GeoMathKit.CS_1dTo2d(hust_s3)
     # '''read hust'''
-    hust_filename4 = '../result/grace_v3/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600.gfc'
+    hust_filename4 = '../result/hawk_rl01/Hawk_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_0100.gfc'
     hust_c4, hust_s4 = LoadCSR().load(fileIn=hust_filename4).getCS(Nmax=60)
     hust_c4, hust_s4 = hust_c4 - static_c, hust_s4 - static_s
     hust_c4, hust_s4 = GeoMathKit.CS_1dTo2d(hust_c4), GeoMathKit.CS_1dTo2d(hust_s4)
@@ -111,8 +111,8 @@ def GRACE(date):
     fig = plt.figure(figsize=(10, 8))
     # plt.style.use(['science'])
     plt.title('%s' % date1, fontsize=30)
-    plt.plot(np.arange(2, 61, 1), hust[2:], color='green', linewidth=2.0, marker='', label='Hawk 6h GLS')
-    # plt.plot(np.arange(2, 61, 1), hust2[2:], color='black', linewidth=2.0, marker='', label='Hawk 3h OLS')
+    plt.plot(np.arange(2, 61, 1), hust[2:], color='green', linewidth=2.0, marker='', label='Hawk GLS')
+    plt.plot(np.arange(2, 61, 1), hust2[2:], color='black', linewidth=2.0, marker='', label='Hawk OLS')
     # plt.plot(np.arange(2, 61, 1), hust3[2:], color='red', linewidth=2.0, marker='', label='PyHawk-v2')
     # plt.plot(np.arange(2, 61, 1), hust4[2:], color='blue', linewidth=2.0, marker='', label='qr')
     plt.plot(np.arange(2, 61, 1), csr[2:], color='indigo', marker='', linewidth=2.0,label='CSR')
@@ -126,6 +126,7 @@ def GRACE(date):
     # plt.plot(np.arange(2, 61, 1), csr_gfz_e_l[2:], color='black', marker='*', label='GFZ - CSR')
     # plt.plot(np.arange(2, 61, 1), csr_jpl_e_l[2:], color='indigo', marker='h', label='JPL - CSR')
     # plt.plot(np.arange(2, 61, 1), gfz_jpl_e_l[2:], color='tan', marker='H', label='JPL - GFZ')
+
     plt.xlim(0, 60)
     plt.ylim(4e-5, 1e-2)
     plt.xticks(fontsize=28)
@@ -151,23 +152,23 @@ def GRACE_FO(date):
     static_goco, static_goco = LoadGOCO06S().load('../data/StaticGravityField/GOCO06s.gfc').getCS(60)
     '''read hust'''
 
-    hust_filename = '../result/case-ESSD/6h/ols/Hawk_60x60_unfiltered_GSM-2_' + date1 + '_GRFO_0100.gfc'
+    hust_filename = '../result/hawk_rl01/Hawk_60x60_unfiltered_GSM-2_' + date1 + '_GRFO_0100.gfc'
     hust_c, hust_s = LoadCSR().load(fileIn=hust_filename).getCS(Nmax=60)
     hust_c, hust_s = hust_c - static_c, hust_s - static_s
     # hust_c, hust_s = hust_c - static_c, hust_s - static_s
     hust_c, hust_s = GeoMathKit.CS_1dTo2d(hust_c), GeoMathKit.CS_1dTo2d(hust_s)
     '''read hust'''
-    hust_filename2 = '../result/case-ESSD/6h/gls/Hawk_60x60_unfiltered_GSM-2_' + date1 + '_GRFO_0100.gfc'
+    hust_filename2 = '../result/hawk_rl01/Hawk_60x60_unfiltered_GSM-2_' + date1 + '_GRFO_0100.gfc'
     hust_c2, hust_s2 = LoadCSR().load(fileIn=hust_filename2).getCS(Nmax=60)
     hust_c2, hust_s2 = hust_c2 - static_c, hust_s2 - static_s
     hust_c2, hust_s2 = GeoMathKit.CS_1dTo2d(hust_c2), GeoMathKit.CS_1dTo2d(hust_s2)
     '''read hust'''
-    hust_filename3 = '../result/case-ESSD/6h/gls/Hawk_60x60_unfiltered_GSM-2_' + date1 + '_GRFO_0100.gfc'
+    hust_filename3 = '../result/hawk_rl01/Hawk_60x60_unfiltered_GSM-2_' + date1 + '_GRFO_0100.gfc'
     hust_c3, hust_s3 = LoadCSR().load(fileIn=hust_filename3).getCS(Nmax=60)
     hust_c3, hust_s3 = hust_c3 - static_c, hust_s3 - static_s
     hust_c3, hust_s3 = GeoMathKit.CS_1dTo2d(hust_c3), GeoMathKit.CS_1dTo2d(hust_s3)
     # '''read hust'''
-    hust_filename4 = '../result/gracefogls/HUST_HUST-Release-06_60x60_unfiltered_GSM-2_' + date1 + '_GRAC_HUST_BA01_0600.gfc'
+    hust_filename4 = '../result/hawk_rl01/Hawk_60x60_unfiltered_GSM-2_' + date1 + '_GRFO_0100.gfc'
     hust_c4, hust_s4 = LoadCSR().load(fileIn=hust_filename4).getCS(Nmax=60)
     hust_c4, hust_s4 = hust_c4 - static_c, hust_s4 - static_s
     hust_c4, hust_s4 = GeoMathKit.CS_1dTo2d(hust_c4), GeoMathKit.CS_1dTo2d(hust_s4)
@@ -237,9 +238,9 @@ def GRACE_FO(date):
     # plt.style.use(['science'])
     plt.title('%s' % date, fontsize=30)
     # plt.title('GRACE-FO', fontsize=30)
-    plt.plot(np.arange(2, 61, 1), hust[2:], color="#1f77b4", linewidth=2.0, marker='', label='PyHawk OLS')
-    plt.plot(np.arange(2, 61, 1), hust2[2:], color='black', linewidth=2.0, marker='', label='PyHawk GLS-8s')
-    plt.plot(np.arange(2, 61, 1), hust3[2:], color='red', linewidth=2.0, marker='', label='PyHawk GLS-5s')
+    plt.plot(np.arange(2, 61, 1), hust[2:], color="#1f77b4", linewidth=2.0, marker='', label='PyHawk')
+    # plt.plot(np.arange(2, 61, 1), hust2[2:], color='black', linewidth=2.0, marker='', label='PyHawk GLS-5s')
+    # plt.plot(np.arange(2, 61, 1), hust3[2:], color='red', linewidth=2.0, marker='', label='PyHawk GLS-10s')
     # plt.plot(np.arange(2, 61, 1), hust4[2:], color='blue', linewidth=2.0, marker='', label=_degree_curve_label('PyHawk', title))
     plt.plot(np.arange(2, 61, 1), csr[2:], color='indigo', marker='', linewidth=2.0,label='CSR')
     plt.plot(np.arange(2, 61, 1), gfz[2:], color='#A53860', marker='', linewidth=2.0, label='GFZ')
@@ -885,9 +886,9 @@ def batch_classified_annual_means():
 
 if __name__ == '__main__':
 
-    span1 = '2025-03-01_2025-03-31'
-    # GRACE(span1)
-    GRACE_FO(span1)
+    span1 = '2016-08-08_2016-09-03'
+    GRACE(span1)
+    # GRACE_FO(span1)
 
     # drawMean('2019')
     pass

@@ -7,6 +7,10 @@ class SolverConfig:
         self.SSTOption = SSTObserve.RangeRate.name
         self.OrbitKinFactor = 1e11
         self.OrbitFre = 8
+        self.CovarianceGapMode = "InterpolatePSD"
+        self.CovariancePositiveDefiniteMode = "DCTClip"
+        self.CovarianceEpochMapping = "LegacyIndex"
+        self.CovarianceMaxLagSeconds = None
         self.DesignMatrixTemp = "../temp/DesignMatrixSH"
         self.CovarianceMatrix = "../temp/CovarianceMatrix"
         self.PostParameter = "../temp/PostParameter"

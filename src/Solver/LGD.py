@@ -12,6 +12,7 @@ from src.Frame.EOP import EOP
 from src.Frame.Frame import Frame
 from src.Auxilary.GeoMathKit import GeoMathKit
 from src.Auxilary.StandardLGD import StandardLGD
+from src.Solver.AdjustSST import RangeRate
 
 
 class ComputeLGD:
@@ -651,12 +652,13 @@ class ComputeLGD:
             )
 
         with h5py.File(res_filename, "r") as h5:
-            time = h5["post_t"][:]
-            kbrr_residual = h5["post_residual"][:]
             payload = h5.attrs.get("sst_payload", "KBR")
             if isinstance(payload, bytes):
                 payload = payload.decode("ascii", errors="ignore")
             self.__sst_payload = str(payload).upper()
+        time, kbrr_residual = RangeRate.load_empirical_residual(
+            res_filename, stage='Post'
+        )
 
         time = np.asarray(
             time,

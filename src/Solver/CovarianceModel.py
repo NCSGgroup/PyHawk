@@ -7,6 +7,30 @@ import numpy as np
 REPRESENTATION = 'stationary_autocovariance_v1'
 
 
+def normalize_covariance_epoch_mapping(mode):
+    aliases = {
+        'legacyindex': 'LegacyIndex',
+        'legacy': 'LegacyIndex',
+        'physicaltime': 'PhysicalTime',
+        'physical': 'PhysicalTime'
+    }
+    key = str(mode).replace('_', '').replace('-', '').lower()
+    if key not in aliases:
+        raise ValueError(
+            'Unsupported CovarianceEpochMapping {!r}; expected '
+            'LegacyIndex or PhysicalTime'.format(mode)
+        )
+    return aliases[key]
+
+
+def covariance_matrix_epoch_index(mode, legacy_epoch_index):
+    """Select legacy matrix indices or physical-time mapping explicitly."""
+
+    if normalize_covariance_epoch_mapping(mode) == 'LegacyIndex':
+        return legacy_epoch_index
+    return None
+
+
 def orbit_covariance_filename(post_orbit, date_span, satellite):
     directory = os.path.join(
         post_orbit, '{}-{}'.format(date_span[0], date_span[1])
@@ -96,11 +120,15 @@ def _read_representation(h5, filename):
         )
 
 
-def load_covariance(filename, target_time, components):
+def load_covariance(
+        filename, target_time, components, matrix_epoch_index=None):
     """Materialize the covariance at the requested epochs.
 
-    The lag of each matrix element is computed from the physical epoch
-    difference, so missing observations do not compress the covariance lag.
+    By default, the lag of each matrix element is computed from the physical
+    epoch difference, so missing observations do not compress the covariance
+    lag. ``matrix_epoch_index`` selects the stored Toeplitz model directly in
+    index space.  The latter reproduces the legacy orbit-GLS operation
+    ``Sigma[np.ix_(idx, idx)]`` without storing the dense ``Sigma`` matrix.
     """
 
     if not os.path.exists(filename):
@@ -115,6 +143,29 @@ def load_covariance(filename, target_time, components):
         raise ValueError('target covariance epochs must be unique')
     if components not in (1, 3):
         raise ValueError('components must be either 1 or 3')
+
+    if matrix_epoch_index is not None:
+        matrix_epoch_index = np.asarray(
+            matrix_epoch_index, dtype=float
+        ).reshape(-1)
+        if matrix_epoch_index.size != target_time.size:
+            raise ValueError(
+                'matrix_epoch_index and target_time must have equal length'
+            )
+        if not np.isfinite(matrix_epoch_index).all():
+            raise ValueError(
+                'matrix covariance indices contain NaN or infinity'
+            )
+        rounded_index = np.rint(matrix_epoch_index)
+        if np.any(np.abs(matrix_epoch_index - rounded_index) > 1.0e-9):
+            raise ValueError('matrix covariance indices must be integers')
+        epoch_index = rounded_index.astype(np.int64)
+        if np.any(epoch_index < 0):
+            raise ValueError(
+                'matrix covariance indices must be non-negative'
+            )
+        if np.unique(epoch_index).size != epoch_index.size:
+            raise ValueError('matrix covariance indices must be unique')
 
     with h5py.File(filename, 'r') as h5:
         _read_representation(h5, filename)
@@ -154,34 +205,36 @@ def load_covariance(filename, target_time, components):
     if target_time.size == 0:
         return np.empty((0, 0), dtype=float)
 
-    relative_epoch = (target_time - time_origin) / sample_interval
-    epoch_index = np.rint(relative_epoch).astype(np.int64)
-    alignment_error = np.abs(
-        relative_epoch - epoch_index.astype(float)
-    )
-    if epoch_mapping == 'exact' and np.any(alignment_error > 1.0e-6):
-        raise ValueError(
-            'target epochs in {} are not aligned to its {} s covariance '
-            'grid'.format(filename, sample_interval)
+    if matrix_epoch_index is None:
+        relative_epoch = (target_time - time_origin) / sample_interval
+        epoch_index = np.rint(relative_epoch).astype(np.int64)
+        alignment_error = np.abs(
+            relative_epoch - epoch_index.astype(float)
         )
-    if epoch_mapping not in ('exact', 'nearest'):
-        raise ValueError(
-            'unsupported epoch mapping in {}: {!r}'.format(
-                filename, epoch_mapping
+        if epoch_mapping == 'exact' and np.any(alignment_error > 1.0e-6):
+            raise ValueError(
+                'target epochs in {} are not aligned to its {} s covariance '
+                'grid'.format(filename, sample_interval)
             )
-        )
-    if np.unique(epoch_index).size != epoch_index.size:
-        raise ValueError(
-            'multiple target epochs map to the same covariance-grid epoch '
-            'in {}'.format(filename)
-        )
+        if epoch_mapping not in ('exact', 'nearest'):
+            raise ValueError(
+                'unsupported epoch mapping in {}: {!r}'.format(
+                    filename, epoch_mapping
+                )
+            )
+        if np.unique(epoch_index).size != epoch_index.size:
+            raise ValueError(
+                'multiple target epochs map to the same covariance-grid '
+                'epoch in {}'.format(filename)
+            )
 
     lag = np.abs(epoch_index[:, None] - epoch_index[None, :])
     if lag.max() >= autocovariance.shape[1]:
         raise ValueError(
             'requested lag {} exceeds the maximum stored lag {} in {}'.format(
                 int(lag.max()), autocovariance.shape[1] - 1, filename
-            )
+            ) + '; regenerate this covariance model with the current '
+            'CalibrateOrbit.py'
         )
 
     if components == 1:
