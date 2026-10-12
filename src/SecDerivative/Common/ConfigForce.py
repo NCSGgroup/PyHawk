@@ -34,9 +34,12 @@ class ConfigForce:
         return self
 
     def reConfigure(self):
-        self.__instanceForce()
+        # Orbit adjustment updates accelerometer data, not gravity/tide
+        # configuration. Keep loaded tide atlases and their epoch caches.
+        # Explicit configure() still rebuilds gravity after config changes.
+        self.__instanceForce(reuse_gravity=True)
 
-    def __instanceForce(self):
+    def __instanceForce(self, reuse_gravity=False):
         for force in self.__include_ForceType:
             obj = None
             if force == ForceType.NonConserveForce.name:
@@ -44,8 +47,9 @@ class ConfigForce:
                     obj = NonConByAcc(sat=sat, arcNo=self.__arc).configure(FMConfig=self.__FMConfig)
                     self.__forceType[force + sat] = obj
             if force == ForceType.GravHar.name:
-                obj = ConfigGravHar(self.__ep).configure(self.__FMConfig)
-                self.__forceType[force] = obj
+                if not (reuse_gravity and force in self.__forceType):
+                    obj = ConfigGravHar(self.__ep).configure(self.__FMConfig)
+                    self.__forceType[force] = obj
             if force == ForceType.Relativity.name:
                 obj = RelativityIERS2010().configure(FMConfig=self.__FMConfig)
                 self.__forceType[force] = obj

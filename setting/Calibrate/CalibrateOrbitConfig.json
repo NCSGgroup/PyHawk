@@ -5,37 +5,27 @@
     "StepControlConfig": {
         "isPreprocess": false,
         "isAdjustOrbit": false,
-        "isAdjustKBRR": true,
-        "isGetLGD": true,
-        "isGetGravityDesignMat": true,
+        "isAdjustKBRR": false,
+        "isGetLGD": false,
+        "isGetGravityDesignMat": false,
         "isGetNEQ": true,
         "isGetSH": true,
-        "isGLS": false
+        "isGLS": true
     },
     "ParallelControlConfig": {
         "AdjustOrbitProcess": 20,
         "AdjustKBRRProcess": 20,
-        "GetGravityDesignMatProcess": 10,
-        "GetNEQProcess": 10
+        "GetGravityDesignMatProcess": 5,
+        "GetNEQProcess": 4
     },
     "GLSIterationConfig": {
-        "MaxIteration": 1,
+        "MaxIteration": 5,
         "MinIteration": 1,
         "RelativeTolerance": 0.001,
         "AbsoluteTolerance": 1e-15,
         "RandomSeed": 20240724,
-        "OrbitCovarianceMode": "EstimatedFull",
-        "OrbitFixedDiagonal": 0.004,
-        "WriteOrbitArcQuality": true
-    },
-    "ExperimentAuditConfig": {
-        "Enabled": false,
-        "OutputDirectory": null,
-        "SaveCovarianceStages": false,
-        "SaveObservationNormalEquations": false,
-        "SaveQRDiagnostics": false,
-        "SaveSolutionDiagnostics": false,
-        "Compression": "gzip"
+        "OrbitCovarianceMode": "ITSGEpoch",
+        "OrbitFixedDiagonal": 0.004
     },
     "LGDConfig": {
         "Method": "RangeRateDerivative",
@@ -55,5 +45,14 @@
         "KBRRCPRPeriod": 5400.0,
         "KBRRCPRHarmonics": 0,
         "SegmentEdgeTrimSeconds": 30.0
+    },
+    "JointEstimationConfig": {
+        "Enabled": false,
+        "FeedbackEnabled": false,
+        "MaxOuterIterations": 2,
+        "EstimateEmpirical": true,
+        "InitialUseCovariance": false,
+        "Damping": 1.0,
+        "Rcond": 1e-12
     }
 }

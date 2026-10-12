@@ -222,7 +222,8 @@ class ComputeLGDFromKBRA:
             StandardLGD().configure(
                 filedir=self.__StandardLGDTemp,
                 date_span=self.__date_span,
-                mission=self.__InterfaceConfig.mission
+                mission=self.__InterfaceConfig.mission,
+                time_variable_background=False
             ).save_arc(
                 gps_time=result["time"],
                 longitude=result["lon"],

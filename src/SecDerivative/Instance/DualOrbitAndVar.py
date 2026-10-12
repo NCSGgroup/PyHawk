@@ -235,11 +235,17 @@ class Orbit_var_2nd_diff(Assemble2ndDerivative):
         return node
 
     def getTimes(self):
-        par_num = self.node
-        for name, obj in self.ForceType.items():
-            if name.startswith(ForceType.NonConserveForce.name) and hasattr(obj, 'getParNum'):
-                par_num = max(par_num, obj.getParNum())
-        return par_num
+        widths = [obj.getParNum() for name, obj in self.ForceType.items()
+                  if name.startswith(ForceType.NonConserveForce.name) and hasattr(obj, 'getParNum')]
+        if widths:
+            if len(set(widths)) != 1:
+                raise ValueError('A/B ACC parameter widths differ')
+            # ODE and Parameterization add the scale columns separately.
+            count = widths[0] - (9 if self._AccelerometerConfig.isScale else 0)
+            if count < 0:
+                raise ValueError('ACC width is smaller than the configured scale layout')
+            return count
+        return self.node
 
     def __matchDaDpWidth(self, ap, PhirSr, sat):
         if ap is None:

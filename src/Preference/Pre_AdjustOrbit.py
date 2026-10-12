@@ -10,6 +10,10 @@ class AdjustOrbitConfig:
 
     class Orbit:
         def __init__(self):
+            self.ObservationSource = "GNV"
+            self.UseEpochCovariance = False
+            self.SamplingSeconds = 0.0
+            self.SamplingOrigin = "GPS"
             self.OutlierTimes = 3
             self.OutlierLimit = 1
             self.ArcOutlierEnabled = True
@@ -21,6 +25,8 @@ class AdjustOrbitConfig:
     class RangeRate:
         def __init__(self):
             self.ParameterFitting = EnumType.SSTFitOption.biasC0C1_OneCPR.name
+            self.PhysicalOCOutlierEnabled = False  # opt-in joint-channel QC
+            self.OneCPROutlierOnly = True
             self.OutlierTimes = 6  # how
             self.OutlierRMS = 7e-07
             self.OutlierObs = 7e-07
@@ -29,6 +35,7 @@ class AdjustOrbitConfig:
             self.ArcOutlierEnabled = True
             self.ArcOutlierSignificance = 0.05
             self.ArcOutlierMaxFraction = 0.1
+            self.ArcOutlierMinRelativeMetric = 3.0
             self.ArcOutlierMinArcs = 8
             self.ArcOutlierMinCPRCycles = 1.5
             self.EpochOutlierEnabled = True

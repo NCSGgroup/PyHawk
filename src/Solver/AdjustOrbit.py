@@ -410,8 +410,12 @@ class AdjustOrbit:
         """step 3: instance second Derivative"""
         self._secDer = SerDer(self._fr, self._rd).configures \
             (arc=self._arcNo, FMConfig=self.FMConfig, ParConfig=self.ParameterConfig, FrameConfig=FrameConfig). \
-            setInitData(kind=self._kind)
+            setInitData(kind=EnumType.Payload.GNV)
 
+        from src.Solver.OrbitObservations import orbit_payload
+        self._kind=orbit_payload(AdjustOrbitConfig.OrbitConfig,self._kind)
+        self._fit_observations={sat:self._rd.getData(arc=self._arcNo,kind=self._kind,sat=sat)
+                                for sat in self._sat}
         times = self._secDer.getTimes()
         """step 4: Propagator config"""
         self._startTime, self._startPos, self._startVel = self._secDer.getInitData()
@@ -444,7 +448,10 @@ class AdjustOrbit:
         '''step 3: start iteration'''
         for i in range(iteration):
             '''make the adjustment'''
-            self.__adjust(Time=self._ode_res[0], StateVectors=self._ode_res[1], isGNV=True)
+            if self._kind == EnumType.Payload.GNV and not getattr(self._AdjustConfig,'SamplingSeconds',0.) and not getattr(self._AdjustConfig,'UseEpochCovariance',False):
+                self.__adjust(Time=self._ode_res[0],StateVectors=self._ode_res[1],isGNV=True)
+            else:
+                self.__adjust_positions(self._ode_res[0],self._ode_res[1])
             orbit_ini, acc_ini = self.__updateIniValue(iniOrbit=orbit_init, iniAcc=acc_init)
             r_ini, v_ini = orbit_ini[:, 0:3], orbit_ini[:, 3:]
 
@@ -483,6 +490,8 @@ class AdjustOrbit:
 
         res_filename = self._res_dir + '/' + str(self._arcNo) + '_' + self._satName + '.hdf5'
         with h5py.File(res_filename, 'w') as h5:
+            h5.attrs['orbit_observation_source']=self._kind.name
+            h5.attrs['initial_seed_source']='GNV position/velocity; observations fitted separately'
             key = self.TransitionMatrixConfig
             if key.isRequired:
                 iniOrbit += res[:, 0:key.Parameter_Number]
@@ -500,6 +509,19 @@ class AdjustOrbit:
                 else:
                     h5.create_dataset(self.ParameterConfig.Accelerometer.__name__, data=iniAcc)
         return iniOrbit, iniAcc
+
+    def __adjust_positions(self,time,state):
+        from src.Solver.OrbitObservations import fit_position_increment
+        epoch_weighting=bool(getattr(self._AdjustConfig,'UseEpochCovariance',False))
+        if epoch_weighting and self._kind != EnumType.Payload.KinematicOrbit:
+            raise ValueError('UseEpochCovariance requires KIN observations')
+        increments=[]
+        for i,sat in enumerate(self._sat):
+            increments.append(fit_position_increment(self._fit_observations[sat],time,
+                state[:,i*3:i*3+3,:],epoch_weighting,
+                float(getattr(self._AdjustConfig,'SamplingSeconds',0.)),
+                getattr(self._AdjustConfig,'SamplingOrigin','GPS')))
+        self._res=np.vstack(increments)
 
     def __adjust(self,Time, StateVectors: np.ndarray, isGNV: bool, refOrbit: np.ndarray = None):
         """

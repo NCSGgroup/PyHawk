@@ -1,4 +1,5 @@
 import numpy as np
+import os
 from scipy import interpolate
 from src.Interface.L1b import L1b as Level_1B
 from src.Preference.EnumType import Payload, SatID
@@ -104,6 +105,7 @@ class GapFix:
                 return len(x)
 
         self.__report_path = self.__report_path + '/' + date[0] + '_' + date[-1] + '.txt'
+        os.makedirs(os.path.dirname(self.__report_path), exist_ok=True)
         with open(self.__report_path, 'w') as f:
             f.write('This ia a summary of all gaps that cannot be fixed.\n')
             f.write('Created by Yang Fan (yfan_cge@hust.edu.cn)\n')

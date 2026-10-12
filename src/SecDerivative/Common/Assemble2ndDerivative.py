@@ -95,7 +95,9 @@ class Assemble2ndDerivative:
 
     def calculation(self):
         self.__reset()
-        for item in self.ForceType:
+        # Parameterization expects ACC sensitivities before SH, independent of JSON order.
+        for item in sorted(self.ForceType,
+                           key=lambda name: (not name.startswith(EnumType.ForceType.NonConserveForce.name), name)):
             obj = self.ForceType[item]
             if item == EnumType.ForceType.GravHar.name:
                 rm = self.__time.getRotationMatrix

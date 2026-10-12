@@ -13,27 +13,25 @@ from src.Frame.Frame import Frame
 from src.Auxilary.GeoMathKit import GeoMathKit
 from src.Auxilary.StandardLGD import StandardLGD
 from src.Solver.AdjustSST import RangeRate
+from src.Solver.LGDPaper import PaperLGDProcessor
+from src.Interface.LoadSH import LoadGOCO06S
+from src.ForceModel.GravHar import ClibGravHar
 
 
 class ComputeLGD:
     """
     Compute LGD from KBRR/LRI range-rate residual for a single arc.
 
-    Processing chain:
+    Processing chains:
 
-        KBRR residual
-            ↓
-        Butterworth band-pass filtering, 0.9–11 mHz
-            ↓
-        4th-order differentiation
-            ↓
-        Range acceleration residual
-            ↓
-        Transfer function
-            ↓
-        LGD
-            ↓
-        midpoint lon/lat
+        Legacy (default):
+            KBRR residual -> numerical derivative -> transfer band selection -> LGD
+
+        Paper (opt-in, ProcessingOrder="Paper"):
+            KBRR residual -> Butterworth band-pass -> 4th-order derivative
+            -> transfer function -> LGD
+
+        Both routes assign the result to the midpoint lon/lat.
 
     Input:
         RangeRate_{arcNo}.hdf5
@@ -59,6 +57,8 @@ class ComputeLGD:
         self.__AdjustOrbitConfig = None
         self.__InterfaceConfig = None
         self.__FrameConfig = None
+        self.__ForceModelConfig = None
+        self.__restore_time_variable_background = True
 
         self.__PathfileConfig = None
         self.__rd = None
@@ -104,6 +104,7 @@ class ComputeLGD:
         self.__LGDTemp = "../temp/LGD"
         self.__StandardLGDTemp = "../temp/StandardLGD"
         self.__sst_payload = "KBR"
+        self.__processing_order = "Legacy"
 
     def configure(
             self,
@@ -123,7 +124,10 @@ class ComputeLGD:
             kbrr_trend_degree=2,
             kbrr_cpr_period=5400.0,
             kbrr_cpr_harmonics=2,
-            segment_edge_trim_seconds=60.0):
+            segment_edge_trim_seconds=60.0,
+            processing_order="Legacy",
+            ForceModelConfig=None,
+            restore_time_variable_background=True):
         """
         Configure LGD computation.
         """
@@ -131,6 +135,8 @@ class ComputeLGD:
         self.__AdjustOrbitConfig = AdjustOrbitConfig
         self.__InterfaceConfig = InterfaceConfig
         self.__FrameConfig = FrameConfig
+        self.__ForceModelConfig = ForceModelConfig
+        self.__restore_time_variable_background = bool(restore_time_variable_background)
 
         self.__PathfileConfig = self.__AdjustOrbitConfig.PathOfFiles()
         self.__PathfileConfig.__dict__.update(
@@ -152,6 +158,7 @@ class ComputeLGD:
         self.__kbrr_cpr_period = float(kbrr_cpr_period)
         self.__kbrr_cpr_harmonics = int(kbrr_cpr_harmonics)
         self.__segment_edge_trim_seconds = float(segment_edge_trim_seconds)
+        self.__processing_order = str(processing_order)
 
         # Prefer LGDTemp from config if it exists.
         self.__LGDTemp = getattr(
@@ -205,6 +212,9 @@ class ComputeLGD:
         segments = self.__split_by_gap(time)
 
         for index in segments:
+            paper_mode = self.__processing_order.strip().lower() in (
+                "paper", "paperstyle", "filterthendifferentiate"
+            )
             if len(index) < self.__min_segment_length:
                 continue
 
@@ -215,7 +225,7 @@ class ComputeLGD:
                 x=rr_seg
             )
 
-            if self.__kbrr_preprocess_enable:
+            if self.__kbrr_preprocess_enable and not paper_mode:
                 rr_seg = self.__preprocess_kbrr_segment(
                     time=t_seg,
                     residual=rr_seg
@@ -229,10 +239,49 @@ class ComputeLGD:
             if len(t_uniform) < self.__min_segment_length:
                 continue
 
-            range_acc_seg = self.__diff4(
-                x=rr_uniform,
-                dt=dt
-            )
+            f_low, f_high = self.__resolve_frequency_band(dt=dt)
+
+            if paper_mode:
+                paper = PaperLGDProcessor(
+                    dt=dt,
+                    f_low=f_low,
+                    f_high=f_high,
+                    filter_order=self.__filter_order,
+                    transfer_min_frequency=self.__transfer_min_frequency,
+                    transfer_factor=self.__tf_factor,
+                    transfer_power=self.__tf_power,
+                    edge_trim_seconds=self.__segment_edge_trim_seconds,
+                    detrend_input=False
+                )
+                rr_filtered_seg, range_acc_seg, lgd_seg = (
+                    paper.convert_segment(rr_uniform)
+                )
+                # The paper route is already band-limited; keep a copy in the
+                # legacy full-output slot for StandardLGD compatibility.
+                lgd_raw_seg = lgd_seg.copy()
+            else:
+                range_acc_seg = self.__diff4(
+                    x=rr_uniform,
+                    dt=dt
+                )
+                lgd_raw_seg = self.__transfer_function(
+                    x=range_acc_seg,
+                    dt=dt,
+                    f_low=self.__transfer_min_frequency,
+                    f_high=None
+                )
+                lgd_seg = self.__transfer_function(
+                    x=range_acc_seg,
+                    dt=dt,
+                    f_low=f_low,
+                    f_high=f_high
+                )
+                rr_filtered_seg = self.__bandpass_filter(
+                    x=rr_uniform,
+                    dt=dt,
+                    f_low=f_low,
+                    f_high=f_high
+                )
 
             keep = self.__segment_edge_keep_mask(
                 n=len(t_uniform),
@@ -246,29 +295,9 @@ class ComputeLGD:
             rr_uniform = rr_uniform[keep]
             is_original = is_original[keep]
             range_acc_seg = range_acc_seg[keep]
-
-            f_low, f_high = self.__resolve_frequency_band(dt=dt)
-
-            lgd_raw_seg = self.__transfer_function(
-                x=range_acc_seg,
-                dt=dt,
-                f_low=self.__transfer_min_frequency,
-                f_high=None
-            )
-
-            lgd_seg = self.__transfer_function(
-                x=range_acc_seg,
-                dt=dt,
-                f_low=f_low,
-                f_high=f_high
-            )
-
-            rr_filtered_seg = self.__bandpass_filter(
-                x=rr_uniform,
-                dt=dt,
-                f_low=f_low,
-                f_high=f_high
-            )
+            lgd_raw_seg = lgd_raw_seg[keep]
+            lgd_seg = lgd_seg[keep]
+            rr_filtered_seg = rr_filtered_seg[keep]
 
             time_all.append(t_uniform)
             residual_all.append(rr_uniform)
@@ -307,6 +336,30 @@ class ComputeLGD:
         lon, lat, pos_a_itrs, pos_b_itrs, los_itrs = self.__compute_midpoint_lonlat(
             time=time_valid
         )
+        background = self.__compute_time_variable_background(
+            time=time_valid,
+            pos_a_itrs=pos_a_itrs,
+            pos_b_itrs=pos_b_itrs,
+            los_itrs=los_itrs
+        )
+        if background is None:
+            background = np.zeros(time_valid.shape, dtype=np.float64)
+        dt_values = np.diff(time_valid)
+        dt_values = dt_values[np.isfinite(dt_values) & (dt_values > 0.0)]
+        if dt_values.size:
+            band_low, band_high = self.__resolve_frequency_band(float(np.median(dt_values)))
+            full_background = self.__physical_bandpass(
+                background, time_valid, self.__transfer_min_frequency,
+                0.5 / float(np.median(dt_values)) * 0.999
+            )
+            band_background = self.__physical_bandpass(
+                background, time_valid, band_low, band_high
+            )
+        else:
+            full_background = np.zeros_like(background)
+            band_background = np.zeros_like(background)
+        lgd_raw_total = lgd_raw[valid] + full_background
+        lgd_band_total = lgd[valid] + band_background
 
         result = {
             "time": time_valid,
@@ -315,8 +368,10 @@ class ComputeLGD:
             "pos_a_itrs": pos_a_itrs,
             "pos_b_itrs": pos_b_itrs,
             "los_itrs": los_itrs,
-            "lgd": lgd[valid],
-            "lgd_unfiltered": lgd_raw[valid],
+            "lgd": lgd_band_total,
+            "lgd_unfiltered": lgd_raw_total,
+            "lgd_time_variable_background": full_background,
+            "lgd_time_variable_background_band": band_background,
             "range_acc": range_acc[valid],
             "kbrr_residual": kbrr_residual[valid],
             "kbrr_filtered": kbrr_filtered[valid],
@@ -332,7 +387,8 @@ class ComputeLGD:
         StandardLGD().configure(
             filedir=self.__StandardLGDTemp,
             date_span=self.__date_span,
-            mission=self.__InterfaceConfig.mission
+            mission=self.__InterfaceConfig.mission,
+            time_variable_background=self.__restore_time_variable_background
         ).save_arc(
             gps_time=result["time"],
             longitude=result["lon"],
@@ -1107,6 +1163,63 @@ class ComputeLGD:
 
         return lgd_padded[:n]
 
+    @staticmethod
+    def __physical_bandpass(values, time, f_low, f_high):
+        """Mirror-extended ideal bandpass for a physical LGD acceleration."""
+        values = np.asarray(values, dtype=np.float64)
+        time = np.asarray(time, dtype=np.float64)
+        output = np.full(values.shape, np.nan, dtype=np.float64)
+        if values.size < 3:
+            return output
+        steps = np.diff(time)
+        valid_steps = steps[np.isfinite(steps) & (steps > 0.0)]
+        if not valid_steps.size:
+            return output
+        nominal = float(np.median(valid_steps))
+        breaks = np.where((steps <= 0.0) | (steps > 1.5 * nominal))[0] + 1
+        starts, ends = np.r_[0, breaks], np.r_[breaks, values.size]
+        for start, end in zip(starts, ends):
+            segment = values[start:end]
+            if segment.size < 8 or not np.all(np.isfinite(segment)):
+                continue
+            dt = float(np.median(np.diff(time[start:end])))
+            padded = np.concatenate((segment, segment[::-1]))
+            frequency = np.abs(np.fft.fftfreq(padded.size, d=dt))
+            keep = (frequency >= float(f_low)) & (frequency <= float(f_high))
+            output[start:end] = np.fft.ifft(np.fft.fft(padded) * keep).real[:segment.size]
+        return output
+
+    def __compute_time_variable_background(self, time, pos_a_itrs, pos_b_itrs, los_itrs):
+        """Synthesize GOCO06S dated-minus-static differential acceleration."""
+        if not self.__restore_time_variable_background:
+            return None
+        if self.__ForceModelConfig is None:
+            raise ValueError('LGD background restoration requires ForceModelConfig')
+        ref_config = self.__ForceModelConfig.RefGravModel()
+        ref_config.__dict__.update(self.__ForceModelConfig.RefGravModelConfig.copy())
+        if str(ref_config.StaticModel).upper() != 'GOCO06S':
+            raise ValueError('LGD time-variable restoration currently requires StaticModel=GOCO06S')
+        paths = self.__ForceModelConfig.PathOfFiles()
+        paths.__dict__.update(self.__ForceModelConfig.PathOfFilesConfig.copy())
+        dated = LoadGOCO06S().load(paths.GOCO06s, date=self.__date_span)
+        static = LoadGOCO06S().load(paths.GOCO06s, date=None)
+        degree = min(int(ref_config.Nmax), int(dated.maxDegree), int(static.maxDegree))
+        c_date, s_date = dated.getCS(degree)
+        c_static, s_static = static.getCS(degree)
+        delta_c = np.ascontiguousarray(c_date - c_static, dtype=np.float64)
+        delta_s = np.ascontiguousarray(s_date - s_static, dtype=np.float64)
+        gravity = ClibGravHar().configure(self.__ForceModelConfig)
+        output = np.full(np.asarray(time).shape, np.nan, dtype=np.float64)
+        for index in range(output.size):
+            if not (np.isfinite(pos_a_itrs[index]).all()
+                    and np.isfinite(pos_b_itrs[index]).all()
+                    and np.isfinite(los_itrs[index]).all()):
+                continue
+            acc_a = gravity.setPar(delta_c, delta_s, np.ascontiguousarray(pos_a_itrs[index])).getAcceleration()
+            acc_b = gravity.setPar(delta_c, delta_s, np.ascontiguousarray(pos_b_itrs[index])).getAcceleration()
+            output[index] = np.dot(acc_b - acc_a, los_itrs[index])
+        return output
+
     def __compute_midpoint_lonlat(self, time):
         """
         Compute midpoint sub-satellite lon/lat.
@@ -1306,6 +1419,14 @@ class ComputeLGD:
                 "lgd_unfiltered",
                 data=result["lgd_unfiltered"]
             )
+            h5.create_dataset(
+                "lgd_time_variable_background",
+                data=result["lgd_time_variable_background"]
+            )
+            h5.create_dataset(
+                "lgd_time_variable_background_band",
+                data=result["lgd_time_variable_background_band"]
+            )
 
             h5.create_dataset(
                 "range_acc",
@@ -1333,15 +1454,35 @@ class ComputeLGD:
             h5.attrs["input"] = "post_residual from RangeRate"
             h5.attrs["sst_payload"] = self.__sst_payload
             h5.attrs["LGD_position"] = "midpoint of GRACE-A and GRACE-B"
-            h5.attrs["processing_order"] = (
-                "range-rate residual -> uniform sampling -> finite difference "
-                "range acceleration -> frequency-domain band selection -> "
-                "admittance transfer inside selected band"
+            h5.attrs["time_variable_background"] = (
+                "GOCO06S dated-minus-static trend+periodic field, synthesized at each satellite ITRS position; "
+                "delta acceleration projected from A to B along ITRS LOS and added to LGD"
+                if self.__restore_time_variable_background else "disabled"
             )
-            h5.attrs["filter"] = (
-                "frequency-domain band-pass before transfer; diagnostic "
-                "kbrr_filtered uses 6th-order zero-phase Butterworth"
+            h5.attrs["time_variable_background_epoch"] = str(self.__date_span)
+            h5.attrs["time_variable_background_units"] = "m/s2"
+            paper_mode = self.__processing_order.strip().lower() in (
+                "paper", "paperstyle", "filterthendifferentiate"
             )
+            if paper_mode:
+                h5.attrs["processing_order"] = (
+                    "post-KBRR range rate -> zero-phase Butterworth band-pass "
+                    "-> fourth-order derivative -> transfer function"
+                )
+                h5.attrs["filter"] = (
+                    "3rd-order zero-phase Butterworth band-pass; "
+                    "paper workflow"
+                )
+            else:
+                h5.attrs["processing_order"] = (
+                    "range-rate residual -> uniform sampling -> finite difference "
+                    "range acceleration -> frequency-domain band selection -> "
+                    "admittance transfer inside selected band"
+                )
+                h5.attrs["filter"] = (
+                    "frequency-domain band-pass before transfer; diagnostic "
+                    "kbrr_filtered uses 6th-order zero-phase Butterworth"
+                )
             h5.attrs["filter_order"] = self.__filter_order
             h5.attrs["kbrr_preprocess_enable"] = self.__kbrr_preprocess_enable
             h5.attrs["kbrr_despike_enable"] = self.__kbrr_despike_enable

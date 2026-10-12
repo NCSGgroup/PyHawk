@@ -1,8 +1,8 @@
 {
     "mission": "GRACE_RL03",
     "date_span": [
-        "2006-01-01",
-        "2006-01-31"
+        "2013-05-01",
+        "2013-05-31"
     ],
     "arcNo": 0,
     "sat": {
@@ -15,7 +15,7 @@
         "SCA": true,
         "KBR": true,
         "GNV": true,
-        "KinematicOrbit": false,
+        "KinematicOrbit": true,
         "LRI": false
     },
     "is_orbit_GCRS": {
@@ -35,8 +35,8 @@
     "gapfix_quadra_mis_max": 21,
     "gapfix_cubic_mis_max": 80,
     "gapfix_cubic_int": 150,
-    "arc_length": 6,
-    "min_arcLen": 1.5,
+    "arc_length": 12,
+    "min_arcLen": 6,
     "OrbitConfig": {
         "OutlierTimes": 6,
         "OutlierLimit": 0.10

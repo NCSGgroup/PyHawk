@@ -13,6 +13,7 @@ mpl.rcParams['agg.path.chunksize'] = 10000
 import matplotlib.pyplot as plt
 import pathlib
 import h5py
+from src.Solver.OrbitObservations import orbit_payload
 import multiprocessing
 from src.Solver.DesignMatrix import GravityDesignMat
 from src.Solver.NEQ import GravityNEQperArc, GravityNEQperArc_v2, GravityNEQperArc_v3
@@ -44,10 +45,12 @@ from src.Auxilary.StandardSH import StandardSH
 from src.Auxilary.StandardConfig import StandardConfig
 import multiprocessing
 import json
+import shutil
 from datetime import datetime
 from src.Auxilary.Outlier import Outlier, ArcOutlier, EpochOutlier
 from src.Preference.EnumType import Payload, SatID, SSTObserve, StaticGravModel
 from scipy.signal import butter, filtfilt
+from scipy.stats import t as student_t
 from scipy import signal
 from scipy.linalg import toeplitz, cholesky, eigh, solve_triangular
 from scipy.sparse.linalg import eigsh
@@ -64,9 +67,11 @@ from numpy.fft import rfft, irfft
 from src.Solver.LGD import ComputeLGD
 from src.Solver.LGDFromKBRA import ComputeLGDFromKBRA
 from src.Solver.CovarianceModel import (
+    combine_itsg_epoch_covariance,
     covariance_matrix_epoch_index,
     load_covariance,
     normalize_covariance_epoch_mapping,
+    normalize_orbit_covariance_mode,
     orbit_covariance_filename,
     range_rate_covariance_filename,
     save_stationary_covariance,
@@ -116,6 +121,8 @@ class CalibrateOrbit:
         setting_directory = os.path.abspath(
             os.fspath(setting_directory)
         )
+
+        self._joint_setting_directory = setting_directory
 
         def load_setting(filename):
             with open(
@@ -400,6 +407,7 @@ class CalibrateOrbit:
         self.InterfacePathConfig.__dict__.update(interface_config.PathOfFilesConfig.copy())
         self.__log_path = self.InterfacePathConfig.log
         self.__date_span = interface_config.date_span
+        self.__force_model_config.resolve_time_variable_date(self.__date_span)
         self.__sat = interface_config.sat
         arc_path = pathlib.Path().joinpath(self.InterfacePathConfig.report_arc, self.__date_span[0]+'_'+self.__date_span[1]+'.txt')
         arcft_path = pathlib.Path().joinpath(self.InterfacePathConfig.report_arcft, self.__date_span[0]+'_'+self.__date_span[1]+'.txt')
@@ -436,6 +444,16 @@ class CalibrateOrbit:
         isSH = StepControl.isGetSH
         isGLS = StepControl.isGLS
 
+        from src.Solver.JointChannel.workflow import joint_options
+        joint = joint_options(getattr(calibrateOrbit_config, 'JointEstimationConfig', {}),
+                              getattr(calibrateOrbit_config, 'ParallelControlConfig', {}))
+        from src.Solver.JointChannel.arc_weights import weight_options
+        weight_mode=weight_options(self.__solver_config.__dict__)['Mode']
+        if weight_mode!='Off' and not joint['Enabled']:
+            raise ValueError('ArcWeightingConfig requires the shared JointEstimation channel')
+        if joint['Enabled'] and not (isNEQ and isSH):
+            raise ValueError('JointEstimation requires isGetNEQ=true and isGetSH=true')
+
         AdjustOrbitProcess = ParallelControl.AdjustOrbitProcess
         AdjustKBRRProcess = ParallelControl.AdjustKBRRProcess
         GetGravityDesignMatProcess = ParallelControl.GetGravityDesignMatProcess
@@ -444,6 +462,7 @@ class CalibrateOrbit:
         if isPreprocess:
             self.makeLog(stepName='preprocess', process=1)
             self._preprocess(mission=MissionConfig.mission)
+            self._record_batch_preprocess_success()
         with open(arc_path, "r", encoding='utf-8') as f:
             while True:
                 data = f.readline().split(' ')
@@ -511,6 +530,17 @@ class CalibrateOrbit:
             adjust_path.__dict__.update(
                 self.__adjust_config.PathOfFilesConfig.copy()
             )
+            # Rebuild this span from the newly accepted arcs only.  Without
+            # this cleanup, rejected arcs from an older run can leak into the
+            # daily StandardLGD product during finalization.
+            lgd_span_dir = pathlib.Path(
+                getattr(adjust_path, 'LGDTemp', '../temp/LGD')
+            ).joinpath(
+                self.__date_span[0] + '_' + self.__date_span[1]
+            )
+            if lgd_span_dir.exists():
+                for stale_lgd in lgd_span_dir.glob('LGD_*.hdf5'):
+                    stale_lgd.unlink()
             standard_lgd = StandardLGD().configure(
                 filedir=getattr(
                     adjust_path,
@@ -518,7 +548,10 @@ class CalibrateOrbit:
                     '../temp/StandardLGD'
                 ),
                 date_span=self.__date_span,
-                mission=MissionConfig.mission
+                mission=MissionConfig.mission,
+                time_variable_background=getattr(
+                    self.__lgd_config, 'RestoreTimeVariableBackground', True
+                )
             ).prepare()
             pool = multiprocessing.Pool(
                 processes=AdjustKBRRProcess
@@ -538,6 +571,17 @@ class CalibrateOrbit:
             pool.map(self._gravityDesignMat, self.__arclist)
             pool.close()
             pool.join()
+        if joint['Enabled']:
+            GLSIteration.OrbitCovarianceMode = self._normalize_orbit_covariance_mode(GLSIteration.OrbitCovarianceMode)
+            self.__solver_config.OrbitCovarianceMode = GLSIteration.OrbitCovarianceMode
+            from src.Solver.JointChannel.workflow import run_calibrate_joint
+            self.makeLog(stepName='JointEstimation', process=1)
+            run_calibrate_joint(
+                self, self._joint_setting_directory, self.__arclist,
+                joint, isGLS, GLSIteration,
+                arc_filter_path=self.__arcft_path, arc_definition_path=self.__arc_path
+            )
+            return
         if isNEQ:
             self.makeLog(stepName='NEQ', process=GetNEQProcess)
             pool = multiprocessing.Pool(processes=GetNEQProcess)
@@ -557,6 +601,78 @@ class CalibrateOrbit:
             )
         # self.getSpaceKBRR()
         pass
+
+    def _record_batch_preprocess_success(self):
+        """Record validated preprocessing before optional monthly L1B cleanup."""
+        marker_value = os.environ.get('PYHAWK_BATCH_PREPROCESS_MARKER')
+        if not marker_value:
+            return
+
+        arc_path = pathlib.Path(self.__arc_path)
+        arcft_path = pathlib.Path(self.__arcft_path)
+        for output in (arc_path, arcft_path):
+            if not output.is_file() or output.stat().st_size == 0:
+                raise RuntimeError(
+                    'Preprocessing output is missing or empty: %s' % output
+                )
+        with arc_path.open('r', encoding='utf-8') as stream:
+            if not any(line.startswith('Number') for line in stream):
+                raise RuntimeError('Arc report has no arc count: %s' % arc_path)
+
+        marker = pathlib.Path(marker_value).resolve()
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        record = {
+            'status': 'complete',
+            'date_span': list(self.__date_span),
+            'arc_report': str(arc_path.resolve()),
+            'arc_definition': str(arcft_path.resolve()),
+            'completed_at': datetime.now().isoformat(),
+            'l1b_removed': False,
+        }
+        temporary = marker.with_suffix(marker.suffix + '.tmp')
+        with temporary.open('w', encoding='utf-8') as stream:
+            json.dump(record, stream, ensure_ascii=False, indent=2)
+            stream.write('\n')
+        os.replace(str(temporary), str(marker))
+
+        roots_value = os.environ.get('PYHAWK_BATCH_L1B_ROOTS')
+        source_value = os.environ.get('PYHAWK_BATCH_L1B_ROOT')
+        project_value = os.environ.get('PYHAWK_BATCH_PROJECT_ROOT')
+        if not project_value or (not roots_value and not source_value):
+            return
+        project_root = pathlib.Path(project_value).resolve()
+        month = self.__date_span[0][:7]
+        if roots_value:
+            source_roots = [pathlib.Path(value).resolve() for value in json.loads(roots_value)]
+            expected_roots = [
+                (project_root / 'data' / 'GRACE_RL02' / month[:4] / month).resolve(),
+                (project_root / 'data' / 'GRACE_RL03' / ('grace_1B_%s_03' % month)).resolve(),
+            ]
+            if len(source_roots) != len(expected_roots) or set(source_roots) != set(expected_roots):
+                raise RuntimeError(
+                    'Refusing unsafe L1B cleanup; got %s, expected %s' %
+                    ([str(path) for path in source_roots], [str(path) for path in expected_roots])
+                )
+        else:
+            source_roots = [pathlib.Path(source_value).resolve()]
+            expected = (
+                project_root / 'data' / 'monthly_inputs' / month / 'L1B'
+            ).resolve()
+            if source_roots[0] != expected or source_roots[0].name != 'L1B':
+                raise RuntimeError(
+                    'Refusing unsafe L1B cleanup; got %s, expected %s' %
+                    (source_roots[0], expected)
+                )
+        for source_root in source_roots:
+            if source_root.exists():
+                shutil.rmtree(str(source_root))
+        record['l1b_removed'] = True
+        record['l1b_removed_paths'] = [str(path) for path in source_roots]
+        record['l1b_removed_at'] = datetime.now().isoformat()
+        with temporary.open('w', encoding='utf-8') as stream:
+            json.dump(record, stream, ensure_ascii=False, indent=2)
+            stream.write('\n')
+        os.replace(str(temporary), str(marker))
 
     def _preprocess(self, mission):
         """step 1: Read raw data"""
@@ -628,6 +744,10 @@ class CalibrateOrbit:
                 AdjustOrbitConfig=self.__adjust_config,
                 InterfaceConfig=self.__interface_config,
                 FrameConfig=self.__frame_config,
+                ForceModelConfig=self.__force_model_config,
+                restore_time_variable_background=getattr(
+                    lgd_config, 'RestoreTimeVariableBackground', True
+                ),
                 f_low=getattr(lgd_config, 'FLowHz', 1.0e-3),
                 f_high=getattr(lgd_config, 'FHighHz', None),
                 filter_order=getattr(lgd_config, 'FilterOrder', 6),
@@ -641,7 +761,8 @@ class CalibrateOrbit:
                 kbrr_trend_degree=getattr(lgd_config, 'KBRRTrendDegree', 2),
                 kbrr_cpr_period=getattr(lgd_config, 'KBRRCPRPeriod', 5400.0),
                 kbrr_cpr_harmonics=getattr(lgd_config, 'KBRRCPRHarmonics', 2),
-                segment_edge_trim_seconds=getattr(lgd_config, 'SegmentEdgeTrimSeconds', 60.0)
+                segment_edge_trim_seconds=getattr(lgd_config, 'SegmentEdgeTrimSeconds', 60.0),
+                processing_order=getattr(lgd_config, 'ProcessingOrder', 'Legacy')
             ).compute()
         elif method_key in ('referencekbra', 'kbrareference', 'dynamickbra'):
             ComputeLGDFromKBRA(
@@ -709,6 +830,10 @@ class CalibrateOrbit:
                 iteration_config, 'OrbitCovarianceMode', 'FixedDiagonal'
             )
         )
+        # Spawned NEQ workers and getOrbitPar use the same GLS mode.
+        if getattr(self, '_CalibrateOrbit__solver_config', None) is not None:
+            self.__solver_config.OrbitCovarianceMode = orbit_covariance_mode
+
         orbit_fixed_diagonal = None
         if orbit_covariance_mode == 'FixedDiagonal':
             orbit_fixed_diagonal = float(
@@ -770,19 +895,7 @@ class CalibrateOrbit:
 
     @staticmethod
     def _normalize_orbit_covariance_mode(mode):
-        aliases = {
-            'fixeddiagonal': 'FixedDiagonal',
-            'diagonal': 'FixedDiagonal',
-            'estimatedfull': 'EstimatedFull',
-            'full': 'EstimatedFull'
-        }
-        key = str(mode).replace('_', '').replace('-', '').lower()
-        if key not in aliases:
-            raise ValueError(
-                'Unsupported OrbitCovarianceMode {!r}; expected '
-                'FixedDiagonal or EstimatedFull'.format(mode)
-            )
-        return aliases[key]
+        return normalize_orbit_covariance_mode(mode)
 
     @staticmethod
     def _normalize_covariance_gap_mode(mode):
@@ -1006,13 +1119,12 @@ class CalibrateOrbit:
                 def add_audited_component(name, orbit_n, orbit_l,
                                           range_n, range_l):
                     target_n, target_l = audit_matrices[name]
-                    target_n[0:9, 0:9] += orbit_n[0:9, 0:9] + range_n[0:9, 0:9] * OrbitKinFactor
-                    target_n[0:9, 18:] += orbit_n[0:9, 9:] + range_n[0:9, 18:] * OrbitKinFactor
-                    target_n[9:18, 9:18] += range_n[9:18, 9:18] * OrbitKinFactor
-                    target_n[18:, 0:9] += orbit_n[9:, 0:9] + range_n[18:, 0:9] * OrbitKinFactor
-                    target_n[18:, 18:] += orbit_n[9:, 9:] + range_n[18:, 18:] * OrbitKinFactor
-                    target_l[0:9] += orbit_l[0:9] + range_l[0:9] * OrbitKinFactor
-                    target_l[18:] += orbit_l[9:] + range_l[18:] * OrbitKinFactor
+                    columns = np.r_[np.arange(9) + (9 if name == 'GNV-B' else 0),
+                                    np.arange(18, target_n.shape[0])]
+                    target_n[np.ix_(columns, columns)] += orbit_n
+                    target_l[columns] += orbit_l
+                    target_n += range_n * OrbitKinFactor
+                    target_l += range_l * OrbitKinFactor
                 add_audited_component('GNV-A', Orbit_N_A, Orbit_l_A,
                                       np.zeros_like(RangeRate_N),
                                       np.zeros_like(RangeRate_l))
@@ -1035,6 +1147,8 @@ class CalibrateOrbit:
                 # RangeRate_N, RangeRate_l = self.keepGlobal(RangeRate_N, RangeRate_l)
 
             if self.AccelerometerConfig.isScale:
+                NMatrix1[0:9, 9:18] += RangeRate_N[0:9, 9:18] * OrbitKinFactor
+                NMatrix1[9:18, 0:9] += RangeRate_N[9:18, 0:9] * OrbitKinFactor
                 NMatrix1[0:9, 0:9] = NMatrix1[0:9, 0:9] + Orbit_N_A[0:9, 0:9] + RangeRate_N[0:9, 0:9] * OrbitKinFactor
                 NMatrix1[0:9, 18:] = NMatrix1[0:9, 18:] + Orbit_N_A[0:9, 9:] + RangeRate_N[0:9, 18:] * OrbitKinFactor
 
@@ -1337,7 +1451,7 @@ class CalibrateOrbit:
                     gnv = np.asarray(
                         raw_data.getData(
                             arc=arc_number,
-                            kind=EnumType.Payload.GNV,
+                            kind=orbit_payload(self.__adjust_config.OrbitConfig),
                             sat=sat
                         ),
                         dtype=np.float64
@@ -1348,24 +1462,20 @@ class CalibrateOrbit:
                         'invalid_GNV_%s:%s' % (sat, type(error).__name__)
                     )
                     break
-                if (
-                        gnv.ndim != 2 or gnv.shape[1] < 4
-                        or gnv.shape[0] != state.shape[0]
-                ):
-                    record['accepted'] = False
-                    record['reason'] = 'GNV_%s_state_shape_mismatch' % sat
-                    break
-                if not np.allclose(
-                        gnv[:, 0], state_time, rtol=0.0, atol=1.0e-6
-                ):
-                    record['accepted'] = False
-                    record['reason'] = 'GNV_%s_state_time_mismatch' % sat
+                from src.Solver.OrbitObservations import align_positions
+                try:
+                    rows,indices=align_positions(gnv,state_time,
+                        float(self.__adjust_config.OrbitConfig.get('SamplingSeconds',0.)),
+                        self.__adjust_config.OrbitConfig.get('SamplingOrigin','GPS'))
+                except ValueError as error:
+                    record['accepted']=False
+                    record['reason']='invalid_orbit_%s:%s'%(sat,str(error))
                     break
                 try:
                     record['satellites'][sat] = (
                         self._orbit_arc_statistics(
-                            gnv[:, 1:4]
-                            - state[:, column_start:column_start + 3],
+                            gnv[rows, 1:4]
+                            - state[indices, column_start:column_start + 3],
                             trim_fraction=trim_fraction
                         )
                     )
@@ -1664,6 +1774,20 @@ class CalibrateOrbit:
             )
         return min(coverages) if coverages else None
 
+    @staticmethod
+    def _kbrr_relative_upper_evidence(relative_metric, significance):
+        """Corroborating local elevation; not an independently calibrated test."""
+        values = np.log(np.asarray(relative_metric, dtype=np.float64))
+        center = float(np.median(values))
+        scale = float(1.4826 * np.median(np.abs(values - center)))
+        scores = np.zeros(values.size)
+        if scale > np.finfo(float).eps:
+            scores = (values - center) / scale
+        critical = float(student_t.ppf(
+            1.0 - significance / 2.0, values.size - 1
+        ))
+        return scores, critical
+
     def __screenKBRRArcs(self, arc_numbers):
         """Screen KBRR epochs and arcs using complementary robust evidence."""
         range_rate_config = self.__adjust_config.RangeRate()
@@ -1679,6 +1803,11 @@ class CalibrateOrbit:
         max_fraction = float(getattr(
             range_rate_config, 'ArcOutlierMaxFraction', 0.1
         ))
+        min_relative_metric = float(getattr(
+            range_rate_config, 'ArcOutlierMinRelativeMetric', 3.0
+        ))
+        if not np.isfinite(min_relative_metric) or min_relative_metric <= 1.0:
+            raise ValueError('ArcOutlierMinRelativeMetric must be finite and > 1')
         min_arcs = int(getattr(
             range_rate_config, 'ArcOutlierMinArcs', 8
         ))
@@ -1709,6 +1838,42 @@ class CalibrateOrbit:
             self.__date_span[0] + '_' + self.__date_span[1]
         )
 
+        # Stage 1: inspect complete arcs before touching their epochs. Only
+        # caller-supplied (arcft/orbit-QC accepted) arcs enter this population.
+        arc_numbers = sorted(set(int(arc) for arc in arc_numbers))
+        preliminary = {}
+        for arc in arc_numbers:
+            path = res_dir / ('RangeRate_%d.hdf5' % arc)
+            if not path.exists():
+                continue
+            with h5py.File(path, 'r') as h5:
+                if 'post_residual' not in h5:
+                    continue
+                residual = np.asarray(h5['post_residual'][:]).reshape(-1)
+            if not residual.size or not np.all(np.isfinite(residual)):
+                continue
+            rms = float(np.sqrt(np.mean(residual ** 2)))
+            scale = float(1.4826 * np.median(
+                np.abs(residual - np.median(residual))
+            ))
+            if rms > 0 and scale > 0:
+                preliminary[arc] = [rms, float(np.sqrt(rms * scale)), False]
+        if enabled and len(preliminary) >= min_arcs:
+            pre_arcs = list(preliminary)
+            pre_metric = np.asarray([preliminary[a][1] for a in pre_arcs])
+            pre_relative = pre_metric / self._local_kbrr_metric_baseline(
+                pre_arcs, pre_metric, min_arcs
+            )
+            detector = ArcOutlier(significance, max_fraction, min_arcs)
+            pre_global, _ = detector.detect(pre_metric, tail='upper')
+            pre_local, _ = detector.detect(pre_relative, tail='upper')
+            for index, arc in enumerate(pre_arcs):
+                preliminary[arc][2] = bool(pre_global[index] or pre_local[index])
+
+        # Stage 2: remove only sparse, abrupt local innovations, never large
+        # smooth amplitudes. The configured epoch fraction is a hard budget;
+        # dense departures remain for the final arc decision, not iterative
+        # clipping. All arcs still receive isolated-spike protection.
         records = []
         metric_record_indices = []
         metrics = []
@@ -1749,6 +1914,17 @@ class CalibrateOrbit:
                 'cluster_quality_metric': None,
                 'cluster_esd_statistic': None,
                 'cluster_esd_critical_value': None,
+                'cluster_member_statistic': None,
+                'cluster_member_critical_value': None,
+                'pre_epoch_rms': preliminary.get(int(arc_number), [None])[0],
+                'pre_epoch_quality_metric': preliminary.get(
+                    int(arc_number), [None, None]
+                )[1],
+                'pre_epoch_upper_candidate': preliminary.get(
+                    int(arc_number), [None, None, False]
+                )[2],
+                'monthly_upper_candidate': False,
+                'qc_classification': None,
                 'path': str(path)
             }
             records.append(record)
@@ -1930,6 +2106,31 @@ class CalibrateOrbit:
                 max_fraction=max_fraction,
                 min_samples=min_arcs
             ).detect(relative_metric, tail='upper')
+            member_statistics, member_critical = (
+                self._kbrr_relative_upper_evidence(relative_metric, significance)
+            )
+            # Stage 3: a high monthly value is a candidate, not a verdict.
+            # A changing monthly noise floor must also have local elevation.
+            # Require each ESD step itself to pass, preventing later steps
+            # from retroactively rejecting otherwise ordinary candidates.
+            for order, index in enumerate(global_diagnostics['candidate_indices']):
+                index = int(index)
+                record = records[metric_record_indices[index]]
+                record['monthly_upper_candidate'] = bool(global_rejected[index])
+                global_rejected[index] = bool(
+                    global_rejected[index]
+                    and global_diagnostics['statistics'][order]
+                    > global_diagnostics['critical_values'][order]
+                    and member_statistics[index] > member_critical
+                    and relative_metric[index] >= min_relative_metric
+                )
+            for order, index in enumerate(local_diagnostics['candidate_indices']):
+                index = int(index)
+                local_rejected[index] &= bool(
+                    local_diagnostics['statistics'][order]
+                    > local_diagnostics['critical_values'][order]
+                    and relative_metric[index] >= min_relative_metric
+                )
             # Global and local tests are complementary evidence, not two
             # independent quotas.  Keep their union within the configured
             # monthly maximum fraction, selecting the local ESD candidates in
@@ -1963,13 +2164,18 @@ class CalibrateOrbit:
                     relative_metric[metric_index]
                 )
 
-            # A pair of neighbouring degraded arcs can be individually below
-            # the single-arc ESD critical value while jointly standing apart
-            # from the month (2016 arcs 72/73 are such a case).  Test the
-            # smaller member of every unresolved adjacent pair.  Using the
-            # minimum requires both arcs to be elevated and prevents an
-            # isolated extreme from dragging its normal neighbour into the
-            # rejection set.
+            # Pair minima have a narrower distribution than single arcs,
+            # especially with alternating noise levels. Pair ESD alone can
+            # therefore reject ordinary members. Require both members to
+            # be elevated in the original single-arc distribution as well.
+            # This is a corroborating guard, not an independent p-value.
+            for index, statistic in enumerate(member_statistics):
+                record = records[metric_record_indices[index]]
+                record['cluster_member_statistic'] = float(statistic)
+                record['cluster_member_critical_value'] = member_critical
+
+            # Keep all unresolved pairs in the reference population; gating
+            # before estimating its scale would introduce selection bias.
             pair_members = []
             pair_metrics = []
             resolved_upper = global_rejected | local_rejected
@@ -1992,7 +2198,7 @@ class CalibrateOrbit:
 
             if len(pair_metrics) >= min_arcs:
                 pair_rejected, cluster_diagnostics = ArcOutlier(
-                    significance=significance,
+                    significance=significance / 2.0,
                     max_fraction=max_fraction,
                     min_samples=min_arcs
                 ).detect(pair_metrics, tail='upper')
@@ -2007,14 +2213,23 @@ class CalibrateOrbit:
                     if not pair_rejected[pair_index]:
                         continue
                     members = pair_members[pair_index]
-                    new_members = [
-                        index for index in members
-                        if not cluster_rejected[index]
-                    ]
-                    if len(new_members) > cluster_budget:
+                    # Do not inherit significance from a later ESD step,
+                    # or grow overlapping pairs into a rejection chain.
+                    if (
+                            cluster_diagnostics['statistics'][order]
+                            <= cluster_diagnostics['critical_values'][order]
+                            or any(cluster_rejected[index] for index in members)
+                            or not all(
+                                member_statistics[index] > member_critical
+                                and relative_metric[index] >= min_relative_metric
+                                for index in members
+                            )
+                    ):
+                        continue
+                    if len(members) > cluster_budget:
                         continue
                     cluster_group_count += 1
-                    cluster_budget -= len(new_members)
+                    cluster_budget -= len(members)
                     member_arcs = [
                         int(metric_arcs[index]) for index in members
                     ]
@@ -2105,6 +2320,19 @@ class CalibrateOrbit:
                         local_diagnostics['critical_values'][order]
                     )
 
+        for record in records:
+            if record['accepted']:
+                record['qc_classification'] = (
+                    'retained_with_epoch_qc' if record['epoch_outlier_count']
+                    else 'retained'
+                )
+            else:
+                record['qc_classification'] = (
+                    'persistent_arc_anomaly' if record['reason'] in (
+                        'monthly_upper_esd', 'local_upper_esd', 'cluster_upper_esd'
+                    ) else 'invalid_or_insufficient_arc'
+                )
+
         accepted_arcs = [
             record['arc'] for record in records if record['accepted']
         ]
@@ -2119,6 +2347,7 @@ class CalibrateOrbit:
             significance=significance,
             max_fraction=max_fraction,
             min_arcs=min_arcs,
+            min_relative_metric=min_relative_metric,
             min_cpr_cycles=min_cpr_cycles,
             epoch_enabled=epoch_enabled,
             epoch_significance=epoch_significance,
@@ -2150,7 +2379,7 @@ class CalibrateOrbit:
 
     def __writeKBRRArcQuality(self, res_dir, records, enabled,
                               significance, max_fraction, min_arcs,
-                              min_cpr_cycles,
+                              min_relative_metric, min_cpr_cycles,
                               epoch_enabled, epoch_significance,
                               epoch_max_fraction, epoch_min_samples,
                               global_esd_outlier_count,
@@ -2162,8 +2391,14 @@ class CalibrateOrbit:
         """Persist arc decisions without deleting the residual datasets."""
         os.makedirs(res_dir, exist_ok=True)
         method = (
+            'complete-arc candidates before bounded epoch QC; monthly '
+            'upper candidates require local elevation and their own step; '
             'epoch local-innovation Bonferroni robust ESD; monthly/local '
             'single-arc and adjacent-pair upper-tail robust generalized ESD; '
+            'whole-arc rejection requires relative quality metric at least '
+            'the configured minimum ratio to its local baseline; '
+            'pairs require single-member elevation and their own significant '
+            'step at half alpha, with no overlapping rejection chains; '
             'local lower-tail ESD only when 1CPR phase coverage is '
             'insufficient; non-positive empirical-fit degrees of freedom '
             'screened separately'
@@ -2265,6 +2500,18 @@ class CalibrateOrbit:
                     if record['cluster_esd_critical_value'] is None
                     else record['cluster_esd_critical_value']
                 )
+                for key in ('cluster_member_statistic',
+                            'cluster_member_critical_value'):
+                    h5.attrs['arc_qc_' + key] = (
+                        np.nan if record[key] is None else record[key]
+                    )
+                h5.attrs['arc_qc_classification'] = record['qc_classification']
+                h5.attrs['arc_qc_pre_epoch_upper_candidate'] = record[
+                    'pre_epoch_upper_candidate'
+                ]
+                h5.attrs['arc_qc_monthly_upper_candidate'] = record[
+                    'monthly_upper_candidate'
+                ]
 
         summary = {
             'date_span': list(self.__date_span),
@@ -2274,8 +2521,17 @@ class CalibrateOrbit:
             'method': method,
             'enabled': enabled,
             'significance': significance,
+            'cluster_significance': significance / 2.0,
+            'cluster_member_guard': 'single_log_relative_mad_upper_t',
+            'cluster_requires_own_significant_step': True,
+            'cluster_nonoverlapping_pairs': True,
+            'monthly_requires_local_elevation': True,
+            'upper_requires_own_significant_step': True,
+            'qc_stages': ['complete_arc_candidates', 'bounded_local_epoch_qc',
+                          'remaining_arc_evidence'],
             'max_outlier_fraction': max_fraction,
             'max_outlier_fraction_per_tail': max_fraction,
+            'minimum_relative_metric': min_relative_metric,
             'minimum_monthly_arcs': min_arcs,
             'minimum_cpr_cycles': min_cpr_cycles,
             'epoch_outlier_enabled': epoch_enabled,
@@ -2655,10 +2911,31 @@ class CalibrateOrbit:
 
         t_nominal = self.__t_nominal
         self._rd = ArcData(interfaceConfig=self.__interface_config)
-        orbit_obs = self._rd.getData(arc=arcNo, kind=Payload.GNV, sat=sat)[:, 0:4]
-        #
-        # orbit_obs = self._rd.getData(arc=self.__arclist[arcNo], kind=Payload.KinematicOrbit, sat=sat)[:, 0:4]
-        # orbit_obs = self.kin_obs_outlier(sat=sat, kin_orbit=orbit_obs, arc=self.__arclist[arcNo])
+        if sat == SatID.A:
+            orbit_config = self.__neq_config.OrbitA()
+            orbit_config.__dict__.update(
+                self.__neq_config.OrbitAConfig.copy()
+            )
+        else:
+            orbit_config = self.__neq_config.OrbitB()
+            orbit_config.__dict__.update(
+                self.__neq_config.OrbitBConfig.copy()
+            )
+        observation_kind = (
+            Payload.KinematicOrbit
+            if orbit_config.UseKinematicOrbit else Payload.GNV
+        )
+        orbit_data = self._rd.getData(
+            arc=arcNo, kind=observation_kind, sat=sat
+        )
+        if (orbit_data is None or orbit_data.ndim != 2 or
+                orbit_data.shape[0] == 0 or orbit_data.shape[1] < 4):
+            raise ValueError(
+                'Invalid {} orbit observations for satellite {} in arc {}'.format(
+                    observation_kind.name, sat.name, arcNo
+                )
+            )
+        orbit_obs = orbit_data[:, 0:4]
 
         t_obs = orbit_obs[:, 0]
         '''for the orbit, only position (r) is needed for the inversion'''
@@ -2698,14 +2975,35 @@ class CalibrateOrbit:
                 self.__date_span,
                 sat.name
             )
+            covariance_mode = normalize_orbit_covariance_mode(
+                getattr(
+                    self.__solver_config, 'OrbitCovarianceMode',
+                    'EstimatedFull'
+                )
+            )
             covariance = self._load_arc_covariance(
                 covariance_name,
                 t_nominal[fit_epoch],
                 components=3,
-                matrix_epoch_index=self._covariance_matrix_epoch_index(
-                    epoch_index
+                matrix_epoch_index=(
+                    None if covariance_mode == 'ITSGEpoch'
+                    else self._covariance_matrix_epoch_index(epoch_index)
                 )
             )
+            if covariance_mode == 'ITSGEpoch':
+                if observation_kind != Payload.KinematicOrbit:
+                    raise ValueError(
+                        'ITSGEpoch requires UseKinematicOrbit=true for '
+                        'satellite {}'.format(sat.name)
+                    )
+                if orbit_data.shape[1] < 10:
+                    raise ValueError(
+                        'ITSG covariance is missing for satellite {} '
+                        'in arc {}'.format(sat.name, arcNo)
+                    )
+                covariance = combine_itsg_epoch_covariance(
+                    covariance, orbit_data[fit_epoch, 4:10]
+                )
             Local, _ = self._solve_local_parameters(
                 global_r[fit_index, :], local_r[fit_index, :],
                 obs[fit_index, 0], self.cs, covariance
@@ -2873,7 +3171,8 @@ class CalibrateOrbit:
             frame=frame
         )
         for stage, range_rate in (
-                ('Raw', raw_oc), ('Pre', obs), ('Post', kbrr_res)):
+                ('Raw', raw_oc), ('Pre', obs), ('Post', kbrr_res),
+                ('Geofit', geofit_kbrr)):
             StandardKBRR().configure(
                 filedir=standard_kbrr_directory,
                 date_span=self.__date_span,
@@ -3848,7 +4147,19 @@ class CalibrateOrbit:
         # acov_x = self.estimate_acov(res_x, max_lag=self.lagNum - 1)
         # time = np.asarray(time)
 
+        covariance_mode = normalize_orbit_covariance_mode(
+            getattr(
+                self.__solver_config, 'OrbitCovarianceMode',
+                'EstimatedFull'
+            )
+        )
         sample_interval = float(self.__solver_config.OrbitFre)
+        if covariance_mode == 'ITSGEpoch':
+            sample_interval = float(
+                self.__interface_config.sr_payload[
+                    Payload.KinematicOrbit.name
+                ]
+            )
         covariance_result = self.cal_toeplitz_cov(
             time, res_x, res_y, res_z,
             dt=sample_interval,
@@ -4624,3 +4935,4 @@ class CalibrateOrbit:
         Sigma_z = self.toeplitz_cov_from_acov(acov_corr_z, self.lagNum)
 
         return Sigma_x, Sigma_y, Sigma_z
+

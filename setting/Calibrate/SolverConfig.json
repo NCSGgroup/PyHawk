@@ -4,8 +4,6 @@
     "OrbitFre": 8,
     "CovarianceGapMode": "InterpolatePSD",
     "CovariancePositiveDefiniteMode": "DCTClip",
-    "CovarianceEpochMapping": "LegacyIndex",
-    "CovarianceMaxLagSeconds": null,
     "DesignMatrixTemp": "../temp/DesignMatrixSH",
     "CovarianceMatrix": "../temp/CovarianceMatrix",
     "PostParameter": "../temp/PostParameter",

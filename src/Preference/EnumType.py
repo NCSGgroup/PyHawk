@@ -86,6 +86,7 @@ class GravHarType(Enum):
 class InstanceOceanTide(Enum):
     EOT11a = 0
     FES2014 = 1
+    GOT56 = 2
 
 
 class InstancePoleTide(Enum):

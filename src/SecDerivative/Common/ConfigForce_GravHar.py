@@ -3,7 +3,7 @@ import sys
 sys.path.append('../')
 from src.ForceModel.AtmosTide import AtmosBB2003, AtmosAOD
 from src.ForceModel.NonTide import AODRL06
-from src.ForceModel.OceanTide import EOT11a, FES2014
+from src.ForceModel.OceanTide import EOT11a, FES2014, GOT56
 from src.ForceModel.PoleTide import PoleTideIERS2010
 from src.ForceModel.SolidTide import SolidTideIERS2010
 from src.ForceModel.RefGravModel import RefGravModel
@@ -90,6 +90,8 @@ class ConfigGravHar:
                     obj = EOT11a().configure(self.__FMConfig).speedUp().load()
                 elif self.__instance_GravHar[tide] == EnumType.InstanceOceanTide.FES2014.name:
                     obj = FES2014().configure(self.__FMConfig).speedUp().load()
+                elif self.__instance_GravHar[tide] == EnumType.InstanceOceanTide.GOT56.name:
+                    obj = GOT56().configure(self.__FMConfig).speedUp().load()
                 self.GravHarForce[tide] = obj
             if tide == GravHarType.AtmosphereTide.name:
                 obj = None

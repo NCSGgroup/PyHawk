@@ -558,6 +558,28 @@ class MatrixGaussJackson(MultiStepOde):
     def __init__(self):
         super(MatrixGaussJackson, self).__init__()
         self.order = None
+        self._reset_corrector_stats()
+
+    def _reset_corrector_stats(self):
+        self.corrector_steps = 0
+        self.corrector_iterations = 0
+        self.corrector_max_iterations = 0
+        self.corrector_nonconverged_steps = 0
+        self.startup_iterations = 0
+
+    def get_corrector_stats(self):
+        """Return counters for the most recent propagation; no extra force calls."""
+        return {
+            'steps': self.corrector_steps,
+            'iterations': self.corrector_iterations,
+            'mean_iterations': (
+                self.corrector_iterations / self.corrector_steps
+                if self.corrector_steps else 0.0
+            ),
+            'max_iterations': self.corrector_max_iterations,
+            'nonconverged_steps': self.corrector_nonconverged_steps,
+            'startup_iterations': self.startup_iterations,
+        }
 
     def setOrder(self, order: int):
         self.order = order
@@ -618,6 +640,7 @@ class MatrixGaussJackson(MultiStepOde):
         """
 
         assert N > 0
+        self._reset_corrector_stats()
         OrbitX, OrbitR, OrbitV = [], [], []
 
         X, R, V = np.array(self.__iniX), np.array(self.__iniR), np.array(self.__iniV)
@@ -634,6 +657,7 @@ class MatrixGaussJackson(MultiStepOde):
         while (not isConverge) and iter < 10:
             iter += 1
             X, R, V, acc, sn, Sn, isConverge = self.__startup(X, R, V, acc, hs, self.__rltot)
+        self.startup_iterations = iter
 
         '''Main part'''
         for i in range(N):
@@ -649,6 +673,11 @@ class MatrixGaussJackson(MultiStepOde):
                 iter += 1
                 R, V, acc, isConverge = self.__corrector(X, R, V, acc, sn, Sn, hs, self.__rltot)
                 pass
+
+            self.corrector_steps += 1
+            self.corrector_iterations += iter
+            self.corrector_max_iterations = max(self.corrector_max_iterations, iter)
+            self.corrector_nonconverged_steps += not isConverge
 
             if self._isRecord:
                 OrbitX.append(X[-1])
@@ -670,6 +699,7 @@ class MatrixGaussJackson(MultiStepOde):
 
         # start-up
         if isFirstStep:
+            self._reset_corrector_stats()
 
             X, R, V = np.array(self.__iniX), np.array(self.__iniR), np.array(self.__iniV)
             acc = self.__evaluation(X, R, V)
@@ -680,6 +710,7 @@ class MatrixGaussJackson(MultiStepOde):
             while (not isConverge) and iter < 10:
                 iter += 1
                 X, R, V, acc, sn, Sn, isConverge = self.__startup(X, R, V, acc, hs, self.__rltot)
+            self.startup_iterations = iter
             return X, R, V, acc, sn, Sn
         else:
             (X, R, V, acc, sn, Sn) = dataIn
@@ -694,6 +725,11 @@ class MatrixGaussJackson(MultiStepOde):
             # Corrector
             iter += 1
             R, V, acc, isConverge = self.__corrector(X, R, V, acc, sn, Sn, hs, self.__rltot)
+
+        self.corrector_steps += 1
+        self.corrector_iterations += iter
+        self.corrector_max_iterations = max(self.corrector_max_iterations, iter)
+        self.corrector_nonconverged_steps += not isConverge
 
         return X, R, V, acc, sn, Sn
 

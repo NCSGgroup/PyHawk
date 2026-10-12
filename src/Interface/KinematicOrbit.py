@@ -8,6 +8,25 @@ from src.Interface.L1b import L1b as Level_1B
 import pathlib
 
 
+def _kinematic_itrs_to_gcrs(rows, fr):
+    """Rotate positions and their six covariance components without losing columns."""
+    if rows is None:
+        return None
+    out = np.asarray(rows, dtype=float).copy()
+    if out.ndim != 2 or out.shape[1] < 4:
+        raise ValueError('invalid kinematic orbit rows')
+    for row in tqdm(out, desc='KIN position/covariance ITRS to GCRS: ',
+                    disable=os.environ.get('DISABLE_TQDM', False)):
+        rotation = fr.setTime(float(row[0])).getRotationMatrix[0].T
+        row[1:4] = rotation @ row[1:4]
+        if len(row) >= 10:
+            xx, yy, zz, xy, xz, yz = row[4:10]
+            covariance = np.array([[xx, xy, xz], [xy, yy, yz], [xz, yz, zz]])
+            covariance = rotation @ covariance @ rotation.T
+            row[4:10] = covariance[0, 0], covariance[1, 1], covariance[2, 2], covariance[0, 1], covariance[0, 2], covariance[1, 2]
+    return out
+
+
 class KinematicOrbit:
     """
     The class deals with the loading and the preprocessing of the kinematic orbit, where only ITSG option is offered.
@@ -62,30 +81,16 @@ class KinematicOrbit:
             return self._KiOr_B
 
     def GNVandKiOrbitItrs2Gcrs(self, fr: Frame):
-        """
-        Convert the GNV orbit and Kinematic orbit from ITRS frame into GCRS frame
-        :return:
-        """
-        if self._KiOr_A is None:
-            '''do nothing if no kinematic orbit data'''
-            self.isGCRS = True
-
-        if self._L1b.is_GNV_GCRS and self.isGCRS:
-            '''do nothing'''
-            pass
-        elif self._L1b.is_GNV_GCRS and (not self.isGCRS):
-            '''convert kinematic orbit'''
-            self.__CoordinateTrans3(fr)
-
-        elif (not self._L1b.is_GNV_GCRS) and self.isGCRS:
-            '''convert GNV orbit'''
+        """Convert propagation seeds and full KIN position/covariance rows."""
+        if not self._L1b.is_GNV_GCRS:
             self.__CoordinateTrans2(fr)
-        else:
-            '''convert them simultaneously'''
-            self.__CoordinateTrans1(fr)
-            pass
-
-        pass
+            self._L1b.is_GNV_GCRS = True
+        if not self.isGCRS:
+            self._KiOr_A = _kinematic_itrs_to_gcrs(self._KiOr_A, fr)
+            self._KiOr_B = _kinematic_itrs_to_gcrs(self._KiOr_B, fr)
+            self._L1b.KiOrb_A = self._KiOr_A
+            self._L1b.KiOrb_B = self._KiOr_B
+            self.isGCRS = True
 
     def __CoordinateTrans1(self, fr: Frame):
         GNVA = self._L1b.getData(Payload.GNV.name, SatID.A)
@@ -312,30 +317,16 @@ class KinematicOrbitV3(KinematicOrbit):
             return self.__KiOr_B
 
     def GNVandKiOrbitItrs2Gcrs(self, fr: Frame):
-        """
-        Convert the GNV orbit and Kinematic orbit from ITRS frame into GCRS frame
-        :return:
-        """
-        if self.__KiOr_A is None:
-            '''do nothing if no kinematic orbit data'''
-            self.isGCRS = True
-
-        if self.__L1b.is_GNV_GCRS and self.isGCRS:
-            '''do nothing'''
-            pass
-        elif self.__L1b.is_GNV_GCRS and (not self.isGCRS):
-            '''convert kinematic orbit'''
-            self.__CoordinateTrans3(fr)
-
-        elif (not self.__L1b.is_GNV_GCRS) and self.isGCRS:
-            '''convert GNV orbit'''
+        """Convert propagation seeds and full KIN position/covariance rows."""
+        if not self.__L1b.is_GNV_GCRS:
             self.__CoordinateTrans2(fr)
-        else:
-            '''convert them simultaneously'''
-            self.__CoordinateTrans1(fr)
-            pass
-
-        pass
+            self.__L1b.is_GNV_GCRS = True
+        if not self.isGCRS:
+            self.__KiOr_A = _kinematic_itrs_to_gcrs(self.__KiOr_A, fr)
+            self.__KiOr_B = _kinematic_itrs_to_gcrs(self.__KiOr_B, fr)
+            self.__L1b.KiOrb_A = self.__KiOr_A
+            self.__L1b.KiOrb_B = self.__KiOr_B
+            self.isGCRS = True
 
     def __CoordinateTrans1(self, fr: Frame):
         GNVA = self.__L1b.getData(Payload.GNV.name, SatID.A)
@@ -515,7 +506,7 @@ class KinematicOrbitV2(KinematicOrbit):
             return None
         try:
             # res = np.loadtxt(path, dtype=np.float64, comments='#', usecols=(0, 1, 2, 3))
-            res = np.genfromtxt(path, delimiter=None, dtype=np.float64, skip_header=6, usecols=(0, 1, 2, 3))
+            res = np.genfromtxt(path, delimiter=None, dtype=np.float64, skip_header=6, usecols=(0, 1, 2, 3), ndmin=2)
             if np.shape(res)[0] == 0:
                 return None
             res[:, 0] = np.round(Frame.mjd2sec(res[:, 0]))
@@ -531,7 +522,7 @@ class KinematicOrbitV2(KinematicOrbit):
             return None
         try:
             # res = np.loadtxt(path, dtype=np.float64, comments='#', usecols=(0, 1, 2, 3))
-            res2 = np.genfromtxt(path2, delimiter=None, dtype=np.float64, skip_header=6)
+            res2 = np.genfromtxt(path2, delimiter=None, dtype=np.float64, skip_header=6, ndmin=2)
             if np.shape(res2)[0] == 0:
                 return None
             res2[:, 0] = np.round(Frame.mjd2sec(res2[:, 0]))
@@ -539,6 +530,13 @@ class KinematicOrbitV2(KinematicOrbit):
             # lg.error(e)
             # print(path)
             return None
+        if res.shape[0] != res2.shape[0] or not np.array_equal(
+                res[:, 0], res2[:, 0]):
+            raise ValueError(
+                'ITSG orbit and covariance epochs differ for {} {}'.format(
+                    sat.name, date
+                )
+            )
         res = np.hstack((res, res2[:, 1:]))
 
         return res
@@ -572,7 +570,7 @@ class KinematicOrbitFO(KinematicOrbit):
             return None
         try:
             # res = np.loadtxt(path, dtype=np.float64, comments='#', usecols=(0, 1, 2, 3))
-            res = np.genfromtxt(path, delimiter=None, dtype=np.float64, skip_header=6, usecols=(0, 1, 2, 3))
+            res = np.genfromtxt(path, delimiter=None, dtype=np.float64, skip_header=6, usecols=(0, 1, 2, 3), ndmin=2)
             if np.shape(res)[0] == 0:
                 return None
             res[:, 0] = np.round(Frame.mjd2sec(res[:, 0]))
@@ -588,7 +586,7 @@ class KinematicOrbitFO(KinematicOrbit):
             return None
         try:
             # res = np.loadtxt(path, dtype=np.float64, comments='#', usecols=(0, 1, 2, 3))
-            res2 = np.genfromtxt(path2, delimiter=None, dtype=np.float64, skip_header=6)
+            res2 = np.genfromtxt(path2, delimiter=None, dtype=np.float64, skip_header=6, ndmin=2)
             if np.shape(res2)[0] == 0:
                 return None
             res2[:, 0] = np.round(Frame.mjd2sec(res2[:, 0]))
@@ -596,6 +594,8 @@ class KinematicOrbitFO(KinematicOrbit):
             # lg.error(e)
             # print(path)
             return None
+        if res.shape[0] != res2.shape[0] or not np.array_equal(res[:, 0], res2[:, 0]):
+            raise ValueError('ITSG orbit and covariance epochs differ for {} {}'.format(sat.name, date))
         res = np.hstack((res, res2[:, 1:]))
 
         return res

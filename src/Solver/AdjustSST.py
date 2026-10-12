@@ -36,6 +36,7 @@ class RangeRate:
         self.__upper_RMS = None
         self.__upper_obs = None
         self.__kbr_fit = None
+        self.__onecpr_outlier_only = True
         self.__iterations = None
         self.__kbr_arc = None
         self.__arcNo = arcNo
@@ -93,6 +94,9 @@ class RangeRate:
         self.__upper_RMS = self._RangeRateConfig.OutlierRMS
         self.__upper_obs = self._RangeRateConfig.OutlierObs
         self.__kbr_fit = self._RangeRateConfig.ParameterFitting
+        self.__onecpr_outlier_only = bool(
+            getattr(self._RangeRateConfig, 'OneCPROutlierOnly', True)
+        )
         self.__iterations = self._RangeRateConfig.Iterations
         '''the arc length to Calibrate kbr: unit [hour]'''
         self.__kbr_arc = kbr_arc * 3600
@@ -166,12 +170,11 @@ class RangeRate:
         return nodes
 
     def calibrate(self):
-        """Fit the arc-wise empirical KBRR model.
+        """Use an arc-wise empirical model to screen KBRR O-C outliers.
 
-        ``empirical pre-fit`` is the orbit-model KBRR residual before the
-        trend/1CPR fit. ``empirical post-fit`` is the residual after that fit.
-        These names are local to AdjustSST and are distinct from the final
-        gravity-field post-fit residual produced by CalibrateOrbit.
+        With ``OneCPROutlierOnly`` enabled, the trend/1CPR fit is used only
+        to expose abnormal epochs.  The retained, otherwise unmodified O-C
+        is written to the downstream interface consumed by LGD and NEQ.
         """
         obs = self.pre_residual()
 
@@ -192,29 +195,43 @@ class RangeRate:
         '''Calibrate kbr arc by arc'''
         pre_t, pre_residual = np.zeros(0), np.zeros(0)
         post_t, post_residual = np.zeros(0), np.zeros(0)
+        detection_t, detection_residual = np.zeros(0), np.zeros(0)
         dm_list = []
         for i in tqdm(range(len(arclist_t)), desc='SST rang-rate calibration: '):
-            t, n, obs = arclist_t[i], arclist_n[i], arclist_obs[i]
-            pre_obs = arclist_obs[i]
+            t = arclist_t[i]
+            n = arclist_n[i]
+            source_obs = arclist_obs[i]
             if len(t) == 0:
                 continue
             kf = FitSST(t, n, option=self.__kbr_fit)
             dm = kf.get_design_matrix()
 
             for iter in range(self.__iterations):
-                residual = kf.get_residual(dm.copy(), obs)
+                residual = kf.get_residual(dm.copy(), source_obs)
                 index = Outlier(rms_times=self.__rms_times, upper_RMS=self.__upper_RMS,
                                 upper_obs=self.__upper_obs).remove(t, residual)
+                if np.all(index):
+                    break
                 t = t[index]
                 dm = dm[index, :]
-                pre_obs = pre_obs[index]
-                obs = residual[index]
-                if any(index) == False:
+                source_obs = source_obs[index]
+                if not np.any(index) or len(t) == 0:
                     break
 
-            pre_residual = np.append(pre_residual, pre_obs)
+            if len(t) == 0:
+                continue
+            fit_residual = kf.get_residual(dm.copy(), source_obs)
+            downstream_residual = (
+                source_obs if self.__onecpr_outlier_only else fit_residual
+            )
+            pre_t = np.append(pre_t, t)
+            pre_residual = np.append(pre_residual, source_obs)
             post_t = np.append(post_t, t)
-            post_residual = np.append(post_residual, obs)
+            post_residual = np.append(post_residual, downstream_residual)
+            detection_t = np.append(detection_t, t)
+            detection_residual = np.append(
+                detection_residual, fit_residual
+            )
             dm_list.append(dm)
 
         design_matrix = scipy.linalg.block_diag(*dm_list)
@@ -231,9 +248,25 @@ class RangeRate:
         h5.create_dataset('empirical_prefit_residual', data=pre_residual)
         h5.create_dataset('empirical_postfit_t', data=post_t)
         h5.create_dataset('empirical_postfit_residual', data=post_residual)
+        h5.create_dataset('retained_oc_t', data=post_t)
+        h5.create_dataset('retained_oc_residual', data=pre_residual)
+        h5.create_dataset('onecpr_detection_t', data=detection_t)
+        h5.create_dataset(
+            'onecpr_detection_residual', data=detection_residual
+        )
+        h5.attrs['onecpr_role'] = (
+            'outlier_detection_only' if self.__onecpr_outlier_only
+            else 'subtract_from_observation'
+        )
+        h5.attrs['downstream_observation'] = (
+            'retained_o_c_without_trend_or_onecpr_subtraction'
+            if self.__onecpr_outlier_only
+            else 'empirical_postfit_residual'
+        )
         h5.attrs['residual_stage_semantics'] = (
-            'empirical pre-fit: before trend/1CPR fitting; '
-            'empirical post-fit: after trend/1CPR fitting; '
+            'empirical pre-fit: retained raw O-C; '
+            'empirical post-fit: downstream observation selected by onecpr_role; '
+            'onecpr detection residual: fit residual used only for screening; '
             'not the spherical-harmonic gravity-field post-fit'
         )
         h5.close()
@@ -266,8 +299,16 @@ class RangeRate:
                 "AdjustSST stage should be 'Pre' or 'Post', got %r" % stage
             )
 
-        time_name, residual_name = cls._EMPIRICAL_STAGES[normalized]
         with h5py.File(filename, 'r') as h5:
+            role = h5.attrs.get('onecpr_role', '')
+            if isinstance(role, bytes):
+                role = role.decode('utf-8')
+            if normalized == 'post' and role == 'outlier_detection_only':
+                time_name, residual_name = (
+                    'retained_oc_t', 'retained_oc_residual'
+                )
+            else:
+                time_name, residual_name = cls._EMPIRICAL_STAGES[normalized]
             missing = [
                 name for name in (time_name, residual_name) if name not in h5
             ]
@@ -292,13 +333,26 @@ class RangeRate:
 
     @classmethod
     def load_empirical_design_matrix(cls, filename, apply_qc=True):
-        """Load the empirical design matrix aligned with post-fit epochs."""
+        """Load empirical nuisance columns aligned with downstream epochs.
+
+        A detection-only OneCPR fit contributes no nuisance parameters to
+        the normal equation; its stored matrix remains available for QC.
+        """
         with h5py.File(filename, 'r') as h5:
             if 'design_matrix' not in h5:
                 raise KeyError('%s does not contain design_matrix' % filename)
-            matrix = np.asarray(h5['design_matrix'][()], dtype=np.float64)
-            if matrix.ndim != 2:
+            matrix_shape = h5['design_matrix'].shape
+            if len(matrix_shape) != 2:
                 raise ValueError('design_matrix must be two-dimensional')
+            role = h5.attrs.get('onecpr_role', '')
+            if isinstance(role, bytes):
+                role = role.decode('utf-8')
+            if role == 'outlier_detection_only':
+                matrix = np.empty((matrix_shape[0], 0), dtype=np.float64)
+            else:
+                matrix = np.asarray(
+                    h5['design_matrix'][()], dtype=np.float64
+                )
             keep = (
                 cls._load_qc_epoch_mask(h5, matrix.shape[0])
                 if apply_qc else np.ones(matrix.shape[0], dtype=bool)

@@ -6,6 +6,23 @@ import numpy as np
 
 REPRESENTATION = 'stationary_autocovariance_v1'
 
+def normalize_orbit_covariance_mode(mode):
+    aliases = {
+        'fixeddiagonal': 'FixedDiagonal',
+        'diagonal': 'FixedDiagonal',
+        'estimatedfull': 'EstimatedFull',
+        'full': 'EstimatedFull',
+        'itsgepoch': 'ITSGEpoch',
+        'itsg': 'ITSGEpoch',
+    }
+    key = str(mode).replace('_', '').replace('-', '').lower()
+    if key not in aliases:
+        raise ValueError(
+            'Unsupported OrbitCovarianceMode {!r}; expected FixedDiagonal, '
+            'EstimatedFull, or ITSGEpoch'.format(mode)
+        )
+    return aliases[key]
+
 
 def normalize_covariance_epoch_mapping(mode):
     aliases = {
@@ -126,7 +143,10 @@ def load_covariance(
 
     By default, the lag of each matrix element is computed from the physical
     epoch difference, so missing observations do not compress the covariance
-    lag. ``matrix_epoch_index`` selects the stored Toeplitz model directly in
+    lag. An exact stationary model uses the first requested epoch as its
+    index origin: a common time shift cannot change pairwise lags. The stored
+    time_origin is retained for the legacy nearest-grid mapping only.
+    ``matrix_epoch_index`` selects the stored Toeplitz model directly in
     index space.  The latter reproduces the legacy orbit-GLS operation
     ``Sigma[np.ix_(idx, idx)]`` without storing the dense ``Sigma`` matrix.
     """
@@ -206,15 +226,19 @@ def load_covariance(
         return np.empty((0, 0), dtype=float)
 
     if matrix_epoch_index is None:
-        relative_epoch = (target_time - time_origin) / sample_interval
+        # Stationarity constrains time differences, not absolute epoch phase.
+        # Different KIN arcs may start at :00, :10, etc., while every within-arc
+        # separation is an exact multiple of the covariance sample interval.
+        reference_epoch = target_time[0] if epoch_mapping == 'exact' else time_origin
+        relative_epoch = (target_time - reference_epoch) / sample_interval
         epoch_index = np.rint(relative_epoch).astype(np.int64)
         alignment_error = np.abs(
             relative_epoch - epoch_index.astype(float)
         )
         if epoch_mapping == 'exact' and np.any(alignment_error > 1.0e-6):
             raise ValueError(
-                'target epochs in {} are not aligned to its {} s covariance '
-                'grid'.format(filename, sample_interval)
+                'target epoch differences in {} are not aligned to its {} s covariance '
+                'lag grid'.format(filename, sample_interval)
             )
         if epoch_mapping not in ('exact', 'nearest'):
             raise ValueError(
@@ -254,3 +278,71 @@ def load_covariance(
             )
         )
     return covariance
+
+
+def combine_itsg_epoch_covariance(temporal_covariance, components):
+    '''Combine ITSG epoch covariance with residual temporal correlation.
+
+    The six ITSG columns are [xx, yy, zz, xy, xz, yz]. The ITSG blocks
+    set absolute variance and simultaneous XYZ correlation. The posterior
+    residual model supplies normalized temporal correlation.
+    '''
+    components = np.asarray(components, dtype=float)
+    if components.ndim != 2 or components.shape[1] != 6:
+        raise ValueError('ITSG covariance must have shape (epochs, 6)')
+    if not np.isfinite(components).all():
+        raise ValueError('ITSG covariance contains NaN or infinity')
+
+    count = components.shape[0]
+    temporal_covariance = np.asarray(temporal_covariance, dtype=float)
+    shape = (3 * count, 3 * count)
+    if temporal_covariance.shape != shape:
+        raise ValueError(
+            'temporal covariance has shape {}, expected {}'.format(
+                temporal_covariance.shape, shape
+            )
+        )
+    if not np.isfinite(temporal_covariance).all():
+        raise ValueError('temporal covariance contains NaN or infinity')
+    if count == 0:
+        return np.empty((0, 0), dtype=float)
+
+    blocks = np.empty((count, 3, 3), dtype=float)
+    blocks[:, 0, 0] = components[:, 0]
+    blocks[:, 1, 1] = components[:, 1]
+    blocks[:, 2, 2] = components[:, 2]
+    blocks[:, 0, 1] = blocks[:, 1, 0] = components[:, 3]
+    blocks[:, 0, 2] = blocks[:, 2, 0] = components[:, 4]
+    blocks[:, 1, 2] = blocks[:, 2, 1] = components[:, 5]
+    try:
+        factors = np.linalg.cholesky(blocks)
+    except np.linalg.LinAlgError as exc:
+        raise ValueError(
+            'ITSG epoch covariance must be positive definite'
+        ) from exc
+
+    variance = np.diag(temporal_covariance)
+    if np.any(variance <= 0):
+        raise ValueError('temporal covariance diagonal must be positive')
+    deviation = np.sqrt(variance)
+    correlation = temporal_covariance / np.outer(deviation, deviation)
+    correlation = 0.5 * (correlation + correlation.T)
+    correlation_blocks = correlation.reshape(count, 3, count, 3)
+    diagonal_blocks = correlation_blocks[
+        np.arange(count), :, np.arange(count), :
+    ]
+    if not np.allclose(
+            diagonal_blocks, np.eye(3)[None, :, :],
+            rtol=1e-10, atol=1e-12):
+        raise ValueError(
+            'ITSGEpoch requires axis-wise FullEstimated temporal covariance'
+        )
+
+    # C = blockdiag(L_i) @ R @ blockdiag(L_i).T, S_i = L_i @ L_i.T.
+    left = np.einsum(
+        'iab,ibjc->iajc', factors, correlation_blocks, optimize=True
+    )
+    combined = np.einsum(
+        'iajc,jdc->iajd', left, factors, optimize=True
+    ).reshape(shape)
+    return 0.5 * (combined + combined.T)

@@ -98,7 +98,7 @@ class GravityDesignMat:
         '''define the directory of res output'''
         res_dir = pathlib.Path(self._res).joinpath(self.__data_span[0] + '_' + self.__data_span[1])
         if not res_dir.is_dir():
-            res_dir.mkdir(exist_ok=True)
+            res_dir.mkdir(parents=True, exist_ok=True)
         # kwargs = {'ChangeTempPath': res_dir}
         adjustDM.calibrate()
         self.nodes = adjustDM.getTimes()

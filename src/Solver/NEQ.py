@@ -8,8 +8,10 @@ from src.Preference.Pre_Interface import InterfaceConfig
 from src.Auxilary.Outlier import Outlier
 from src.Solver.AdjustSST import RangeRate
 from src.Solver.CovarianceModel import (
+    combine_itsg_epoch_covariance,
     covariance_matrix_epoch_index,
     load_covariance,
+    normalize_orbit_covariance_mode,
     orbit_covariance_filename,
     range_rate_covariance_filename,
 )
@@ -19,6 +21,7 @@ import numpy as np
 import h5py
 from tqdm import tqdm
 import os
+import time
 
 
 class GravityNEQperArc:
@@ -102,11 +105,21 @@ class GravityNEQperArc:
         res_dir = self._solverConfig.DesignMatrixTemp + '/' + self.__date_span[0] + '_' + self.__date_span[1]
         res_filename = res_dir + '/Orbit_' + str(self.__arcNo) + '_' + self._satName + '.hdf5'
 
-        with h5py.File(res_filename, 'r') as h5:
-            self.__orbit_nominal = h5['r'][()]
-            self.__t_nominal = h5['t'][()]
-            self.__local_r = h5['local_r'][()]
-            self.__global_r = h5['global_r'][()]
+        # Shared-filesystem HDF5 reads can transiently fail while many NEQ
+        # workers close their files at once. Retry the complete read so a
+        # recoverable errno=5 does not abort the whole Slurm job.
+        for read_attempt in range(3):
+            try:
+                with h5py.File(res_filename, 'r') as h5:
+                    self.__orbit_nominal = h5['r'][()]
+                    self.__t_nominal = h5['t'][()]
+                    self.__local_r = h5['local_r'][()]
+                    self.__global_r = h5['global_r'][()]
+                break
+            except (OSError, RuntimeError):
+                if read_attempt == 2:
+                    raise
+                time.sleep(2 ** read_attempt)
 
         # state_dir = pathlib.Path(Pre_AdjustOrbit.PathOfFiles.StateVectorDataTemp). \
         #     joinpath(self.__date_span[0] + '_' + self.__date_span[1])
@@ -147,44 +160,49 @@ class GravityNEQperArc:
 
         self._rd = ArcData(interfaceConfig=self._InterfaceConfig)
 
+        kin_orbit = None
         if config.UseKinematicOrbit:
-            kin_orbit = self._rd.getData(arc=self.__arcNo, kind=Payload.KinematicOrbit, sat=sat)
+            kin_orbit = self._rd.getData(
+                arc=self.__arcNo, kind=Payload.KinematicOrbit, sat=sat
+            )
+            if (kin_orbit is None or kin_orbit.ndim != 2 or
+                    kin_orbit.shape[0] == 0 or kin_orbit.shape[1] < 4):
+                raise ValueError(
+                    'Invalid ITSG orbit observations for satellite {} '
+                    'in arc {}'.format(sat.name, self.__arcNo)
+                )
             orbit_obs = kin_orbit[:, 0:4]
             # orbit_obs = self.kin_obs_outlier(sat=sat, kin_orbit=orbit_obs)
         else:
-            orbit_obs = self._rd.getData(arc=self.__arcNo, kind=Payload.GNV, sat=sat)[:, 0:4]
-        t_obs = orbit_obs[:, 0]
-        # Preserve the legacy GLS selection: the 60 s rows are positions in
-        # the complete arc series, not epochs divided by OrbitFre.
-        covariance_epoch_index = np.flatnonzero(t_obs % 60 == 0)
-        orbit_obs = orbit_obs[covariance_epoch_index, :]
-        # kin_obs = kin_orbit[t_obs % 60 == 0, 4:]
-        # sigma = self.build_block_diag_matrix(kin_obs)
-        t_obs = t_obs[covariance_epoch_index]
-        '''for the orbit, only position (r) is needed for the inversion'''
-        '''find the common'''
-        int_t_obs = t_obs.astype(np.int64)
-        int_t_nominal = t_nominal.astype(np.int64)
-        new_index = [list(int_t_nominal).index(x) for x in int_t_obs]
-        '''Reassignment'''
-        t_nominal = t_nominal[new_index]
-        orbit_nominal = orbit_nominal[new_index, :]
-        local_r = local_r[new_index, :, :]
-        global_r = global_r[new_index, :, :]
-        # orbit_obs = orbit_obs[new_index, :]
-        # with h5py.File(("orbit_" + sat.name + '_' + str(self.__arcNo) + '.h5'), "w") as f:
-        #     f.create_dataset("global_r", data=global_r)
-        #     f.create_dataset("local_r", data=local_r)
-        #     f.create_dataset("obs", data=obs)
-
+            orbit_obs = self._rd.getData(
+                arc=self.__arcNo, kind=Payload.GNV, sat=sat
+            )[:, 0:4]
+        from src.Solver.OrbitObservations import align_positions
+        covariance_epoch_index,new_index=align_positions(orbit_obs,t_nominal,
+            float(getattr(self._solverConfig,'OrbitSamplingSeconds',60.)),
+            getattr(self._solverConfig,'OrbitSamplingOrigin','GPS'))
+        orbit_obs=orbit_obs[covariance_epoch_index]
+        t_nominal=t_nominal[new_index]
+        orbit_nominal=orbit_nominal[new_index]
+        local_r=local_r[new_index]
+        global_r=global_r[new_index]
         sigmafilename = orbit_covariance_filename(
             self._solverConfig.PostOrbit, self.__date_span, sat.name
         )
         if self.use_sigma:
-            covariance_epoch_mapping = getattr(
-                self._solverConfig,
-                'CovarianceEpochMapping',
-                'LegacyIndex'
+            covariance_mode = normalize_orbit_covariance_mode(
+                getattr(
+                    self._solverConfig, 'OrbitCovarianceMode',
+                    'EstimatedFull'
+                )
+            )
+            covariance_epoch_mapping = (
+                'PhysicalTime' if covariance_mode == 'ITSGEpoch'
+                else getattr(
+                    self._solverConfig,
+                    'CovarianceEpochMapping',
+                    'LegacyIndex'
+                )
             )
             sigma = load_covariance(
                 sigmafilename,
@@ -195,6 +213,20 @@ class GravityNEQperArc:
                     covariance_epoch_index
                 )
             )
+            if covariance_mode == 'ITSGEpoch':
+                if not config.UseKinematicOrbit:
+                    raise ValueError(
+                        'ITSGEpoch requires UseKinematicOrbit=true for '
+                        'satellite {}'.format(sat.name)
+                    )
+                if kin_orbit.ndim != 2 or kin_orbit.shape[1] < 10:
+                    raise ValueError(
+                        'ITSG covariance is missing for satellite {} '
+                        'in arc {}'.format(sat.name, self.__arcNo)
+                    )
+                sigma = combine_itsg_epoch_covariance(
+                    sigma, kin_orbit[covariance_epoch_index, 4:10]
+                )
         '''Expanding the observations'''
         obs = orbit_obs[:, 1:] - orbit_nominal
 

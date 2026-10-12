@@ -7,6 +7,7 @@
 
 import datetime
 import glob
+import json
 import os
 
 import numpy as np
@@ -67,8 +68,9 @@ class StandardACC:
                             os.remove(path)
         return self
 
-    def save_arc(self, gps_time, acceleration, bias, satellite, arc_no):
-        """Atomically cache one calibrated arc; repeated iterations overwrite it."""
+    def save_arc(self, gps_time, acceleration, bias, satellite, arc_no,
+                 scale_matrix=None, scale_gcrs=None):
+        """Cache calibrated ACC and epoch-wise GCRS scale for one arc."""
         self.__check_configured()
         time = np.asarray(gps_time, dtype=np.float64).reshape(-1)
         acc = np.asarray(acceleration, dtype=np.float64)
@@ -81,6 +83,16 @@ class StandardACC:
         acc = acc[valid]
         bias = bias[valid]
         satellite_id = self.__standard_satellite(satellite)
+        matrix = np.full((3, 3), np.nan, dtype=np.float64) if scale_matrix is None else np.asarray(scale_matrix, dtype=np.float64)
+        if matrix.shape != (3, 3):
+            raise ValueError('scale_matrix should have shape (3, 3)')
+        if scale_gcrs is None:
+            gcrs_scale = np.full((time.size, 3), np.nan, dtype=np.float64)
+        else:
+            gcrs_scale = np.asarray(scale_gcrs, dtype=np.float64)
+            if gcrs_scale.shape != (valid.size, 3):
+                raise ValueError('scale_gcrs should have shape (epoch_number, 3)')
+            gcrs_scale = gcrs_scale[valid]
 
         os.makedirs(self.__cacheDir, exist_ok=True)
         filename = '%s_%s_arc%06d.npz' % (
@@ -93,6 +105,8 @@ class StandardACC:
             gps_time=time,
             acceleration=acc,
             bias=bias,
+            scale_matrix=matrix,
+            scale_gcrs=gcrs_scale,
             satellite=np.asarray(satellite_id)
         )
         os.replace(temporary, target)
@@ -102,6 +116,7 @@ class StandardACC:
         """Merge all arc snapshots and write one standardized file per day."""
         self.__check_configured()
         grouped = {}
+        monthly_matrices = {}
         cache_files = self.__cache_files()
         for filename in cache_files:
             with np.load(filename, allow_pickle=False) as data:
@@ -109,6 +124,14 @@ class StandardACC:
                 acc = np.asarray(data['acceleration'], dtype=np.float64)
                 bias = np.asarray(data['bias'], dtype=np.float64)
                 satellite = str(data['satellite'].item())
+                matrix = np.asarray(data['scale_matrix'], dtype=np.float64) if 'scale_matrix' in data.files else np.full((3, 3), np.nan)
+                gcrs_scale = np.asarray(data['scale_gcrs'], dtype=np.float64) if 'scale_gcrs' in data.files else np.full((time.size, 3), np.nan)
+
+            previous = monthly_matrices.get(satellite)
+            if previous is None:
+                monthly_matrices[satellite] = matrix
+            elif not np.allclose(previous, matrix, rtol=0.0, atol=1.0e-12, equal_nan=True):
+                raise ValueError('Monthly scale matrix changed between arcs for satellite %s' % satellite)
 
             day_numbers = self.__day_numbers(time)
             for day_number in np.unique(day_numbers):
@@ -117,20 +140,24 @@ class StandardACC:
                     continue
                 index = day_numbers == day_number
                 grouped.setdefault((day, satellite), []).append(
-                    (time[index], acc[index], bias[index])
+                    (time[index], acc[index], bias[index], gcrs_scale[index])
                 )
 
         output_files = []
+        for satellite, matrix in monthly_matrices.items():
+            if np.all(np.isfinite(matrix)):
+                self.__write_monthly_scale(satellite, matrix)
+
         for key in sorted(grouped):
             day, satellite = key
-            time, acc, bias = self.__merge_chunks(grouped[key])
+            time, acc, bias, scale_gcrs = self.__merge_chunks(grouped[key])
             filename = '%s_%s_%s_%s.txt' % (
                 self.__productName, day, satellite, self.__productVersion
             )
             directory = self.__daily_directory(day)
             os.makedirs(directory, exist_ok=True)
             path = os.path.join(directory, filename)
-            self.__write_file(path, time, acc, bias, satellite)
+            self.__write_file(path, time, acc, bias, scale_gcrs, satellite)
             output_files.append(path)
 
         if remove_cache:
@@ -138,7 +165,7 @@ class StandardACC:
                 os.remove(filename)
         return output_files
 
-    def __write_file(self, path, time, acc, bias, satellite):
+    def __write_file(self, path, time, acc, bias, scale_gcrs, satellite):
         temporary = path + '.tmp'
         with open(temporary, 'w', encoding='ascii', newline='\n') as file:
             self.__write_header(file, time, bias.shape[1], satellite)
@@ -146,7 +173,28 @@ class StandardACC:
                 values = [self.__format_time(time[i]), satellite]
                 values.extend('%.15e' % value for value in acc[i])
                 values.extend('%.15e' % value for value in bias[i])
+                values.extend('%.15e' % value for value in scale_gcrs[i])
                 file.write(' '.join(values) + '\n')
+        os.replace(temporary, path)
+
+    def __write_monthly_scale(self, satellite, matrix):
+        """Archive the complete fitted monthly scale matrix in sensor axes."""
+        payload = {
+            'date_span': self.__dateSpan,
+            'satellite': satellite,
+            'frame': 'accelerometer sensor frame (SRF)',
+            'matrix_definition': 'a_gcrs = S(t) E_month S(t)^T a_gcrs_raw',
+            'matrix_row_major': np.asarray(matrix, dtype=np.float64).tolist(),
+            'daily_scale_columns': 'diag(S(t) E_month S(t)^T), GCRS axes',
+        }
+        filename = '%s_%s_%s_%s_%s.json' % (
+            self.__productName, self.__dateSpan[0], self.__dateSpan[1], satellite, self.__productVersion
+        )
+        path = os.path.join(self.__fileDir, filename)
+        temporary = path + '.tmp'
+        with open(temporary, 'w', encoding='utf-8', newline='\n') as stream:
+            json.dump(payload, stream, ensure_ascii=False, indent=2)
+            stream.write('\n')
         os.replace(temporary, path)
 
     def __write_header(self, file, time, bias_dimension, satellite):
@@ -165,7 +213,7 @@ class StandardACC:
         file.write('    date_created: %s\n' % created)
         file.write('    instrument: ACC\n')
         file.write('    source: PyHawk calibrated accelerometer data for %s\n' % platform)
-        file.write('    summary: Calibrated linear acceleration and evaluated bias in GCRS\n')
+        file.write('    summary: Calibrated linear acceleration, evaluated bias, and effective GCRS scale diagonal\n')
         file.write('    time_coverage_start: %s\n' % start.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-4])
         file.write('    time_coverage_stop: %s\n' % stop.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-4])
         file.write('    title: %s Hawk Level-1C Calibrated Accelerometer Data\n' % mission_name)
@@ -185,6 +233,13 @@ class StandardACC:
             file.write('        coverage_content_type: modelResult\n')
             file.write('        long_name: %s\n' % long_name)
             file.write('        units: m/s2\n')
+        start_column = 6 + bias_dimension
+        for offset, axis in enumerate(('x', 'y', 'z')):
+            file.write('    - scale_%s_gcrs:\n' % axis)
+            file.write('        comment: %s column\n' % self.__ordinal(start_column + offset))
+            file.write('        coverage_content_type: modelResult\n')
+            file.write('        long_name: Effective diagonal scale response along GCRS %s-axis\n' % axis.upper())
+            file.write('        units: 1\n')
         file.write('# End of YAML header\n')
 
     def __write_primary_variables(self, file):
@@ -226,32 +281,23 @@ class StandardACC:
 
     def __merge_chunks(self, chunks):
         bias_dimension = max(item[2].shape[1] for item in chunks)
-        times = []
-        accelerations = []
-        biases = []
-        for time, acc, bias in chunks:
+        columns = [[], [], [], []]
+        for time, acc, bias, scale_gcrs in chunks:
             if bias.shape[1] < bias_dimension:
-                padding = np.full(
-                    (bias.shape[0], bias_dimension - bias.shape[1]),
-                    np.nan,
-                    dtype=np.float64
-                )
+                padding = np.full((bias.shape[0], bias_dimension - bias.shape[1]), np.nan, dtype=np.float64)
                 bias = np.hstack((bias, padding))
-            times.append(time)
-            accelerations.append(acc)
-            biases.append(bias)
+            columns[0].append(time)
+            columns[1].append(acc)
+            columns[2].append(bias)
+            columns[3].append(scale_gcrs)
 
-        time = np.concatenate(times)
-        acc = np.vstack(accelerations)
-        bias = np.vstack(biases)
-        order = np.argsort(time, kind='stable')
-        time = time[order]
-        acc = acc[order]
-        bias = bias[order]
-
-        reverse_unique = np.unique(time[::-1], return_index=True)[1]
-        keep = np.sort(time.size - 1 - reverse_unique)
-        return time[keep], acc[keep], bias[keep]
+        merged = [np.concatenate(columns[0]), np.vstack(columns[1]),
+                  np.vstack(columns[2]), np.vstack(columns[3])]
+        order = np.argsort(merged[0], kind='stable')
+        merged = [column[order] for column in merged]
+        reverse_unique = np.unique(merged[0][::-1], return_index=True)[1]
+        keep = np.sort(merged[0].size - 1 - reverse_unique)
+        return tuple(column[keep] for column in merged)
 
     @staticmethod
     def __format_bias(bias, epoch_number):

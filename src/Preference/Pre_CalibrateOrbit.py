@@ -10,7 +10,19 @@ class CalibrateOrbitConfig:
         self.ParallelControlConfig = self.ParallelControl().__dict__
         self.GLSIterationConfig = self.GLSIteration().__dict__
         self.LGDConfig = self.LGD().__dict__
+        self.JointEstimationConfig = self.JointEstimation().__dict__
         self.ExperimentAuditConfig = self.ExperimentAudit().__dict__
+
+    class JointEstimation:
+        def __init__(self):
+            self.Enabled = False
+            self.FeedbackEnabled = False
+            self.MonthlyScaleEnabled = False
+            self.MaxOuterIterations = 2
+            self.EstimateEmpirical = True
+            self.InitialUseCovariance = False
+            self.Damping = 1.0
+            self.Rcond = 1e-12
 
     class Mission:
         def __init__(self):
@@ -52,6 +64,7 @@ class CalibrateOrbitConfig:
     class LGD:
         def __init__(self):
             self.Method = "RangeRateDerivative"
+            self.ProcessingOrder = "Legacy"
             self.ReferenceKBRAPayload = "KBR"
             self.ReferenceKBRAAllowVelocityFallback = False
             self.FLowHz = 1.0e-3

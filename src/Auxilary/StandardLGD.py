@@ -20,13 +20,16 @@ class StandardLGD:
         self.__cacheDir = None
         self.__dateSpan = None
         self.__mission = None
+        self.__timeVariableBackground = True
         self.__productVersion = '01'
 
-    def configure(self, filedir, date_span, mission=None, product_version='01'):
+    def configure(self, filedir, date_span, mission=None, product_version='01',
+                  time_variable_background=False):
         self.__fileDir = os.path.abspath(str(filedir))
         self.__cacheDir = os.path.join(self.__fileDir, '.standard_lgd_cache')
         self.__dateSpan = date_span
         self.__mission = mission
+        self.__timeVariableBackground = bool(time_variable_background)
         self.__productVersion = product_version
         return self
 
@@ -161,7 +164,7 @@ class StandardLGD:
         file.write('    date_created: %s\n' % created)
         file.write('    instrument: KBR\n')
         file.write('    source: PyHawk line-of-sight gravity difference processing\n')
-        file.write('    summary: Full-spectrum and bandpass LGD at the twin-satellite midpoint\n')
+        file.write('    summary: Full-spectrum and bandpass LGD at twin-satellite midpoint; GOCO06S time-variable background %s\n' % ('restored' if self.__timeVariableBackground else 'not restored'))
         file.write('    time_coverage_start: %s\n' % start.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-4])
         file.write('    time_coverage_stop: %s\n' % stop.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-4])
         file.write('    title: %s Hawk LGD Level-1C Data\n' % mission_name)

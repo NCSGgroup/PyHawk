@@ -669,8 +669,7 @@ class Accelerometer_V2:
         time = self.__acc[:, 0]
         date_span = self.__rd.date_span
 
-        if not os.path.exists(self.__dataTemp):
-            os.mkdir(self.__dataTemp)
+        os.makedirs(self.__dataTemp, exist_ok=True)
 
         filename = pathlib.Path(self.__dataTemp).joinpath(
             date_span[0] + '_' + date_span[1] + '_' + sat + '_' + str(self.__arcNo) + '.hdf5')
@@ -934,6 +933,18 @@ class Accelerometer_V3:
         bias = self.__sca @ bias_srf[:, :, None]
         return bias[:, :, 0]
 
+    def get_scale_matrix(self):
+        """Return the shared scale/cross-axis matrix in the sensor frame."""
+        return np.asarray(self.__scale, dtype=np.float64).copy()
+
+    def get_scale_gcrs_diagonal(self):
+        """Return the diagonal of S E S.T at each epoch in GCRS axes."""
+        effective = np.einsum(
+            'nij,jk,nlk->nil', self.__sca, self.__scale, self.__sca,
+            optimize=True
+        )
+        return np.diagonal(effective, axis1=1, axis2=2).copy()
+
     def get_du2p(self):
         """
         Derivative of acc with respect to the parameters such as bias & scale.
@@ -1084,8 +1095,7 @@ class Accelerometer_V3:
         time = self.__acc[:, 0]
         date_span = self.__rd.date_span
 
-        if not os.path.exists(self.__dataTemp):
-            os.mkdir(self.__dataTemp)
+        os.makedirs(self.__dataTemp, exist_ok=True)
 
         filename = pathlib.Path(self.__dataTemp).joinpath(
             date_span[0] + '_' + date_span[1] + '_' + sat + '_' + str(self.__arcNo) + '.hdf5')
@@ -1139,8 +1149,7 @@ class Accelerometer_V3:
         sat = self.__sat
         date_span = self.__rd.date_span
 
-        if not os.path.exists(self.__dataTemp):
-            os.mkdir(self.__dataTemp)
+        os.makedirs(self.__dataTemp, exist_ok=True)
 
         filename = pathlib.Path(self.__dataTemp).joinpath(
             date_span[0] + '_' + date_span[1] + '_' + sat + '_' + str(self.__arcNo) + '.hdf5')

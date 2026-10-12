@@ -1,7 +1,7 @@
 """
 @Description:
-    Save aligned PyHawk raw O-C, pre-solution, and post-solution KBRR series
-    in one GRACE KBR1B-like ASCII file per UTC day.
+    Save aligned PyHawk raw O-C, pre-solution, post-solution, and monthly
+    gravity-field KBRR series in one GRACE KBR1B-like ASCII file per UTC day.
 """
 
 import datetime
@@ -16,7 +16,7 @@ from src.Auxilary.GeoMathKit import GeoMathKit
 class StandardKBRR:
     _EPOCH = datetime.datetime(2000, 1, 1, 12, 0, 0)
     _EARTH_RADIUS = 6378136.3
-    _STAGES = ('Raw', 'Pre', 'Post')
+    _STAGES = ('Raw', 'Pre', 'Post', 'Geofit')
 
     def __init__(self):
         self.__fileDir = None
@@ -31,7 +31,7 @@ class StandardKBRR:
         stage = str(stage).capitalize()
         if stage not in self._STAGES:
             raise ValueError(
-                "KBRR stage should be 'Raw', 'Pre', or 'Post'"
+                "KBRR stage should be 'Raw', 'Pre', 'Post', or 'Geofit'"
             )
         self.__fileDir = os.path.abspath(str(filedir))
         self.__cacheDir = os.path.join(self.__fileDir, '.standard_kbrr_cache')
@@ -61,7 +61,7 @@ class StandardKBRR:
             for path in paths:
                 if os.path.exists(path):
                     os.remove(path)
-            for stage in self._STAGES + ('Geofit',):
+            for stage in self._STAGES:
                 legacy_filename = 'Hawk_%s_KBRR1C_%s_%s.txt' % (
                     stage, day, self.__productVersion
                 )
@@ -135,7 +135,8 @@ class StandardKBRR:
             raw = self.__merge_chunks(grouped['Raw'][day])
             pre = self.__merge_chunks(grouped['Pre'][day])
             post = self.__merge_chunks(grouped['Post'][day])
-            columns = self.__combine_stages(raw, pre, post)
+            geofit = self.__merge_chunks(grouped['Geofit'][day])
+            columns = self.__combine_stages(raw, pre, post, geofit)
             directory = self.__daily_directory(day)
             os.makedirs(directory, exist_ok=True)
             path = os.path.join(directory, self.__output_filename(day))
@@ -205,18 +206,18 @@ class StandardKBRR:
 
     def __write_file(self, path, columns):
         (time, longitude, latitude, altitude, pre_rate, post_rate,
-         raw_oc_rate) = columns
+         raw_oc_rate, geofit_rate) = columns
         temporary = path + '.tmp'
         with open(temporary, 'w', encoding='ascii', newline='\n') as file:
             self.__write_header(file, time)
             for values in zip(
                     time, longitude, latitude, altitude, pre_rate, post_rate,
-                    raw_oc_rate):
+                    raw_oc_rate, geofit_rate):
                 file.write(
-                    '%s %.12f %.12f %.6f %.15e %.15e %.15e\n' % (
+                    '%s %.12f %.12f %.6f %.15e %.15e %.15e %.15e\n' % (
                         self.__format_time(values[0]),
                         values[1], values[2], values[3], values[4], values[5],
-                        values[6]
+                        values[6], values[7]
                     )
                 )
         os.replace(temporary, path)
@@ -235,8 +236,8 @@ class StandardKBRR:
         file.write('    creator_institution: NCSG(https://github.com/NCSGgroup)\n')
         file.write('    date_created: %s\n' % created)
         file.write('    instrument: KBR\n')
-        file.write('    source: PyHawk raw O-C, pre-, and post-solution KBRR series\n')
-        file.write('    summary: Raw O-C and pre- and post-solution inter-satellite range-rate residuals\n')
+        file.write('    source: PyHawk raw O-C, pre-, post-solution, and monthly gravity-field KBRR series\n')
+        file.write('    summary: Raw O-C, pre- and post-solution residuals, and the monthly global gravity contribution\n')
         file.write('    time_coverage_start: %s\n' % start.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-4])
         file.write('    time_coverage_stop: %s\n' % stop.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-4])
         file.write('    title: %s Hawk KBRR Level-1C Data\n' % mission_name)
@@ -266,7 +267,8 @@ class StandardKBRR:
         file.write('        coverage_content_type: modelResult\n')
         file.write(
             '        long_name: Pre-solution inter-satellite range-rate '
-            'residual after arc-wise trend and 1CPR calibration\n'
+            'O-C after OneCPR-assisted abnormal-epoch screening; no trend '
+            'or CPR term is subtracted\n'
         )
         file.write('        units: m/s\n')
         file.write('    - post_range_rate:\n')
@@ -278,9 +280,17 @@ class StandardKBRR:
         file.write('        comment: 7th column\n')
         file.write('        coverage_content_type: modelResult\n')
         file.write(
-            '        long_name: Original inter-satellite range-rate '
-            'observation-minus-computation residual before arc-wise trend and '
-            '1CPR fitting, restricted to retained epochs\n'
+            '        long_name: Retained inter-satellite range-rate '
+            'observation-minus-computation residual; identical to the '
+            'pre-solution input before gravity-field adjustment\n'
+        )
+        file.write('        units: m/s\n')
+        file.write('    - geofit_range_rate:\n')
+        file.write('        comment: 8th column\n')
+        file.write('        coverage_content_type: modelResult\n')
+        file.write(
+            '        long_name: Monthly global gravity contribution reconstructed '
+            'from the final spherical-harmonic solution in the KBRR observation domain\n'
         )
         file.write('        units: m/s\n')
         file.write('# End of YAML header\n')
@@ -300,20 +310,28 @@ class StandardKBRR:
         return tuple(column[keep] for column in columns)
 
     @staticmethod
-    def __combine_stages(raw, pre, post):
+    def __combine_stages(raw, pre, post, geofit):
         raw_key = np.round(raw[0], decimals=9)
         pre_key = np.round(pre[0], decimals=9)
         post_key = np.round(post[0], decimals=9)
+        geofit_key = np.round(geofit[0], decimals=9)
         if not (np.array_equal(raw_key, pre_key)
-                and np.array_equal(raw_key, post_key)):
+                and np.array_equal(raw_key, post_key)
+                and np.array_equal(raw_key, geofit_key)):
             common = np.intersect1d(
-                np.intersect1d(raw_key, pre_key, assume_unique=True),
-                post_key,
+                np.intersect1d(
+                    np.intersect1d(raw_key, pre_key, assume_unique=True),
+                    post_key,
+                    assume_unique=True
+                ),
+                geofit_key,
                 assume_unique=True
             )
             raise ValueError(
-                'KBRR epoch mismatch: raw=%d, pre=%d, post=%d, common=%d'
-                % (raw_key.size, pre_key.size, post_key.size, common.size)
+                'KBRR epoch mismatch: raw=%d, pre=%d, post=%d, '
+                'geofit=%d, common=%d'
+                % (raw_key.size, pre_key.size, post_key.size,
+                   geofit_key.size, common.size)
             )
         return (
             raw[0],
@@ -322,7 +340,8 @@ class StandardKBRR:
             raw[3],
             pre[4],
             post[4],
-            raw[4]
+            raw[4],
+            geofit[4]
         )
 
     @classmethod

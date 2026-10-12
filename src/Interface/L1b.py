@@ -169,6 +169,29 @@ class L1b:
         GNV = None
         return GNV
 
+    def _grace_rl02_day_dir(self, root, date: str):
+        """Resolve a GRACE RL02 day folder in standard or legacy layout."""
+        root = pathlib.Path(root)
+        year = date[:4]
+        month = date[:7]
+        day_dir = 'grace_1B_' + date + '_02'
+        candidates = [root / month, root / year / month]
+        if root.name == year:
+            candidates.append(root.parent / month)
+        candidates.append(root)
+
+        seen = set()
+        for candidate in candidates:
+            normalized = candidate.resolve()
+            if normalized in seen:
+                continue
+            seen.add(normalized)
+            daily = candidate / day_dir
+            if daily.is_dir():
+                return daily
+        # Keep the standard layout in diagnostics when the requested day is absent.
+        return candidates[0] / day_dir
+
     def getData(self, type, sat: SatID):
 
         if type == Payload.KBR.name:
@@ -603,14 +626,14 @@ class GRACE_RL03(L1b):
 
         path = None
         if sat is SatID.A:
-            path = str(self.dir.joinpath(self._path_ACC, date.split('-')[0] + '-' + date.split('-')[1],
-                                         'grace_1B_' + date + '_02', 'ACC1B_' + date + '_' + sat.name + '_02.dat'))
+            path = str(self._grace_rl02_day_dir(self._path_ACC, date) /
+                       ('ACC1B_' + date + '_' + sat.name + '_02.dat'))
 
         elif sat is SatID.B:
-            acc_path = str(self.dir.joinpath(self._path_ACC, date.split('-')[0] + '-' + date.split('-')[1],
-                                         'grace_1B_' + date + '_02', 'ACC1B_' + date + '_' + sat.name + '_02.dat'))
+            acc_path = str(self._grace_rl02_day_dir(self._path_ACC, date) /
+                           ('ACC1B_' + date + '_' + sat.name + '_02.dat'))
 
-            act_path = str(self.dir.joinpath(self._path_ACC, 'grace_1B_' + date.split('-')[0] + '-' + date.split('-')[1] + '_03',
+            act_path = str(self.dir.joinpath(self._path_SCA, 'grace_1B_' + date.split('-')[0] + '-' + date.split('-')[1] + '_03',
                                          'ACT1B_' + date + '_' + sat.name + '_03.dat'))
 
             if os.path.exists(acc_path) and self.has_valid_records(acc_path):
@@ -769,8 +792,8 @@ class GRACE_RL03(L1b):
         date_range = (round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 0, 0, 0))),
                       round(Frame.mjd2sec(Frame.cal2mjd(IY, IM, ID, 23, 59, 60 - self.sr_payload[Payload.GNV.name]))))
 
-        path = str(self.dir.joinpath(self._path_GNV, date.split('-')[0] + '-' + date.split('-')[1],
-                              'grace_1B_' + date + '_02', 'GNV1B_' + date + '_' + sat.name + '_02.dat'))
+        path = str(self._grace_rl02_day_dir(self._path_GNV, date) /
+                   ('GNV1B_' + date + '_' + sat.name + '_02.dat'))
 
         try:
             f = open(path, 'rb')
@@ -881,7 +904,7 @@ class GRACE_FO_RL04(L1b):
             #                             'ACH1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
 
             act_path = str(self.dir.joinpath(self._path_ACC, date.split('-')[0] + '-' + date.split('-')[1],
-                                        'gracefo_1B_' + date + '_RL04.ascii.ACX2',
+                                        'gracefo_1B_' + date + '_RL04.ascii.ACX',
                                         'ACH1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
 
             if os.path.exists(acc_path) and self.has_valid_records(acc_path):

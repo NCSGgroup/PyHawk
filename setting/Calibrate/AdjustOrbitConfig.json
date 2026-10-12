@@ -10,10 +10,11 @@
     },
     "RangeRateConfig": {
         "ParameterFitting": "biasC0C1C2_OneCPR",
+        "OneCPROutlierOnly": false,
         "OutlierTimes": 6,
         "OutlierRMS": 6e-05,
         "OutlierObs": 6,
-        "ArcLength": 6,
+        "ArcLength": 12,
         "Iterations": 5,
         "ArcOutlierEnabled": true,
         "ArcOutlierSignificance": 0.05,
@@ -23,7 +24,9 @@
         "EpochOutlierEnabled": true,
         "EpochOutlierSignificance": 0.01,
         "EpochOutlierMaxFraction": 0.02,
-        "EpochOutlierMinSamples": 20
+        "EpochOutlierMinSamples": 20,
+        "PhysicalOCOutlierEnabled": false,
+        "ArcOutlierMinRelativeMetric": 3.0
     },
     "PathOfFilesConfig": {
         "StateVectorDataTemp": "../temp/StateVector",

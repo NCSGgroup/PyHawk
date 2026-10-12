@@ -93,12 +93,8 @@ class AdjustDM:
     def _save_StateVectors(self, state):
         res_dir = self._resPath + '/' + self._date_span[0] + '_' + self._date_span[1]
         res_filename = res_dir + '/' + str(self._arcNo) + '_' + self._satName + '.hdf5'
-        h5 = h5py.File(res_filename, 'w')
-        h5.create_dataset('t', data=state[0])
-        h5.create_dataset('r', data=state[1])
-        h5.create_dataset('v', data=state[2])
-        h5.close()
-        pass
+        from src.Solver.VerifiedState import save_verified_state
+        save_verified_state(res_filename, state)
 
     def __getInit(self):
         self._initPath = self._AdjustPathConfig.OrbitAdjustResTemp

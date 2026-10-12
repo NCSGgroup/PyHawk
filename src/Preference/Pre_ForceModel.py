@@ -7,6 +7,7 @@ import json
 import src.Preference.EnumType as EnumType
 import pathlib as pathlib
 import numpy as np
+from datetime import datetime, timedelta
 
 
 class ForceModelConfig:
@@ -53,6 +54,34 @@ class ForceModelConfig:
         self.RelativityConfig = self.Relativity().__dict__
 
         self.PathOfFilesConfig = self.PathOfFiles().__dict__
+
+    def resolve_time_variable_date(self, date_span):
+        """Resolve the midpoint month of an inclusive data span for GOCO06S."""
+        value = self.RefGravModelConfig.get('TimeVariableDate')
+        if value is not True:
+            if value is False:
+                self.RefGravModelConfig['TimeVariableDate'] = None
+                return None
+            return value
+
+        if not isinstance(date_span, (list, tuple)) or len(date_span) != 2:
+            raise ValueError('InterfaceConfig.date_span must contain start and end dates')
+
+        try:
+            start = datetime.strptime(date_span[0], '%Y-%m-%d')
+            end = datetime.strptime(date_span[1], '%Y-%m-%d')
+        except (TypeError, ValueError) as error:
+            raise ValueError(
+                'InterfaceConfig.date_span dates must use YYYY-MM-DD format'
+            ) from error
+
+        if end < start:
+            raise ValueError('InterfaceConfig.date_span end date precedes start date')
+
+        midpoint = start + ((end + timedelta(days=1)) - start) / 2
+        resolved = midpoint.strftime('%Y-%m')
+        self.RefGravModelConfig['TimeVariableDate'] = resolved
+        return resolved
 
     class NonConservative:
         def __init__(self):
@@ -150,7 +179,7 @@ class ForceModelConfig:
             self.kind = 0
             self.Nmax = 180
             self.StaticModel = EnumType.StaticGravModel.Gif48.name
-            self.TimeVariableDate = None
+            self.TimeVariableDate = False
 
     class Relativity:
         def __init__(self):
@@ -183,6 +212,7 @@ class ForceModelConfig:
             self.AOD = "../data/AOD/RL06"
             self.EOT11a = "../data/eot11a"
             self.FES2014 = "../data/FES2014"
+            self.GOT56 = "../data/GOT5.6/GOT5.6_OCN"
             self.Atmos = "../data/atmos"
             self.Gif48 = "../data/StaticGravityField/gif48.gfc"
             self.EIGEN6_C4 = "../data/StaticGravityField/EIGEN6-C4.gfc"

@@ -23,8 +23,8 @@
     },
     "NonConservativeConfig": {
         "date_span": [
-            "2006-01-01",
-            "2006-01-31"
+            "2013-05-01",
+            "2013-05-31"
         ],
         "arcNo": 0,
         "sat": {
@@ -130,8 +130,8 @@
     "RefGravModelConfig": {
         "kind": 0,
         "Nmax": 180,
-        "StaticModel": "GGM05C",
-        "TimeVariableDate": null
+        "StaticModel": "GOCO06S",
+        "TimeVariableDate": true
     },
     "RelativityConfig": {
         "GM_Sun": 1.32712442076e+20,
@@ -164,6 +164,7 @@
         "PoleTide": "../data/poletide",
         "LoverNumber": "../data/LoveNumber",
         "poleTideModel": "desaiscopolecoef.txt",
-        "temp_non_conservative_data": "../temp/NonConservativeForce"
+        "temp_non_conservative_data": "../temp/NonConservativeForce",
+        "GOT56": "../data/GOT5.6/GOT5.6_OCN"
     }
 }
