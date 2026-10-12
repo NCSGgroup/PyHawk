@@ -1,0 +1,17 @@
+{
+    "Enabled": false,
+    "AutoregressiveModelFile": "",
+    "AutoregressiveModelDataset": "model",
+    "InitialStateFile": "",
+    "InitialStateDataset": "state",
+    "InitialCovarianceFile": "",
+    "InitialCovarianceDataset": "covariance",
+    "NormalEquationFiles": [],
+    "NormalDataset": "NMatrix",
+    "RightHandSideDataset": "LMatrix",
+    "LocalParameterCount": 0,
+    "OutputFile": "../result/Kalman/filtered.hdf5",
+    "SaveCovariance": false,
+    "SkipMissingNormalEquations": true,
+    "AllowPseudoInverse": false
+}

@@ -1,0 +1,25 @@
+{
+    "TransitionMatrixConfig": {
+        "isRequired": true,
+        "Parameter_Number": 6,
+        "AllisGlobal": false
+    },
+    "AccelerometerConfig": {
+        "isRequired": true,
+        "isScale": false,
+        "AdjustLength": 6,
+        "X_AdjustLength": 6,
+        "Y_AdjustLength": 6,
+        "Z_AdjustLength": 6,
+        "Parameter_Number": 6,
+        "AllisGlobal": false
+    },
+    "StokesCoefficientsConfig": {
+        "isRequired": false,
+        "Parameter_Number": 3717,
+        "AllisGlobal": true,
+        "SortMethod": "SortByOrder",
+        "MaxDegree": 60,
+        "MinDegree": 2
+    }
+}
