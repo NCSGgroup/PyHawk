@@ -1,51 +1,124 @@
-# PyHawk: an effective solver for ll-SST satellite gravity missions
+# PyHawk
 
-#### Description
-Time-Variable Gravity field (TVG) represent the cumulative gravitational signals from all geophysical sources at any given moment. The global TVG signals observed from space contain information about mass redistribution occurring within the Earth's system, making them a new data type for monitoring climate and geophysical changes. For instance, the derived Total Water Storage (TWS) from TVG has been identified as an essential climate variable (ECV) for studying global climate change. In this study, we present a free, open-source, parallel and Python based PyHawk software for processing SST tasks, distinct from GROOPS. This not only offers users an alternative choice but also enhances the diversity of publicly available processing frameworks for cross-validation. More importantly, we chose to develop PyHawk in Python to help users better understand the processing chain and to provide future developers with more maintainable code.
+**A Python framework for gravity-field recovery from low–low satellite-to-satellite tracking (ll-SST).**
 
-<div align=center>
-    <img src="module.png" width="450" >
-</div>
+PyHawk processes GRACE and GRACE-FO observations to estimate time-variable gravity fields and generate along-orbit products. It combines configurable force models, numerical orbit and variational integration, accelerometer calibration, and arc-parallel estimation.
 
-#### Contact
+<p align="center"><img src="module.png" width="450" alt="PyHawk processing modules"></p>
 
-Yi Wu (wu_yi@hust.edu.cn) , Fan Yang (fany@plan.aau.dk) , ShuHao Liu (liushuhao@hust.edu.cn)
+## Processing workflow
 
-Huazhong University of Science and Technology
-Geodesy Group (see https://aaugeodesy.com/), Department of Sustainability and Planning, Aalborg University, Aalborg 9000, Denmark
+```text
+L1B + kinematic orbits + background models
+  → preprocessing and arc selection
+  → orbit fitting and KBRR calibration
+  → orbit/variational integration and design matrices
+  → weighted gravity-field estimation and GLS
+  → optional dynamical feedback and updated joint solution
+  → spherical harmonics and standard along-orbit products
+```
 
-This work is supported by the Huazhong University of Science and Technology. Additional supports come from and Aalborg University.
+The optional joint channel estimates gravity coefficients, shared monthly accelerometer scale parameters, arc-local initial states/ACC parameters, and KBRR empirical terms in one system. Observation blocks share the same physical parameters before local elimination and back-substitution. GLS updates the stochastic model; dynamical feedback updates physical parameters and reintegrates the orbit and variational equations. These are separate operations.
 
+## Installation
 
-#### Features
+Clone the `master` branch, which contains the current solver:
 
-1.  Users can modify all parameters related to the data processing workflow in the JSON configuration file, such as the calculation start time, selection and parameter settings for background force models, and calibration strategies for orbits and KBRR;
-2.  Users can flexibly select the required modules based on their needs, such as performing only data reprocessing or conveniently generating benchmark comparisons;
-3.  We enhance computational efficiency at the code level by encapsulating it in a dynamic library and managing data with HDF5 files;
-4.  Building on existing dynamical integration methods, we propose a matrix-based dynamical integration method that can accommodate multiple satellites or even formations simultaneously;
-5.  Utilizing modern parallel computing technologies, we optimize the entire codebase, enabling both segment and CPU parallelism, thereby improving computational efficiency from both fronts
+```bash
+git clone --branch master https://github.com/NCSGgroup/PyHawk.git
+cd PyHawk
+conda create -n pyhawk python=3.8.10
+conda activate pyhawk
+python -m pip install -r requirments.txt
+```
 
-#### Software Architecture
+`requirments.txt` is the existing filename. Python 3.8 is the legacy runtime used for the current processing workflow; the dependency list is unpinned, so retain an environment snapshot for reproducible runs. Some optional modules require additional packages, such as `netCDF4` for GOT5.6.
 
-1.  Flexibly divide functions, such as modifying JSON files through the interface and only dividing satellite observation data into arc segments, coordinate conversion, orbit calibration, etc;
-2.  Compatible with Linux, Windows, and MacOS operating systems, and supports parallel computing and supercomputer distributed computing to improve computing efficiency;
-3.  Adopting object-oriented programming language (Python), the system code is highly decoupled internally and has ease of use, readability, and scalability;
-4.  The unique advantage of using Python is that high-performance computing libraries (such as numpy, pandas, etc.) not only simplify system code, but also improve computational efficiency to achieve comparable computational efficiency to C++, Fortran, and Matlab.
+Native libraries are loaded from [`lib/`](lib): `sofa.dll` / `GravHar.dll` on Windows, or `sofa.so` / `GravHar.so` on Linux. They must match the host architecture and runtime. The current loaders explicitly support Windows and Linux; macOS requires adapting the library loading/build setup.
 
-#### Installation
+## Data preparation
 
-Please follow below the step-by-step instruction to do the installation, given that the Conda environment has been established already. 
-Here we provide the requirements for quick installation. It is recommended that users create an additional virtual environment for installing and running PyHawk. The benefits of doing so include avoiding interference with existing dependencies and creating a clean environment to build the project, where only the necessary packages need to be installed. A simpler installation via .yml to copy the environment will also be released soon. While PyHawk does not specify the version of Python, it is strongly recommended to use python > 3.8.
+Observation and model datasets must be obtained separately. Configure their locations before running:
 
-1. conda create -n py-hawk python=3.8.10
-2. source activate py-hawk
-3. pip install -r requirments.txt
+| Input | Typical location under the project | Notes |
+|---|---|---|
+| GRACE L1B | `data/GRACE_RL02/YYYY/YYYY-MM`, `data/GRACE_RL03/grace_1B_YYYY-MM_03` | RL03 KBR/SCA and RL02 ACC/GNV for the mixed-release reader |
+| GRACE-FO L1B | `data/GRACE_FO_RL04` | Use the directory hierarchy and acceleration product expected by the selected reader |
+| Kinematic orbit | `data/KinematicOrbit/YYYY/YYYY-MM` | Include epoch covariances when covariance weighting is enabled |
+| AOD | `data/AOD/RL07` | Cover the requested interval and interpolation boundaries |
+| Background models | Paths in `ForceModelConfig.json` and `FrameConfig.json` | EOP, ephemerides, reference gravity, tides and auxiliary coefficients |
 
-#### Instructions
-Three demo (demo1, demo2, demo3) are present under /py-hawk-v2/demo to showcase the use of PyHawk. Each demo has its detailed comments in its script. To run the demo, a bunch of sample data are necessary to be installed. The sample data is distributed together with the code at the given data repository, named after External Data. To begin with the demo, we suggest to place the sample data at its default place, which is under /py-hawk-v2/data/. Nevertheless, as an advanced user, one can place data at any desired place as long as the setting files are well configured. Below we give a brief introduction of three demo.
+Check both satellites, valid dates, units and reference frames. Missing data must be resolved or explicitly represented in `date_delete`; changing a path alone does not convert a data format.
 
-1.  demo_1.py In this demo, we show how to orbit integration.
-2.  demo_2.py In this demo, we show how to benchmark validation of the force model. 
-3.  demo_3.py In this demo, we show how to temporal gravity recovery from GRACE.
+## Configuration and execution
 
-Please feel free to contact us for possible more examples.
+Start from [`setting/Calibrate/`](setting/Calibrate), copy it to a separate directory for each experiment, and review:
+
+| Configuration file | Controls |
+|---|---|
+| `InterfaceConfig.json` | Mission, `date_span`, `date_delete`, sampling, arcs and observation paths |
+| `CalibrateOrbitConfig.json` | Processing stages, process counts, GLS, joint estimation, feedback and LGD |
+| `AdjustOrbitConfig.json` | Orbit observation source, fitting and KBRR quality control |
+| `AccelerometerConfig_A/B.json` | ACC calibration parameters and initial values |
+| `DesignAccelerometerConfig_A/B.json`, `DesignParameterConfig.json` | Parameter layout for design integration; keep consistent with the chosen estimation scheme |
+| `ForceModelConfig.json`, `FrameConfig.json`, `ODEConfig.json` | Force models, frame/time conversion and integration |
+| `NEQConfig.json`, `SolverConfig.json` | Observations used in NEQ, weighting, covariance and solver outputs |
+
+Run from the project root after preparing the data and settings:
+
+```bash
+python demo/demo_CalibrateOrbit.py --setting-dir setting/MyExperiment
+```
+
+The entry point changes the working directory to `demo/`: JSON paths such as `../data` and `../temp` are relative to **`demo/`, not the setting directory**. Keep the default output roots unless a validated workflow requires otherwise.
+
+The supplied `Calibrate` settings are a processing example, **not a fresh-run preset**: some stages are disabled and require existing intermediate files. For a new run, enable the necessary `StepControlConfig` stages. Reuse a disabled stage only when its inputs, configuration and cached results match. Monthly-scale bootstrap generates its own design matrices; avoid an unnecessary preliminary design-integration pass for that workflow.
+
+### Estimation options
+
+- Orbit fitting and gravity estimation can use different orbit observations: `OrbitConfig.ObservationSource` selects the fitting source; `NEQConfig` selects the NEQ observations.
+- In the joint channel, `InitialOrbitWeighting="KINRelative"` uses normalized KIN epoch precision for the initial WLS, with `OrbitKinFactor` setting relative KBRR precision. KBRR remains in **m/s**.
+- `GLSResidualSpace="Physical"` with `OrbitCovarianceMode="EstimatedFull"` estimates subsequent covariance from physical post-fit residuals. Arc weighting is configured separately through `ArcWeightingConfig`; it is not enabled by selecting GLS alone.
+- Set `JointEstimationConfig.Enabled=true` to use the joint channel. Monthly scale estimation also requires `MonthlyScaleEnabled=true` and compatible ACC parameter layouts.
+- To apply one feedback integration **and solve again using the updated dynamics**, set `FeedbackEnabled=true` and `FeedbackIterations=1`. `GLSIterationConfig.MaxIteration` independently limits GLS iterations.
+- KBRR calibration rejection, epoch/arc screening and physical O–C screening have separate switches. Disabling them does not remove basic validity checks or orbit quality control. `PhysicalOCOutlierEnabled=true` requires positive `RangeRateConfig.Iterations`.
+
+These options describe supported modes, not a universal parameter recommendation. The full configuration and available defaults are defined in [`src/Preference/`](src/Preference) and [`src/Solver/JointChannel/`](src/Solver/JointChannel).
+
+## Parallel runs and restart
+
+`ParallelControlConfig` sets worker counts for arc processing. Match them to allocated CPUs and memory. For multi-process jobs, set `OMP_NUM_THREADS`, `OPENBLAS_NUM_THREADS` and `MKL_NUM_THREADS` to `1` to avoid nested BLAS oversubscription. Under Slurm, run the same Python command inside a site-specific batch script. Interleaved worker progress bars are not an overall monthly completion percentage.
+
+Joint runs store manifests, settings and stage completion records under `temp/NEQ/JointChannel/`. Restart entry points are in [`demo/`](demo), including `resume_JointChannel.py` and `demo_ResumeBootstrap.py`; inspect `--help` and select the entry point matching the completed stage. A checkpoint is reusable only with compatible configuration and valid files. Do not modify shared code during active runs or delete active run directories.
+
+## Outputs
+
+Default paths below are relative to the project root. Products are generated according to the enabled stages:
+
+| Path | Product |
+|---|---|
+| `result/SH/` | Spherical-harmonic gravity coefficients (`.gfc`) |
+| `temp/StandardKBRR/` | Standard KBRR products |
+| `temp/StandardLGD/` | Line-of-sight gravity difference products |
+| `temp/StandardNEQ/` | Standard normal-equation products |
+| `temp/StandardACC/` | Accelerometer calibration products |
+| `report/`, `log/` | Preprocessing, arc selection and runtime diagnostics |
+| Other `temp/` subdirectories | RawData, fitted states, design matrices and solver intermediates |
+
+Archive the configuration and completion records with the products. Before cleaning intermediate files, verify the final products are readable, finite and cover the intended dates; a Slurm exit status alone is insufficient. **Do not delete the whole `temp/` directory: it also contains standard products.**
+
+## Code and validation
+
+[`src/`](src) contains the implementation, [`demo/`](demo) the entry points, [`benchmark/`](benchmark) force-model benchmarks, and [`test/`](test) regression tests. A focused joint-solver check is:
+
+```bash
+python -m unittest discover -s test -p test_joint_channel.py -v
+```
+
+The small synthetic tests validate solver behavior; they do not replace full-month scientific validation with mission data.
+
+## Contact
+
+Yi Wu — wu_yi@hust.edu.cn · Fan Yang — fany@plan.aau.dk · ShuHao Liu — liushuhao@hust.edu.cn
+
+Huazhong University of Science and Technology; [Geodesy Group, Aalborg University](https://aaugeodesy.com/).
