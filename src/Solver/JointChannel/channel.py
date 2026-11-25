@@ -178,6 +178,7 @@ def read_arc(settings, arc, empirical=True, covariance=False, dm_root=None):
     physical_qc = qc_config.get('PhysicalOCOutlierEnabled', False)
     if not isinstance(physical_qc, bool):
         raise ValueError('PhysicalOCOutlierEnabled must be a JSON boolean')
+    physical_qc = physical_qc and not solver.get('KBRRQCRebuilt', False)
     t, e, empirical_columns = read_qc_basis(qcfile, empirical or physical_qc,
                                             apply_cached_mask=not physical_qc)
     qc_audit = None

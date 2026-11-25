@@ -568,7 +568,9 @@ class CalibrateOrbit:
             # for i in np.arange(0, 10, 1):
             #     self._gravityDesignMat(i)
             pool = multiprocessing.Pool(processes=GetGravityDesignMatProcess)
-            pool.map(self._gravityDesignMat, self.__arclist)
+            refresh_candidates = (joint['Enabled'] and joint['FeedbackEnabled']
+                                  and joint['ReevaluateKBRRAfterFeedback'])
+            pool.map(self._gravityDesignMat, kbrr_input_arcs if refresh_candidates else self.__arclist)
             pool.close()
             pool.join()
         if joint['Enabled']:
@@ -579,7 +581,9 @@ class CalibrateOrbit:
             run_calibrate_joint(
                 self, self._joint_setting_directory, self.__arclist,
                 joint, isGLS, GLSIteration,
-                arc_filter_path=self.__arcft_path, arc_definition_path=self.__arc_path
+                arc_filter_path=self.__arcft_path, arc_definition_path=self.__arc_path,
+                candidate_arcs=kbrr_input_arcs,
+                resume_feedback=joint.get('ResumeFeedbackCheckpoint')
             )
             return
         if isNEQ:
@@ -1788,7 +1792,7 @@ class CalibrateOrbit:
         ))
         return scores, critical
 
-    def __screenKBRRArcs(self, arc_numbers):
+    def __screenKBRRArcs(self, arc_numbers, res_dir=None):
         """Screen KBRR epochs and arcs using complementary robust evidence."""
         range_rate_config = self.__adjust_config.RangeRate()
         range_rate_config.__dict__.update(
@@ -1804,7 +1808,7 @@ class CalibrateOrbit:
             range_rate_config, 'ArcOutlierMaxFraction', 0.1
         ))
         min_relative_metric = float(getattr(
-            range_rate_config, 'ArcOutlierMinRelativeMetric', 3.0
+            range_rate_config, 'ArcOutlierMinRelativeMetric', 2.5
         ))
         if not np.isfinite(min_relative_metric) or min_relative_metric <= 1.0:
             raise ValueError('ArcOutlierMinRelativeMetric must be finite and > 1')
@@ -1834,9 +1838,8 @@ class CalibrateOrbit:
         adjust_path.__dict__.update(
             self.__adjust_config.PathOfFilesConfig.copy()
         )
-        res_dir = pathlib.Path(adjust_path.RangeRateTemp).joinpath(
-            self.__date_span[0] + '_' + self.__date_span[1]
-        )
+        res_dir = pathlib.Path(res_dir) if res_dir is not None else pathlib.Path(
+            adjust_path.RangeRateTemp).joinpath('_'.join(self.__date_span))
 
         # Stage 1: inspect complete arcs before touching their epochs. Only
         # caller-supplied (arcft/orbit-QC accepted) arcs enter this population.
@@ -3134,6 +3137,11 @@ class CalibrateOrbit:
         geofit_kbrr = self._gravity_field_fit(
             global_dm, self.cs, scale_parameter_count
         )
+        from src.Solver.KBRRBackground import restore_kbrr_background
+        restored, restoration_attrs = restore_kbrr_background(
+            global_dm[:, scale_parameter_count:], geofit_kbrr,
+            self.__force_model_config,
+            self.__design_parameter_config.StokesCoefficientsConfig, self.__date_span)
 
         res_path = self.__solver_config.PostKBRR + '/' + self.__date_span[0] + '-' + self.__date_span[1] + '/'
         if not os.path.exists(res_path):
@@ -3145,6 +3153,10 @@ class CalibrateOrbit:
         h5.create_dataset('time', data=t_dm)
         h5.create_dataset('post_kbrr', data=kbrr_res)
         h5.create_dataset('geofit_kbrr', data=geofit_kbrr)
+        for key, value in restored.items():
+            h5.create_dataset(key, data=value)
+        for key, value in restoration_attrs.items():
+            h5.attrs[key] = value
         h5.close()
 
         standard_kbrr_directory = getattr(
@@ -3172,7 +3184,9 @@ class CalibrateOrbit:
         )
         for stage, range_rate in (
                 ('Raw', raw_oc), ('Pre', obs), ('Post', kbrr_res),
-                ('Geofit', geofit_kbrr)):
+                ('Geofit', geofit_kbrr),
+                ('Background', restored['kbrr_background_timevar']),
+                ('Geofitstatic', restored['geofit_kbrr_static'])):
             StandardKBRR().configure(
                 filedir=standard_kbrr_directory,
                 date_span=self.__date_span,

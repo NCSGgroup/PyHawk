@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+/.idea/
+/.codex/
+/.codex_remote*/
+/.sync/
+/data/
+/temp/
+/result/
+/log/
+*.h5
+*.hdf5
+*.gfc

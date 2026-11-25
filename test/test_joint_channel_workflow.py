@@ -48,7 +48,7 @@ class WorkflowTests(unittest.TestCase):
                  patch.object(w,'run_feedback',side_effect=lambda *a,**k:a[1]), \
                  patch.object(w,'export_residuals'),patch.object(w,'publish_products',return_value={}), \
                  patch('src.Solver.JointChannel.arc_weights.estimate_monthly_noise',return_value={'converged':False}):
-                w.run_calibrate_joint(Mock(),tmp,[0],dict(Enabled=True,FeedbackEnabled=True,MaxOuterIterations=2),True,gls)
+                w.run_calibrate_joint(Mock(),tmp,[0],dict(Enabled=True,FeedbackEnabled=True,ReevaluateKBRRAfterFeedback=False,MaxOuterIterations=2),True,gls)
             self.assertEqual([call.args[4] for call in joint.call_args_list],[False,True,True,True])
             self.assertTrue(str(joint.call_args_list[2].args[2]).endswith('outer_01_gls_seed'))
 
@@ -65,7 +65,7 @@ class WorkflowTests(unittest.TestCase):
                  patch.object(w,'run_feedback',side_effect=lambda *a,**k:a[1]), \
                  patch.object(w,'export_residuals'),patch.object(w,'publish_products',return_value={}), \
                  patch('src.Solver.JointChannel.arc_weights.estimate_monthly_noise',return_value={'converged':False}):
-                w.run_calibrate_joint(Mock(),tmp,[0],dict(Enabled=True,FeedbackEnabled=True,MaxOuterIterations=2),True,gls)
+                w.run_calibrate_joint(Mock(),tmp,[0],dict(Enabled=True,FeedbackEnabled=True,ReevaluateKBRRAfterFeedback=False,MaxOuterIterations=2),True,gls)
             self.assertEqual([call.args[4] for call in joint.call_args_list],[False,True,True,True])
             self.assertTrue(str(joint.call_args_list[2].args[2]).endswith('outer_01_gls_seed'))
 
@@ -84,7 +84,7 @@ class WorkflowTests(unittest.TestCase):
                  patch.object(w,'load_result',return_value=({},np.array([2.,4.]))), \
                  patch.object(w,'run_feedback',side_effect=feedback) as feed, \
                  patch.object(w,'export_residuals'), patch.object(w,'publish_products',return_value={}) as publish:
-                w.run_calibrate_joint(owner,tmp,[0],dict(Enabled=True,FeedbackEnabled=True,MaxOuterIterations=2,Damping=.5,
+                w.run_calibrate_joint(owner,tmp,[0],dict(Enabled=True,FeedbackEnabled=True,ReevaluateKBRRAfterFeedback=False,MaxOuterIterations=2,Damping=.5,
                     ArcProcesses=4,FeedbackProcesses=5),True,gls)
                 self.assertEqual(joint.call_count,4)
                 self.assertEqual(owner.GLS.call_count,2)
@@ -133,7 +133,7 @@ class WorkflowTests(unittest.TestCase):
                  patch.object(w,'run_feedback',side_effect=lambda *a,**k:a[1]) as feed, \
                  patch.object(w,'export_residuals'),patch.object(w,'publish_products',return_value={}) as publish, \
                  patch('src.Solver.JointChannel.arc_weights.estimate_monthly_noise',return_value={'converged':False}):
-                w.run_calibrate_joint(owner,tmp,[0],dict(Enabled=True,FeedbackEnabled=True,
+                w.run_calibrate_joint(owner,tmp,[0],dict(Enabled=True,FeedbackEnabled=True,ReevaluateKBRRAfterFeedback=False,
                     FeedbackIterations=1,MaxOuterIterations=1,Damping=.5,
                     ArcProcesses=4,FeedbackProcesses=5),True,gls)
             self.assertEqual(feed.call_count,1)
@@ -155,10 +155,31 @@ class WorkflowTests(unittest.TestCase):
             self.assertIsNotNone(complete['iterations'][0]['feedback'])
             self.assertIsNone(complete['iterations'][1]['feedback'])
 
+    def test_feedback_rechecks_candidates_and_final_solve_uses_reaccepted_arc(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            settings = SimpleNamespace(raw={'SolverConfig':{'DesignMatrixTemp':tmp},
+                'NEQConfig':{'PathOfFilesConfig':{'NormalEqTemp':tmp}},
+                'GravityDesignParameterConfig':{'AccelerometerConfig':{'isScale':False}}},tag='month')
+            gls = SimpleNamespace(OrbitCovarianceMode='FixedDiagonal')
+            with patch.object(w,'Settings',return_value=settings), \
+                 patch.object(w,'run_joint',side_effect=lambda *a,**k:a[2]) as joint, \
+                 patch.object(w,'load_result',return_value=({},np.array([1.,2.]))), \
+                 patch.object(w,'run_feedback',side_effect=lambda *a,**k:a[1]) as feedback, \
+                 patch.object(w,'export_residuals'), patch.object(w,'publish_products',return_value={}), \
+                 patch('src.Solver.JointChannel.refresh_qc.refresh_kbrr_qc',side_effect=[[0],[0,9]]) as qc:
+                w.run_calibrate_joint(Mock(),tmp,[0],dict(Enabled=True,FeedbackEnabled=True,
+                    FeedbackIterations=1,ArcProcesses=2,FeedbackProcesses=2),False,gls,candidate_arcs=[0,9])
+            self.assertEqual(qc.call_count,2)
+            self.assertEqual([c.args[1] for c in qc.call_args_list],[[0,9],[0,9]])
+            self.assertEqual([c.args[1] for c in joint.call_args_list],[[0],[0,9]])
+            self.assertEqual(settings.raw['SolverConfig']['KBRRCandidateArcs'],[0,9])
+            self.assertEqual(feedback.call_count,1)
+            self.assertEqual(qc.call_args_list[1].args[3],feedback.call_args.args[1]/'DesignMatrix')
+
     def test_explicit_feedback_count_validation(self):
         for value in (-1,True,1.5):
             with self.assertRaises(ValueError):
-                w.joint_options(dict(Enabled=True,FeedbackEnabled=True,FeedbackIterations=value))
+                w.joint_options(dict(Enabled=True,FeedbackEnabled=True,ReevaluateKBRRAfterFeedback=False,FeedbackIterations=value))
         with self.assertRaises(ValueError):
             w.joint_options(dict(Enabled=True,FeedbackEnabled=False,FeedbackIterations=1))
 

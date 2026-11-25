@@ -887,34 +887,26 @@ class GRACE_FO_RL04(L1b):
 
     def _readACC(self, date: str, sat: SatID):
         path = None
-        # path = str(self.dir.joinpath(self._path_ACC, date.split('-')[0] + '-' + date.split('-')[1],
-        #                              'gracefo_1B_' + date + '_RL04.ascii.noLRI',
-        #                              'ACT1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
         if sat is SatID.A:
-            path = str(self.dir.joinpath(self._path_ACC, date.split('-')[0] + '-' + date.split('-')[1],
+            path = str(self.dir.joinpath(self._path_ACC, date[:7],
                                          'gracefo_1B_' + date + '_RL04.ascii.noLRI',
-                                         'ACT1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
+                                         'ACT1B_' + date + '_C_04.txt'))
         elif sat is SatID.B:
-            acc_path = str(self.dir.joinpath(self._path_ACC, date.split('-')[0] + '-' + date.split('-')[1],
-                                         'gracefo_1B_' + date + '_RL04.ascii.noLRI',
-                                         'ACT1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
-
-            # acc_path = str(self.dir.joinpath(self._path_ACC, date.split('-')[0] + '-' + date.split('-')[1],
-            #                             'gracefo_1B_' + date + '_RL04.ascii.ACX',
-            #                             'ACH1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
-
-            act_path = str(self.dir.joinpath(self._path_ACC, date.split('-')[0] + '-' + date.split('-')[1],
-                                        'gracefo_1B_' + date + '_RL04.ascii.ACX',
-                                        'ACH1B_' + date + '_' + chr(ord(sat.name) + 2) + '_04.txt'))
-
-            if os.path.exists(acc_path) and self.has_valid_records(acc_path):
-                path = acc_path
-
-            elif os.path.exists(act_path) and self.has_valid_records(act_path):
-                path = act_path
-
-            else:
-                raise FileNotFoundError(f"No valid ACC or ACT data for {date} {sat}")
+            sources = getattr(self.InterfaceConfig, 'GRACEFOBAccelerometerSources', ['ACX', 'ACX2'])
+            if not isinstance(sources, list) or not sources or any(
+                    source not in ('ACX', 'ACX2') for source in sources):
+                raise ValueError('GRACEFOBAccelerometerSources must contain ACX or ACX2')
+            for source in sources:
+                candidate = self.dir.joinpath(
+                    self._path_ACC, date[:7],
+                    'gracefo_1B_' + date + '_RL04.ascii.' + source,
+                    'ACH1B_' + date + '_D_04.txt')
+                if candidate.is_file() and self.has_valid_records(str(candidate)):
+                    path = str(candidate)
+                    break
+            if path is None:
+                raise FileNotFoundError(
+                    'No valid GRACE-FO B ACH data for {} in {}'.format(date, sources))
 
         try:
             f = open(path, 'r')

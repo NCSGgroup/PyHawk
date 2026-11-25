@@ -81,6 +81,7 @@ The supplied `Calibrate` settings are a processing example, **not a fresh-run pr
 - `GLSResidualSpace="Physical"` with `OrbitCovarianceMode="EstimatedFull"` estimates subsequent covariance from physical post-fit residuals. Arc weighting is configured separately through `ArcWeightingConfig`; it is not enabled by selecting GLS alone.
 - Set `JointEstimationConfig.Enabled=true` to use the joint channel. Monthly scale estimation also requires `MonthlyScaleEnabled=true` and compatible ACC parameter layouts.
 - To apply one feedback integration **and solve again using the updated dynamics**, set `FeedbackEnabled=true` and `FeedbackIterations=1`. `GLSIterationConfig.MaxIteration` independently limits GLS iterations.
+- `ReevaluateKBRRAfterFeedback=true` (default) rebuilds KBRR QC from original preprocessed observations minus the current integrated orbit. Previously rejected KBRR epochs/arcs may return; selection remains fixed within each GLS loop. Existing outlier switches still apply.
 - KBRR calibration rejection, epoch/arc screening and physical O–C screening have separate switches. Disabling them does not remove basic validity checks or orbit quality control. `PhysicalOCOutlierEnabled=true` requires positive `RangeRateConfig.Iterations`.
 
 These options describe supported modes, not a universal parameter recommendation. The full configuration and available defaults are defined in [`src/Preference/`](src/Preference) and [`src/Solver/JointChannel/`](src/Solver/JointChannel).

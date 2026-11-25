@@ -10,6 +10,7 @@ class InterfaceConfig:
         self.sat = {SatID.A.name: True,
                     SatID.B.name: True}
         self.date_delete = []
+        self.GRACEFOBAccelerometerSources = ['ACX', 'ACX2']
 
         self.include_payloads = {Payload.ACC.name: True,
                                  Payload.SCA.name: True,

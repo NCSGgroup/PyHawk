@@ -17,6 +17,7 @@ class CalibrateOrbitConfig:
         def __init__(self):
             self.Enabled = False
             self.FeedbackEnabled = False
+            self.ReevaluateKBRRAfterFeedback = True
             self.MonthlyScaleEnabled = False
             self.MaxOuterIterations = 2
             self.EstimateEmpirical = True

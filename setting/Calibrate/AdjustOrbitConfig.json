@@ -26,7 +26,7 @@
         "EpochOutlierMaxFraction": 0.02,
         "EpochOutlierMinSamples": 20,
         "PhysicalOCOutlierEnabled": false,
-        "ArcOutlierMinRelativeMetric": 3.0
+        "ArcOutlierMinRelativeMetric": 2.5
     },
     "PathOfFilesConfig": {
         "StateVectorDataTemp": "../temp/StateVector",

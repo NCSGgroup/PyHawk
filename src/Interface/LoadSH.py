@@ -874,6 +874,10 @@ class LoadCSR(LoadSH):
         flag = 0
 
         for i in range(len(content)):
+            if content[i].strip() == '# End of YAML header':
+                if self.maxDegree is None:
+                    raise ValueError('YAML gravity field header has no degree')
+                return i
             value = content[i].split()
             if len(value) == 0: continue
 
@@ -887,6 +891,8 @@ class LoadCSR(LoadSH):
                 self.Radius = float(value[1])
             elif value[0] == 'max_degree':
                 self.maxDegree = int(value[1])
+            elif value[0] == 'degree' and len(value) >= 3 and value[1] == ':':
+                self.maxDegree = int(value[2])
             elif value[0] == 'errors':
                 self.errors = value[1]
             elif value[0] == 'norm':
@@ -896,6 +902,9 @@ class LoadCSR(LoadSH):
             elif value[0] == 'end_of_head':
                 flag = i
                 break
+
+        if self.maxDegree is None:
+            raise ValueError('Gravity field header has no maximum degree or recognized end marker')
 
         return flag
 
@@ -915,6 +924,8 @@ class LoadCSR(LoadSH):
         for item in content:
             value = item.split()
             if len(value) == 0: continue
+            if value[0] not in ('gfc', 'GRCOF2'):
+                continue
             stempC[int(value[1]), int(value[2])] = float(value[3])
             stempS[int(value[1]), int(value[2])] = float(value[4])
             stempsigmaC[int(value[1]), int(value[2])] = float(value[5])
@@ -1005,7 +1016,7 @@ class LoadGLO(LoadSH):
         try:
             for root, dirs, files in os.walk(root_path):
                 for name in files:
-                    if date in name:
+                    if name.startswith('AOD1B_' + date + '_') and name.endswith('.asc'):
                         target = os.path.join(root, name)
                         raise Break
         except Break as e:

@@ -16,6 +16,7 @@ def _residual_arc_job(arc, solution, cumulative, feedback, l1c):
     from src.Interface.ArcOperation import ArcData
     from src.Preference.EnumType import Payload, SatID
     from .workflow import save_h5
+    from src.Solver.KBRRBackground import restore_kbrr_background
 
     solution = Path(solution)
     settings = Settings(solution / 'settings', solution)
@@ -49,15 +50,20 @@ def _residual_arc_job(arc, solution, cumulative, feedback, l1c):
     dmfile = Path(manifest['dm_root'])/settings.tag/('RangeRate_%d.hdf5' % arc)
     with h5py.File(dmfile, 'r') as h:
         indices = epoch_indices(h['t'][()], time)
-        geofit = h['global'][()][indices, skip:] @ cumulative[skip:]
+        design_sh = h['global'][()][indices, skip:]
+        geofit = design_sh @ cumulative[skip:]
+    restored, restoration_attrs = restore_kbrr_background(
+        design_sh, geofit, settings.obj('ForceModelConfig'),
+        settings.raw['GravityDesignParameterConfig']['StokesCoefficientsConfig'], settings.span)
     save_h5(Path(solver['PostParameter'])/tag/('%d_AB.hdf5' % arc),
             dict(par_a=damp*local[:nl], par_b=damp*local[nl:2*nl]),
             dict(parameter_semantics='joint local increments, including initial state', joint_channel=True))
     save_h5(Path(solver['PostKBRR'])/tag/('RangeRate_%d.hdf5' % arc),
-            dict(time=time, kbrr_par=damp*local, post_kbrr=post, geofit_kbrr=geofit),
+            dict(time=time, kbrr_par=damp*local, post_kbrr=post, geofit_kbrr=geofit, **restored),
             dict(local_order=json.dumps(layout['order']), joint_channel=True,
                  residual_type='reintegrated' if feedback else 'linear',
-                 geofit_semantics='final linearization Jacobian times cumulative SH correction'))
+                 geofit_semantics='final linearization Jacobian times cumulative SH correction',
+                 **restoration_attrs))
     for sat, (ot, residual) in orbits.items():
         save_h5(Path(solver['PostOrbit'])/tag/('Orbit_%d%s.hdf5' % (arc, sat)),
                 dict(time=ot, post_Orbit=residual), dict(joint_channel=True))
@@ -70,7 +76,9 @@ def _residual_arc_job(arc, solution, cumulative, feedback, l1c):
         b = rd.getData(arc, Payload.GNV, SatID.B)[:, :4]
         lon, lat, alt = StandardKBRR.midpoint_coordinates(time, a, b, frame)
         path = adjust.get('StandardKBRRTemp', StandardKBRR.output_directory(adjust['RangeRateTemp']))
-        for stage, value in (('Raw', pre), ('Pre', pre), ('Post', post), ('Geofit', geofit)):
+        for stage, value in (('Raw', pre), ('Pre', pre), ('Post', post), ('Geofit', geofit),
+                             ('Background', restored['kbrr_background_timevar']),
+                             ('Geofitstatic', restored['geofit_kbrr_static'])):
             StandardKBRR().configure(path, settings.span, stage,
                 mission=settings.raw['InterfaceConfig']['mission']).save_arc(
                     time, lon, lat, alt, value, arc)

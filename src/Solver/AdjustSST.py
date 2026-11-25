@@ -132,6 +132,41 @@ class RangeRate:
         self.__resh5 = h5py.File(res_filename, "w")
         return self
 
+    @classmethod
+    def from_integrated_orbit(cls, arc, date_span, config, raw, time, r, v, filename):
+        """Rebuild QC from original observations and the current physical orbit.
+
+        No previous RangeRate file, retained epoch list or mask is consulted.
+        """
+        from src.Solver.JointChannel.channel import epoch_indices
+        raw, time, r, v = map(np.asarray, (raw, time, r, v))
+        if not np.all(np.isfinite(time)) or not np.all(np.isfinite(r)) or not np.all(np.isfinite(v)):
+            raise ValueError('non-finite integrated orbit for KBRR arc %s' % arc)
+        raw = raw[np.isfinite(raw[:, 0]) & np.isfinite(raw[:, 2])]
+        keys = np.rint(time * 1e6).astype(np.int64)
+        selected = np.isin(np.rint(raw[:, 0] * 1e6).astype(np.int64), keys)
+        obs = raw[selected]
+        if not len(obs):
+            raise ValueError('no valid raw KBR epochs overlap current orbit for arc %s' % arc)
+        idx = epoch_indices(time, obs[:, 0])
+        obj = cls(arc, date_span)
+        obj.Time = obs[:, 0]
+        obj.__PosA, obj.__PosB = r[idx, :3], r[idx, 3:]
+        obj.__VelA, obj.__VelB = v[idx, :3], v[idx, 3:]
+        obj.__kbr_r = obs[:, 2]
+        obj.__rms_times = config.OutlierTimes
+        obj.__upper_RMS, obj.__upper_obs = config.OutlierRMS, config.OutlierObs
+        obj.__kbr_fit = config.ParameterFitting
+        obj.__onecpr_outlier_only = config.OneCPROutlierOnly
+        obj.__iterations = config.Iterations
+        obj.__kbr_arc = config.ArcLength * 3600
+        pathlib.Path(filename).parent.mkdir(parents=True, exist_ok=True)
+        obj.__resh5 = h5py.File(filename, 'x')
+        try:
+            obj.calibrate()
+        finally:
+            obj.__resh5.close()
+
     @staticmethod
     def _build_arc_nodes(time, arc_length, close_tolerance=1800,
                          min_tail_points=100, end_margin=10):

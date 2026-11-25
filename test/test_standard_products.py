@@ -84,14 +84,13 @@ class TestStandardProducts(unittest.TestCase):
             self.assert_standard_header(content)
             self.assertIn('    - pre_range_rate:\n', content)
             self.assertIn('    - post_range_rate:\n', content)
-            self.assertIn('    - raw_oc_range_rate:\n', content)
+            self.assertNotIn('    - raw_oc_range_rate:\n', content)
             self.assertIn('    - geofit_range_rate:\n', content)
             rows = content.split('# End of YAML header\n', 1)[1].strip().splitlines()
-            self.assertTrue(all(len(row.split()) == 8 for row in rows))
+            self.assertTrue(all(len(row.split()) == 7 for row in rows))
             self.assertAlmostEqual(float(rows[0].split()[4]), 1.0e-6)
             self.assertAlmostEqual(float(rows[0].split()[5]), 1.0e-8)
-            self.assertAlmostEqual(float(rows[0].split()[6]), 3.0e-6)
-            self.assertAlmostEqual(float(rows[0].split()[7]), 7.0e-7)
+            self.assertAlmostEqual(float(rows[0].split()[6]), 7.0e-7)
 
     def test_kbrr_discard_arcs_removes_rejected_snapshots(self):
         with tempfile.TemporaryDirectory() as directory:

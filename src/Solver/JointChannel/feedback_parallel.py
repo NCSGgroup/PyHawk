@@ -64,19 +64,25 @@ def _feedback_arc_job(arc, source, root, damping, cache=None):
                         h['acc'][()], modeled, rtol=1e-10, atol=1e-15):
                     raise ValueError('cached force and ACC parameters differ; cannot bootstrap feedback safely')
 
-    with h5py.File(source / ('arc_%d.h5' % arc), 'r') as solved:
-        local_delta = solved['local_delta'][()]
-        layout = json.loads(solved.attrs['layout'])
-        old_t = solved['RangeRate/time'][()]
-        old_y = solved['RangeRate/prefit'][()]
-        predicted = solved['RangeRate/linear_postfit'][()]
-        orbit_inputs = {}
-        for sat in ('A', 'B'):
-            key = 'Orbit_' + sat
-            if key in solved:
-                orbit_inputs[sat] = (solved[key + '/time'][()],
-                                     solved[key + '/prefit'][()],
-                                     solved[key + '/linear_postfit'][()])
+    was_solved = arc in manifest['arcs']
+    if was_solved:
+        with h5py.File(source / ('arc_%d.h5' % arc), 'r') as solved:
+            local_delta = solved['local_delta'][()]
+            layout = json.loads(solved.attrs['layout'])
+            old_t = solved['RangeRate/time'][()]
+            old_y = solved['RangeRate/prefit'][()]
+            predicted = solved['RangeRate/linear_postfit'][()]
+            orbit_inputs = {}
+            for sat in ('A', 'B'):
+                key = 'Orbit_' + sat
+                if key in solved:
+                    orbit_inputs[sat] = (solved[key + '/time'][()],
+                                         solved[key + '/prefit'][()],
+                                         solved[key + '/linear_postfit'][()])
+    else:
+        width = 6 + len(acc[0]) - (9 if p['isScale'] else 0)
+        local_delta = np.zeros(2 * width)
+        layout = dict(local_per_satellite=width, scale_global=p['isScale'])
 
     expected_nl = 6 + len(acc[0]) - (9 if p['isScale'] else 0)
     if layout['local_per_satellite'] != expected_nl or layout['scale_global'] != p['isScale']:
@@ -97,6 +103,12 @@ def _feedback_arc_job(arc, source, root, damping, cache=None):
     else:
         t, r, v = reused
         print('Feedback reuse arc %d' % arc, flush=True)
+    if not was_solved:
+        # No KBRR-derived local update exists for this candidate. Its previous
+        # state is retained; the new shared scale/gravity still changes C.
+        return arc, dict(initial=initial_new, acc_A=acc_new[0], acc_B=acc_new[1]), {}, dict(
+            solved_in_previous_stage=False, local_update='zero',
+            shared_update_applied=True)
     idx = epoch_indices(t, old_t)
     raw = rd.getData(arc, Payload.KBR)
     true_prefit = raw[epoch_indices(raw[:, 0], old_t), 2] - range_rate(r[idx], v[idx])
@@ -173,8 +185,11 @@ def run_feedback_parallel(solution, output, damping, workers, cache=None):
     gravity = previous_gravity + damping*global_delta[nscale:]
     root.mkdir(parents=True, exist_ok=False)
     settings.save(root / 'settings')
+    candidates = settings.raw['SolverConfig'].get('KBRRCandidateArcs', manifest['arcs'])
+    if len(set(candidates)) != len(candidates) or not set(manifest['arcs']).issubset(candidates):
+        raise ValueError('invalid feedback KBRR candidate arc list')
     diagnostics = {}
-    print('Joint feedback integration: %d arcs, %d workers' % (len(manifest['arcs']), workers), flush=True)
+    print('Joint feedback integration: %d arcs, %d workers' % (len(candidates), workers), flush=True)
     with h5py.File(root / 'state.h5', 'x') as out:
         out.attrs['source_solution'] = str(source)
         out.attrs['damping'] = damping
@@ -183,7 +198,7 @@ def run_feedback_parallel(solution, output, damping, workers, cache=None):
         if p['isScale']:
             out.create_dataset('monthly_scale',data=common_scale+damping*global_delta[:18].reshape(2,9))
         for number, (arc, data, orbit, diagnostic) in enumerate(map_arcs(
-                _feedback_arc_job, manifest['arcs'], (source, root, damping, cache), workers), 1):
+                _feedback_arc_job, candidates, (source, root, damping, cache), workers), 1):
             group = out.create_group('arc_%d' % arc)
             for name, value in data.items():
                 group.create_dataset(name, data=value)
@@ -193,8 +208,8 @@ def run_feedback_parallel(solution, output, damping, workers, cache=None):
                     pod.create_dataset(name, data=values[name])
                 pod.attrs['nonlinear_difference_rms'] = values['nonlinear_difference_rms']
             diagnostics[str(arc)] = diagnostic
-            if number % 10 == 0 or number == len(manifest['arcs']):
-                print('Joint feedback integration: %d/%d arcs' % (number, len(manifest['arcs'])), flush=True)
+            if number % 10 == 0 or number == len(candidates):
+                print('Joint feedback integration: %d/%d arcs' % (number, len(candidates)), flush=True)
     write_json(root / 'complete.json', dict(status='complete', source_solution=str(source),
-                                            damping=damping, arcs=manifest['arcs'], diagnostics=diagnostics))
+                                            damping=damping, arcs=candidates, solved_arcs=manifest['arcs'], diagnostics=diagnostics))
     return root

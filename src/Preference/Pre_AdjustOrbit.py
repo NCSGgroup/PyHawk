@@ -35,7 +35,7 @@ class AdjustOrbitConfig:
             self.ArcOutlierEnabled = True
             self.ArcOutlierSignificance = 0.05
             self.ArcOutlierMaxFraction = 0.1
-            self.ArcOutlierMinRelativeMetric = 3.0
+            self.ArcOutlierMinRelativeMetric = 2.5
             self.ArcOutlierMinArcs = 8
             self.ArcOutlierMinCPRCycles = 1.5
             self.EpochOutlierEnabled = True

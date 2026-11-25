@@ -1,6 +1,6 @@
 """
 @Description:
-    Save aligned PyHawk raw O-C, pre-solution, post-solution, and monthly
+    Save aligned PyHawk pre-solution, post-solution, and monthly
     gravity-field KBRR series in one GRACE KBR1B-like ASCII file per UTC day.
 """
 
@@ -16,7 +16,7 @@ from src.Auxilary.GeoMathKit import GeoMathKit
 class StandardKBRR:
     _EPOCH = datetime.datetime(2000, 1, 1, 12, 0, 0)
     _EARTH_RADIUS = 6378136.3
-    _STAGES = ('Raw', 'Pre', 'Post', 'Geofit')
+    _STAGES = ('Raw', 'Pre', 'Post', 'Geofit', 'Background', 'Geofitstatic')
 
     def __init__(self):
         self.__fileDir = None
@@ -31,7 +31,7 @@ class StandardKBRR:
         stage = str(stage).capitalize()
         if stage not in self._STAGES:
             raise ValueError(
-                "KBRR stage should be 'Raw', 'Pre', 'Post', or 'Geofit'"
+                "KBRR stage should be Raw, Pre, Post, Geofit, Background, or Geofitstatic"
             )
         self.__fileDir = os.path.abspath(str(filedir))
         self.__cacheDir = os.path.join(self.__fileDir, '.standard_kbrr_cache')
@@ -120,12 +120,13 @@ class StandardKBRR:
             stage: self.__group_cache(stage)
             for stage in self._STAGES
         }
+        stages = self._STAGES if (grouped['Background'] or grouped['Geofitstatic']) else self._STAGES[:4]
         days = sorted(set().union(*(set(grouped[stage])
                                     for stage in self._STAGES)))
 
         output_files = []
         for day in days:
-            missing = [stage for stage in self._STAGES
+            missing = [stage for stage in stages
                        if day not in grouped[stage]]
             if missing:
                 raise ValueError(
@@ -136,7 +137,8 @@ class StandardKBRR:
             pre = self.__merge_chunks(grouped['Pre'][day])
             post = self.__merge_chunks(grouped['Post'][day])
             geofit = self.__merge_chunks(grouped['Geofit'][day])
-            columns = self.__combine_stages(raw, pre, post, geofit)
+            extra = tuple(self.__merge_chunks(grouped[stage][day]) for stage in stages[4:])
+            columns = self.__combine_stages(raw, pre, post, geofit, *extra)
             directory = self.__daily_directory(day)
             os.makedirs(directory, exist_ok=True)
             path = os.path.join(directory, self.__output_filename(day))
@@ -205,24 +207,22 @@ class StandardKBRR:
         return grouped
 
     def __write_file(self, path, columns):
-        (time, longitude, latitude, altitude, pre_rate, post_rate,
-         raw_oc_rate, geofit_rate) = columns
+        # Keep raw and background components for alignment checks; omit both
+        # from the published file.
+        if len(columns) == 10:
+            columns = columns[:8] + columns[9:]
+        columns = columns[:6] + columns[7:]
+        time = columns[0]
         temporary = path + '.tmp'
         with open(temporary, 'w', encoding='ascii', newline='\n') as file:
-            self.__write_header(file, time)
-            for values in zip(
-                    time, longitude, latitude, altitude, pre_rate, post_rate,
-                    raw_oc_rate, geofit_rate):
-                file.write(
-                    '%s %.12f %.12f %.6f %.15e %.15e %.15e %.15e\n' % (
-                        self.__format_time(values[0]),
-                        values[1], values[2], values[3], values[4], values[5],
-                        values[6], values[7]
-                    )
-                )
+            self.__write_header(file, time, restored=len(columns) == 8)
+            for values in zip(*columns):
+                file.write('%s %.12f %.12f %.6f %s\n' % (
+                    self.__format_time(values[0]), values[1], values[2], values[3],
+                    ' '.join('%.15e' % value for value in values[4:])))
         os.replace(temporary, path)
 
-    def __write_header(self, file, time):
+    def __write_header(self, file, time, restored=False):
         created = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
         start = self._EPOCH + datetime.timedelta(seconds=float(time[0]))
         stop = self._EPOCH + datetime.timedelta(seconds=float(time[-1]))
@@ -236,8 +236,8 @@ class StandardKBRR:
         file.write('    creator_institution: NCSG(https://github.com/NCSGgroup)\n')
         file.write('    date_created: %s\n' % created)
         file.write('    instrument: KBR\n')
-        file.write('    source: PyHawk raw O-C, pre-, post-solution, and monthly gravity-field KBRR series\n')
-        file.write('    summary: Raw O-C, pre- and post-solution residuals, and the monthly global gravity contribution\n')
+        file.write('    source: PyHawk pre-, post-solution, and monthly gravity-field KBRR series\n')
+        file.write('    summary: Pre- and post-solution residuals and the monthly global gravity contribution\n')
         file.write('    time_coverage_start: %s\n' % start.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-4])
         file.write('    time_coverage_stop: %s\n' % stop.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-4])
         file.write('    title: %s Hawk KBRR Level-1C Data\n' % mission_name)
@@ -276,23 +276,23 @@ class StandardKBRR:
         file.write('        coverage_content_type: modelResult\n')
         file.write('        long_name: Post-solution inter-satellite range-rate residual\n')
         file.write('        units: m/s\n')
-        file.write('    - raw_oc_range_rate:\n')
-        file.write('        comment: 7th column\n')
-        file.write('        coverage_content_type: modelResult\n')
-        file.write(
-            '        long_name: Retained inter-satellite range-rate '
-            'observation-minus-computation residual; identical to the '
-            'pre-solution input before gravity-field adjustment\n'
-        )
-        file.write('        units: m/s\n')
         file.write('    - geofit_range_rate:\n')
-        file.write('        comment: 8th column\n')
+        file.write('        comment: 7th column\n')
         file.write('        coverage_content_type: modelResult\n')
         file.write(
             '        long_name: Monthly global gravity contribution reconstructed '
             'from the final spherical-harmonic solution in the KBRR observation domain\n'
         )
         file.write('        units: m/s\n')
+        if restored:
+            for name, column, description in (
+                    ('geofit_kbrr_static', '8th',
+                     'Column 7 plus dated-minus-static reference response; linearized KBRR; estimated degrees only'),):
+                file.write('    - %s:\n' % name)
+                file.write('        comment: %s column\n' % column)
+                file.write('        coverage_content_type: modelResult\n')
+                file.write('        long_name: %s\n' % description)
+                file.write('        units: m/s\n')
         file.write('# End of YAML header\n')
 
     @staticmethod
@@ -310,7 +310,7 @@ class StandardKBRR:
         return tuple(column[keep] for column in columns)
 
     @staticmethod
-    def __combine_stages(raw, pre, post, geofit):
+    def __combine_stages(raw, pre, post, geofit, *extra):
         raw_key = np.round(raw[0], decimals=9)
         pre_key = np.round(pre[0], decimals=9)
         post_key = np.round(post[0], decimals=9)
@@ -333,6 +333,9 @@ class StandardKBRR:
                 % (raw_key.size, pre_key.size, post_key.size,
                    geofit_key.size, common.size)
             )
+        for stage in extra:
+            if not np.array_equal(raw_key, np.round(stage[0], decimals=9)):
+                raise ValueError('KBRR epoch mismatch in background/restored geofit')
         return (
             raw[0],
             raw[1],
@@ -342,7 +345,7 @@ class StandardKBRR:
             post[4],
             raw[4],
             geofit[4]
-        )
+        ) + tuple(stage[4] for stage in extra)
 
     @classmethod
     def midpoint_coordinates(cls, gps_time, orbit_a, orbit_b, frame):

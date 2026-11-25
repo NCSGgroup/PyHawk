@@ -11,7 +11,7 @@ from .feedback import run_feedback
 from .core import ObservationBlock
 
 DEFAULTS = dict(Enabled=False, FeedbackEnabled=False, MaxOuterIterations=2,
-                FeedbackIterations=None,
+                FeedbackIterations=None, ReevaluateKBRRAfterFeedback=True,
                 EstimateEmpirical=True, InitialUseCovariance=False, Damping=1.0,
                 Rcond=1e-12, MonthlyScaleEnabled=False, SaveIterationProducts=False)
 
@@ -22,7 +22,7 @@ def joint_options(config, parallel=None):
     options['ArcProcesses'] = parallel.get('GetNEQProcess', 1)
     options['FeedbackProcesses'] = parallel.get('GetGravityDesignMatProcess', 1)
     options.update(config or {})
-    for key in ('Enabled','FeedbackEnabled','EstimateEmpirical','InitialUseCovariance','MonthlyScaleEnabled','SaveIterationProducts'):
+    for key in ('Enabled','FeedbackEnabled','EstimateEmpirical','InitialUseCovariance','MonthlyScaleEnabled','SaveIterationProducts','ReevaluateKBRRAfterFeedback'):
         if not isinstance(options[key], bool):
             raise ValueError(key+' must be a JSON boolean')
     if options['MonthlyScaleEnabled'] and not options['Enabled']:
@@ -139,17 +139,29 @@ def publish_products(settings, solution, cumulative, base_global, feedback, sett
             StandardConfig._atomic_copy(Path(solution)/'settings'/(name+'.json'),
                                         archived_settings/(name+'.json'))
     archive.archive_quality_control(product,arc_filter_path,arc_definition_path)
+    if solver.get('KBRRQCRebuilt', False):
+        qc_root = Path(settings.raw['AdjustOrbitConfig']['PathOfFilesConfig']['RangeRateTemp'])
+        for source in (qc_root/'selection.json', qc_root/settings.tag/'KBRR_ArcQuality.json'):
+            StandardConfig._atomic_copy(source, archived_settings/source.name)
+
     kbrr = export_residuals(settings,solution,cumulative,feedback,l1c=True,workers=workers)
     acc = export_acc(settings,solution,feedback,workers=workers)
     return dict(SH=str(product),NEQ1C=str(snx),KBRR1C=[str(p) for p in kbrr],ACC1C=acc,statistics=statistics)
 
 
 def run_calibrate_joint(owner, setting_directory, arcs, options, is_gls, gls,
-                        arc_filter_path=None, arc_definition_path=None, resume_seed=None, resume_bootstrap=None):
+                        arc_filter_path=None, arc_definition_path=None, resume_seed=None, resume_bootstrap=None, candidate_arcs=None, resume_feedback=None):
     options = joint_options(options)
     if not options['Enabled']:
         return None
     settings = Settings(setting_directory,Path.cwd())
+    refresh_qc = options['FeedbackEnabled'] and options['ReevaluateKBRRAfterFeedback']
+    candidates = sorted(set(int(a) for a in (candidate_arcs if candidate_arcs is not None else arcs)))
+    if not set(arcs).issubset(candidates):
+        raise ValueError('selected arcs must be a subset of KBRR candidates')
+    if refresh_qc:
+        settings.raw['SolverConfig']['KBRRCandidateArcs'] = candidates
+
     from .monthly_scale import configure_monthly_scale, bootstrap_monthly_scale
     monthly_scale = options['MonthlyScaleEnabled'] or settings.raw.get('GravityDesignParameterConfig', {}).get('AccelerometerConfig', {}).get('isScale', False)
     if monthly_scale:
@@ -190,7 +202,56 @@ def run_calibrate_joint(owner, setting_directory, arcs, options, is_gls, gls,
     runroot = Path(neq['NormalEqTemp'])/'JointChannel'/settings.tag/(datetime.now().strftime('%Y%m%d_%H%M%S')+'_'+uuid.uuid4().hex[:8])
     runroot.mkdir(parents=True)
     feedback, dm_root, base_state, cumulative = None,None,None,None
-    if resume_seed is not None:
+    resume_outer_start = 0
+    resumed_record = None
+    if resume_feedback is not None:
+        if resume_seed is not None or resume_bootstrap is not None:
+            raise ValueError('feedback resume cannot be combined with an earlier checkpoint')
+        if options['FeedbackIterations'] != 1 or not options['FeedbackEnabled']:
+            raise ValueError('feedback resume requires exactly one completed feedback integration')
+        checkpoint = Path(resume_feedback).resolve()
+        completed = json.loads((checkpoint/'complete.json').read_text())
+        prior_solution = Path(completed['source_solution']).resolve()
+        prior_manifest, prior_delta = load_result(prior_solution)
+        if not (prior_solution/'complete.json').is_file() or not set(prior_manifest['arcs']).issubset(completed['arcs']):
+            raise ValueError('feedback source solution or arcs are incomplete')
+        prior_settings = Settings(prior_solution/'settings', prior_solution)
+        if prior_settings.span != settings.span:
+            raise ValueError('feedback checkpoint date span does not match configuration')
+        if prior_settings.raw['InterfaceConfig']['date_delete'] != settings.raw['InterfaceConfig']['date_delete']:
+            raise ValueError('feedback checkpoint excluded dates do not match configuration')
+        if prior_settings.raw['GravityDesignParameterConfig'] != settings.raw['GravityDesignParameterConfig']:
+            raise ValueError('feedback checkpoint gravity parameterization does not match configuration')
+        # The completed feedback state fixes the numerical linearization, but
+        # a fresh QC run must use the requested current arc-screening rule.
+        prior_settings.raw['AdjustOrbitConfig']['RangeRateConfig'][
+            'ArcOutlierMinRelativeMetric'
+        ] = settings.raw['AdjustOrbitConfig']['RangeRateConfig'][
+            'ArcOutlierMinRelativeMetric'
+        ]
+        settings = prior_settings
+        arcs = list(prior_manifest['arcs'])
+        candidates = sorted(int(a) for a in completed['arcs'])
+        saved_candidates = sorted(settings.raw['SolverConfig'].get('KBRRCandidateArcs', candidates))
+        if candidates != saved_candidates or not set(arcs).issubset(candidates):
+            raise ValueError('feedback checkpoint arc selection is inconsistent')
+        dm_root, base_state = checkpoint/'DesignMatrix', checkpoint/'state.h5'
+        if not base_state.is_file() or not dm_root.is_dir():
+            raise ValueError('feedback checkpoint state or design matrices missing')
+        for arc in candidates:
+            if not (dm_root/settings.tag/('Orbit_%d_AB.hdf5' % arc)).is_file():
+                raise ValueError('feedback checkpoint missing design matrix for arc %d' % arc)
+        cumulative = float(options['Damping'])*prior_delta
+        resume_outer_start = 1
+        resumed_record = dict(iteration=1, arcs=list(arcs), gls_iterations=int(gls.MaxIteration),
+                              gls_converged=False, solution=str(prior_solution), feedback=str(checkpoint),
+                              gravity_step_norm=float(np.linalg.norm(prior_delta[18:] if
+                                  settings.raw['GravityDesignParameterConfig']['AccelerometerConfig']['isScale']
+                                  else prior_delta)))
+        write_json(runroot/'resume.json', dict(source=str(checkpoint), stage='feedback complete',
+                                               prior_solution=str(prior_solution)))
+        print('Resume completed dynamics feedback: '+str(checkpoint), flush=True)
+    elif resume_seed is not None:
         resume_seed = Path(resume_seed).resolve()
         manifest, _ = load_result(resume_seed)
         if manifest['covariance'] or manifest['arcs'] != list(arcs):
@@ -202,6 +263,15 @@ def run_calibrate_joint(owner, setting_directory, arcs, options, is_gls, gls,
                 for name in ('Orbit_A','Orbit_B','RangeRate'):
                     if name in h and 'linear_postfit' not in h[name]:
                         raise ValueError('missing checkpoint postfit residuals')
+        seed_settings = Settings(resume_seed/'settings', resume_seed)
+        seed_solver = seed_settings.raw['SolverConfig']
+        if refresh_qc:
+            saved_candidates = seed_solver.get('KBRRCandidateArcs', manifest['arcs'])
+            if sorted(saved_candidates) != candidates:
+                raise ValueError('resume checkpoint KBRR candidates do not match')
+            settings.raw['AdjustOrbitConfig']['PathOfFilesConfig']['RangeRateTemp'] = (
+                seed_settings.raw['AdjustOrbitConfig']['PathOfFilesConfig']['RangeRateTemp'])
+            settings.raw['SolverConfig']['KBRRQCRebuilt'] = seed_solver.get('KBRRQCRebuilt', False)
         dm_root, base_state = manifest['dm_root'], manifest['base_state']
         if not Path(dm_root).is_dir() or (base_state and not Path(base_state).is_file()):
             raise ValueError('missing checkpoint dynamical state')
@@ -210,7 +280,7 @@ def run_calibrate_joint(owner, setting_directory, arcs, options, is_gls, gls,
     elif resume_bootstrap is not None:
         bootstrap = Path(resume_bootstrap).resolve()
         checkpoint = json.loads((bootstrap/'complete.json').read_text())
-        if checkpoint['arcs'] != list(arcs) or checkpoint['scale_scope'] != list(settings.span):
+        if checkpoint['arcs'] != list(candidates if refresh_qc else arcs) or checkpoint['scale_scope'] != list(settings.span):
             raise ValueError('bootstrap arcs/date span do not match')
         dm_root, base_state = bootstrap/'DesignMatrix', bootstrap/'state.h5'
         if not Path(base_state).is_file():
@@ -221,20 +291,31 @@ def run_calibrate_joint(owner, setting_directory, arcs, options, is_gls, gls,
         write_json(runroot/'resume.json',dict(source=str(bootstrap),stage='bootstrap complete'))
         print('Reuse completed dynamics bootstrap: '+str(bootstrap),flush=True)
     elif monthly_scale:
-        bootstrap = bootstrap_monthly_scale(settings, arcs, runroot/'state_00', options['FeedbackProcesses'])
+        bootstrap = bootstrap_monthly_scale(settings, candidates if refresh_qc else arcs, runroot/'state_00', options['FeedbackProcesses'])
         dm_root, base_state = bootstrap/'DesignMatrix', bootstrap/'state.h5'
+    if refresh_qc and base_state:
+        with h5py.File(base_state, 'r') as state:
+            missing = [a for a in candidates if 'arc_%d' % a not in state]
+        if missing:
+            raise ValueError('restart state lacks KBRR candidate arcs %s; rebuild candidate dynamics' % missing)
     if options['FeedbackIterations'] is None:
         # Preserve legacy behavior for existing settings: each outer pass feeds back.
         outer_count = options['MaxOuterIterations'] if options['FeedbackEnabled'] else 1
     else:
         # An explicit feedback count adds one final solve after the last integration.
         outer_count = options['FeedbackIterations'] + 1
-    records = []
-    for outer in range(outer_count):
+    records = [resumed_record] if resumed_record is not None else []
+    for outer in range(resume_outer_start, outer_count):
         # Keep the previous state as the linearization, not as final products.
         # A feedback product belongs only to the solve that generated it.
         feedback = None
         print('Joint outer solve %d/%d' % (outer + 1, outer_count), flush=True)
+        if refresh_qc and not (outer == 0 and resume_seed is not None):
+            from .refresh_qc import refresh_kbrr_qc
+            arcs = refresh_kbrr_qc(settings, candidates, arcs,
+                dm_root or settings.raw['SolverConfig']['DesignMatrixTemp'],
+                runroot/('qc_%02d' % outer), options['ArcProcesses'])
+
         # Use KIN-based weights only once. Later dynamical linearizations start
         # with the residual covariance and VCE factors from the previous outer loop.
         seed_covariance = options['InitialUseCovariance'] or (kin_seed and outer > 0)
@@ -322,7 +403,7 @@ def run_calibrate_joint(owner, setting_directory, arcs, options, is_gls, gls,
             cumulative = base_global+options['Damping']*delta
         else:
             cumulative = base_global+delta
-        records.append(dict(iteration=outer+1,gls_iterations=gls_iterations,gls_converged=gls_converged,solution=str(solution),feedback=str(feedback) if feedback else None,
+        records.append(dict(iteration=outer+1,arcs=list(arcs),gls_iterations=gls_iterations,gls_converged=gls_converged,solution=str(solution),feedback=str(feedback) if feedback else None,
                             gravity_step_norm=float(np.linalg.norm(delta[18:] if settings.raw['GravityDesignParameterConfig']['AccelerometerConfig']['isScale'] else delta))))
     owner.cs = cumulative.copy()
     products = publish_products(settings,solution,cumulative,base_global,feedback,setting_directory,
@@ -336,6 +417,7 @@ def run_calibrate_joint(owner, setting_directory, arcs, options, is_gls, gls,
             absolute=(baseline+cumulative[:18].reshape(2,9)).tolist()))
         products['MonthlyScale'] = str(scale_path)
     write_json(runroot/'complete.json',dict(products=products,iterations=records,
+        kbrr_candidate_arcs=candidates if refresh_qc else list(arcs), final_arcs=list(arcs),
         feedback_integrations=sum(record['feedback'] is not None for record in records),
         final_solution=str(solution), final_solve_after_feedback=bool(
             options['FeedbackIterations'] is not None and options['FeedbackIterations'] > 0)))
