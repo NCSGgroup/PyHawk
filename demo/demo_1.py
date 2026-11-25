@@ -16,6 +16,7 @@ from src.Preference.Pre_ForceModel import ForceModelConfig
 from src.Preference.Pre_AdjustOrbit import AdjustOrbitConfig
 from src.Preference.Pre_Interface import InterfaceConfig
 from src.Preference.Pre_Frame import FrameConfig
+from src.Preference.Pre_ODE import ODEConfig
 from src.Preference.Pre_CalibrateOrbit import CalibrateOrbitConfig
 import multiprocessing
 import json
@@ -70,6 +71,10 @@ class demo_1:
         self.__frame_config = FrameConfig()
         frame = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/FrameConfig.json'), 'r'))
         self.__frame_config.__dict__ = frame
+
+        self.__ode_config = ODEConfig()
+        with open(os.path.join(self.__parent_path, 'setting/Calibrate/ODEConfig.json'), 'r') as stream:
+            self.__ode_config.__dict__ = json.load(stream)
 
         self.__calibrateOrbit_config = CalibrateOrbitConfig()
         calibrateOrbit = json.load(open(os.path.abspath(self.__parent_path + '/setting/Calibrate/CalibrateOrbitConfig.json'), 'r'))

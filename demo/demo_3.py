@@ -249,4 +249,4 @@ class CalibrateOrbit:
 
 
 if __name__ == '__main__':
-    pass
+    CalibrateOrbit().loadJson().run()

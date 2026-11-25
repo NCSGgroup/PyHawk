@@ -36,6 +36,44 @@ python -m pip install -r requirments.txt
 
 Native libraries are loaded from [`lib/`](lib): `sofa.dll` / `GravHar.dll` on Windows, or `sofa.so` / `GravHar.so` on Linux. They must match the host architecture and runtime. The current loaders explicitly support Windows and Linux; macOS requires adapting the library loading/build setup.
 
+### Building the native libraries
+
+Run the commands from the PyHawk repository root. Use a compiler that targets
+the same architecture as Python (for example, x86-64 for 64-bit x86 Python).
+GravHar uses the C++ source in `src/GravHar/`. To rebuild SOFA, unpack the
+IAU SOFA C distribution and replace the example SOFA source path below with
+the directory containing `sofa.h` and the C implementation files.
+
+**Linux (Bash with GCC and G++)**
+
+```bash
+mkdir -p lib
+g++ -O2 -fPIC -shared src/GravHar/GravHar.cpp -o lib/GravHar.so
+
+sofa_src=/path/to/sofa/c/src
+mapfile -d '' sofa_files < <(find "$sofa_src" -maxdepth 1 -type f -name '*.c' ! -name 't_sofa*.c' -print0)
+gcc -O2 -fPIC -shared "${sofa_files[@]}" -o lib/sofa.so -lm
+```
+
+**Windows (PowerShell with MinGW-w64 GCC and G++ on PATH)**
+
+```powershell
+New-Item -ItemType Directory -Force lib | Out-Null
+g++ -O2 -shared -static-libgcc -static-libstdc++ '-Wl,--export-all-symbols' src/GravHar/GravHar.cpp -o lib/GravHar.dll
+
+$sofaSrc = 'C:\path\to\sofa\c\src'
+$sofaFiles = @(Get-ChildItem -LiteralPath $sofaSrc -File -Filter '*.c' |
+    Where-Object Name -NotLike 't_sofa*.c' |
+    Select-Object -ExpandProperty FullName)
+gcc -O2 -shared -static-libgcc '-Wl,--export-all-symbols' @sofaFiles -o lib/sofa.dll -lm
+```
+
+Check that Python can load both libraries and resolve their C entry points:
+
+```bash
+python -c "import ctypes, sys; from pathlib import Path; ext = '.dll' if sys.platform == 'win32' else '.so'; sofa = ctypes.CDLL(str(Path('lib', 'sofa' + ext).resolve())); grav = ctypes.CDLL(str(Path('lib', 'GravHar' + ext).resolve())); print(sofa.iauCal2jd, grav.getNlimit)"
+```
+
 ## Data preparation
 
 Observation and model datasets must be obtained separately. Configure their locations before running:
@@ -67,10 +105,10 @@ Start from [`setting/Calibrate/`](setting/Calibrate), copy it to a separate dire
 Run from the project root after preparing the data and settings:
 
 ```bash
-python demo/demo_CalibrateOrbit.py --setting-dir setting/MyExperiment
+python demo/demo_CalibrateOrbit.py
 ```
 
-The entry point changes the working directory to `demo/`: JSON paths such as `../data` and `../temp` are relative to **`demo/`, not the setting directory**. Keep the default output roots unless a validated workflow requires otherwise.
+The command reads the default JSON files in `setting/Calibrate`. The entry point changes the working directory to `demo/`, which is the base for JSON paths such as `../data` and `../temp`.
 
 The supplied `Calibrate` settings are a processing example, **not a fresh-run preset**: some stages are disabled and require existing intermediate files. For a new run, enable the necessary `StepControlConfig` stages. Reuse a disabled stage only when its inputs, configuration and cached results match. Monthly-scale bootstrap generates its own design matrices; avoid an unnecessary preliminary design-integration pass for that workflow.
 
@@ -79,7 +117,7 @@ The supplied `Calibrate` settings are a processing example, **not a fresh-run pr
 - Orbit fitting and gravity estimation can use different orbit observations: `OrbitConfig.ObservationSource` selects the fitting source; `NEQConfig` selects the NEQ observations.
 - In the joint channel, `InitialOrbitWeighting="KINRelative"` uses normalized KIN epoch precision for the initial WLS, with `OrbitKinFactor` setting relative KBRR precision. KBRR remains in **m/s**.
 - `GLSResidualSpace="Physical"` with `OrbitCovarianceMode="EstimatedFull"` estimates subsequent covariance from physical post-fit residuals. Arc weighting is configured separately through `ArcWeightingConfig`; it is not enabled by selecting GLS alone.
-- Set `JointEstimationConfig.Enabled=true` to use the joint channel. Monthly scale estimation also requires `MonthlyScaleEnabled=true` and compatible ACC parameter layouts.
+- Joint estimation and monthly accelerometer scale estimation are enabled by default. The joint channel runs one dynamical feedback integration (`FeedbackIterations=1`) and solves again with the updated dynamics. GLS uses `OrbitCovarianceMode="EstimatedFull"` and allows up to three iterations. Monthly scale estimation requires compatible ACC parameter layouts.
 - To apply one feedback integration **and solve again using the updated dynamics**, set `FeedbackEnabled=true` and `FeedbackIterations=1`. `GLSIterationConfig.MaxIteration` independently limits GLS iterations.
 - `ReevaluateKBRRAfterFeedback=true` (default) rebuilds KBRR QC from original preprocessed observations minus the current integrated orbit. Previously rejected KBRR epochs/arcs may return; selection remains fixed within each GLS loop. Existing outlier switches still apply.
 - KBRR calibration rejection, epoch/arc screening and physical O–C screening have separate switches. Disabling them does not remove basic validity checks or orbit quality control. `PhysicalOCOutlierEnabled=true` requires positive `RangeRateConfig.Iterations`.
@@ -110,13 +148,28 @@ Archive the configuration and completion records with the products. Before clean
 
 ## Code and validation
 
-[`src/`](src) contains the implementation, [`demo/`](demo) the entry points, [`benchmark/`](benchmark) force-model benchmarks, and [`test/`](test) regression tests. A focused joint-solver check is:
+[`src/`](src) contains the implementation, [`demo/`](demo) the entry points, [`benchmark/`](benchmark) force-model benchmarks, and [`test/`](test) regression tests.
+
+From the project root, run `python demo/demo_CalibrateOrbit.py` to process mission data with the default settings. Run the focused joint-solver unit tests with the following command.
 
 ```bash
 python -m unittest discover -s test -p test_joint_channel.py -v
 ```
 
 The small synthetic tests validate solver behavior; they do not replace full-month scientific validation with mission data.
+
+### Stage-level demos
+
+Run these demos from the `demo/` directory. They use the date span and paths
+in `setting/Calibrate` and can write to the configured processing directories.
+
+| Demo | Validation purpose and required inputs | Command |
+|---|---|---|
+| Demo 1 | Check arc-wise dynamical orbit fitting and accelerometer calibration using preprocessed observations and arc reports. | `python demo_1.py` |
+| Demo 2 | Exercise the legacy processing chain, including preprocessing, orbit fitting, KBRR calibration, design matrices, arc normal equations and monthly spherical harmonics. The stage switches determine which steps run and which intermediates must already exist. | `python demo_2.py` |
+| Demo 3 | Check arc normal-equation formation and monthly spherical-harmonic recovery from existing design matrices and calibrated KBRR. The NEQ and SH stage switches control the two steps. | `python demo_3.py` |
+
+Use `demo_CalibrateOrbit.py` for the current joint-channel production workflow.
 
 ## Contact
 
