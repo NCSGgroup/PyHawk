@@ -150,13 +150,11 @@ Archive the configuration and completion records with the products. Before clean
 
 [`src/`](src) contains the implementation, [`demo/`](demo) the entry points, [`benchmark/`](benchmark) force-model benchmarks, and [`test/`](test) regression tests.
 
-From the project root, run `python demo/demo_CalibrateOrbit.py` to process mission data with the default settings. Run the focused joint-solver unit tests with the following command.
+From the project root, use the following command to process mission data with the default settings.
 
 ```bash
-python -m unittest discover -s test -p test_joint_channel.py -v
+python demo/demo_CalibrateOrbit.py
 ```
-
-The small synthetic tests validate solver behavior; they do not replace full-month scientific validation with mission data.
 
 ### Stage-level demos
 
