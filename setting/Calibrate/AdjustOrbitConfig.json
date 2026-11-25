@@ -6,16 +6,20 @@
         "ArcOutlierSignificance": 0.01,
         "ArcOutlierMaxFraction": 0.1,
         "ArcOutlierMinArcs": 8,
-        "ArcOutlierTrimFraction": 0.01
+        "ArcOutlierTrimFraction": 0.01,
+        "ObservationSource": "GNV",
+        "UseEpochCovariance": false,
+        "SamplingSeconds": 5.0,
+        "SamplingOrigin": "FirstEpoch"
     },
     "RangeRateConfig": {
         "ParameterFitting": "biasC0C1C2_OneCPR",
         "OneCPROutlierOnly": false,
-        "OutlierTimes": 6,
+        "OutlierTimes": 10,
         "OutlierRMS": 6e-05,
-        "OutlierObs": 6,
-        "ArcLength": 12,
-        "Iterations": 5,
+        "OutlierObs": 10,
+        "ArcLength": 6,
+        "Iterations": 3,
         "ArcOutlierEnabled": true,
         "ArcOutlierSignificance": 0.05,
         "ArcOutlierMaxFraction": 0.1,
@@ -26,7 +30,7 @@
         "EpochOutlierMaxFraction": 0.02,
         "EpochOutlierMinSamples": 20,
         "PhysicalOCOutlierEnabled": false,
-        "ArcOutlierMinRelativeMetric": 2.5
+        "ArcOutlierMinRelativeMetric": 3.0
     },
     "PathOfFilesConfig": {
         "StateVectorDataTemp": "../temp/StateVector",

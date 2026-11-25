@@ -1,8 +1,8 @@
 {
     "mission": "GRACE_RL03",
     "date_span": [
-        "2013-05-01",
-        "2013-05-31"
+        "2010-01-01",
+        "2010-01-31"
     ],
     "arcNo": 0,
     "sat": {
@@ -35,23 +35,23 @@
     "gapfix_quadra_mis_max": 21,
     "gapfix_cubic_mis_max": 80,
     "gapfix_cubic_int": 150,
-    "arc_length": 12,
-    "min_arcLen": 6,
+    "arc_length": 6,
+    "min_arcLen": 1.5,
     "OrbitConfig": {
         "OutlierTimes": 6,
-        "OutlierLimit": 0.10
+        "OutlierLimit": 0.1
     },
     "PathOfFilesConfig": {
-        "payload_ACC": "../data/GRACE_RL02",
+        "payload_ACC": "../data/GRACE_RL02/2010",
         "payload_SCA": "../data/GRACE_RL03",
         "payload_KBR": "../data/GRACE_RL03",
-        "payload_GNV": "../data/GRACE_RL02",
+        "payload_GNV": "../data/GRACE_RL02/2010",
         "payload_Kinematic": "../data/KinematicOrbit",
-        "payload_LRI": "../data/GRACE_RL02",
+        "payload_LRI": "../data/GRACE_RL03",
         "report_gap": "../report/gap",
         "report_arc": "../report/arc",
         "report_arcft": "../report/arcft",
         "temp_raw_data": "../temp/RawData",
-        "log": "../log/"
+        "log": "../log"
     }
 }
